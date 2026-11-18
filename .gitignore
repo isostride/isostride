@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+reports/
+next-env.d.ts
+*.tsbuildinfo
+# The runner's own FIT files and the data Strideprism writes next to them: personal health data, kept out of git
+test_data/
+.next-build/
+.next-dev/

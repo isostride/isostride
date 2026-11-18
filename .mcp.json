@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "radical": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "radical.sh",
+        "mcp",
+        "--folder",
+        ".radical/model"
+      ]
+    }
+  }
+}

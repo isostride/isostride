@@ -1,0 +1,247 @@
+{
+  "implements": [
+    { "element": "39491f93-4fcc-4f9c-960b-e12750deef8f", "name": "Web App", "paths": ["app"] },
+    { "element": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1", "name": "App Shell", "paths": ["components"] },
+    { "element": "d0291cd1-bdf1-4c49-8333-4b658a02f95d", "name": "Folder Access", "paths": ["lib/fs"] },
+    { "element": "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7", "name": "Processing Worker", "paths": ["workers"] },
+    { "element": "ce42067b-80ea-40e1-a577-39607ab89630", "name": "Ingest", "paths": ["lib/ingest"] },
+    { "element": "31df2b33-7d61-4128-bd2a-a8fd73481b33", "name": "Prepare", "paths": ["lib/prepare"] },
+    { "element": "84b558e0-d87c-4134-8479-f01b164bcd47", "name": "Context", "paths": ["lib/context"] },
+    { "element": "0765fef0-4b2e-4087-a745-30d31c103732", "name": "Pages", "paths": ["app"] },
+    { "element": "cbb5fc4a-220e-4316-97b6-63afe40c8cc8", "name": "Charts and Map", "paths": ["components/charts.tsx"] },
+    { "element": "af580e00-9fde-4182-89d8-479d71707a14", "name": "Blocks", "paths": ["lib/blocks"] },
+    { "element": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9", "name": "Compare", "paths": ["lib/compare"] },
+    { "element": "ca29b4d4-2e21-4bd0-8a7d-dedef3dab8b4", "name": "Stats", "paths": ["lib/stats"] },
+    { "element": "c8218f3c-c48b-4800-a633-b190e85d5833", "name": "CSV Export", "paths": ["lib/compare/csv.ts"] }
+  ],
+  "verifies": [
+    { "element": "2a0542b2-ead0-42d2-ad1c-24694dc2d613", "name": "Import new FIT files", "tests": [
+      "tests/ingest.test.ts › Import FIT files › Import new FIT files"
+    ] },
+    { "element": "65964775-681d-4a0b-baf7-19ff96159e17", "name": "Only new files imported", "tests": [
+      "tests/ingest.test.ts › Import FIT files › Only new files imported"
+    ] },
+    { "element": "74a449f3-a422-40f4-ac64-8cfd1cdaa65b", "name": "Repeated import adds nothing", "tests": [
+      "tests/ingest.test.ts › No duplicate runs › Repeated import adds nothing"
+    ] },
+    { "element": "84930b78-0d43-4aea-b74b-808687a91b45", "name": "Renamed copy skipped", "tests": [
+      "tests/ingest.test.ts › No duplicate runs › Renamed copy skipped"
+    ] },
+    { "element": "4694d757-ae1c-4238-b0f7-1de633e81d8a", "name": "All fields read", "tests": [
+      "tests/ingest.test.ts › Read all FIT fields › All fields read"
+    ] },
+    { "element": "56fbf8e4-2a89-449b-8ec4-aef33531f8eb", "name": "COROS developer fields read", "tests": [
+      "tests/ingest.test.ts › Read all FIT fields › COROS developer fields read"
+    ] },
+    { "element": "670674aa-8d04-4ca9-9389-9afb3f2dee44", "name": "Heart rate source recorded", "tests": [
+      "tests/ingest.test.ts › Read all FIT fields › Heart rate source recorded"
+    ] },
+    { "element": "00f166c6-73f4-47e3-a804-04ad4bdb7785", "name": "FIT files unchanged", "tests": [
+      "tests/ingest.test.ts › FIT files untouched › FIT files unchanged",
+      "tests/recompute.test.ts › Recompute everything › FIT files unchanged by recompute"
+    ] },
+    { "element": "c2d7666b-6bd3-41ce-a923-608cb0217869", "name": "Damaged file skipped", "tests": [
+      "tests/ingest.test.ts › Skip unreadable FIT file › Damaged file skipped"
+    ] },
+    { "element": "6129c4ff-92cb-4550-b38c-7cd6bd728cf4", "name": "Run imported within 5 s", "tests": [
+      "tests/ingest.test.ts › Import time budget › Run imported within 5 s"
+    ] },
+    { "element": "faf5d07b-a583-459c-b69b-836cc1dc61c1", "name": "Derived files carry version", "tests": [
+      "tests/ingest.test.ts › Record algorithm version › Derived files carry version"
+    ] },
+    { "element": "3d858429-f454-438e-a431-eed8e4172c06", "name": "Run file is columnar", "tests": [
+      "tests/ingest.test.ts › Columnar JSON format › Run file is columnar"
+    ] },
+    { "element": "666b220b-2d5e-465f-b436-bf8287e09558", "name": "10 s window means", "tests": [
+      "tests/windows.test.ts › 10 s windows › 10 s window means"
+    ] },
+    { "element": "59aee52c-dcea-4b4f-81a8-21f8a7ecab8f", "name": "Quality flags set", "tests": [
+      "tests/windows.test.ts › Window quality flags › Quality flags set"
+    ] },
+    { "element": "1660cc95-0e4b-4a00-9892-b2ebbcc0f88b", "name": "Import time per run", "tests": [
+      "tests/ingest.test.ts › Import time budget › Run imported within 5 s"
+    ] },
+    { "element": "7764c1ed-26dd-49a2-9781-faf1777c8088", "name": "Idempotent import", "tests": [
+      "tests/ingest.test.ts › No duplicate runs › Repeated import adds nothing"
+    ] },
+    { "element": "e37710fa-222e-4d09-8b8a-f8c87e99ad7b", "name": "Run file size", "tests": [
+      "tests/ingest.test.ts › Columnar JSON format › Run file is columnar"
+    ] },
+    { "element": "23148674-0c62-4887-a3a2-346dbfb72e3b", "name": "Derived files versioned", "tests": [
+      "tests/ingest.test.ts › Record algorithm version › Derived files carry version"
+    ] },
+    { "element": "058838f5-1eff-4381-9e09-dd4cd1504ae1", "name": "Register shoes", "tests": [
+      "tests/context.test.ts › Gear register › Register shoes"
+    ] },
+    { "element": "c0b8d4bb-1945-4b23-8189-643498763bfd", "name": "Change gear date range", "tests": [
+      "tests/context.test.ts › Gear register › Change gear date range"
+    ] },
+    { "element": "4308a42e-127f-47bc-865c-c4c96f09aec0", "name": "Gear assigned by date", "tests": [
+      "tests/context.test.ts › Assign gear by date › Gear assigned by date"
+    ] },
+    { "element": "491ff68d-2460-4e0e-9670-529cf7a1195f", "name": "Range change reassigns runs", "tests": [
+      "tests/context.test.ts › Assign gear by date › Range change reassigns runs"
+    ] },
+    { "element": "50a052f7-595b-411c-a59a-5d8b6247b9ff", "name": "Shoe override for one run", "tests": [
+      "tests/context.test.ts › Per-run gear override › Shoe override for one run"
+    ] },
+    { "element": "a2084606-fba4-4417-b655-ea825c6a19fb", "name": "Tag a run", "tests": [
+      "tests/context.test.ts › Run tags › Tag a run"
+    ] },
+    { "element": "2eea07a3-376f-4995-bd4e-0129ff4704c2", "name": "Day state computed", "tests": [
+      "tests/context.test.ts › Compute day state › Day state computed"
+    ] },
+    { "element": "1a7ad257-fd5a-4d25-b529-e09dd80998a7", "name": "Recompute gives same results", "tests": [
+      "tests/recompute.test.ts › Recompute everything › Recompute gives same results"
+    ] },
+    { "element": "79088551-a2af-4e96-b5be-32942b1f662c", "name": "User data survives recompute", "tests": [
+      "tests/recompute.test.ts › User data never overwritten › User data survives recompute"
+    ] },
+    { "element": "ad22c80f-c82c-4d21-ad60-2e568333f3a4", "name": "Old version offers recompute", "tests": [
+      "tests/recompute.test.ts › Offer recompute on mismatch › Old version offers recompute"
+    ] },
+    { "element": "929d3f69-cf3e-4522-95d1-a5424b36e37f", "name": "Recompute within 15 min", "tests": [
+      "tests/recompute.test.ts › Recompute time budget › Recompute within 15 min"
+    ] },
+    { "element": "df81f6e6-c81a-49fc-801e-c4d030ef11ea", "name": "Reproducible recompute", "tests": [
+      "tests/recompute.test.ts › Recompute everything › Recompute gives same results",
+      "tests/recompute.test.ts › User data never overwritten › User data survives recompute",
+      "tests/recompute.test.ts › Recompute everything › FIT files unchanged by recompute"
+    ] },
+    { "element": "316c4249-8e1b-4104-87de-f1cac5064fa7", "name": "Recompute time", "tests": [
+      "tests/recompute.test.ts › Recompute time budget › Recompute within 15 min"
+    ] },
+    { "element": "9ab44fc6-cc41-4349-925f-e27ed3d61d4e", "name": "Processing off main thread", "tests": [
+      "tests/architecture.test.ts › Non-blocking processing › Processing modules load only in the worker"
+    ] },
+    { "element": "a7041664-0172-4632-9168-8f1465772fe8", "name": "Promenade recommended", "tests": [
+      "tests/blocks.test.ts › Recommend route segment › Promenade recommended"
+    ] },
+    { "element": "8d46ce69-d3a5-4813-80eb-a356f27100be", "name": "Four passes not enough", "tests": [
+      "tests/blocks.test.ts › Recommend route segment › Four passes not enough"
+    ] },
+    { "element": "e25f213f-aaa5-4195-aa24-7954bb2e4956", "name": "Route segment derived", "tests": [
+      "tests/blocks.test.ts › Derive route segments › Route segment derived"
+    ] },
+    { "element": "645dfc87-940c-4d4b-828e-4115420096dd", "name": "Tempo recommended", "tests": [
+      "tests/blocks.test.ts › Recommend workout structure › Tempo recommended"
+    ] },
+    { "element": "3120690b-ce09-4693-bbb1-2eafbc8a99ce", "name": "Two workouts not enough", "tests": [
+      "tests/blocks.test.ts › Recommend workout structure › Two workouts not enough"
+    ] },
+    { "element": "b56414c2-a1f2-48bf-b827-2da00a91bfe3", "name": "Accept recommendation", "tests": [
+      "tests/blocks.test.ts › Accept or reject recommendation › Accept recommendation"
+    ] },
+    { "element": "e02b1e20-43f6-4549-83d9-f25472c2f6b6", "name": "Reject recommendation", "tests": [
+      "tests/blocks.test.ts › Accept or reject recommendation › Reject recommendation"
+    ] },
+    { "element": "342343ef-917c-4171-99f8-14183dcb563e", "name": "Rejected stays rejected", "tests": [
+      "tests/blocks.test.ts › Rejected not proposed again › Rejected stays rejected"
+    ] },
+    { "element": "6c5841aa-eb91-46d4-bad2-10d27bb0ea15", "name": "Change a tolerance", "tests": [
+      "tests/blocks.test.ts › Editable tolerances › Change a tolerance"
+    ] },
+    { "element": "5be5bf20-53c5-492e-971d-eaa227bad0a7", "name": "New definition scans history", "tests": [
+      "tests/blocks.test.ts › Detect in history › New definition scans history"
+    ] },
+    { "element": "2bb96b35-76c1-4914-82ab-a4bbc9728fd7", "name": "Tolerance change redetects", "tests": [
+      "tests/blocks.test.ts › Detect in history › Tolerance change redetects"
+    ] },
+    { "element": "04d3b18e-9640-44dd-8bfc-87b827bd8719", "name": "New run scanned", "tests": [
+      "tests/blocks.test.ts › Detect in new runs › New run scanned"
+    ] },
+    { "element": "bb318d07-1e0a-48d4-942c-8ecad440f7c5", "name": "Instance holds four layers", "tests": [
+      "tests/blocks.test.ts › Store instance context › Instance holds four layers"
+    ] },
+    { "element": "4af56562-2cf3-4808-a6a5-5cd7d3dd13fd", "name": "Three definition types", "tests": [
+      "tests/blocks.test.ts › Three definition types › Three definition types"
+    ] },
+    { "element": "539116a4-7b3c-4da5-9968-507ed20d4942", "name": "Treadmill tempo detected", "tests": [
+      "tests/blocks.test.ts › Blocks without GPS › Treadmill tempo detected"
+    ] },
+    { "element": "a0e2d555-fcc7-45bd-a3e4-a9e4403028cb", "name": "Recommendations found unaided", "tests": [
+      "tests/blocks.test.ts › Recommendations found unaided › Both acceptance blocks proposed"
+    ] },
+    { "element": "b123dc6d-e4bc-46b0-b2c2-af5f46cada59", "name": "Steady pass accepted", "tests": [
+      "tests/matching.test.ts › Strict condition matching › Steady pass accepted"
+    ] },
+    { "element": "c21bb240-ba44-4e8c-9e34-28b5722a4b13", "name": "Hilly fragment rejected", "tests": [
+      "tests/matching.test.ts › Strict condition matching › Hilly fragment rejected",
+      "tests/matching.test.ts › Strict condition matching › Effort before differs"
+    ] },
+    { "element": "7d17eb04-3492-4f0e-aeeb-19d8c09e5022", "name": "Unsteady pass rejected", "tests": [
+      "tests/matching.test.ts › Reject with reason › Unsteady pass rejected"
+    ] },
+    { "element": "49ca3dc4-6bd9-4cc2-9e66-d0167cd137c8", "name": "Early pass rejected for HR", "tests": [
+      "tests/matching.test.ts › Reject with reason › Early pass rejected for HR"
+    ] },
+    { "element": "e1dd5d44-08ba-4641-b568-dc638874fbca", "name": "Short block, no HR result", "tests": [
+      "tests/matching.test.ts › Minimum length per metric › Short block, no HR result"
+    ] },
+    { "element": "bce684cd-a33b-41b5-afe7-ab471102446f", "name": "Very short block, no result", "tests": [
+      "tests/matching.test.ts › Minimum length per metric › Very short block, no result"
+    ] },
+    { "element": "03271319-70c9-4537-8fa4-5f936cae0979", "name": "Southbound pass rejected", "tests": [
+      "tests/matching.test.ts › Route direction › Southbound pass rejected"
+    ] },
+    { "element": "b81bafdf-940d-4c8a-a04c-0c4e29d8e9e2", "name": "Tempo trend filtered", "tests": [
+      "tests/trend.test.ts › Show trend › Tempo trend filtered"
+    ] },
+    { "element": "ca9f71d9-a02c-4454-a417-41c4d4f6f610", "name": "Sensor change splits series", "tests": [
+      "tests/trend.test.ts › Separate series per device › Sensor change splits series"
+    ] },
+    { "element": "8175a7d6-ae03-49c5-8391-5254e2bfbfee", "name": "Raw and corrected shown", "tests": [
+      "tests/trend.test.ts › Residual pace correction › Raw and corrected shown"
+    ] },
+    { "element": "d05264c0-0983-4cdb-91ac-60eff605bc3d", "name": "Trend of four, no verdict", "tests": [
+      "tests/trend.test.ts › Minimum instance count › Trend of four, no verdict"
+    ] },
+    { "element": "afe8191c-e280-4118-b571-53e876cd904e", "name": "Noise threshold computed", "tests": [
+      "tests/trend.test.ts › Noise threshold › Noise threshold computed"
+    ] },
+    { "element": "dd518dbe-e2c6-409f-8002-93257a9e0127", "name": "Overlap counted once", "tests": [
+      "tests/trend.test.ts › Fragment counted once › Overlap counted once"
+    ] },
+    { "element": "6e00e259-2327-4229-8aeb-2681b4eb3848", "name": "Open instances of a result", "tests": [
+      "tests/trend.test.ts › Result transparency › Open instances of a result"
+    ] },
+    { "element": "fbda199c-6846-4232-8ca1-2c1eaeab5309", "name": "Hover shows context", "tests": [
+      "tests/trend.test.ts › Instance context on hover › Hover shows context"
+    ] },
+    { "element": "ab9f7280-d703-4816-a780-0e5ba3de8c71", "name": "Tempo profiles overlaid", "tests": [
+      "tests/trend.test.ts › Overlay block profiles › Tempo profiles overlaid"
+    ] },
+    { "element": "c8488111-9e77-4da6-8d46-aac74fe4f0a4", "name": "Export instances to CSV", "tests": [
+      "tests/trend.test.ts › Export to CSV › Export instances to CSV",
+      "tests/ab.test.ts › Export to CSV › Export A/B result to CSV"
+    ] },
+    { "element": "3e608f71-04ae-42e1-aabe-194a07a8a79f", "name": "Analysis recompute time", "tests": [
+      "tests/trend.test.ts › Analysis time budget › Trend within 3 s",
+      "tests/ab.test.ts › Real data › Filter change within 3 s"
+    ] },
+    { "element": "773d4a32-2253-4553-992e-7bea943c9669", "name": "Shoe A/B comparison", "tests": [
+      "tests/ab.test.ts › A/B comparison › Shoe A/B comparison"
+    ] },
+    { "element": "ee5830e5-5f44-4c16-b3a4-a2e0b6692085", "name": "Verdict: Change", "tests": [
+      "tests/ab.test.ts › A/B verdict rule › Verdict: Change"
+    ] },
+    { "element": "695baba5-904e-49a7-9043-1a856d257987", "name": "Verdict below noise", "tests": [
+      "tests/ab.test.ts › A/B verdict rule › Verdict below noise"
+    ] },
+    { "element": "ce8f2aa2-16a5-4870-852e-e42d0650c315", "name": "Shoes changed for good", "tests": [
+      "tests/ab.test.ts › Confounding warning › Shoes changed for good"
+    ] },
+    { "element": "4f0590be-3281-4ba8-88ac-ec3d079f0825", "name": "A/B side of three, no verdict", "tests": [
+      "tests/ab.test.ts › Minimum instance count › A/B side of three, no verdict"
+    ] },
+    { "element": "97c35bfa-4c9f-4a90-a704-08731fd60cdf", "name": "Random split negative test", "tests": [
+      "tests/ab.test.ts › Real data › Random split negative test"
+    ] },
+    { "element": "acc7080d-81b9-4b31-8f5c-db0d35e36abb", "name": "Random split negative test", "tests": [
+      "tests/ab.test.ts › Real data › Random split negative test"
+    ] },
+    { "element": "4f0cddbc-e222-42f9-bd63-ca73494e743d", "name": "Filter change within 3 s", "tests": [
+      "tests/ab.test.ts › Real data › Filter change within 3 s"
+    ] }
+  ]
+}
