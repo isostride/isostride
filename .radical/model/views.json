@@ -1,0 +1,3035 @@
+[
+  {
+    "folder": "Conceptual",
+    "id": "aa1966b7-2284-4fa1-8162-f3e478fa8890",
+    "kind": "table",
+    "name": "Traceability",
+    "nodeIds": [],
+    "pipeline": {
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "need"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "requirement"
+              ],
+              "via": {
+                "direction": "in",
+                "relationType": "derives"
+              }
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "scenario"
+              ],
+              "via": {
+                "direction": "in",
+                "relationType": "verifies"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "traceability",
+    "viewport": {
+      "x": -1646.537300026609,
+      "y": 107.55102044021902,
+      "zoom": 1.4999134932373754
+    }
+  },
+  {
+    "folder": "Conceptual",
+    "id": "daa99ad5-6665-42fe-87e5-3b0b83806274",
+    "kind": "wiki",
+    "name": "Specification",
+    "nodeIds": [],
+    "pipeline": {
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "need"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "requirement"
+              ],
+              "via": {
+                "direction": "in",
+                "relationType": "derives"
+              }
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "scenario"
+              ],
+              "via": {
+                "direction": "in",
+                "relationType": "verifies"
+              }
+            },
+            {
+              "types": [
+                "mockup"
+              ],
+              "via": {
+                "direction": "in",
+                "relationType": "illustrates"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "specification",
+    "viewport": {
+      "x": -1646.537300026609,
+      "y": 107.55102044021902,
+      "zoom": 1.4999134932373754
+    },
+    "wikiDepth": 5,
+    "wikiFocusId": null,
+    "wikiPageMode": "multi"
+  },
+  {
+    "folder": "Governance",
+    "id": "b65b7549-d1ae-45d5-9053-17b9690aa328",
+    "kind": "table",
+    "name": "Requirement coverage",
+    "nodeIds": [],
+    "pipeline": {
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "requirement"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "via": {
+                "direction": "in",
+                "relationType": "satisfies"
+              }
+            },
+            {
+              "types": [
+                "scenario"
+              ],
+              "via": {
+                "direction": "in",
+                "relationType": "verifies"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "requirement-coverage"
+  },
+  {
+    "folder": "Governance",
+    "id": "365d85f6-93df-4dac-a607-3e131bb71d92",
+    "kind": "table",
+    "name": "Requirement gaps",
+    "nodeIds": [],
+    "pipeline": {
+      "levels": [
+        {
+          "filters": [
+            {
+              "direction": "in",
+              "has": false,
+              "kind": "relation",
+              "relationType": "verifies"
+            },
+            {
+              "direction": "in",
+              "has": false,
+              "join": "or",
+              "kind": "relation",
+              "relationType": "satisfies"
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "requirement"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "requirement-gaps"
+  },
+  {
+    "folder": "Concerns",
+    "id": "79c9d033-37fe-4134-a849-22ed85541f3d",
+    "kind": "static",
+    "name": "Frontend stack",
+    "nodeIds": [
+      "aec32856-5ea5-4f0e-8316-178aff6a9838",
+      "fcc428c5-776d-4166-abc1-8d513b3d0948",
+      "5f000913-f470-4fb5-8bd5-8121a2631948",
+      "36038f78-a505-4196-a7a7-9dbac6a637e8",
+      "cf881669-ade1-4276-8e27-b57217debcd7",
+      "d3c81008-1d9a-459b-b77c-ba4b66820d00",
+      "7e211aff-5ee2-4c56-9468-1d54def7f3cd",
+      "b1707f8d-4ee5-434c-a5c1-8545b9b1c76a",
+      "368d77bf-f7ca-4698-8943-e0f8518b648a",
+      "2a65e887-3709-40e5-bfed-93b716b3a13a",
+      "d3d24907-8709-4102-b0e0-fce59ce36880",
+      "47356775-cc89-4247-9a0a-d47fd6e79209",
+      "8a394a4e-63d6-40d7-a713-aef169721290",
+      "2671768b-27e2-467e-b90b-5add847f2d87",
+      "6f3356ad-6424-489d-bc61-804df1409cfa",
+      "1809c170-5fa4-4576-9f85-6886fe771b9f",
+      "72c583fd-7114-4b96-a19d-c719255e624c",
+      "62453160-130b-4517-ae25-023829dea55e",
+      "0db10cc1-795c-4f2e-8508-33bead388cc9",
+      "a6fde2be-ed0c-4697-a89e-fbb1224474c1",
+      "f23e5655-c7f1-4d0b-b3ab-37e6c42af5ba",
+      "5d936220-729f-479c-8731-3e20a5b0bbb8",
+      "05929fda-cefa-4521-ae28-fbd51b8260af",
+      "292d4f8d-4b29-41e8-9af7-98a4a4d5115a",
+      "668193e6-22d8-49d5-a71f-1bda90dcf4d6",
+      "443e43b6-6641-4758-a0ae-f73ca1bd3601",
+      "2f46f997-ec74-405b-917b-2d3c97b3be0f"
+    ],
+    "positions": {
+      "05929fda-cefa-4521-ae28-fbd51b8260af": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 1040
+      },
+      "0db10cc1-795c-4f2e-8508-33bead388cc9": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 0
+      },
+      "1809c170-5fa4-4576-9f85-6886fe771b9f": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 1170
+      },
+      "2671768b-27e2-467e-b90b-5add847f2d87": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 520
+      },
+      "292d4f8d-4b29-41e8-9af7-98a4a4d5115a": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 1170
+      },
+      "2a65e887-3709-40e5-bfed-93b716b3a13a": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 0
+      },
+      "2f46f997-ec74-405b-917b-2d3c97b3be0f": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 1950
+      },
+      "36038f78-a505-4196-a7a7-9dbac6a637e8": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 260
+      },
+      "368d77bf-f7ca-4698-8943-e0f8518b648a": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 1430
+      },
+      "443e43b6-6641-4758-a0ae-f73ca1bd3601": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 1690
+      },
+      "47356775-cc89-4247-9a0a-d47fd6e79209": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 260
+      },
+      "5d936220-729f-479c-8731-3e20a5b0bbb8": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 910
+      },
+      "5f000913-f470-4fb5-8bd5-8121a2631948": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 130
+      },
+      "62453160-130b-4517-ae25-023829dea55e": {
+        "height": 52,
+        "width": 180,
+        "x": 780,
+        "y": 0
+      },
+      "668193e6-22d8-49d5-a71f-1bda90dcf4d6": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 1300
+      },
+      "6f3356ad-6424-489d-bc61-804df1409cfa": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 910
+      },
+      "72c583fd-7114-4b96-a19d-c719255e624c": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 1430
+      },
+      "7e211aff-5ee2-4c56-9468-1d54def7f3cd": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 910
+      },
+      "8a394a4e-63d6-40d7-a713-aef169721290": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 390
+      },
+      "a6fde2be-ed0c-4697-a89e-fbb1224474c1": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 650
+      },
+      "aec32856-5ea5-4f0e-8316-178aff6a9838": {
+        "height": 80,
+        "width": 200,
+        "x": 0,
+        "y": 0
+      },
+      "b1707f8d-4ee5-434c-a5c1-8545b9b1c76a": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 1170
+      },
+      "cf881669-ade1-4276-8e27-b57217debcd7": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 390
+      },
+      "d3c81008-1d9a-459b-b77c-ba4b66820d00": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 520
+      },
+      "d3d24907-8709-4102-b0e0-fce59ce36880": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 130
+      },
+      "f23e5655-c7f1-4d0b-b3ab-37e6c42af5ba": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 780
+      },
+      "fcc428c5-776d-4166-abc1-8d513b3d0948": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 0
+      }
+    }
+  },
+  {
+    "folder": "Concerns",
+    "id": "9437a18d-fb1b-4f52-ba15-ec47672ad100",
+    "kind": "static",
+    "name": "Test strategy",
+    "nodeIds": [
+      "5fec73e1-f20a-41e5-bf2b-b5a58bf77bac",
+      "c5829292-1066-494a-9c63-78abe795aa96",
+      "b5600968-c043-44c7-80a2-a5aa2be5d6f2",
+      "21175535-2832-4a69-9b60-984a3f99b920",
+      "0585b389-f971-4a83-b491-a151cb44d2c0",
+      "d3a03d2c-8b8d-41a1-9028-ce00ca6f8177",
+      "e9118911-4a30-4e28-92b3-10b03ce2cbfc",
+      "c153c13a-6e97-4129-8454-472207a6fbd3",
+      "16887829-b274-4139-a4c8-97fc02ccb34a",
+      "51b1e1de-1354-4042-b149-db1af504cf02",
+      "7f1ed88b-3fc4-44f4-9700-7b2a6be24e6c",
+      "28777e57-7a41-411d-b3c1-74461bd569ac",
+      "0a1697f1-3f2b-4e08-91aa-334b85d1e5d8",
+      "db7bc61d-5dad-4fc7-a241-5d1fa31ca854",
+      "f6242d0c-671f-47c3-bab4-97c5d642bc0a",
+      "fc4d5152-99b5-44ae-8ff1-2728cb8cfdf5",
+      "a5a56b28-2ba1-46be-8b29-9d87439949a9",
+      "1a793ea3-d335-4fe1-aa57-feba437b067d",
+      "aaaccc51-012a-4c14-9315-82eaa46770f1",
+      "9804e6b1-e27c-49d3-af34-bad27cca134c",
+      "b90202ab-2fcb-414f-83ca-2f368c7e56ed",
+      "7d30c4ac-66d7-4265-a753-2c40750a084c",
+      "714b331c-200a-490e-85f7-6a72d565f28a"
+    ],
+    "positions": {
+      "0585b389-f971-4a83-b491-a151cb44d2c0": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 780
+      },
+      "0a1697f1-3f2b-4e08-91aa-334b85d1e5d8": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 1430
+      },
+      "16887829-b274-4139-a4c8-97fc02ccb34a": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 130
+      },
+      "1a793ea3-d335-4fe1-aa57-feba437b067d": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 780
+      },
+      "21175535-2832-4a69-9b60-984a3f99b920": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 390
+      },
+      "28777e57-7a41-411d-b3c1-74461bd569ac": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 1040
+      },
+      "51b1e1de-1354-4042-b149-db1af504cf02": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 390
+      },
+      "5fec73e1-f20a-41e5-bf2b-b5a58bf77bac": {
+        "height": 80,
+        "width": 200,
+        "x": 0,
+        "y": 0
+      },
+      "714b331c-200a-490e-85f7-6a72d565f28a": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 1690
+      },
+      "7d30c4ac-66d7-4265-a753-2c40750a084c": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 1560
+      },
+      "7f1ed88b-3fc4-44f4-9700-7b2a6be24e6c": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 780
+      },
+      "9804e6b1-e27c-49d3-af34-bad27cca134c": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 1170
+      },
+      "a5a56b28-2ba1-46be-8b29-9d87439949a9": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 390
+      },
+      "aaaccc51-012a-4c14-9315-82eaa46770f1": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 910
+      },
+      "b5600968-c043-44c7-80a2-a5aa2be5d6f2": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 130
+      },
+      "b90202ab-2fcb-414f-83ca-2f368c7e56ed": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 1300
+      },
+      "c153c13a-6e97-4129-8454-472207a6fbd3": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 0
+      },
+      "c5829292-1066-494a-9c63-78abe795aa96": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 0
+      },
+      "d3a03d2c-8b8d-41a1-9028-ce00ca6f8177": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 1040
+      },
+      "db7bc61d-5dad-4fc7-a241-5d1fa31ca854": {
+        "height": 52,
+        "width": 180,
+        "x": 780,
+        "y": 0
+      },
+      "e9118911-4a30-4e28-92b3-10b03ce2cbfc": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 1430
+      },
+      "f6242d0c-671f-47c3-bab4-97c5d642bc0a": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 0
+      },
+      "fc4d5152-99b5-44ae-8ff1-2728cb8cfdf5": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 130
+      }
+    },
+    "viewport": {
+      "x": 544.7106624974836,
+      "y": 69.84215920407405,
+      "zoom": 0.5363375398179152
+    }
+  },
+  {
+    "folder": "Concerns",
+    "id": "88494e26-60d3-47be-b2cb-23bc99c39fc4",
+    "kind": "static",
+    "name": "Module boundaries",
+    "nodeIds": [
+      "599b3f04-be13-49e5-bcba-032b2680a58e",
+      "da832a20-4c6e-48e6-9bce-d34a6396158a",
+      "a24ee5df-9ebc-4224-93fc-0e9e323247f4",
+      "422370cf-5624-4397-804e-862b68fe2f68",
+      "a5a8aff6-8927-434e-bd7d-6a4a6f338bac",
+      "b277147e-4dc1-40fe-8a58-9004d82b2740",
+      "c09703b7-6c40-4606-8121-ae23d4e92fe8",
+      "d689e9f1-176b-482e-84f7-48e9fc823dad",
+      "e47a11bd-a986-4f7d-9a36-7e5d35a88365",
+      "6ce047df-9636-4978-af1d-efc85a227f6d",
+      "79a9693f-e282-43ff-bbfa-ae2891f4aa12",
+      "6571fdbf-e3a5-4871-8aec-2f04b8ff4a85",
+      "d80d0ec6-3ee4-4a8d-b084-2724d2b1e34b",
+      "66ea8d17-0186-448e-b9d1-0a9a26f5e3af",
+      "849939df-4bd6-415e-b844-a5d5a27b1425",
+      "d70ace61-b027-43c3-93cb-4df7cfb1b3a9",
+      "5205b562-e8af-470c-910c-17248e62e3aa",
+      "fefd8bec-3f3f-4a8a-92ef-ff994442c642",
+      "7d6b12f4-6f67-4179-bdba-18d135ea871c"
+    ],
+    "positions": {
+      "422370cf-5624-4397-804e-862b68fe2f68": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 390
+      },
+      "5205b562-e8af-470c-910c-17248e62e3aa": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 260
+      },
+      "599b3f04-be13-49e5-bcba-032b2680a58e": {
+        "height": 80,
+        "width": 200,
+        "x": 0,
+        "y": 0
+      },
+      "6571fdbf-e3a5-4871-8aec-2f04b8ff4a85": {
+        "height": 52,
+        "width": 180,
+        "x": 780,
+        "y": 0
+      },
+      "66ea8d17-0186-448e-b9d1-0a9a26f5e3af": {
+        "height": 52,
+        "width": 180,
+        "x": 780,
+        "y": 520
+      },
+      "6ce047df-9636-4978-af1d-efc85a227f6d": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 520
+      },
+      "79a9693f-e282-43ff-bbfa-ae2891f4aa12": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 780
+      },
+      "7d6b12f4-6f67-4179-bdba-18d135ea871c": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 780
+      },
+      "849939df-4bd6-415e-b844-a5d5a27b1425": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 0
+      },
+      "a24ee5df-9ebc-4224-93fc-0e9e323247f4": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 260
+      },
+      "a5a8aff6-8927-434e-bd7d-6a4a6f338bac": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 520
+      },
+      "b277147e-4dc1-40fe-8a58-9004d82b2740": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 780
+      },
+      "c09703b7-6c40-4606-8121-ae23d4e92fe8": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 0
+      },
+      "d689e9f1-176b-482e-84f7-48e9fc823dad": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 260
+      },
+      "d70ace61-b027-43c3-93cb-4df7cfb1b3a9": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 130
+      },
+      "d80d0ec6-3ee4-4a8d-b084-2724d2b1e34b": {
+        "height": 52,
+        "width": 180,
+        "x": 780,
+        "y": 260
+      },
+      "da832a20-4c6e-48e6-9bce-d34a6396158a": {
+        "height": 80,
+        "width": 200,
+        "x": 260,
+        "y": 0
+      },
+      "e47a11bd-a986-4f7d-9a36-7e5d35a88365": {
+        "height": 80,
+        "width": 200,
+        "x": 520,
+        "y": 390
+      },
+      "fefd8bec-3f3f-4a8a-92ef-ff994442c642": {
+        "height": 52,
+        "width": 180,
+        "x": 1040,
+        "y": 520
+      }
+    },
+    "viewport": {
+      "x": 426.0477252453166,
+      "y": 182.328724353256,
+      "zoom": 0.7515611061552187
+    }
+  },
+  {
+    "folder": "Governance",
+    "id": "cbea3d76-ace5-4540-9856-374a10823560",
+    "kind": "table",
+    "name": "Decisions",
+    "nodeIds": [],
+    "pipeline": {
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "adr"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "fitness-fn"
+              ],
+              "via": {
+                "direction": "in",
+                "relationType": "implements"
+              }
+            },
+            {
+              "via": {
+                "direction": "out",
+                "relationType": "constrains"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "decisions"
+  },
+  {
+    "folder": "Governance",
+    "id": "f4df7328-5d5d-4a21-834f-13c373464182",
+    "kind": "wiki",
+    "name": "Decision log",
+    "nodeIds": [],
+    "pipeline": {
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "adr"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "adr"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "supersedes"
+              }
+            }
+          ]
+        }
+      ],
+      "sort": {
+        "by": "property",
+        "desc": true,
+        "key": "date"
+      }
+    },
+    "positions": {},
+    "viewpoint": "decision-log",
+    "viewport": {
+      "x": 426.0477252453166,
+      "y": 182.328724353256,
+      "zoom": 0.7515611061552187
+    },
+    "wikiDepth": 5,
+    "wikiFocusId": null,
+    "wikiPageMode": "multi"
+  },
+  {
+    "folder": "Governance",
+    "id": "33b5cf80-8daa-4f2d-8473-1cfaad190e8f",
+    "kind": "table",
+    "name": "Fitness functions",
+    "nodeIds": [],
+    "pipeline": {
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "fitness-fn"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "adr"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "implements"
+              }
+            },
+            {
+              "via": {
+                "direction": "out",
+                "relationType": "constrains"
+              }
+            }
+          ]
+        }
+      ],
+      "sort": {
+        "by": "property",
+        "key": "characteristic"
+      }
+    },
+    "positions": {},
+    "viewpoint": "fitness-functions"
+  },
+  {
+    "folder": "Conceptual",
+    "id": "58d1b49e-78be-4a91-aefe-06b38b056854",
+    "kind": "static",
+    "name": "Entities of a domain",
+    "nodeIds": [],
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "domain",
+                "entity"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "references"
+              }
+            },
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "part-of"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "domain-entities"
+  },
+  {
+    "folder": "Conceptual",
+    "id": "ca3fe564-4328-4a25-93fb-9044e5f24cef",
+    "kind": "static",
+    "name": "Domain map",
+    "nodeIds": [],
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "domain"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "1a767a75-6088-48ab-bed9-a2498217b013": {
+        "height": 220,
+        "width": 610,
+        "x": 0,
+        "y": 0
+      },
+      "1cd3f54a-5563-44d5-8284-443db86b11e0": {
+        "height": 220,
+        "width": 610,
+        "x": 945,
+        "y": 0
+      },
+      "28133512-0955-4030-aed2-ebbae2df888f": {
+        "height": 220,
+        "width": 990,
+        "x": 0,
+        "y": 261
+      },
+      "875a1b04-e98e-4a01-afa9-eab609a3a630": {
+        "height": 220,
+        "width": 360,
+        "x": 0,
+        "y": 522
+      },
+      "964eadcd-50c1-40ea-a603-6d00a7f4ce53": {
+        "height": 220,
+        "width": 420,
+        "x": 472.5,
+        "y": 0
+      }
+    },
+    "viewpoint": "domain-map",
+    "viewport": {
+      "x": 259.0847651775488,
+      "y": 456.1841033473336,
+      "zoom": 0.44832633320605825
+    }
+  },
+  {
+    "folder": "Logical",
+    "id": "6dc16f9c-eedb-4de7-bdee-28c9be5435dd",
+    "kind": "table",
+    "name": "Domain realisation",
+    "nodeIds": [],
+    "pipeline": {
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "domain"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "contains": true
+              }
+            },
+            {
+              "via": {
+                "direction": "in",
+                "relationType": "realises"
+              }
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "via": {
+                "direction": "in",
+                "relationType": "realises"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "domain-realisation",
+    "viewport": {
+      "x": 474.4150390625,
+      "y": 309.09228515625,
+      "zoom": 1
+    }
+  },
+  {
+    "expandedNodeIds": [
+      "28133512-0955-4030-aed2-ebbae2df888f"
+    ],
+    "folder": "Conceptual",
+    "id": "f92e155a-639f-4a10-8d74-1dfb818afbf4",
+    "kind": "static",
+    "name": "Activity Data",
+    "nodeIds": [],
+    "partOf": "58d1b49e-78be-4a91-aefe-06b38b056854",
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "28133512-0955-4030-aed2-ebbae2df888f",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "domain",
+                "entity"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "references"
+              }
+            },
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "part-of"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "1a767a75-6088-48ab-bed9-a2498217b013": {
+        "height": 220,
+        "width": 360,
+        "x": 0,
+        "y": 224.25
+      },
+      "26cc095b-c47f-45bc-a2d5-e9927468dfb8": {
+        "height": 56,
+        "width": 170,
+        "x": 30,
+        "y": 316.25
+      },
+      "28133512-0955-4030-aed2-ebbae2df888f": {
+        "height": 402.25,
+        "width": 448.25,
+        "x": 238.25,
+        "y": 0
+      },
+      "2f223517-a575-43e4-bac5-c331d15faa41": {
+        "height": 56,
+        "width": 170,
+        "x": 30,
+        "y": 224.25
+      },
+      "8de8aec9-2d36-4186-a029-a11a7a751c77": {
+        "height": 56,
+        "width": 170,
+        "x": 30,
+        "y": 120
+      },
+      "b42594f3-27b1-4808-a1a2-8db3d739d2d9": {
+        "height": 56,
+        "width": 170,
+        "x": 248.25,
+        "y": 120
+      },
+      "be3423a1-1145-46d6-97c5-40b0abf4f00b": {
+        "height": 56,
+        "width": 170,
+        "x": 0,
+        "y": 0
+      },
+      "c8fb6f34-4a5f-4f86-99e2-77f6e6d27d54": {
+        "height": 56,
+        "width": 170,
+        "x": 248.25,
+        "y": 224.25
+      }
+    },
+    "subject": "28133512-0955-4030-aed2-ebbae2df888f",
+    "viewpoint": "domain-entities",
+    "viewport": {
+      "x": 541.25,
+      "y": 304.375,
+      "zoom": 1
+    }
+  },
+  {
+    "expandedNodeIds": [
+      "1a767a75-6088-48ab-bed9-a2498217b013"
+    ],
+    "folder": "Conceptual",
+    "id": "e1b07e25-2cfe-4b59-a07e-596e15ce19b7",
+    "kind": "static",
+    "name": "Run Context",
+    "nodeIds": [],
+    "partOf": "58d1b49e-78be-4a91-aefe-06b38b056854",
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "1a767a75-6088-48ab-bed9-a2498217b013",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "domain",
+                "entity"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "references"
+              }
+            },
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "part-of"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "1a767a75-6088-48ab-bed9-a2498217b013": {
+        "height": 220,
+        "width": 640,
+        "x": 0,
+        "y": 0
+      },
+      "28133512-0955-4030-aed2-ebbae2df888f": {
+        "height": 220,
+        "width": 360,
+        "x": 234,
+        "y": 276.75
+      },
+      "2f223517-a575-43e4-bac5-c331d15faa41": {
+        "height": 56,
+        "width": 170,
+        "x": 0,
+        "y": 0
+      },
+      "b5b4d684-1cc3-4404-b87d-575310014b5a": {
+        "height": 56,
+        "width": 170,
+        "x": 235,
+        "y": 120
+      },
+      "be3423a1-1145-46d6-97c5-40b0abf4f00b": {
+        "height": 56,
+        "width": 170,
+        "x": 30,
+        "y": 120
+      },
+      "c68701bb-cda9-41a6-a434-1fb4199752aa": {
+        "height": 56,
+        "width": 170,
+        "x": 440,
+        "y": 120
+      }
+    },
+    "subject": "1a767a75-6088-48ab-bed9-a2498217b013",
+    "viewpoint": "domain-entities"
+  },
+  {
+    "expandedNodeIds": [
+      "964eadcd-50c1-40ea-a603-6d00a7f4ce53"
+    ],
+    "folder": "Conceptual",
+    "id": "dde432d8-2205-4b0b-bcde-a13bcdfa80c8",
+    "kind": "static",
+    "name": "Blocks",
+    "nodeIds": [],
+    "partOf": "58d1b49e-78be-4a91-aefe-06b38b056854",
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "964eadcd-50c1-40ea-a603-6d00a7f4ce53",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "domain",
+                "entity"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "references"
+              }
+            },
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "part-of"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "1a767a75-6088-48ab-bed9-a2498217b013": {
+        "height": 220,
+        "width": 360,
+        "x": 0,
+        "y": 120
+      },
+      "28133512-0955-4030-aed2-ebbae2df888f": {
+        "height": 220,
+        "width": 463.2919921875,
+        "x": 69.9580078125,
+        "y": 339.5625
+      },
+      "2f223517-a575-43e4-bac5-c331d15faa41": {
+        "height": 56,
+        "width": 170,
+        "x": 0,
+        "y": 0
+      },
+      "3614e7f4-9407-407b-a23b-56e0b424d992": {
+        "height": 56,
+        "width": 170,
+        "x": 30,
+        "y": 120
+      },
+      "964eadcd-50c1-40ea-a603-6d00a7f4ce53": {
+        "height": 299.5625,
+        "width": 360,
+        "x": 238.25,
+        "y": 0
+      },
+      "989ddea4-2268-46b9-a61d-ef102ca319a6": {
+        "height": 56,
+        "width": 170,
+        "x": 95,
+        "y": 213.5625
+      },
+      "b42594f3-27b1-4808-a1a2-8db3d739d2d9": {
+        "height": 56,
+        "width": 170,
+        "x": 263.2919921875,
+        "y": 0
+      },
+      "be3423a1-1145-46d6-97c5-40b0abf4f00b": {
+        "height": 56,
+        "width": 170,
+        "x": 0,
+        "y": 108
+      },
+      "c68701bb-cda9-41a6-a434-1fb4199752aa": {
+        "height": 56,
+        "width": 170,
+        "x": 0,
+        "y": 0
+      }
+    },
+    "subject": "964eadcd-50c1-40ea-a603-6d00a7f4ce53",
+    "viewpoint": "domain-entities",
+    "viewport": {
+      "x": 585.375,
+      "y": 307.71875,
+      "zoom": 1
+    }
+  },
+  {
+    "expandedNodeIds": [
+      "1cd3f54a-5563-44d5-8284-443db86b11e0"
+    ],
+    "folder": "Conceptual",
+    "id": "7ee34f51-ed05-42de-b4cd-01b07ea780c3",
+    "kind": "static",
+    "name": "Comparison",
+    "nodeIds": [],
+    "partOf": "58d1b49e-78be-4a91-aefe-06b38b056854",
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "1cd3f54a-5563-44d5-8284-443db86b11e0",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "domain",
+                "entity"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "references"
+              }
+            },
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "part-of"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "1cd3f54a-5563-44d5-8284-443db86b11e0": {
+        "height": 392.8154296875,
+        "width": 360,
+        "x": 460.169921875,
+        "y": 0
+      },
+      "3614e7f4-9407-407b-a23b-56e0b424d992": {
+        "height": 56,
+        "width": 170,
+        "x": 0,
+        "y": 0
+      },
+      "464b2289-1217-408d-a912-ec1e23db81d9": {
+        "height": 56,
+        "width": 170,
+        "x": 30,
+        "y": 213.408203125
+      },
+      "7e47fd98-2218-4d27-b2e9-81cc404c4533": {
+        "height": 56,
+        "width": 170,
+        "x": 30,
+        "y": 120
+      },
+      "964eadcd-50c1-40ea-a603-6d00a7f4ce53": {
+        "height": 220,
+        "width": 438.25,
+        "x": 0,
+        "y": 214.8154296875
+      },
+      "989ddea4-2268-46b9-a61d-ef102ca319a6": {
+        "height": 56,
+        "width": 170,
+        "x": 238.25,
+        "y": 0
+      },
+      "9d407d6d-646e-46ac-bfb9-f310b0c8fa75": {
+        "height": 56,
+        "width": 170,
+        "x": 30,
+        "y": 306.8154296875
+      }
+    },
+    "subject": "1cd3f54a-5563-44d5-8284-443db86b11e0",
+    "viewpoint": "domain-entities",
+    "viewport": {
+      "x": 474.4150390625,
+      "y": 309.09228515625,
+      "zoom": 1
+    }
+  },
+  {
+    "expandedNodeIds": [
+      "875a1b04-e98e-4a01-afa9-eab609a3a630"
+    ],
+    "folder": "Conceptual",
+    "id": "f9e1c822-754e-4246-a815-3ec14c2f98bf",
+    "kind": "static",
+    "name": "Data Folder",
+    "nodeIds": [],
+    "partOf": "58d1b49e-78be-4a91-aefe-06b38b056854",
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "875a1b04-e98e-4a01-afa9-eab609a3a630",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "domain",
+                "entity"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "references"
+              }
+            },
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "part-of"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "20773fe3-dac4-43a8-b0a4-5098326b5d59": {
+        "height": 56,
+        "width": 170,
+        "x": 30,
+        "y": 120
+      },
+      "28133512-0955-4030-aed2-ebbae2df888f": {
+        "height": 220,
+        "width": 360,
+        "x": 0,
+        "y": 288.25
+      },
+      "2f223517-a575-43e4-bac5-c331d15faa41": {
+        "height": 56,
+        "width": 170,
+        "x": 0,
+        "y": 0
+      },
+      "875a1b04-e98e-4a01-afa9-eab609a3a630": {
+        "height": 220,
+        "width": 360,
+        "x": 0,
+        "y": 0
+      }
+    },
+    "subject": "875a1b04-e98e-4a01-afa9-eab609a3a630",
+    "viewpoint": "domain-entities"
+  },
+  {
+    "folder": "Conceptual",
+    "id": "673b13a0-f74a-4714-bba1-ad8e070d2a09",
+    "kind": "static",
+    "name": "State machine",
+    "nodeIds": [],
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "state-machine",
+                "state",
+                "pseudostate",
+                "event"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "lifecycle-of"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "state-machine"
+  },
+  {
+    "folder": "Conceptual",
+    "id": "ffde63db-91ee-42aa-a3e8-429b8ca35ea9",
+    "kind": "table",
+    "name": "Entity lifecycles",
+    "nodeIds": [],
+    "pipeline": {
+      "levels": [
+        {
+          "filters": [
+            {
+              "direction": "in",
+              "has": true,
+              "kind": "relation",
+              "relationType": "lifecycle-of"
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "entity"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "state-machine"
+              ],
+              "via": {
+                "direction": "in",
+                "relationType": "lifecycle-of"
+              }
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "via": {
+                "direction": "in",
+                "relationType": "implements"
+              }
+            },
+            {
+              "types": [
+                "scenario"
+              ],
+              "via": {
+                "direction": "in",
+                "relationType": "verifies"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "entity-lifecycles"
+  },
+  {
+    "folder": "Conceptual",
+    "id": "23f4b0b2-d73b-411c-8cb9-04053ca35011",
+    "kind": "table",
+    "name": "Event catalogue",
+    "nodeIds": [],
+    "pipeline": {
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "event"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "via": {
+                "direction": "in",
+                "relationType": "emits"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "event-catalogue"
+  },
+  {
+    "expandedNodeIds": [
+      "9af04b42-1352-4b04-880f-a46bcd62caf2"
+    ],
+    "folder": "Conceptual",
+    "id": "6666cf7a-a0fe-4327-928f-cf8c5cd24a27",
+    "kind": "static",
+    "name": "Block Definition lifecycle",
+    "nodeIds": [],
+    "partOf": "673b13a0-f74a-4714-bba1-ad8e070d2a09",
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "9af04b42-1352-4b04-880f-a46bcd62caf2",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "state-machine",
+                "state",
+                "pseudostate",
+                "event"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "lifecycle-of"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "03e4345b-f2e8-4c9f-a605-6cf5afd24cf4": {
+        "height": 220,
+        "width": 320,
+        "x": 470,
+        "y": 462.5625
+      },
+      "0965031c-0b71-4b28-b698-63d5fc5d9f2a": {
+        "height": 52,
+        "width": 170,
+        "x": 30,
+        "y": 356.5625
+      },
+      "112811a0-888f-45d0-b8c1-a3cc22097f78": {
+        "height": 36,
+        "width": 36,
+        "x": 612,
+        "y": 241.4375
+      },
+      "184eb349-2087-42af-9be9-8b93739464a3": {
+        "height": 461.125,
+        "width": 755.125,
+        "x": 845.125,
+        "y": 120
+      },
+      "37bd5634-0cac-4407-a824-5dfccb39f1a5": {
+        "height": 52,
+        "width": 170,
+        "x": 30,
+        "y": 284.5625
+      },
+      "4b0c8aa1-093d-4221-b84c-307919ebccbd": {
+        "height": 220,
+        "width": 320,
+        "x": 30,
+        "y": 211.125
+      },
+      "5fa0cb15-b6b9-4119-8392-7df387ab21a4": {
+        "height": 52,
+        "width": 170,
+        "x": 1655.375,
+        "y": 415.125
+      },
+      "723cacca-e43f-4666-91dc-2a39ad86e80f": {
+        "height": 36,
+        "width": 36,
+        "x": 547.125,
+        "y": 120
+      },
+      "964eadcd-50c1-40ea-a603-6d00a7f4ce53": {
+        "height": 220,
+        "width": 360,
+        "x": 842.6875,
+        "y": 1062.8125
+      },
+      "989ddea4-2268-46b9-a61d-ef102ca319a6": {
+        "height": 56,
+        "width": 170,
+        "x": 0,
+        "y": 0
+      },
+      "9af04b42-1352-4b04-880f-a46bcd62caf2": {
+        "height": 987.6875,
+        "width": 1855.375,
+        "x": 0,
+        "y": 0
+      },
+      "9f30c60c-9ee5-417a-b930-9a76cb06c57b": {
+        "height": 220,
+        "width": 320,
+        "x": 405.125,
+        "y": 211.125
+      },
+      "a86c78df-cf97-4315-ba16-57a66a78fd9e": {
+        "height": 52,
+        "width": 170,
+        "x": 30,
+        "y": 212.5625
+      },
+      "afa13a9f-1af7-447d-a52e-a189a0191cc3": {
+        "height": 52,
+        "width": 170,
+        "x": 30,
+        "y": 546.5625
+      },
+      "b3f88c5c-0502-4dfc-bd38-79369ff7b1de": {
+        "height": 52,
+        "width": 170,
+        "x": 30,
+        "y": 451.5625
+      },
+      "c25342cc-2eb8-4dac-841f-f66766123332": {
+        "height": 220,
+        "width": 320,
+        "x": 470,
+        "y": 737.6875
+      },
+      "c6397f85-d03a-43e2-9148-65a849432e0b": {
+        "height": 36,
+        "width": 36,
+        "x": 612,
+        "y": 332.5625
+      }
+    },
+    "subject": "9af04b42-1352-4b04-880f-a46bcd62caf2",
+    "viewpoint": "state-machine",
+    "viewport": {
+      "x": -2086.997248989327,
+      "y": 823.4994452483835,
+      "zoom": 1.4999988221691196
+    }
+  },
+  {
+    "expandedNodeIds": [
+      "dfa7465c-ebda-482a-a4d9-ef5a4e2dca48"
+    ],
+    "folder": "Conceptual",
+    "id": "39f6d713-4f31-474e-8827-57d8a5182ab6",
+    "kind": "static",
+    "name": "Block Instance lifecycle",
+    "nodeIds": [],
+    "partOf": "673b13a0-f74a-4714-bba1-ad8e070d2a09",
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "dfa7465c-ebda-482a-a4d9-ef5a4e2dca48",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "state-machine",
+                "state",
+                "pseudostate",
+                "event"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "lifecycle-of"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "05d29d12-ac83-4c8f-b9b4-74fbf68209b8": {
+        "height": 36,
+        "width": 36,
+        "x": 30,
+        "y": 212
+      },
+      "2a8766ff-a2db-4ec7-a562-54b8db5384ea": {
+        "height": 220,
+        "width": 320,
+        "x": 220,
+        "y": 215.9501953125
+      },
+      "3614e7f4-9407-407b-a23b-56e0b424d992": {
+        "height": 56,
+        "width": 170,
+        "x": 0,
+        "y": 0
+      },
+      "4265e3ce-648a-4471-8c97-0100fede2b68": {
+        "height": 220,
+        "width": 320,
+        "x": 599.9501953125,
+        "y": 215.9501953125
+      },
+      "4a143764-ef38-442e-85e9-0b74101efa85": {
+        "height": 220,
+        "width": 320,
+        "x": 128.45703125,
+        "y": 120
+      },
+      "638f705e-6839-4b32-ad06-bd7bc526aef3": {
+        "height": 52,
+        "width": 170,
+        "x": 979.900390625,
+        "y": 299.9501953125
+      },
+      "6e422e0e-da3a-456e-b154-d6b56cc90855": {
+        "height": 370,
+        "width": 860.9130859375,
+        "x": 220,
+        "y": 456.9501953125
+      },
+      "78dd70f1-da92-4e8c-b1a9-0bfcd47910a4": {
+        "height": 220,
+        "width": 320,
+        "x": 510.9130859375,
+        "y": 120
+      },
+      "964eadcd-50c1-40ea-a603-6d00a7f4ce53": {
+        "height": 220,
+        "width": 360,
+        "x": 0,
+        "y": 400.4755859375
+      },
+      "a818e503-7a21-40b5-b96e-8b4b23a95c79": {
+        "height": 52,
+        "width": 170,
+        "x": 30,
+        "y": 120
+      },
+      "abf40e24-6f3f-4f08-aadc-ec6a4a6f5368": {
+        "height": 52,
+        "width": 170,
+        "x": 979.900390625,
+        "y": 188
+      },
+      "ad888d4e-1eef-441c-bf51-5d5612a5faf8": {
+        "height": 36,
+        "width": 36,
+        "x": 741.9501953125,
+        "y": 120
+      },
+      "dfa7465c-ebda-482a-a4d9-ef5a4e2dca48": {
+        "height": 856.9501953125,
+        "width": 1179.900390625,
+        "x": 249.9501953125,
+        "y": 0
+      }
+    },
+    "subject": "dfa7465c-ebda-482a-a4d9-ef5a4e2dca48",
+    "viewpoint": "state-machine",
+    "viewport": {
+      "x": 347.86079080764694,
+      "y": 371.768902678951,
+      "zoom": 0.431390636519513
+    }
+  },
+  {
+    "expandedNodeIds": [
+      "e6909b1e-ea15-4395-b4e5-0ecdb64eef5b"
+    ],
+    "folder": "Conceptual",
+    "id": "64ba5f07-9eae-4246-91cb-e4acbb651d7a",
+    "kind": "static",
+    "name": "Data Folder lifecycle",
+    "nodeIds": [],
+    "partOf": "673b13a0-f74a-4714-bba1-ad8e070d2a09",
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "e6909b1e-ea15-4395-b4e5-0ecdb64eef5b",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "state-machine",
+                "state",
+                "pseudostate",
+                "event"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "entity"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "lifecycle-of"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "20773fe3-dac4-43a8-b0a4-5098326b5d59": {
+        "height": 56,
+        "width": 170,
+        "x": 0,
+        "y": 0
+      },
+      "2d616620-c32d-4865-9ec3-35cd2941687a": {
+        "height": 52,
+        "width": 170,
+        "x": 30,
+        "y": 370
+      },
+      "3427be02-d02e-446f-ab48-68ebfcc2c505": {
+        "height": 220,
+        "width": 320,
+        "x": 618,
+        "y": 134
+      },
+      "494a6225-a5ae-4d1a-bdc8-399d32fed054": {
+        "height": 52,
+        "width": 170,
+        "x": 30,
+        "y": 514
+      },
+      "4c3ad656-ed99-4be7-991c-f998441a50f0": {
+        "height": 36,
+        "width": 36,
+        "x": 1196,
+        "y": 514
+      },
+      "54b0cf3c-0a56-4033-bed3-328f9cc75395": {
+        "height": 220,
+        "width": 320,
+        "x": 86,
+        "y": 120
+      },
+      "875a1b04-e98e-4a01-afa9-eab609a3a630": {
+        "height": 220,
+        "width": 360,
+        "x": 0,
+        "y": 588
+      },
+      "877fa040-1fb5-4ff9-8761-46995488d503": {
+        "height": 52,
+        "width": 170,
+        "x": 1792.9990234375,
+        "y": 1036
+      },
+      "91dffe7a-a202-4302-9438-c0c3055367ed": {
+        "height": 52,
+        "width": 170,
+        "x": 1497,
+        "y": 506
+      },
+      "9217b16e-906d-4e84-ad35-12d9985b6c0f": {
+        "height": 52,
+        "width": 170,
+        "x": 828.0498046875,
+        "y": 506
+      },
+      "9564f075-8afd-4fc4-8c62-7fc3c97e14bd": {
+        "height": 220,
+        "width": 320,
+        "x": 766,
+        "y": 120
+      },
+      "a0409b9d-a5b8-4c0e-b3d5-5cde0711690d": {
+        "height": 36,
+        "width": 36,
+        "x": 30,
+        "y": 120
+      },
+      "ad48e9b1-8e61-43a8-8bc3-aa2db53837ff": {
+        "height": 36,
+        "width": 36,
+        "x": 990,
+        "y": 226
+      },
+      "b1000ab5-2a4b-4f8a-98d5-7eba138c0bfa": {
+        "height": 52,
+        "width": 170,
+        "x": 30,
+        "y": 298
+      },
+      "bc8a0f2a-3845-40f0-a863-4093dcaffd83": {
+        "height": 52,
+        "width": 170,
+        "x": 30,
+        "y": 442
+      },
+      "c04ee182-e278-4bc6-8c42-4ea3defa36f4": {
+        "height": 370,
+        "width": 1116,
+        "x": 656,
+        "y": 832
+      },
+      "ce81e21a-fce5-4e0e-9354-5d4c3aa19cb2": {
+        "height": 52,
+        "width": 170,
+        "x": 30,
+        "y": 226
+      },
+      "cf6ac0ea-ba3f-4029-8c07-fe7a6d6397ce": {
+        "height": 36,
+        "width": 36,
+        "x": 990,
+        "y": 120
+      },
+      "e6909b1e-ea15-4395-b4e5-0ecdb64eef5b": {
+        "height": 1232,
+        "width": 1992.9990234375,
+        "x": 245.9501953125,
+        "y": 0
+      },
+      "eab1b9ab-39ad-4402-afac-783fea85ded2": {
+        "height": 52,
+        "width": 170,
+        "x": 1792.9990234375,
+        "y": 694
+      },
+      "f7f92a23-e8ff-4eaf-86c4-f0409fcca6d1": {
+        "height": 220,
+        "width": 320,
+        "x": 1054,
+        "y": 586
+      },
+      "f926b068-e811-49b2-8b51-f7df388e2ea8": {
+        "height": 220,
+        "width": 320,
+        "x": 1054,
+        "y": 134
+      },
+      "fd48b0b8-a45e-4495-85f3-4ee021203ffe": {
+        "height": 220,
+        "width": 320,
+        "x": 426,
+        "y": 120
+      }
+    },
+    "subject": "e6909b1e-ea15-4395-b4e5-0ecdb64eef5b",
+    "viewpoint": "state-machine",
+    "viewport": {
+      "x": -15763.530989262348,
+      "y": 467.7492403836426,
+      "zoom": 0.35606703729385697
+    }
+  },
+  {
+    "folder": "Conceptual",
+    "id": "0c8908d4-6586-45eb-a45b-435ffdbcc7da",
+    "kind": "warnier",
+    "name": "Process",
+    "nodeIds": [],
+    "pipeline": {
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "process",
+                "step"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "process"
+  },
+  {
+    "expandedNodeIds": [
+      "2a60339a-0a2c-4da8-b12e-4227eba8f4d1"
+    ],
+    "folder": "Conceptual",
+    "id": "eb7828a2-33b3-46c7-b37e-67bba6efc31a",
+    "kind": "warnier",
+    "name": "Import folder",
+    "nodeIds": [],
+    "partOf": "0c8908d4-6586-45eb-a45b-435ffdbcc7da",
+    "pipeline": {
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "2a60339a-0a2c-4da8-b12e-4227eba8f4d1",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "process",
+                "step"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "subject": "2a60339a-0a2c-4da8-b12e-4227eba8f4d1",
+    "viewpoint": "process"
+  },
+  {
+    "expandedNodeIds": [
+      "51a7ebbe-fcd8-46e0-892f-61d495c6fc97"
+    ],
+    "folder": "Conceptual",
+    "id": "427a6e7c-3c21-475c-ae24-ec3430f65f1a",
+    "kind": "warnier",
+    "name": "Recompute everything",
+    "nodeIds": [],
+    "partOf": "0c8908d4-6586-45eb-a45b-435ffdbcc7da",
+    "pipeline": {
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "51a7ebbe-fcd8-46e0-892f-61d495c6fc97",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "process",
+                "step"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "subject": "51a7ebbe-fcd8-46e0-892f-61d495c6fc97",
+    "viewpoint": "process"
+  },
+  {
+    "expandedNodeIds": [
+      "b493eda5-2af5-4894-8ad8-5ddd03cd76ff"
+    ],
+    "folder": "Conceptual",
+    "id": "4729b454-6c31-427e-a371-a018f451ac1e",
+    "kind": "warnier",
+    "name": "Match a Block Instance",
+    "nodeIds": [],
+    "partOf": "0c8908d4-6586-45eb-a45b-435ffdbcc7da",
+    "pipeline": {
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "b493eda5-2af5-4894-8ad8-5ddd03cd76ff",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "process",
+                "step"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "subject": "b493eda5-2af5-4894-8ad8-5ddd03cd76ff",
+    "viewpoint": "process"
+  },
+  {
+    "expandedNodeIds": [
+      "0e952c97-92a0-4037-846e-9154619a2261"
+    ],
+    "folder": "Conceptual",
+    "id": "3753a141-59a4-466b-9b1b-af06d9fd35ba",
+    "kind": "warnier",
+    "name": "Compare instances",
+    "nodeIds": [],
+    "partOf": "0c8908d4-6586-45eb-a45b-435ffdbcc7da",
+    "pipeline": {
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "0e952c97-92a0-4037-846e-9154619a2261",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "process",
+                "step"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "subject": "0e952c97-92a0-4037-846e-9154619a2261",
+    "viewpoint": "process"
+  },
+  {
+    "folder": "Conceptual",
+    "id": "8eb882cc-cfac-4682-b88c-e25c832fdbcb",
+    "kind": "static",
+    "name": "Screen flow",
+    "nodeIds": [],
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "mockup"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3": {
+        "height": 190,
+        "width": 220,
+        "x": 1015.1220703125,
+        "y": 281.25
+      },
+      "29452319-21e3-42fa-a4e2-87267d468dc4": {
+        "height": 190,
+        "width": 220,
+        "x": 403.8720703125,
+        "y": 562.5
+      },
+      "3326b1ec-d31e-42a2-8e92-81f30f7ec6ef": {
+        "height": 190,
+        "width": 220,
+        "x": 0,
+        "y": 562.5
+      },
+      "338e617d-2563-4e79-997a-bf7596ac10aa": {
+        "height": 190,
+        "width": 220,
+        "x": 0,
+        "y": 281.25
+      },
+      "45412314-e70a-445a-bb9e-27340722d02c": {
+        "height": 190,
+        "width": 220,
+        "x": 403.8720703125,
+        "y": 0
+      },
+      "8b8003c2-e262-4787-95d6-4576f080cdf3": {
+        "height": 190,
+        "width": 220,
+        "x": 703.8720703125,
+        "y": 0
+      },
+      "a58faa23-2592-4664-90ca-6b1c0143af21": {
+        "height": 190,
+        "width": 220,
+        "x": 703.8720703125,
+        "y": 281.25
+      },
+      "c6d5b5bc-63e5-4e1d-b3e0-9f4b74617881": {
+        "height": 190,
+        "width": 220,
+        "x": 403.8720703125,
+        "y": 281.25
+      },
+      "e6e9ebc2-7943-4771-832e-42a2814f4078": {
+        "height": 190,
+        "width": 220,
+        "x": 703.8720703125,
+        "y": 562.5
+      }
+    },
+    "viewpoint": "screen-flow",
+    "viewport": {
+      "x": 501.96701821036714,
+      "y": 292.85492965114236,
+      "zoom": 0.5158281818024038
+    }
+  },
+  {
+    "folder": "Conceptual",
+    "id": "7ef4c5c9-09fc-449f-bc72-a3f227c191f5",
+    "kind": "table",
+    "name": "Screens",
+    "nodeIds": [],
+    "pipeline": {
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "mockup"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "via": {
+                "direction": "out",
+                "relationType": "illustrates"
+              }
+            },
+            {
+              "via": {
+                "direction": "out",
+                "relationType": "presented-by"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "screens"
+  },
+  {
+    "folder": "Logical",
+    "id": "4457e4a4-691c-48f1-965f-25e75ba89a17",
+    "kind": "static",
+    "name": "Containers of a system",
+    "nodeIds": [],
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "system",
+                "container",
+                "webapp",
+                "database",
+                "queue"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "person",
+                "system",
+                "container",
+                "webapp",
+                "database",
+                "queue"
+              ],
+              "via": {
+                "anyRelation": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "system-containers"
+  },
+  {
+    "folder": "Logical",
+    "id": "e59b5bae-f4c6-46b7-93ac-295f5cf225d1",
+    "kind": "static",
+    "name": "System context",
+    "nodeIds": [],
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "person",
+                "system"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "7f6ed566-2dac-4505-af87-88711fdd8c66": {
+        "height": 260,
+        "width": 360,
+        "x": 0,
+        "y": 278.3330078125
+      },
+      "a694fdc9-58ad-462b-a996-c49812b6da79": {
+        "height": 767.318359375,
+        "width": 3237.515625,
+        "x": 40,
+        "y": 0
+      },
+      "f58f1376-76ae-401e-9a0b-97fb2c636e4f": {
+        "height": 170,
+        "width": 150,
+        "x": 516,
+        "y": 5
+      }
+    },
+    "viewpoint": "system-context"
+  },
+  {
+    "folder": "Logical",
+    "id": "b813328d-72e0-4b92-b4a0-fc8c4462228c",
+    "kind": "static",
+    "name": "Components of a container",
+    "nodeIds": [],
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "container",
+                "webapp",
+                "component"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "person",
+                "system",
+                "container",
+                "webapp",
+                "database",
+                "queue",
+                "component"
+              ],
+              "via": {
+                "anyRelation": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "container-components"
+  },
+  {
+    "folder": "Logical",
+    "id": "0cbe23f1-8d39-45cc-b5f6-8a4dde00a4d2",
+    "kind": "table",
+    "name": "Responsibilities",
+    "nodeIds": [],
+    "pipeline": {
+      "levels": [
+        {
+          "filters": [
+            {
+              "direction": "out",
+              "has": true,
+              "kind": "relation",
+              "relationType": "satisfies"
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "system",
+                "container",
+                "webapp",
+                "component",
+                "database",
+                "queue"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "requirement"
+              ],
+              "via": {
+                "direction": "out",
+                "relationType": "satisfies"
+              }
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "scenario"
+              ],
+              "via": {
+                "direction": "in",
+                "relationType": "verifies"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "responsibilities"
+  },
+  {
+    "expandedNodeIds": [
+      "a694fdc9-58ad-462b-a996-c49812b6da79"
+    ],
+    "folder": "Logical",
+    "id": "fb3d0a34-a1a4-4eaa-bded-0dd03bd930d9",
+    "kind": "static",
+    "name": "Strideprism",
+    "nodeIds": [],
+    "partOf": "4457e4a4-691c-48f1-965f-25e75ba89a17",
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "a694fdc9-58ad-462b-a996-c49812b6da79",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "system",
+                "container",
+                "webapp",
+                "database",
+                "queue"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "person",
+                "system",
+                "container",
+                "webapp",
+                "database",
+                "queue"
+              ],
+              "via": {
+                "anyRelation": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "2ca6a82b-6302-4406-a3b5-7ad433a6dea2": {
+        "height": 130,
+        "width": 190,
+        "x": 501,
+        "y": 120
+      },
+      "39491f93-4fcc-4f9c-960b-e12750deef8f": {
+        "height": 395.69921875,
+        "width": 628.8037109375,
+        "x": 491,
+        "y": 400
+      },
+      "7f6ed566-2dac-4505-af87-88711fdd8c66": {
+        "height": 260,
+        "width": 360,
+        "x": 420.00390625,
+        "y": 0
+      },
+      "a694fdc9-58ad-462b-a996-c49812b6da79": {
+        "height": 580,
+        "width": 731,
+        "x": 0,
+        "y": 340
+      },
+      "ae98bcc0-d501-45fc-b39d-c304e5a7b242": {
+        "height": 130,
+        "width": 190,
+        "x": 55,
+        "y": 120
+      },
+      "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7": {
+        "height": 566.318359375,
+        "width": 982.7119140625,
+        "x": 30,
+        "y": 390
+      },
+      "f58f1376-76ae-401e-9a0b-97fb2c636e4f": {
+        "height": 170,
+        "width": 150,
+        "x": 865,
+        "y": 340
+      }
+    },
+    "subject": "a694fdc9-58ad-462b-a996-c49812b6da79",
+    "viewpoint": "system-containers"
+  },
+  {
+    "expandedNodeIds": [
+      "39491f93-4fcc-4f9c-960b-e12750deef8f"
+    ],
+    "folder": "Logical",
+    "id": "3fd806b1-a975-4412-8b64-bc0855b9fc1e",
+    "kind": "static",
+    "name": "Web App",
+    "nodeIds": [],
+    "partOf": "b813328d-72e0-4b92-b4a0-fc8c4462228c",
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "39491f93-4fcc-4f9c-960b-e12750deef8f",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "container",
+                "webapp",
+                "component"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "person",
+                "system",
+                "container",
+                "webapp",
+                "database",
+                "queue",
+                "component"
+              ],
+              "via": {
+                "anyRelation": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "0765fef0-4b2e-4087-a745-30d31c103732": {
+        "height": 120,
+        "width": 200,
+        "x": 860,
+        "y": 324.2060546875
+      },
+      "244fc1c2-dda7-40cd-ab1e-27a047cccdc1": {
+        "height": 120,
+        "width": 200,
+        "x": 600,
+        "y": 142.7421875
+      },
+      "2ca6a82b-6302-4406-a3b5-7ad433a6dea2": {
+        "height": 130,
+        "width": 190,
+        "x": 725,
+        "y": 0
+      },
+      "39491f93-4fcc-4f9c-960b-e12750deef8f": {
+        "height": 464.2060546875,
+        "width": 1640,
+        "x": 0,
+        "y": 216.2001953125
+      },
+      "a694fdc9-58ad-462b-a996-c49812b6da79": {
+        "height": 710.40625,
+        "width": 2836.6669921875,
+        "x": 0,
+        "y": 0
+      },
+      "ae98bcc0-d501-45fc-b39d-c304e5a7b242": {
+        "height": 130,
+        "width": 190,
+        "x": 1956.6669921875,
+        "y": 109.71875
+      },
+      "af580e00-9fde-4182-89d8-479d71707a14": {
+        "height": 120,
+        "width": 200,
+        "x": 382.1279296875,
+        "y": 120
+      },
+      "c8218f3c-c48b-4800-a633-b190e85d5833": {
+        "height": 120,
+        "width": 200,
+        "x": 20,
+        "y": 120
+      },
+      "ca29b4d4-2e21-4bd0-8a7d-dedef3dab8b4": {
+        "height": 120,
+        "width": 200,
+        "x": 860,
+        "y": 142.7421875
+      },
+      "cbb5fc4a-220e-4316-97b6-63afe40c8cc8": {
+        "height": 120,
+        "width": 200,
+        "x": 472.15625,
+        "y": 324.2060546875
+      },
+      "d0291cd1-bdf1-4c49-8333-4b658a02f95d": {
+        "height": 120,
+        "width": 200,
+        "x": 1140,
+        "y": 142.7421875
+      },
+      "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7": {
+        "height": 340.927734375,
+        "width": 602.1279296875,
+        "x": 2204.5390625,
+        "y": 277.8388671875
+      },
+      "df4990c9-dd90-49cc-9eca-6507c3d5dd66": {
+        "height": 120,
+        "width": 200,
+        "x": 20,
+        "y": 200.927734375
+      },
+      "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9": {
+        "height": 120,
+        "width": 200,
+        "x": 1420,
+        "y": 142.7421875
+      },
+      "f58f1376-76ae-401e-9a0b-97fb2c636e4f": {
+        "height": 170,
+        "width": 150,
+        "x": 1328.333984375,
+        "y": 725.263671875
+      }
+    },
+    "subject": "39491f93-4fcc-4f9c-960b-e12750deef8f",
+    "viewpoint": "container-components",
+    "viewport": {
+      "x": 258.94765798402386,
+      "y": 305.66264875478055,
+      "zoom": 0.4457636252154567
+    }
+  },
+  {
+    "expandedNodeIds": [
+      "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7"
+    ],
+    "folder": "Logical",
+    "id": "ccb541b8-c5c3-4a99-aec6-2a1b653fc29d",
+    "kind": "static",
+    "name": "Processing Worker",
+    "nodeIds": [],
+    "partOf": "b813328d-72e0-4b92-b4a0-fc8c4462228c",
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "container",
+                "webapp",
+                "component"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "person",
+                "system",
+                "container",
+                "webapp",
+                "database",
+                "queue",
+                "component"
+              ],
+              "via": {
+                "anyRelation": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "0765fef0-4b2e-4087-a745-30d31c103732": {
+        "height": 120,
+        "width": 200,
+        "x": 20,
+        "y": 255.69921875
+      },
+      "31df2b33-7d61-4128-bd2a-a8fd73481b33": {
+        "height": 120,
+        "width": 200,
+        "x": 20,
+        "y": 120
+      },
+      "39491f93-4fcc-4f9c-960b-e12750deef8f": {
+        "height": 395.69921875,
+        "width": 628.8037109375,
+        "x": 1178.7119140625,
+        "y": 85.3095703125
+      },
+      "84b558e0-d87c-4134-8479-f01b164bcd47": {
+        "height": 120,
+        "width": 200,
+        "x": 195.26171875,
+        "y": 426.318359375
+      },
+      "a694fdc9-58ad-462b-a996-c49812b6da79": {
+        "height": 767.318359375,
+        "width": 1837.515625,
+        "x": 0,
+        "y": 0
+      },
+      "ae98bcc0-d501-45fc-b39d-c304e5a7b242": {
+        "height": 130,
+        "width": 190,
+        "x": 767.7119140625,
+        "y": 607.318359375
+      },
+      "af580e00-9fde-4182-89d8-479d71707a14": {
+        "height": 120,
+        "width": 200,
+        "x": 762.7119140625,
+        "y": 312.904296875
+      },
+      "ce42067b-80ea-40e1-a577-39607ab89630": {
+        "height": 120,
+        "width": 200,
+        "x": 455.26171875,
+        "y": 312.904296875
+      },
+      "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7": {
+        "height": 566.318359375,
+        "width": 982.7119140625,
+        "x": 0,
+        "y": 0
+      },
+      "dcc9c750-4930-43ec-b29a-96d8cc3419e7": {
+        "height": 120,
+        "width": 200,
+        "x": 762.7119140625,
+        "y": 120
+      },
+      "df4990c9-dd90-49cc-9eca-6507c3d5dd66": {
+        "height": 120,
+        "width": 200,
+        "x": 383.8916015625,
+        "y": 120
+      },
+      "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9": {
+        "height": 120,
+        "width": 200,
+        "x": 408.8037109375,
+        "y": 120
+      }
+    },
+    "subject": "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7",
+    "viewpoint": "container-components",
+    "viewport": {
+      "x": -1646.537300026609,
+      "y": 107.55102044021902,
+      "zoom": 1.4999134932373754
+    }
+  },
+  {
+    "folder": "Logical",
+    "id": "0459caf1-f606-44e4-9288-e8750d71eb2f",
+    "kind": "matrix",
+    "name": "Container dependencies",
+    "nodeIds": [],
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "ways": [
+            {
+              "types": [
+                "container",
+                "webapp",
+                "database",
+                "queue"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {},
+    "viewpoint": "container-dependencies"
+  }
+]
