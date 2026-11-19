@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useFolder } from '@/lib/client/folderContext';
 import { Welcome } from './Welcome';
+import { CommandPalette } from './CommandPalette';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -32,6 +33,8 @@ export function Shell({ children }: { children: ReactNode }) {
     else document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  const cycleTheme = useCallback(() => setTheme((t) => (t === 'light' ? 'dark' : t === 'dark' ? 'system' : 'light')), []);
 
   if (state.status !== 'open') return <Welcome />;
 
@@ -64,10 +67,11 @@ export function Shell({ children }: { children: ReactNode }) {
       <div className="main">
         <header className="topbar">
           <span className="crumbs">▸ <b>{state.folder.name}</b></span>
-          <div className="search">⌕ Search runs, blocks… <span className="kbd">⌘K</span></div>
+          <button className="search" style={{ border: 0 }} onClick={() => window.dispatchEvent(new Event('open-palette'))}>⌕ Search runs, blocks… <span className="kbd">⌘K</span></button>
         </header>
         {children}
       </div>
+      <CommandPalette onTheme={cycleTheme} />
     </div>
   );
 }

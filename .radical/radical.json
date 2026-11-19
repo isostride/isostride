@@ -242,6 +242,12 @@
     ] },
     { "element": "4f0cddbc-e222-42f9-bd63-ca73494e743d", "name": "Filter change within 3 s", "tests": [
       "tests/ab.test.ts › Real data › Filter change within 3 s"
+    ] },
+    { "element": "87cc4620-281c-4697-bafe-41bf44e61a99", "name": "Definition from map selection", "tests": [
+      "tests/selection.test.ts › Definition from selection › Definition from map selection"
+    ] },
+    { "element": "a6ee7a7e-4d53-485f-b476-13000f2f2227", "name": "Definition from chart selection", "tests": [
+      "tests/selection.test.ts › Definition from selection › Definition from chart selection"
     ] }
   ]
 }

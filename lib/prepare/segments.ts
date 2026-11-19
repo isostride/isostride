@@ -1,4 +1,4 @@
-import { angleBetween, distance, projector, type TrackPoint } from '@/lib/geo/geo';
+import { angleBetween, distance, meanHeading, projector, type TrackPoint } from '@/lib/geo/geo';
 import { findPasses } from '@/lib/blocks/routeMatch';
 import type { RefPoint } from '@/lib/blocks/types';
 
@@ -140,16 +140,6 @@ function overlap(a: TrackPoint[], b: TrackPoint[]): number {
 function median(xs: number[]): number {
   const s = [...xs].sort((a, b) => a - b);
   return s[Math.floor(s.length / 2)];
-}
-
-export function meanHeading(track: { heading: number }[]): number {
-  let x = 0;
-  let y = 0;
-  for (const p of track) {
-    x += Math.cos((p.heading * Math.PI) / 180);
-    y += Math.sin((p.heading * Math.PI) / 180);
-  }
-  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
 }
 
 function round6(x: number) {

@@ -7,8 +7,10 @@ import { LineChart, RouteMap } from '@/components/charts';
 import { useOpenFolder } from '@/lib/client/folderContext';
 import { PATHS, readJson } from '@/lib/fs/folder';
 import type { RunFile } from '@/lib/ingest/importFolder';
-import { readDefinitions } from '@/lib/blocks/definitions';
-import type { BlockInstance } from '@/lib/blocks/types';
+import { definitionFromSelection, readDefinitions, selectionOptions, writeDefinitions } from '@/lib/blocks/definitions';
+import { runInWorker } from '@/lib/client/worker';
+import { useRouter } from 'next/navigation';
+import type { BlockInstance, BlockType } from '@/lib/blocks/types';
 import { date, duration, km, pace, time } from '@/lib/format';
 
 export default function RunPageWrapper() {
@@ -22,7 +24,10 @@ export default function RunPageWrapper() {
 /** Run: metrics over time on 10 s windows, the route, laps and quality-flagged windows. */
 function RunPage() {
   const id = useSearchParams().get('id') ?? '';
-  const { folder } = useOpenFolder();
+  const { folder, handle } = useOpenFolder();
+  const router = useRouter();
+  const [selection, setSelection] = useState<{ from: number; to: number } | null>(null);
+  const [creating, setCreating] = useState(false);
   const [run, setRun] = useState<RunFile | null | undefined>(undefined);
   const [cursor, setCursor] = useState<number | null>(null);
   const [blocks, setBlocks] = useState<(BlockInstance & { name: string })[]>([]);
@@ -50,10 +55,19 @@ function RunPage() {
     return { w, x, flagged, laps, flags: { stopped: count('stopped'), grade: count('grade'), first150: count('first150'), missing: w.flags.missingSignal.filter(Boolean).length } };
   }, [run]);
 
+  const create = async (type: BlockType) => {
+    if (!run || !selection) return;
+    setCreating(true);
+    const def = definitionFromSelection(run, selection.from, selection.to, type);
+    await writeDefinitions(folder, [...(await readDefinitions(folder)), def]);
+    await runInWorker('blocks', handle);
+    router.push('/blocks');
+  };
+
   if (run === undefined) return <div className="page muted">Loading…</div>;
   if (!run || !view) return <div className="page">Run not found. <Link href="/" className="muted">← Runs</Link></div>;
   const { w, x, flagged, laps } = view;
-  const common = { x, laps, flagged, blocks: blocks.map((b) => ({ from: b.start, to: b.end, ok: b.status === 'accepted' })), cursor, onCursor: setCursor };
+  const common = { x, laps, flagged, selection, onSelect: setSelection, blocks: blocks.map((b) => ({ from: b.start, to: b.end, ok: b.status === 'accepted' })), cursor, onCursor: setCursor };
 
   return (
     <div className="page">
@@ -75,11 +89,11 @@ function RunPage() {
         <span><i style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }} />lap</span>
         <span><i style={{ background: 'repeating-linear-gradient(45deg, var(--muted) 0 2px, transparent 2px 5px)', opacity: 0.5 }} />flagged window (stopped, grade, missing signal)</span>
         <span><i style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)' }} />block instance</span>
-        <span className="muted">Selecting a fragment to create a block definition comes in stage 5.</span>
+        <span className="muted">Drag across a chart, or click two points on the route, to select a fragment.</span>
       </div>
       <div className="run-grid">
         <div>
-          <RouteMap lat={run.samples.lat} lon={run.samples.lon} t={run.samples.t} cursor={cursor} />
+          <RouteMap lat={run.samples.lat} lon={run.samples.lon} t={run.samples.t} cursor={cursor} selection={selection} onSelect={setSelection} />
           <div className="card" style={{ marginTop: 12, padding: 12 }}>
             <h3 style={{ margin: '0 0 8px', fontSize: 13 }}>Detected blocks</h3>
             {blocks.length === 0 && <div className="muted small">None. Accept block suggestions on the Blocks screen.</div>}
@@ -113,6 +127,16 @@ function RunPage() {
           <LineChart title="Power W" y={w.power} format={(v) => `${Math.round(v)} W`} color="var(--series-1)" {...common} />
         </div>
       </div>
+      {selection && (
+        <div className="float-bar">
+          <span>Selected min {(selection.from / 60).toFixed(1)}–{(selection.to / 60).toFixed(1)} · {Math.round(selection.to - selection.from)} s</span>
+          <span className="muted">Create block definition as</span>
+          {selectionOptions(run, selection.from, selection.to).map((t) => (
+            <button key={t} className="btn primary" disabled={creating} onClick={() => create(t)}>{t === 'route' ? 'Route segment' : t === 'structure' ? 'Workout structure (lap)' : 'Steady fragment'}</button>
+          ))}
+          <button className="btn" onClick={() => setSelection(null)}>✕</button>
+        </div>
+      )}
     </div>
   );
 }

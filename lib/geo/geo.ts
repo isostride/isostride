@@ -72,3 +72,14 @@ export function projector(lat0: number) {
   const ky = (Math.PI * R) / 180;
   return (p: Point) => ({ x: p.lon * kx, y: p.lat * ky });
 }
+
+/** Mean bearing of a track (circular mean), degrees 0..360. */
+export function meanHeading(track: { heading: number }[]): number {
+  let x = 0;
+  let y = 0;
+  for (const p of track) {
+    x += Math.cos((p.heading * Math.PI) / 180);
+    y += Math.sin((p.heading * Math.PI) / 180);
+  }
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}

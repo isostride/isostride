@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Fragment, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useOpenFolder } from '@/lib/client/folderContext';
 import { PATHS, readJson } from '@/lib/fs/folder';
 import { isOutdated, readManifest, type Manifest } from '@/lib/fs/manifest';
@@ -13,9 +13,15 @@ import { readGear, type Gear } from '@/lib/context/gear';
 import { readRunTags, writeRunTags, type RunTag, type RunTagsFile } from '@/lib/context/tags';
 
 /** Runs: the imported runs, the import with its progress, and the files that could not be imported. */
-export default function RunsPage() {
+export default function RunsPageWrapper() {
+  return <Suspense><RunsPage /></Suspense>;
+}
+
+function RunsPage() {
   const { folder, handle } = useOpenFolder();
   const router = useRouter();
+  const params = useSearchParams();
+  const actionDone = useRef(false);
   const [index, setIndex] = useState<RunsIndex | null>(null);
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -42,6 +48,15 @@ export default function RunsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // ⌘K → "Import folder" lands here with ?action=import.
+  useEffect(() => {
+    if (params.get('action') === 'import' && !actionDone.current) {
+      actionDone.current = true;
+      router.replace('/');
+      start('import');
+    }
+  });
 
   const start = async (kind: 'import' | 'recompute') => {
     setMessage(null);

@@ -152,3 +152,14 @@ table.data tr.row:hover td { background: var(--surface-2); cursor: pointer; }
 .ctx { background: var(--surface-2); border-radius: 8px; padding: 8px 10px; font-size: 12px; }
 .ctx-title { font-weight: 600; margin-bottom: 4px; }
 .ctx-row { display: flex; justify-content: space-between; gap: 8px; }
+
+.float-bar { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; padding: 8px 10px 8px 16px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); z-index: 15; font-size: 13px; }
+.float-bar .btn { border-radius: 999px; padding: 5px 12px; }
+
+.palette-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.3); z-index: 30; display: grid; place-items: start center; padding-top: 12vh; }
+.palette { width: min(560px, 92vw); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); overflow: hidden; }
+.palette input { width: 100%; padding: 14px 16px; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); font-size: 15px; outline: none; }
+.palette-list { max-height: 50vh; overflow: auto; padding: 6px; }
+.palette-group { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 10px 4px; }
+.palette-item { display: flex; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.palette-item.on { background: var(--accent-soft); color: var(--accent); }
