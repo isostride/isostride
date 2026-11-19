@@ -470,23 +470,32 @@
     { "element": "a23ad5ec-41a8-4148-9fcd-a762769f05a9", "name": "Block from criteria with a live count", "tests": [
       "e2e/block-definition.spec.ts › Blocks from criteria › Block from criteria with a live count"
     ] },
-    { "element": "e1fb2839-eff8-4d39-a460-d51388a469d5", "name": "Question kept in the link", "tests": [
-      "tests/unit/ask.test.ts › Questions about the data › Question kept in the link"
+    { "element": "e1fb2839-eff8-4d39-a460-d51388a469d5", "name": "Run set kept in the link", "tests": [
+      "tests/unit/ask.test.ts › Run sets in Analysis › Run set kept in the link"
     ] },
     { "element": "52115b3a-c9d3-449a-afa7-39a4659d8531", "name": "Change of a metric over runs", "tests": [
-      "tests/unit/ask.test.ts › Questions about the data › Change of a metric over runs"
+      "tests/unit/ask.test.ts › Run sets in Analysis › Change of a metric over runs"
     ] },
     { "element": "5fd6562d-deca-4509-86a8-a28b84e52f3e", "name": "Fastest stretch across runs", "tests": [
-      "tests/unit/ask.test.ts › Questions about the data › Fastest stretch across runs"
+      "tests/unit/ask.test.ts › Run sets in Analysis › Fastest stretch across runs"
     ] },
-    { "element": "7ec54c1a-41c2-45c6-b21c-d0d8e608512c", "name": "Question built from controls and answered with a sentence, a chart and a table", "tests": [
-      "e2e/ask.spec.ts › Questions about the data › Question built from controls and answered with a sentence, a chart and a table"
+    { "element": "7ec54c1a-41c2-45c6-b21c-d0d8e608512c", "name": "Runs matching a period compared and ranked", "tests": [
+      "e2e/ask.spec.ts › Analysis workspace › Runs matching a period compared and ranked"
     ] },
-    { "element": "b2ecee7e-c463-4adf-9bdc-167842a010a9", "name": "Question answered from the data folder", "tests": [
-      "tests/unit/askFolder.test.ts › Questions about the data › Question answered from the data folder"
+    { "element": "b2ecee7e-c463-4adf-9bdc-167842a010a9", "name": "Series of a run set from the data folder", "tests": [
+      "tests/unit/askFolder.test.ts › Run sets in Analysis › Series of a run set from the data folder"
     ] },
     { "element": "20280dd4-9d43-4d15-bb62-dd3ca3050e95", "name": "Statistic of a run", "tests": [
-      "tests/unit/ask.test.ts › Questions about the data › Statistic of a run"
+      "tests/unit/ask.test.ts › Run sets in Analysis › Statistic of a run"
+    ] },
+    { "element": "37de8939-dd70-4e96-827e-5901e301a79b", "name": "Pace curve from the fastest stretches", "tests": [
+      "tests/unit/ask.test.ts › Run sets in Analysis › Pace curve from the fastest stretches"
+    ] },
+    { "element": "1d96c647-cd03-485d-9f23-63e8b54e8571", "name": "Pace curve drawn for a run set", "tests": [
+      "e2e/ask.spec.ts › Analysis workspace › Runs matching a period compared and ranked"
+    ] },
+    { "element": "e52ebeb4-a468-47dd-8fb2-2983ba904533", "name": "Estimated pace curve", "tests": [
+      "tests/unit/ask.test.ts › Run sets in Analysis › Estimated pace curve"
     ] }
   ]
 }

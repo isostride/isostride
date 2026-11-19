@@ -40,26 +40,30 @@ export function runMean(run: RunFile, metric: BlockMetric): number | null {
 
 /** An item of the Analysis screen: a block or a run, with its colour slot (kept while others come and go). */
 export interface AnalysisItem {
-  kind: 'block' | 'run';
+  /** a block, a run, or a run set (its id is the set's spec, as lib/ask writes it) */
+  kind: 'block' | 'run' | 'set';
   id: string;
   slot: number;
 }
 
 export const MAX_ITEMS = 4;
 
-/** Items as the screen's URL keeps them: b:<id>:<slot>,r:<id>:<slot>. */
+const KINDS = { b: 'block', r: 'run', s: 'set' } as const;
+
+/** Items as the screen's URL keeps them: b:<id>:<slot>,r:<id>:<slot>,s:<spec>:<slot>. */
 export function parseItems(text: string | null): AnalysisItem[] {
   if (!text) return [];
   const out: AnalysisItem[] = [];
   for (const part of text.split(',')) {
     const [k, id, slot] = part.split(':');
-    if ((k === 'b' || k === 'r') && id && !out.some((o) => o.id === id)) out.push({ kind: k === 'b' ? 'block' : 'run', id, slot: Number(slot) || 0 });
+    const kind = KINDS[k as keyof typeof KINDS];
+    if (kind && id && !out.some((o) => o.id === id)) out.push({ kind, id, slot: Number(slot) || 0 });
   }
   return out.slice(0, MAX_ITEMS);
 }
 
 export function formatItems(items: AnalysisItem[]): string {
-  return items.map((i) => `${i.kind === 'block' ? 'b' : 'r'}:${i.id}:${i.slot}`).join(',');
+  return items.map((i) => `${i.kind === 'block' ? 'b' : i.kind === 'run' ? 'r' : 's'}:${i.id}:${i.slot}`).join(',');
 }
 
 /** Adds an item in the lowest free colour slot; at most MAX_ITEMS, no duplicates. */

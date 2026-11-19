@@ -35,7 +35,6 @@ const NAV = [
   { href: '/blocks', label: 'Blocks', ico: ICONS.blocks },
   { href: '/analysis', label: 'Analysis', ico: ICONS.analysis },
   { href: '/compare', label: 'A/B comparison', ico: ICONS.compare },
-  { href: '/ask', label: 'Ask', ico: ICONS.ask },
   { href: '/gear', label: 'Gear and tags', ico: ICONS.gear },
 ];
 

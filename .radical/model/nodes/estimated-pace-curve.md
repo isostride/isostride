@@ -1,0 +1,8 @@
+---
+id: "7e820091-6148-431b-b28d-880efea10233"
+type: "requirement"
+label: "Estimated pace curve"
+action: "draw beside each measured pace curve an estimated one, dashed: a power law of time whose exponent is fitted to the item's best stretches of 3 minutes and more and whose level is raised to the strongest of them, so that no measured best lies above the estimate, with the predicted times for 5 km, 10 km, the half and the marathon; show each best's gap to the estimate as a stroke between them, and read the estimate at any length of time under the pointer, with the nearest best and its gap; give the critical speed and D' from the critical speed model fitted to the bests of 2 to 20 minutes; with fewer than 3 such bests, say the estimate needs them"
+ears_type: "ubiquitous"
+rationale: "The runner asked: \"jesli chodzi o pace curve ... dodaj estymaowana ... bazujac na researchu\", and, seeing bests above a regression line (\"mam wyniki ponad ta linia\"), chose the envelope: \"tak zrob (1, obwiednia)\"; then \"daj mozliwosc przemieszczania sie po tej estymacie ... albo pokaz roznice pomiedzy pomiarem a estymata\", both done. The models are the literature's (ADR \"Pace curve models\"): Riegel's power law (Riegel 1981), meant for a maximal effort, and the critical speed model (Monod & Scherrer 1965; Hill 1993; Jones & Vanhatalo 2017). The model's choices after that literature: the power law's exponent from bests of 3 minutes and more, the critical speed from bests of 2 to 20 minutes, 3 bests at least for either, and the distances predicted, 5 km, 10 km, the half and the marathon."
+---

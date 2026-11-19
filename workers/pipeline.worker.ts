@@ -1,16 +1,16 @@
 /// <reference lib="webworker" />
 import { BrowserFolder } from '@/lib/fs';
-import { answerQuestion, type Answer, type Query } from '@/lib/ask';
+import { seriesOfRuns, type MetricKey, type RunSet, type Series } from '@/lib/ask';
 import { importFolder, recomputeEverything, refreshBlocks, refreshContext } from '@/lib/pipeline';
 
 /** Messages between the Web App and the Processing Worker. */
-/** context: gear or tags changed; blocks: block definitions changed; ask: a question about the data. */
-export type WorkerJob = 'import' | 'recompute' | 'context' | 'blocks' | 'ask';
-export type WorkerRequest = { type: Exclude<WorkerJob, 'ask'>; handle: FileSystemDirectoryHandle } | { type: 'ask'; handle: FileSystemDirectoryHandle; query: Query };
+/** context: gear or tags changed; blocks: block definitions changed; series: a run set's metrics for Analysis. */
+export type WorkerJob = 'import' | 'recompute' | 'context' | 'blocks' | 'series';
+export type WorkerRequest = { type: Exclude<WorkerJob, 'series'>; handle: FileSystemDirectoryHandle } | { type: 'series'; handle: FileSystemDirectoryHandle; set: RunSet; keys: MetricKey[] };
 export type WorkerEvent =
   | { type: 'progress'; done: number; total: number; file: string }
   | { type: 'done'; imported: number; duplicates: number; errors: number }
-  | { type: 'answer'; answer: Answer }
+  | { type: 'series'; series: Record<string, Series> }
   | { type: 'error'; message: string };
 
 const post = (e: WorkerEvent) => (self as unknown as { postMessage(m: unknown): void }).postMessage(e);
@@ -19,8 +19,8 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
   const folder = new BrowserFolder(e.data.handle);
   const onProgress = (p: { done: number; total: number; file: string }) => post({ type: 'progress', ...p });
   try {
-    if (e.data.type === 'ask') {
-      post({ type: 'answer', answer: await answerQuestion(folder, e.data.query, onProgress) });
+    if (e.data.type === 'series') {
+      post({ type: 'series', series: await seriesOfRuns(folder, e.data.set, e.data.keys, onProgress) });
       return;
     }
     if (e.data.type === 'context' || e.data.type === 'blocks') {

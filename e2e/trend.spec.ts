@@ -76,7 +76,7 @@ test.describe('Analysis workspace', () => {
     // The table of changes: one row per block, one column per metric, each with its verdict.
     const table = page.getByRole('table', { name: 'Changes' });
     await expect(table.getByRole('row')).toHaveCount(2);
-    await expect(table.getByRole('columnheader')).toHaveText(['Block', 'Pace', 'Heart rate']);
+    await expect(table.getByRole('columnheader')).toHaveText(['Item', 'Pace', 'Heart rate']);
     await expect(table.getByText(/no detectable change|^change ·/).first()).toBeVisible();
     // Switching off the joined points and the trend line hides them on every chart.
     await page.getByRole('checkbox', { name: 'Join points' }).uncheck();

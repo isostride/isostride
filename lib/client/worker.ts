@@ -1,6 +1,6 @@
 'use client';
 
-import type { Answer, Query } from '@/lib/ask';
+import type { MetricKey, RunSet, Series } from '@/lib/ask';
 import type { WorkerEvent, WorkerJob, WorkerRequest } from '@/workers';
 
 export type DoneEvent = Extract<WorkerEvent, { type: 'done' }>;
@@ -43,9 +43,9 @@ function start(request: WorkerRequest, onProgress?: Progress, signal?: AbortSign
     if (current?.job === job) publish(null);
   };
   publish({ job, done: 0, total: 0 });
-  // Abandoned (the controls changed again): the worker stops reading, and the promise never settles.
-  signal?.addEventListener('abort', end, { once: true });
   return new Promise((resolve, reject) => {
+    // Abandoned (the screen moved on): the worker stops reading and the promise rejects.
+    signal?.addEventListener('abort', () => { end(); reject(new DOMException('abandoned', 'AbortError')); }, { once: true });
     w.onmessage = (e: MessageEvent<WorkerEvent>) => {
       const m = e.data;
       if (m.type === 'progress') {
@@ -66,15 +66,15 @@ function start(request: WorkerRequest, onProgress?: Progress, signal?: AbortSign
 }
 
 /** Runs one job in a fresh Processing Worker; resolves when it is done. */
-export async function runInWorker(job: Exclude<WorkerJob, 'ask'>, handle: FileSystemDirectoryHandle, onProgress?: Progress): Promise<DoneEvent> {
+export async function runInWorker(job: Exclude<WorkerJob, 'series'>, handle: FileSystemDirectoryHandle, onProgress?: Progress): Promise<DoneEvent> {
   const m = await start({ type: job, handle }, onProgress);
   if (m.type !== 'done') throw new Error(`unexpected ${m.type}`);
   return m;
 }
 
-/** Answers a question about the data in the Processing Worker (it reads every run the question covers). */
-export async function askInWorker(query: Query, handle: FileSystemDirectoryHandle, onProgress?: Progress, signal?: AbortSignal): Promise<Answer> {
-  const m = await start({ type: 'ask', handle, query }, onProgress, signal);
-  if (m.type !== 'answer') throw new Error(`unexpected ${m.type}`);
-  return m.answer;
+/** The series of a run set for the metrics given, computed in the Processing Worker (it reads every run of the set once). */
+export async function seriesInWorker(set: RunSet, keys: MetricKey[], handle: FileSystemDirectoryHandle, onProgress?: Progress, signal?: AbortSignal): Promise<Record<string, Series>> {
+  const m = await start({ type: 'series', handle, set, keys }, onProgress, signal);
+  if (m.type !== 'series') throw new Error(`unexpected ${m.type}`);
+  return m.series;
 }

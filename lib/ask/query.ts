@@ -2,10 +2,10 @@ import type { BlockMetric } from '@/lib/blocks';
 import { METRIC_LABEL } from '@/lib/compare';
 
 /**
- * Questions about the data (the author's request of 19 Nov 2026: "pokaz mi jak sie zmieniala
- * efektywnosc od lutego", "pokaz mi najszybszy bieg 10 min od marca"), built from controls
- * rather than typed ("nie chce wpisywac tekstu chce bardzije strukturalne wyszukiwanie"): a kind
- * of answer, a metric, a period, a window and filters. The question lives in the screen's link.
+ * Run sets (the author's request of 19 Nov 2026, merged into Analysis: "ask to tak naprawde
+ * analysis"): the runs of a period that meet filters, each counted by a statistic, as an item of
+ * the Analysis screen beside blocks and runs; and the fastest stretch of a length as a metric.
+ * A run set lives in the screen's link.
  */
 
 export interface Period {
@@ -30,27 +30,20 @@ export interface Window {
 }
 
 /**
- * The statistic of a metric within a run (the author's request of 19 Nov 2026: "avg, min, max,
- * mediana"): the average over the moving samples, or the median, minimum or maximum over the
- * run's 10 s windows with movement, so one odd sample is no extreme.
+ * The statistic of a metric within a run ("avg, min, max, mediana"): the average over the moving
+ * samples, or the median, minimum or maximum over the run's 10 s windows with movement, so one
+ * odd sample is no extreme.
  */
 export type Stat = 'avg' | 'median' | 'min' | 'max';
 export const STATS: Stat[] = ['avg', 'median', 'min', 'max'];
 export const STAT_LABEL: Record<Stat, string> = { avg: 'average', median: 'median', min: 'minimum', max: 'maximum' };
 
-export type Query =
-  /** how a metric changed: one point per run, its statistic, with a fitted line and a verdict */
-  | { kind: 'trend'; metric: BlockMetric; stat: Stat; period: Period; filters: Filters }
-  /** the fastest stretch of a length in every run, ranked */
-  | { kind: 'best'; window: Window; period: Period; filters: Filters; limit: number }
-  /** runs ranked by a statistic of a metric */
-  | { kind: 'top'; metric: BlockMetric; stat: Stat; direction: 'high' | 'low'; period: Period; filters: Filters; limit: number };
-
-/** Metrics where lower is better: the "best" direction of a ranking. */
-export const LOWER_IS_BETTER: Record<BlockMetric, boolean> = {
-  speed: true, effortPace: true, heartRate: true, groundContactTime: true, verticalOscillation: true,
-  cadence: false, stepLength: false, power: false, legSpringStiffness: false, efficiency: false,
-};
+/** The runs of a period that meet the filters, each counted by the statistic. */
+export interface RunSet {
+  period: Period;
+  filters: Filters;
+  stat: Stat;
+}
 
 /** Letters without their Polish marks, so "Buty Łódź" and "buty lodz" read the same in a filter. */
 export function fold(text: string): string {
@@ -86,50 +79,61 @@ export function windowName(w: Window): string {
   return w.kind === 'time' ? `${+(w.target / 60).toFixed(1)} min` : `${+(w.target / 1000).toFixed(2)} km`;
 }
 
-export const DEFAULT_QUERY: Query = { kind: 'trend', metric: 'speed', stat: 'avg', period: presetPeriod('all'), filters: { workoutType: null, shoes: null, title: null } };
+export const ALL_RUNS: RunSet = { period: presetPeriod('all'), filters: { workoutType: null, shoes: null, title: null }, stat: 'avg' };
 
-/** The question as the screen's link carries it: kind, metric, direction, window, from, to, tag, shoes, title, top. */
-export function queryToParams(q: Query): URLSearchParams {
-  const p = new URLSearchParams();
-  p.set('kind', q.kind);
-  if (q.kind !== 'best') p.set('metric', q.metric);
-  if (q.kind !== 'best' && q.stat !== 'avg') p.set('stat', q.stat);
-  if (q.kind === 'top') p.set('direction', q.direction);
-  if (q.kind === 'best') p.set('window', `${q.window.target}${q.window.kind === 'time' ? 's' : 'm'}`);
-  if (q.period.from) p.set('from', q.period.from);
-  if (q.period.to) p.set('to', q.period.to);
-  if (q.filters.workoutType) p.set('tag', q.filters.workoutType);
-  if (q.filters.shoes) p.set('shoes', q.filters.shoes);
-  if (q.filters.title) p.set('title', q.filters.title);
-  if (q.kind !== 'trend' && q.limit !== 10) p.set('top', String(q.limit));
-  return p;
-}
-
-const METRICS = new Set<string>(Object.keys(LOWER_IS_BETTER));
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const enc = (v: string | null) => encodeURIComponent(v ?? '');
+const dec = (v: string | undefined) => (v ? decodeURIComponent(v) : null);
 
-/** The question read back from a link; what the link does not say takes the default. */
-export function queryFromParams(p: URLSearchParams): Query {
-  const metric = (METRICS.has(p.get('metric') ?? '') ? p.get('metric') : 'speed') as BlockMetric;
-  const stat = (STATS.includes(p.get('stat') as Stat) ? p.get('stat') : 'avg') as Stat;
-  const period = datesPeriod(DATE.test(p.get('from') ?? '') ? p.get('from') : null, DATE.test(p.get('to') ?? '') ? p.get('to') : null);
-  const filters: Filters = { workoutType: p.get('tag') || null, shoes: p.get('shoes') || null, title: p.get('title') || null };
-  const limit = Math.min(100, Math.max(1, Number(p.get('top')) || 10));
-  const kind = p.get('kind');
-  if (kind === 'best') {
-    const m = (p.get('window') ?? '').match(/^(\d+)([sm])$/);
-    const window: Window = m ? { kind: m[2] === 's' ? 'time' : 'distance', target: Number(m[1]) } : { kind: 'time', target: 600 };
-    return { kind, window, period, filters, limit };
-  }
-  if (kind === 'top') return { kind, metric, stat, direction: p.get('direction') === 'high' ? 'high' : p.get('direction') === 'low' ? 'low' : LOWER_IS_BETTER[metric] ? 'low' : 'high', period, filters, limit };
-  return { kind: 'trend', metric, stat, period, filters };
+/** A run set as the Analysis link carries it: from|to|stat|tag|shoes|title, each part URL-encoded (no ":" or "," survive). */
+export function formatRunSet(s: RunSet): string {
+  return [enc(s.period.from), enc(s.period.to), s.stat, enc(s.filters.workoutType), enc(s.filters.shoes), enc(s.filters.title)].join('|');
 }
 
-/** The question in words, for the answer's heading. */
-export function describeQuery(q: Query): string {
-  const where = q.period.label === 'all runs' ? 'over all runs' : q.period.label;
-  const filters = [q.filters.workoutType && `tag ${q.filters.workoutType}`, q.filters.shoes && `shoes ${q.filters.shoes}`, q.filters.title && `title “${q.filters.title}”`].filter(Boolean).join(', ');
-  const what = q.kind === 'best' ? '' : q.stat === 'avg' ? METRIC_LABEL[q.metric].toLowerCase() : `${STAT_LABEL[q.stat]} ${METRIC_LABEL[q.metric].toLowerCase()}`;
-  const head = q.kind === 'trend' ? `Change of ${what} ${where}` : q.kind === 'best' ? `Fastest ${windowName(q.window)} ${where}, top ${q.limit}` : `${q.direction === 'high' ? 'Highest' : 'Lowest'} ${what} ${where}, top ${q.limit}`;
-  return filters ? `${head}, ${filters}` : head;
+/** A run set read back from the link; null when it is not one. */
+export function parseRunSet(spec: string): RunSet | null {
+  const parts = spec.split('|');
+  if (parts.length !== 6 || !STATS.includes(parts[2] as Stat)) return null;
+  const from = dec(parts[0]);
+  const to = dec(parts[1]);
+  if ((from && !DATE.test(from)) || (to && !DATE.test(to))) return null;
+  return { period: datesPeriod(from, to), stat: parts[2] as Stat, filters: { workoutType: dec(parts[3]), shoes: dec(parts[4]), title: dec(parts[5]) } };
+}
+
+/** "Runs since 2026-03-01 · tag easy · maximum": a run set in words, for its chip. */
+export function describeRunSet(s: RunSet): string {
+  const parts = [
+    s.period.label === 'all runs' ? 'All runs' : `Runs ${s.period.label}`,
+    s.filters.workoutType && `tag ${s.filters.workoutType}`, s.filters.shoes && `shoes ${s.filters.shoes}`, s.filters.title && `title “${s.filters.title}”`,
+    s.stat !== 'avg' && STAT_LABEL[s.stat],
+  ].filter((p): p is string => !!p);
+  return parts.join(' · ');
+}
+
+/** A metric of the Analysis screen: a block metric, or the fastest stretch of a length ("best:600s", "best:5000m"). */
+export type MetricKey = BlockMetric | `best:${string}`;
+
+export function bestKey(w: Window): MetricKey {
+  return `best:${w.target}${w.kind === 'time' ? 's' : 'm'}`;
+}
+
+/**
+ * The lengths of the pace curve (the author's request of 19 Nov 2026: "os x czas, os y - tempo
+ * ... ze wszystkich prob"): the fastest stretch of each, across all the runs of an item.
+ */
+export const CURVE_DURATIONS = [30, 60, 120, 180, 300, 600, 900, 1200, 1800, 2700, 3600, 5400, 7200];
+export const CURVE_KEYS: MetricKey[] = CURVE_DURATIONS.map((d) => bestKey({ kind: 'time', target: d }));
+
+/** The window of a "best:" key, or null for a block metric or an unreadable key. */
+export function bestWindow(key: string): Window | null {
+  const m = key.match(/^best:(\d+)([sm])$/);
+  return m ? { kind: m[2] === 's' ? 'time' : 'distance', target: Number(m[1]) } : null;
+}
+
+/** "Fastest 10 min", "Heart rate"; with the statistic, "Maximum heart rate". */
+export function metricKeyLabel(key: MetricKey, stat: Stat = 'avg'): string {
+  const w = bestWindow(key);
+  if (w) return `Fastest ${windowName(w)}`;
+  const m = METRIC_LABEL[key as BlockMetric] ?? key;
+  return stat === 'avg' ? m : `${STAT_LABEL[stat]} ${m.toLowerCase()}`;
 }

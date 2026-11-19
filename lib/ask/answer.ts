@@ -1,11 +1,11 @@
 import { efficiencyOf, fastestFragment, localDay, type BlockMetric } from '@/lib/blocks';
-import { METRIC_LABEL, describeDelta, formatAmount, percentChange, runMean } from '@/lib/compare';
+import { describeDelta, formatAmount, percentChange, runMean } from '@/lib/compare';
 import { PATHS, readJson, type DataFolder } from '@/lib/fs';
 import type { IndexedRun, RunFile, RunsIndex } from '@/lib/kernel';
 import { bootstrap, linearFit, quantile, sd } from '@/lib/stats';
-import { STAT_LABEL, fold, windowName, type Filters, type Period, type Query, type Stat, type Window } from './query';
+import { CURVE_DURATIONS, bestKey, bestWindow, fold, metricKeyLabel, type Filters, type MetricKey, type Period, type RunSet, type Stat, type Window } from './query';
 
-/** The answer needs this many runs before a trend gets a verdict (as a block's trend does). */
+/** A series needs this many runs before it gets a verdict (as a block's trend does). */
 export const MIN_TREND_RUNS = 5;
 const DAY = 86_400_000;
 
@@ -14,9 +14,9 @@ export interface AnswerPoint {
   /** the run's start, ISO */
   date: string;
   title: string | null;
-  /** the metric's value: a run's mean, or the pace of its fastest stretch (s/km) */
+  /** the metric's value: a run's statistic, or the pace of its fastest stretch (s/km) */
   value: number;
-  /** the stretch, s since the run's start, for a "fastest" answer */
+  /** the stretch, s since the run's start, for a fastest-stretch metric */
   from: number | null;
   to: number | null;
   /** the stretch's length, m */
@@ -39,21 +39,13 @@ export interface AnswerFit {
   verdict: 'change' | 'no detectable change';
 }
 
-export interface Answer {
-  query: Query;
-  metric: BlockMetric;
-  /** by date */
+/** One metric of a run set: a point per run by date, and the line through them with enough runs. */
+export interface Series {
   points: AnswerPoint[];
-  /** best first; the points, ranked, for "fastest" and "highest" questions */
-  ranking: AnswerPoint[];
-  /** for a question about change, with enough runs */
   fit: AnswerFit | null;
-  sentence: string;
-  /** runs the question covered */
-  runs: number;
 }
 
-/** The runs a question covers: in its period, with its tag, shoes and title. */
+/** The runs a set covers: in its period, with its tag, shoes and title. */
 export function selectRuns(rows: IndexedRun[], period: Period, filters: Filters): IndexedRun[] {
   const has = (v: string | null | undefined, wanted: string | null) => wanted === null || (!!v && fold(v).includes(fold(wanted)));
   return rows.filter((r) => {
@@ -81,9 +73,6 @@ export function trendOfRuns(points: AnswerPoint[], seed = 7): AnswerFit | null {
 }
 
 const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-/** "16 Sep 2026", the same on every platform (a locale would write "Sept"). */
-const day = (iso: string) => { const d = new Date(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; };
 
 /** The fastest stretch of the window in a run, as a point: its pace in s/km. */
 export function bestStretch(run: RunFile, row: IndexedRun, window: Window): AnswerPoint | null {
@@ -114,55 +103,137 @@ export function runStat(run: RunFile, metric: BlockMetric, stat: Stat): number |
   return stat === 'min' ? vals[0] : stat === 'max' ? vals[vals.length - 1] : quantile(vals, 0.5);
 }
 
-/** "maximum heart rate", or just "heart rate" for the average. */
-function metricWords(metric: BlockMetric, stat: Stat): string {
-  const m = METRIC_LABEL[metric].toLowerCase();
-  return stat === 'avg' ? m : `${STAT_LABEL[stat]} ${m}`;
+/** The value of a metric key for one run: its statistic, or the pace of its fastest stretch. */
+export function pointOf(run: RunFile, row: IndexedRun, key: MetricKey, stat: Stat): AnswerPoint | null {
+  const w = bestWindow(key);
+  if (w) return bestStretch(run, row, w);
+  const v = runStat(run, key as BlockMetric, stat);
+  return v === null ? null : { runId: run.id, date: run.startTime, title: row.title ?? null, value: v, from: null, to: null, distance: null };
 }
 
-/** The sentence of an answer: the figure, where it was found, and for a change whether it is beyond the noise. */
-export function sentenceOf(query: Query, metric: BlockMetric, points: AnswerPoint[], ranking: AnswerPoint[], fit: AnswerFit | null): string {
-  const where = query.period.label === 'all runs' ? 'over all runs' : query.period.label;
-  if (!points.length) return `No run ${where} has ${query.kind === 'best' ? `a stretch of ${windowName(query.window)}` : `a value of ${metricWords(metric, query.stat)}`} to answer with.`;
-  if (query.kind === 'best') {
-    const b = ranking[0];
-    return `Fastest ${windowName(query.window)} ${where}: ${mmss(b.value)} /km on ${day(b.date)}${b.title ? ` (${b.title})` : ''}, minute ${Math.floor(b.from! / 60)}–${Math.ceil(b.to! / 60)} of the run; ${ranking.length} run${ranking.length === 1 ? '' : 's'} ranked.`;
-  }
-  if (query.kind === 'top') {
-    const b = ranking[0];
-    return `${query.direction === 'high' ? 'Highest' : 'Lowest'} ${metricWords(metric, query.stat)} ${where}: ${formatAmount(metric, b.value)} on ${day(b.date)}${b.title ? ` (${b.title})` : ''}; ${ranking.length} run${ranking.length === 1 ? '' : 's'} ranked.`;
-  }
-  const words = metricWords(metric, query.stat);
-  const label = words[0].toUpperCase() + words.slice(1);
-  if (!fit) return `${label} ${where}: ${points.length} run${points.length === 1 ? '' : 's'}, too few for a verdict (${MIN_TREND_RUNS} needed); the points are shown as they are.`;
-  const end = fit.start + fit.change;
-  // Pace reads as m:ss /km; every other metric in its unit.
-  const value = (v: number) => (metric === 'speed' || metric === 'effortPace' ? `${mmss(v)} /km` : formatAmount(metric, v));
-  const delta = describeDelta(metric, fit.change);
-  return `${label} ${where}: ${value(fit.start)} → ${value(end)} over ${points.length} runs, ${delta} (${percentChange(fit.change, fit.start)}), ${fit.verdict === 'change' ? 'beyond' : 'within'} the noise between runs (±${formatAmount(metric, fit.noise)}): ${fit.verdict}.`;
+/** The block metric a key is read in: a fastest stretch is a pace. */
+export function metricOf(key: MetricKey): BlockMetric {
+  return bestWindow(key) ? 'speed' : (key as BlockMetric);
 }
 
-/** Answers a question from the data folder: the runs index, then the run files the question needs. */
-export async function answerQuestion(folder: DataFolder, query: Query, onProgress?: (p: { done: number; total: number; file: string }) => void): Promise<Answer> {
-  const rows = selectRuns((await readJson<RunsIndex>(folder, PATHS.runsIndex))?.runs ?? [], query.period, query.filters);
-  const metric: BlockMetric = query.kind === 'best' ? 'speed' : query.metric;
-  const points: AnswerPoint[] = [];
+/**
+ * The series of a run set for several metrics in one pass over its runs: the runs index, then
+ * each run file once, with progress.
+ */
+export async function seriesOfRuns(folder: DataFolder, set: RunSet, keys: MetricKey[], onProgress?: (p: { done: number; total: number; file: string }) => void): Promise<Record<string, Series>> {
+  const rows = selectRuns((await readJson<RunsIndex>(folder, PATHS.runsIndex))?.runs ?? [], set.period, set.filters);
+  const points: Record<string, AnswerPoint[]> = Object.fromEntries(keys.map((k) => [k, []]));
   let done = 0;
   for (const row of rows) {
     const run = await readJson<RunFile>(folder, PATHS.runFile(row.id));
     onProgress?.({ done: ++done, total: rows.length, file: row.file });
     if (!run) continue;
-    if (query.kind === 'best') {
-      const p = bestStretch(run, row, query.window);
-      if (p) points.push(p);
-    } else {
-      const v = runStat(run, metric, query.stat);
-      if (v !== null) points.push({ runId: run.id, date: run.startTime, title: row.title ?? null, value: v, from: null, to: null, distance: null });
-    }
+    for (const k of keys) { const p = pointOf(run, row, k, set.stat); if (p) points[k].push(p); }
   }
-  points.sort((a, b) => a.date.localeCompare(b.date));
-  const up = query.kind === 'top' && query.direction === 'high';
-  const ranking = query.kind === 'trend' ? [] : [...points].sort((a, b) => (up ? b.value - a.value : a.value - b.value)).slice(0, query.limit);
-  const fit = query.kind === 'trend' ? trendOfRuns(points) : null;
-  return { query, metric, points, ranking, fit, sentence: sentenceOf(query, metric, points, ranking, fit), runs: rows.length };
+  const out: Record<string, Series> = {};
+  for (const k of keys) {
+    const pts = points[k].sort((a, b) => a.date.localeCompare(b.date));
+    out[k] = { points: pts, fit: trendOfRuns(pts) };
+  }
+  return out;
+}
+
+/**
+ * The verdict of a series in words: the start and end values, the change with its percentage,
+ * and whether it is beyond the noise between runs; with too few runs, the count alone.
+ */
+export function seriesSentence(key: MetricKey, stat: Stat, where: string, s: Series): string {
+  const metric = metricOf(key);
+  const words = metricKeyLabel(key, stat);
+  const label = words[0].toUpperCase() + words.slice(1);
+  const n = s.points.length;
+  if (!n) return `No run ${where} has a value of ${words.toLowerCase()}.`;
+  if (!s.fit) return `${label} ${where}: ${n} run${n === 1 ? '' : 's'}, too few for a verdict (${MIN_TREND_RUNS} needed); the points are shown as they are.`;
+  const end = s.fit.start + s.fit.change;
+  // Pace reads as m:ss /km; every other metric in its unit.
+  const value = (v: number) => (metric === 'speed' || metric === 'effortPace' ? `${mmss(v)} /km` : formatAmount(metric, v));
+  return `${label} ${where}: ${value(s.fit.start)} → ${value(end)} over ${n} runs, ${describeDelta(metric, s.fit.change)} (${percentChange(s.fit.change, s.fit.start)}), ${s.fit.verdict === 'change' ? 'beyond' : 'within'} the noise between runs (±${formatAmount(metric, s.fit.noise)}): ${s.fit.verdict}.`;
+}
+
+/** One point of the pace curve: the fastest stretch of a length across the runs, and the run it comes from. */
+export interface CurvePoint {
+  /** s */
+  duration: number;
+  /** s/km */
+  pace: number;
+  runId: string;
+  date: string;
+  title: string | null;
+  from: number;
+  to: number;
+}
+
+/**
+ * The pace curve of an item from its series of fastest stretches: for each length, the best
+ * (lowest pace) over all its runs; lengths no run covers are left out.
+ */
+export function paceCurve(series: Record<string, Series>): CurvePoint[] {
+  const out: CurvePoint[] = [];
+  for (const d of CURVE_DURATIONS) {
+    const s = series[bestKey({ kind: 'time', target: d })];
+    if (!s?.points.length) continue;
+    const b = s.points.reduce((best, p) => (p.value < best.value ? p : best));
+    out.push({ duration: d, pace: b.value, runId: b.runId, date: b.date, title: b.title, from: b.from!, to: b.to! });
+  }
+  return out;
+}
+
+/** The estimate's models need this many best stretches of at least MIN_FIT_SECONDS. */
+export const MIN_FIT_POINTS = 3;
+/** Stretches shorter than this are sprints the endurance models do not describe (model's choice: 3 minutes). */
+export const MIN_FIT_SECONDS = 180;
+/** The critical speed model holds for efforts of about 2 to 20 minutes (Jones & Vanhatalo 2017). */
+export const CS_RANGE: [number, number] = [120, 1200];
+/** Distances the estimate predicts a time for: 5 km, 10 km, half and full marathon. */
+export const PREDICTED_DISTANCES = [5000, 10000, 21097.5, 42195];
+
+export interface CurveEstimate {
+  /** Riegel's power law, v(t) = e^a · t^(−k): speed falls by the factor 2^(−k) for every doubling of the time */
+  a: number;
+  k: number;
+  /** best stretches the law was fitted to */
+  n: number;
+  /** the critical speed model, d = CS·t + D′, from the bests of 2–20 minutes; null below MIN_FIT_POINTS of them */
+  cs: { cs: number; dPrime: number; n: number } | null;
+  /** predicted times by distance, s, from the power law */
+  predictions: { distance: number; seconds: number }[];
+}
+
+/**
+ * The estimated pace curve from the measured one (the author's request of 19 Nov 2026: "dodaj
+ * estymowana ... bazujac na researchu"): Riegel's power law (Riegel 1981, "Athletic records and
+ * human endurance": time grows with distance to the power 1.06, that is speed falls with time to
+ * the power about −0.06), its exponent fitted by least squares in log–log to the best stretches
+ * of 3 minutes and more and its level raised to the strongest of them (an envelope: the law is
+ * meant for maximal efforts), and the critical speed model (Monod & Scherrer 1965; Hill 1993; Jones & Vanhatalo
+ * 2017) fitted to the bests of 2–20 minutes. Null with fewer than MIN_FIT_POINTS bests.
+ */
+export function estimateCurve(points: { duration: number; pace: number }[]): CurveEstimate | null {
+  const fit = points.filter((p) => p.duration >= MIN_FIT_SECONDS);
+  if (fit.length < MIN_FIT_POINTS) return null;
+  const f = linearFit(fit.map((p) => Math.log(p.duration)), fit.map((p) => Math.log(1000 / p.pace)));
+  const k = -f.slope;
+  // The envelope (the author's choice of 19 Nov 2026): the law's slope from the fit, its level
+  // raised to the strongest best, so no measured best lies above the estimate; Riegel's law is
+  // meant for a maximal effort, and an easy long run is no such effort.
+  const a = Math.max(...fit.map((p) => Math.log(1000 / p.pace) + k * Math.log(p.duration)));
+  const csPts = points.filter((p) => p.duration >= CS_RANGE[0] && p.duration <= CS_RANGE[1]);
+  let cs: CurveEstimate['cs'] = null;
+  if (csPts.length >= MIN_FIT_POINTS) {
+    const c = linearFit(csPts.map((p) => p.duration), csPts.map((p) => (1000 / p.pace) * p.duration));
+    cs = { cs: c.slope, dPrime: c.intercept, n: csPts.length };
+  }
+  // d = v·t = e^a · t^(1−k)  ⇒  t = (d / e^a)^(1/(1−k)); meaningless when the law says speed rises with time.
+  const predictions = k < 1 && k > -0.5 ? PREDICTED_DISTANCES.map((distance) => ({ distance, seconds: Math.pow(distance / Math.exp(a), 1 / (1 - k)) })) : [];
+  return { a, k, n: fit.length, cs, predictions };
+}
+
+/** The estimated pace, s/km, at a length of time, from the power law. */
+export function estimatedPace(e: CurveEstimate, duration: number): number {
+  return 1000 / (Math.exp(e.a) * Math.pow(duration, -e.k));
 }

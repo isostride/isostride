@@ -52,7 +52,6 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
         { group: 'Screens', label: 'Blocks', run: go('/blocks') },
         { group: 'Screens', label: 'Analysis', run: go('/analysis') },
         { group: 'Screens', label: 'A/B comparison', run: go('/compare') },
-        { group: 'Screens', label: 'Ask a question', hint: 'e.g. fastest 10 min since March', run: go('/ask') },
         { group: 'Screens', label: 'Gear and tags', run: go('/gear') },
       ];
       for (const d of (await readDefinitions(state.folder)).filter((x) => x.status === 'active')) {

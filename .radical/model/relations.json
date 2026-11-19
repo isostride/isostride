@@ -141,6 +141,13 @@
     "targetId": "60e86846-3529-4650-bb51-62d720d3242f"
   },
   {
+    "id": "0809bbdd-e094-403e-92a4-67ebf9b9e4c0",
+    "quote": "ok chce miec mozliwosc zbduowanej kryzwej predkosci .. tzn os x czas, os y - tempo, i taki wykres powinien byc tworzony ze wszystkich problem",
+    "relationType": "derives",
+    "sourceId": "e84ad3f8-43b0-4d2e-a541-5f69d06f66ac",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "0876bb51-316d-4330-b304-c7138da84e46",
     "quote": "runs entirely in the browser\nThere is no server and no database, and the data never leaves the computer.\nlocally on their own computer",
     "relationType": "derives",
@@ -1164,6 +1171,12 @@
     "targetId": "318c99a5-6ed7-45ae-98f1-d7daa3f364c2"
   },
   {
+    "id": "2ffecdb7-9232-43e6-aa95-8a0e2644df4d",
+    "relationType": "verifies",
+    "sourceId": "37de8939-dd70-4e96-827e-5901e301a79b",
+    "targetId": "e84ad3f8-43b0-4d2e-a541-5f69d06f66ac"
+  },
+  {
     "id": "3068965a-23a7-4844-bedd-2c6c384857b5",
     "quote": "or at least 3 workouts with the same structure\norigin (manual, recommendation)",
     "relationType": "derives",
@@ -1335,6 +1348,12 @@
     "relationType": "illustrates",
     "sourceId": "45412314-e70a-445a-bb9e-27340722d02c",
     "targetId": "78dd70f1-da92-4e8c-b1a9-0bfcd47910a4"
+  },
+  {
+    "id": "390632c9-3e0c-41b3-8fa8-4a229245d9ac",
+    "relationType": "traces-to",
+    "sourceId": "7e820091-6148-431b-b28d-880efea10233",
+    "targetId": "27bfbb75-0d7b-42a4-abeb-12bbcbb68e50"
   },
   {
     "id": "3933dca5-cadb-45fc-a3c9-09e2b471b47b",
@@ -1631,6 +1650,12 @@
     "targetId": "a07463a7-0792-4e04-89c9-288eaaa8cd70"
   },
   {
+    "id": "4653acd8-7e2c-447c-a26d-63ee3cc69c30",
+    "relationType": "constrains",
+    "sourceId": "27bfbb75-0d7b-42a4-abeb-12bbcbb68e50",
+    "targetId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d"
+  },
+  {
     "description": "trends and comparisons are computed from block instances",
     "id": "46a3315e-126b-4d30-9301-ece7ba88c074",
     "relationType": "depends-on",
@@ -1888,6 +1913,12 @@
     "targetId": "c8488111-9e77-4da6-8d46-aac74fe4f0a4"
   },
   {
+    "id": "55db98c8-9570-4686-8a9d-03188329b4ea",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "7e820091-6148-431b-b28d-880efea10233"
+  },
+  {
     "id": "55df40aa-f736-48c1-b1e7-d6cbdcbd1416",
     "relationType": "performed-by",
     "sourceId": "5d119055-fe83-4400-beae-d7283fa7f992",
@@ -2126,6 +2157,12 @@
     "targetId": "3a807173-78c6-4e65-a07c-6d1aed8a072b"
   },
   {
+    "id": "62823184-a5c5-4c41-aa8a-f5da8db9d885",
+    "relationType": "verifies",
+    "sourceId": "e52ebeb4-a468-47dd-8fb2-2983ba904533",
+    "targetId": "7e820091-6148-431b-b28d-880efea10233"
+  },
+  {
     "id": "62b72b79-ff70-4aea-8b01-42e5b7609663",
     "relationType": "verifies",
     "sourceId": "d3d24907-8709-4102-b0e0-fce59ce36880",
@@ -2163,12 +2200,24 @@
     "targetId": "ce42067b-80ea-40e1-a577-39607ab89630"
   },
   {
+    "id": "640543a8-78bd-46e8-952a-54c2084ce814",
+    "relationType": "illustrates",
+    "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
+    "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
+  },
+  {
     "cardinality": "many",
     "description": "groups A and B, and rejected instances",
     "id": "64bd9418-08a9-4052-8def-2f4269266ae1",
     "relationType": "references",
     "sourceId": "7e47fd98-2218-4d27-b2e9-81cc404c4533",
     "targetId": "3614e7f4-9407-407b-a23b-56e0b424d992"
+  },
+  {
+    "id": "655453c2-1562-4840-bf74-ca1247f711ec",
+    "relationType": "satisfies",
+    "sourceId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d",
+    "targetId": "7e820091-6148-431b-b28d-880efea10233"
   },
   {
     "id": "66ab619f-526b-4529-a666-731079c26510",
@@ -2643,6 +2692,13 @@
     "targetId": "11307cf5-4302-49f7-b72d-56ae367f462a"
   },
   {
+    "id": "7bfe9b04-196a-4206-b276-3099def40d62",
+    "quote": "jesli chodzi o pace curve ... dodaj estymaowana ... bazujac na researchu ...",
+    "relationType": "derives",
+    "sourceId": "7e820091-6148-431b-b28d-880efea10233",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "7c9b63da-0e33-4dc3-a50a-e481911a2ab1",
     "relationType": "satisfies",
     "sourceId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1",
@@ -3090,6 +3146,12 @@
     "targetId": "a90357d6-8d79-4dd5-bb07-f49493d04b3c"
   },
   {
+    "id": "8e6d993f-5885-4175-8d4d-0844bf7a52fa",
+    "relationType": "verifies",
+    "sourceId": "1d96c647-cd03-485d-9f23-63e8b54e8571",
+    "targetId": "e84ad3f8-43b0-4d2e-a541-5f69d06f66ac"
+  },
+  {
     "id": "91347e0c-9ff3-4408-b5e6-45f50a22b97f",
     "label": "Folder handle",
     "relationType": "interacts",
@@ -3254,12 +3316,6 @@
     "relationType": "satisfies",
     "sourceId": "a694fdc9-58ad-462b-a996-c49812b6da79",
     "targetId": "c5829292-1066-494a-9c63-78abe795aa96"
-  },
-  {
-    "id": "976cad5f-4d0b-4680-899a-47ffff661e8d",
-    "relationType": "illustrates",
-    "sourceId": "39baf51f-e6cc-4383-a2f9-fee0ada8d95a",
-    "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
   },
   {
     "id": "977c1b90-53a3-49a5-bd4d-b2ea342b5622",
@@ -3427,7 +3483,7 @@
   },
   {
     "id": "9fbd07f2-69b4-440e-b9f6-c39b8b65ce0e",
-    "quote": "chce rozsszerzyc aplikacje, nie tylko do modulow i porownan - chce miec mozliwosc doglebnej analizy danych ktore sa, - np. chce miec mozliwosc zadania pytanie - pokaz mi jak sie zmieniala efektywnosc od lutego\nodpowiedź to najlepszy z nich (bieg, minuta startu, tempo), plus ranking kolejnych.\nWykres + tabela + zdanie: Wykres w czasie (gdy pytanie o zmianę), tabela wyników z linkami do biegów, i jedno zdanie werdyktu",
+    "quote": "chce rozsszerzyc aplikacje, nie tylko do modulow i porownan - chce miec mozliwosc doglebnej analizy danych ktore sa, - np. chce miec mozliwosc zadania pytanie - pokaz mi jak sie zmieniala efektywnosc od lutego\nTekst + lokalny parser: Wpisujesz pytanie po polsku lub angielsku; aplikacja rozpoznaje metrykę, okres, filtr i rodzaj odpowiedzi własną gramatyką (bez sieci, bez AI) i pokazuje interpretację jako chipy, które możesz poprawić. Ograniczony zestaw wzorców, ale dane nie opuszczają komputera.\nWykres + tabela + zdanie: Wykres w czasie (gdy pytanie o zmianę), tabela wyników z linkami do biegów, i jedno zdanie werdyktu\nnie chce wpisywac tekstu chce bardzije strukturalne wyszukiwanie\nchce miec mozliwosc wyboru sposobu agregowania danych ... i rodzaju metryki , avg, min, max , mediana\nok ask to tak naprawde analysis ... jak sugerujesz aby to polaczyc ?",
     "relationType": "derives",
     "sourceId": "83816ea6-8c1f-42fc-bc74-944304c249f5",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -4066,6 +4122,12 @@
     "targetId": "5f000913-f470-4fb5-8bd5-8121a2631948"
   },
   {
+    "id": "be224036-2799-47c1-83cd-13c9859e2821",
+    "relationType": "verifies",
+    "sourceId": "1d96c647-cd03-485d-9f23-63e8b54e8571",
+    "targetId": "7e820091-6148-431b-b28d-880efea10233"
+  },
+  {
     "id": "be333b40-abb0-4975-bd5a-8b5dbb87f5c6",
     "relationType": "satisfies",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
@@ -4157,6 +4219,12 @@
     "relationType": "constrains",
     "sourceId": "849939df-4bd6-415e-b844-a5d5a27b1425",
     "targetId": "a694fdc9-58ad-462b-a996-c49812b6da79"
+  },
+  {
+    "id": "c2f1c3be-3141-4c18-8ff4-764e0402dcc2",
+    "relationType": "satisfies",
+    "sourceId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d",
+    "targetId": "e84ad3f8-43b0-4d2e-a541-5f69d06f66ac"
   },
   {
     "actions": "created by CandidateFound",
@@ -4951,6 +5019,12 @@
     "targetId": "3e608f71-04ae-42e1-aabe-194a07a8a79f"
   },
   {
+    "id": "e8a47679-e009-4c72-987f-a594d2b100b1",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "e84ad3f8-43b0-4d2e-a541-5f69d06f66ac"
+  },
+  {
     "id": "e8f298b4-8be1-476f-83a3-9a307f3ff860",
     "relationType": "performed-by",
     "sourceId": "9a04e7fe-012d-40a9-9188-982d981c6b8d",
@@ -5019,6 +5093,12 @@
     "sourceId": "39491f93-4fcc-4f9c-960b-e12750deef8f",
     "targetId": "2ca6a82b-6302-4406-a3b5-7ad433a6dea2",
     "technology": "IndexedDB"
+  },
+  {
+    "id": "eb20277d-8674-4763-85cc-db388450f0b3",
+    "relationType": "illustrates",
+    "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
+    "targetId": "e84ad3f8-43b0-4d2e-a541-5f69d06f66ac"
   },
   {
     "id": "eb5cd0b0-6f89-4246-88b1-125b4ed83f0d",
@@ -5129,7 +5209,7 @@
   },
   {
     "id": "ef7f60ef-2b2b-4869-a3b0-2751e011c942",
-    "quote": "Tekst + lokalny parser: Wpisujesz pytanie po polsku lub angielsku; aplikacja rozpoznaje metrykę, okres, filtr i rodzaj odpowiedzi własną gramatyką (bez sieci, bez AI) i pokazuje interpretację jako chipy, które możesz poprawić. Ograniczony zestaw wzorców, ale dane nie opuszczają komputera.",
+    "quote": "pokaz mi najszybszy bieg 10 min od marca itp\nNajszybszy fragment 10 min: W każdym biegu od marca szukany jest najszybszy ciągły odcinek 10 minut; odpowiedź to najlepszy z nich (bieg, minuta startu, tempo), plus ranking kolejnych.",
     "relationType": "derives",
     "sourceId": "909a96f5-edf8-4706-9ed2-f2623dc00f62",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -5221,6 +5301,12 @@
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
     "targetId": "f69a0da2-2a43-471f-9863-97268ea75c06"
+  },
+  {
+    "id": "f5c9b7b7-f8f4-4514-83f2-925d0759936e",
+    "relationType": "illustrates",
+    "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
+    "targetId": "7e820091-6148-431b-b28d-880efea10233"
   },
   {
     "id": "f5e4609e-307e-4333-874b-c70ef48cf83e",
