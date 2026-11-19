@@ -330,3 +330,25 @@ A: Yes, carry on
 Q: (użytkownik) ok ... inny problem .... hr zostalo wykluiczone ale inne metryki sa ...w tym bloku ... jak to mozewe ? kryteria powinny wygladac bieg albo nie wykluczqac
 Q: Today an instance can be accepted for pace/gait but left out for heart rate (block shorter than 4 min, starts before minute 8, a stop over 30 s or in the last 2 min). You want one decision per run: in the block or not. How?
 A: Never exclude for HR: Acceptance depends only on the general conditions (pace, grade, steadiness, effort before, start); HR is always computed for accepted runs from the block's HR window, even after a stop or early in the run.
+Q: (użytkownik) ok zmiany 1. zamien trend na analysis , 2. w analysis chce miec mozliwosc dodania bloku lub blokow, biegu i biegow .. 3. w analysis porownuje dane ... na tych samych wykresach
+Q: When you add RUNS to Analysis, how should they be overlaid on one chart?
+A: Switch: time or distance (Recommended): Each run is a line of the chosen metric (pace, HR, cadence…) over the run, aligned from its start; a switch picks the x axis: elapsed time or distance.
+Q: When you add BLOCKS to Analysis, what should their lines/points show?
+A: Both views (Recommended): 'Over time': one point per instance on a date axis (today's trend), several blocks on the same chart, each with its fitted line. 'Inside': the per-minute profile of each block (mean of its instances, or chosen instances) overlaid.
+Q: Runs and blocks together: how should they mix on one chart?
+A: On the 'Inside' chart (Recommended): Runs and blocks share the 'inside' chart (metric over time from the start of the run / block); on the 'Over time' chart a run is one point (its average) next to the block instances.
+Q: What about the existing A/B comparison screen?
+A: Keep it separate (Recommended): A/B stays its own screen (split one block by shoes/tags with a verdict); Analysis is the free comparison workspace. The Trend verdict sentence stays in Analysis for each block.
+Q: (użytkownik) w analize moge wybrac tylko 1 metryka ... chce pokazac kilka i analizowac ich zmiany , chce linie trendu oraz linie laczaco punkty
+A: (model) Several metrics at once, each on its own chart sharing the time axis (one y axis per chart: the metrics have different units); on each, every item's points joined by a line in date order and each block's trend line; a table of each block's change for every chosen metric.
+Q: (użytkownik) sekcja inside ... nie ma sensu
+Q: The 'Inside' section in Analysis makes no sense to you. What should happen to it?
+A: Remove it: Analysis keeps only 'Over time' (per metric), the table of changes and the verdicts. Adding runs still shows their average as a point on 'Over time'. Comparing the course of whole runs stays on the Run screen.
+Q: (użytkownik) dodaj metryke ktora bedzie przeliczala efetywnosc biegu .. tzn predkosc wzgledem tetna
+A: (model) Efficiency: metres per heartbeat, speed (m/s) × 60 / heart rate (bpm), from the same moving samples as the block's heart rate; higher is better.
+Q: (użytkownik) popracuj nad look & feel calego layout ... nie wyglada na nowoczesny — chodzi mi o wyglad, kolory, sposobu prezentacji wykresu
+A: (model) One neutral surface system with hairlines instead of boxes in boxes, ink buttons, one accent for selection, the series colours reserved for data; a sidebar with icons and the folder, no top bar; figures in one strip; charts with a gradient wash under the line, the cursor as a dot, recessive grid and axes.
+Q: (użytkownik) jest lepiej ale ciagle nie top class
+A: (model) Geist Sans and Geist Mono bundled with the app (no font fetched from the network), smooth lines with the ticks inside the plot and one cursor card for all lanes, a logo mark, numbers right-aligned in tables, the changes in Analysis as figures with a verdict chip, the route on a dotted grid with a halo.
+Q: (użytkownik) nie mam opcji usuwania blokow
+A: (model) The block's sheet gets "Delete block": after a confirmation the definition and its detected instances are removed; a block that came from a suggestion is suggested again.

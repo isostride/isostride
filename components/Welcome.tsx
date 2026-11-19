@@ -1,6 +1,7 @@
 'use client';
 
 import { useFolder } from '@/lib/client';
+import { Logo } from './Logo';
 
 /** Welcome: pick the data folder, confirm access to the remembered one, or say the browser is not supported. */
 export function Welcome() {
@@ -9,7 +10,7 @@ export function Welcome() {
   return (
     <div className="welcome">
       <div className="card">
-        <div className="brand-mark" />
+        <Logo size={56} />
         <h1>Strideprism</h1>
         <p className="muted">Compare blocks of your runs in the same context, and see changes the watch averages hide.</p>
         {state.status === 'unsupported' && (

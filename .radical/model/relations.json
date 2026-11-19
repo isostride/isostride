@@ -227,6 +227,13 @@
     "targetId": "09caeaad-7d11-4eda-8b47-0c314d79dd27"
   },
   {
+    "id": "0b375525-2052-4afa-be29-3f93a6ee4d16",
+    "quote": "nie mam opcji usuwania blokow",
+    "relationType": "derives",
+    "sourceId": "b719ad21-3e91-4ed0-bf3d-319783d781db",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "0b6bdc73-6201-4f9a-9b83-02ad73667289",
     "relationType": "implements",
     "sourceId": "fefd8bec-3f3f-4a8a-92ef-ff994442c642",
@@ -481,6 +488,13 @@
     "relationType": "satisfies",
     "sourceId": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9",
     "targetId": "e6a5afbb-9945-4524-9a7e-6aa34d59ea8e"
+  },
+  {
+    "id": "16114dbf-6d28-4b70-b2bd-c0413fd47d38",
+    "quote": "1. zamien trend na analysis , 2. w analysis chce miec mozliwosc dodania bloku lub blokow, biegu i biegow .. 3. w analysis porownuje dane ... na tych samych wykresach",
+    "relationType": "derives",
+    "sourceId": "f6e6082a-1b7a-49e5-8f92-3bca3c726419",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "1676e727-71ed-4435-b9bd-8faa304e5f19",
@@ -1095,6 +1109,12 @@
     "technology": "File System Access API"
   },
   {
+    "id": "2f0e0e83-65d6-4f60-9381-4fe19b7e78bc",
+    "relationType": "verifies",
+    "sourceId": "510a6296-aa7f-45bf-964f-559be6359a85",
+    "targetId": "f6e6082a-1b7a-49e5-8f92-3bca3c726419"
+  },
+  {
     "id": "2ffca083-ddb5-49b7-901a-dd38e2e39bc6",
     "relationType": "illustrates",
     "sourceId": "45412314-e70a-445a-bb9e-27340722d02c",
@@ -1246,6 +1266,12 @@
     "relationType": "satisfies",
     "sourceId": "a694fdc9-58ad-462b-a996-c49812b6da79",
     "targetId": "505e6fba-5b0d-4595-8792-d8e0cf2751c0"
+  },
+  {
+    "id": "38bdae66-7e31-4fc2-aa47-a3c5538d2cea",
+    "relationType": "verifies",
+    "sourceId": "1f3b6c7a-8ea3-441c-ae4d-0d5e0b7582d2",
+    "targetId": "f6e6082a-1b7a-49e5-8f92-3bca3c726419"
   },
   {
     "actions": "keep origin = recommendation",
@@ -1560,6 +1586,12 @@
     "relationType": "depends-on",
     "sourceId": "1cd3f54a-5563-44d5-8284-443db86b11e0",
     "targetId": "964eadcd-50c1-40ea-a603-6d00a7f4ce53"
+  },
+  {
+    "id": "46b7f344-c7be-46ef-87a8-69af2b49a168",
+    "relationType": "verifies",
+    "sourceId": "3ada0e31-9a55-47b5-bb5c-e160ba2e68ed",
+    "targetId": "f6e6082a-1b7a-49e5-8f92-3bca3c726419"
   },
   {
     "id": "46c7b005-449d-4262-85a4-f68ea2a73c62",
@@ -1946,6 +1978,12 @@
     "targetId": "839d8289-93cd-4d39-9e0b-4c96b2d659f9"
   },
   {
+    "id": "5c988135-349e-4212-8bad-174f5cda67cf",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "b719ad21-3e91-4ed0-bf3d-319783d781db"
+  },
+  {
     "id": "5cd81f76-5e0a-4644-9cd1-394a3cdd10f8",
     "relationType": "satisfies",
     "sourceId": "d0291cd1-bdf1-4c49-8333-4b658a02f95d",
@@ -2155,6 +2193,12 @@
     "relationType": "verifies",
     "sourceId": "47356775-cc89-4247-9a0a-d47fd6e79209",
     "targetId": "36038f78-a505-4196-a7a7-9dbac6a637e8"
+  },
+  {
+    "id": "6aebc581-ac71-4dae-a003-86d8facc5117",
+    "relationType": "verifies",
+    "sourceId": "9cab11ba-c018-4316-b3e0-70b1eb1fed90",
+    "targetId": "b719ad21-3e91-4ed0-bf3d-319783d781db"
   },
   {
     "id": "6b6e9db4-69be-4ce5-9f52-7d8bb28b4096",
@@ -2968,6 +3012,13 @@
     "technology": "IndexedDB"
   },
   {
+    "id": "91431ccb-9b69-4ab5-b4c4-023912829a06",
+    "quote": "dodaj metryke ktora bedzie przeliczala efetywnosc biegu .. tzn predkosc wzgledem tetna",
+    "relationType": "derives",
+    "sourceId": "c2d112a5-91f6-4e51-946c-920566ef771e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "9186dd09-63b9-4d63-abd4-8dfe771d18f7",
     "on": "do",
     "relationType": "emits",
@@ -3202,6 +3253,12 @@
     "relationType": "satisfies",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
     "targetId": "097750f8-c550-4b2c-afa6-84234eb13724"
+  },
+  {
+    "id": "9c18f417-571f-4dfa-9d54-edd68e14d56f",
+    "relationType": "constrains",
+    "sourceId": "4657ac26-ce37-4d24-a2cf-0e02511d9e0a",
+    "targetId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1"
   },
   {
     "id": "9c2cfd19-be9d-4b5b-8730-1343fb4c6d8c",
@@ -3483,6 +3540,12 @@
     "relationType": "verifies",
     "sourceId": "2671768b-27e2-467e-b90b-5add847f2d87",
     "targetId": "d3c81008-1d9a-459b-b77c-ba4b66820d00"
+  },
+  {
+    "id": "ab2e3540-4b54-4273-9f2c-4d8a89f00b2d",
+    "relationType": "illustrates",
+    "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
+    "targetId": "1f3b6c7a-8ea3-441c-ae4d-0d5e0b7582d2"
   },
   {
     "id": "ab726e4e-8b0c-47e0-b048-f6ece38f3ef1",
@@ -4077,6 +4140,13 @@
     "relationType": "illustrates",
     "sourceId": "45412314-e70a-445a-bb9e-27340722d02c",
     "targetId": "a4c0dbc9-0686-4c8e-a892-ef9d83e23c96"
+  },
+  {
+    "id": "c78d4b9d-d223-4edf-b575-f22257106f70",
+    "quote": "chce pokazac kilka i analizowac ich zmiany , chce linie trendu oraz linie laczaco punkty",
+    "relationType": "derives",
+    "sourceId": "f6e6082a-1b7a-49e5-8f92-3bca3c726419",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "c7abbb80-ddb6-43d7-9417-6dea1af7901c",
@@ -4999,6 +5069,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "f4748f47-b264-4bc2-b8e9-de555b0909e7",
+    "relationType": "constrains",
+    "sourceId": "4657ac26-ce37-4d24-a2cf-0e02511d9e0a",
+    "targetId": "cbb5fc4a-220e-4316-97b6-63afe40c8cc8"
+  },
+  {
     "id": "f55be4c1-8c80-4caf-9dd4-46b3739df6e7",
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
@@ -5204,6 +5280,12 @@
     "targetId": "3a807173-78c6-4e65-a07c-6d1aed8a072b"
   },
   {
+    "id": "fd3dd0d4-f5d6-484e-ab8b-9528632f2f12",
+    "relationType": "implements",
+    "sourceId": "2f46f997-ec74-405b-917b-2d3c97b3be0f",
+    "targetId": "4657ac26-ce37-4d24-a2cf-0e02511d9e0a"
+  },
+  {
     "id": "fd595f40-04db-4a9f-8ecc-761d96f06d1f",
     "relationType": "satisfies",
     "sourceId": "e6909b1e-ea15-4395-b4e5-0ecdb64eef5b",
@@ -5220,6 +5302,12 @@
     "relationType": "verifies",
     "sourceId": "c21bb240-ba44-4e8c-9e34-28b5722a4b13",
     "targetId": "e994cb73-b961-4a9d-8334-de1cd8a785e4"
+  },
+  {
+    "id": "fe712e01-7028-42cd-ba7c-3ea9c0c41891",
+    "relationType": "verifies",
+    "sourceId": "035f9616-3378-4ba5-8a17-1b184317121f",
+    "targetId": "c2d112a5-91f6-4e51-946c-920566ef771e"
   },
   {
     "id": "feb9cc43-a5f3-4c6c-a762-0b9c20a1952c",

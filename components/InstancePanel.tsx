@@ -32,7 +32,7 @@ export function InstancePanel({ included, rejected, value, focus, onFocus, onClo
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
         <h3 style={{ margin: 0 }}>Instances</h3>
         <span style={{ flex: 1 }} />
-        <button className="btn" onClick={onClose}>✕</button>
+        <button className="btn icon" aria-label="Close" onClick={onClose}>✕</button>
       </div>
       <div className="segmented" style={{ marginBottom: 10 }}>
         <button className={tab === 'accepted' ? 'on' : ''} onClick={() => setTab('accepted')}>Accepted {included.length}</button>

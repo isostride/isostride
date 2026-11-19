@@ -19,7 +19,7 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       await page.emulateMedia({ colorScheme: scheme });
       if (scheme === 'light') await setUpWithBlock(page);
       else await page.reload();
-      for (const screen of ['Runs', 'Blocks', 'Trend', 'A/B comparison', 'Gear and tags']) {
+      for (const screen of ['Runs', 'Blocks', 'Analysis', 'A/B comparison', 'Gear and tags']) {
         await nav(page, screen);
         await page.getByRole('heading', { level: 1, name: screen }).waitFor();
         await page.waitForTimeout(200);
@@ -27,7 +27,7 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       }
       await nav(page, 'Runs');
       await page.locator('tr.row').first().click();
-      await page.getByRole('img', { name: 'Pace /km', exact: true }).waitFor();
+      await page.getByRole('img', { name: 'Pace · min/km', exact: true }).waitFor();
       found.push(...(await serious(page, `Run (${scheme})`)));
     }
     await recordMeasure('a11ySeriousViolations', found.length);

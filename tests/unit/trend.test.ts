@@ -136,3 +136,16 @@ describe('Show trend', () => {
     expect(reasonSummary([{ instance: all[0], reasons: ['pace: 5:40 outside 4:45–5:15', 'grade: 6%'] }, { instance: all[1], reasons: ['pace: 5:30 outside 4:45–5:15'] }])).toEqual(['pace (2)', 'grade (1)']);
   });
 });
+
+describe('Running efficiency metric', () => {
+  it('Instances from an older version have no efficiency', async () => {
+    const { selectInstances, valueOf } = await import('@/lib/compare');
+    // A file written before efficiency existed: the field is missing, not null.
+    const old = inst('2026-08-03', { metrics: { heartRate: 150 } });
+    delete (old.metrics as Partial<typeof old.metrics>).efficiency;
+    expect(valueOf(old, 'efficiency')).toBeNull();
+    const s = selectInstances([old], 'def', 'efficiency');
+    expect(s.included).toEqual([]);
+    expect(s.rejected[0].reasons).toEqual(['efficiency: not recorded']);
+  });
+});

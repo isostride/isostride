@@ -36,14 +36,15 @@ sense --label expected=135 --metric acceptance.promenade.hr_2026_11_14.abs_error
 E=reports/measures-e2e.json
 if [ -f "$E" ]; then
   sensee() { sh radical.sh sense json "$E" --folder .radical/model "$@" >/dev/null; }
-  sensee --label origin=external --metric app.network.requests=/externalRequests
+  # A measure a failed end-to-end test did not record stays unmeasured; the failed test is reported.
+  sensee --label origin=external --metric app.network.requests=/externalRequests 2>/dev/null || true
   sensee --label origin=other-than-map-tiles --label map=on --metric app.network.requests=/mapOnOtherRequests 2>/dev/null || true
   sensee --label impact=serious-or-critical --metric a11y.violations=/a11ySeriousViolations 2>/dev/null || true
   sensee --metric e2e.keyboard_journey.completed=/keyboardJourneyCompleted 2>/dev/null || true
   sensee --metric e2e.lcp.max=/lcpMaxMs@ms --metric e2e.cls.max=/clsMax --metric e2e.tbt.max=/tbtMaxMs@ms --metric e2e.inp.max=/inpMaxMs@ms 2>/dev/null || true
-  sensee --label browser=webkit --metric e2e.unsupported_browser.started=/unsupportedStarted_webkit
-  sensee --metric build.server_routes=/buildServerRoutes --metric build.static_routes_missing=/buildStaticRoutesMissing
-  sensee --label browser=chromium --metric e2e.supported_browser.started=/supportedStartedChromium
+  sensee --label browser=webkit --metric e2e.unsupported_browser.started=/unsupportedStarted_webkit 2>/dev/null || true
+  sensee --metric build.server_routes=/buildServerRoutes --metric build.static_routes_missing=/buildStaticRoutesMissing 2>/dev/null || true
+  sensee --label browser=chromium --metric e2e.supported_browser.started=/supportedStartedChromium 2>/dev/null || true
 fi
 # Test strategy (scripts/test-metrics.mjs, scripts/coverage-new.mjs, scripts/nightly.sh).
 T=reports/measures-tests.json

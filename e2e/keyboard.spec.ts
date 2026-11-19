@@ -41,12 +41,12 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
     await tabTo(page, 'button', 'Accept');
     await page.keyboard.press('Space');
     await expect(page.locator('.block-card:not(.suggested)')).toHaveCount(1, { timeout: 30_000 });
-    // Trend for pace.
-    await tabTo(page, 'link', /Trend$/);
+    // Analysis for pace.
+    await tabTo(page, 'link', /Analysis$/);
     await page.keyboard.press('Enter');
     await tabTo(page, 'button', 'Pace');
     await page.keyboard.press('Enter');
-    await expect(page.getByRole('heading', { level: 1, name: 'Trend' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Analysis' })).toBeVisible();
     // A/B comparison.
     await tabTo(page, 'link', /A\/B comparison$/);
     await page.keyboard.press('Enter');

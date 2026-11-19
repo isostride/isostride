@@ -2,22 +2,14 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useState } from 'react';
-import { InstancePanel, ProfileChart } from '@/components';
+import { InstancePanel, Key, METRIC_VIEW, ProfileChart, ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useWidth } from '@/components';
 import { useOpenFolder } from '@/lib/client';
 import { readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric } from '@/lib/blocks';
-import { MIN_AB_INSTANCES, abCsv, byField, computeAb, firstUsableMetric, meanProfile, type AbResult, instancesCsv, CONTEXT_FIELDS, METRIC_LABEL, valueOf, type ContextField } from '@/lib/compare';
+import { METRIC_UNIT, MIN_AB_INSTANCES, abCsv, byField, computeAb, describeAb, firstUsableMetric, meanProfile, type AbResult, instancesCsv, CONTEXT_FIELDS, valueOf, type ContextField } from '@/lib/compare';
 import { PATHS, readJson } from '@/lib/fs';
 
-const METRICS: { key: BlockMetric; short: string; fmt: (v: number) => string; unit: string; invert?: boolean }[] = [
-  { key: 'groundContactTime', short: 'GCT', fmt: (v) => `${v.toFixed(1)} ms`, unit: 'ms' },
-  { key: 'heartRate', short: 'HR', fmt: (v) => `${v.toFixed(1)} bpm`, unit: 'bpm' },
-  { key: 'speed', short: 'Pace', fmt: (v) => `${Math.floor(v / 60)}:${String(Math.round(v % 60)).padStart(2, '0')}`, unit: 's/km', invert: true },
-  { key: 'cadence', short: 'Cadence', fmt: (v) => `${v.toFixed(1)} spm`, unit: 'spm' },
-  { key: 'verticalOscillation', short: 'VO', fmt: (v) => `${v.toFixed(1)} mm`, unit: 'mm' },
-  { key: 'stepLength', short: 'Step', fmt: (v) => `${v.toFixed(0)} mm`, unit: 'mm' },
-  { key: 'power', short: 'Power', fmt: (v) => `${v.toFixed(0)} W`, unit: 'W' },
-  { key: 'legSpringStiffness', short: 'LSS', fmt: (v) => `${v.toFixed(2)} kN/m`, unit: 'kN/m' },
-];
+/** Ground contact time first: the A/B screen's usual question is a change of shoes or technique. */
+const METRICS = [...METRIC_VIEW].sort((a, b) => (a.key === 'groundContactTime' ? -1 : b.key === 'groundContactTime' ? 1 : 0));
 
 export default function ComparePageWrapper() {
   return <Suspense><ComparePage /></Suspense>;
@@ -93,11 +85,11 @@ function ComparePage() {
         </select>
         <span className="spacer" />
         {result && <button className="btn" onClick={() => { download(`${base}-ab.csv`, abCsv(result, def?.name ?? '')); download(`${base}-ab-instances.csv`, instancesCsv(included)); }}>Export CSV</button>}
-        {result && <button className="btn primary" onClick={() => setPanel(true)}>Instances {included.length} · rejected {result.rejected.length}</button>}
+        {result && <button className="btn" onClick={() => setPanel(true)}>Instances: {included.length} in · {result.rejected.length} left out</button>}
       </div>
 
       <div className="toolbar">
-        <div className="segmented">{METRICS.map((x) => <button key={x.key} className={metric === x.key ? 'on' : ''} onClick={() => setMetric(x.key)}>{x.short}</button>)}</div>
+        <div className="metric-picker" role="group" aria-label="Metric">{METRICS.map((x) => <button key={x.key} className={`pill ${metric === x.key ? 'on' : ''}`} aria-pressed={metric === x.key} title={x.name} onClick={() => setMetric(x.key)}>{x.short}</button>)}</div>
         <div className="segmented">
           <button className={!corrected ? 'on' : ''} onClick={() => setCorrected(false)}>Raw</button>
           <button className={corrected ? 'on' : ''} onClick={() => setCorrected(true)}>Corrected</button>
@@ -122,31 +114,26 @@ function ComparePage() {
       ) : (
         <>
           {result.warnings.map((w) => <div key={w} className="banner warn">⚠ {w}</div>)}
-          <div className="card" style={{ padding: 16, display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) 2fr', gap: 16, alignItems: 'center' }}>
-            <div>
-              <div className="muted small">{METRIC_LABEL[metric]} · {result.b.label} − {result.a.label}{corrected ? ' · corrected for pace' : ''}</div>
-              <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-0.02em' }}>
-                {result.difference === null ? '–' : `${result.difference > 0 ? '+' : ''}${result.difference.toFixed(1)} ${m.unit}`}
+          {(() => {
+            const d = describeAb(result, metric, MIN_AB_INSTANCES);
+            return (
+              <div className="card result">
+                <div className="muted small">{m.name}{corrected ? ' · corrected for pace' : ''} · {result.b.label} against {result.a.label}</div>
+                <div className={`verdict ${d.change ? 'is-change' : ''}`}>{d.headline}</div>
+                <div className="explain">{d.sentence}</div>
+                <DifferencePlot r={result} metric={metric} />
               </div>
-              {result.ci && <div className="small muted">95% interval {result.ci[0].toFixed(1)} … {result.ci[1].toFixed(1)} · noise ±{result.noise!.toFixed(1)}</div>}
-              <div className="small muted">{result.a.label}: {result.a.points.length} · {result.b.label}: {result.b.points.length}</div>
-              {result.verdict ? (
-                <span className={`pill ${result.verdict === 'change' ? 'on' : ''}`} style={{ fontSize: 14 }}>{result.verdict === 'change' ? 'Change' : 'No detectable change'}</span>
-              ) : (
-                <span className="pill">No verdict: needs {MIN_AB_INSTANCES} on each side</span>
-              )}
-            </div>
-            <ForestPlot r={result} />
+            );
+          })()}
+
+          <div className="card chart" style={{ marginTop: 12 }}>
+            <h3 className="chart-title">Timeline <span className="muted">· do the groups take turns? A difference is fair only when they do.</span></h3>
+            <Timeline r={result} format={m.fmt} tick={m.tick} minSpan={m.minSpan} invert={m.invert} onPick={(i) => { setFocus(i); setPanel(true); }} />
           </div>
 
-          <div className="card" style={{ padding: 12, marginTop: 12 }}>
-            <h3 style={{ margin: '0 0 6px', fontSize: 13 }}>Timeline <span className="muted" style={{ fontWeight: 400 }}>· do the groups interleave?</span></h3>
-            <Timeline r={result} format={m.fmt} invert={m.invert} onPick={(i) => { setFocus(i); setPanel(true); }} />
-          </div>
-
-          <div className="card" style={{ padding: 12, marginTop: 12 }}>
-            <h3 style={{ margin: '0 0 6px', fontSize: 13 }}>Per-minute profile inside the block <span className="muted" style={{ fontWeight: 400 }}>· group means</span></h3>
-            <ProfileChart lines={[{ id: 'a', label: result.a.label, values: meanProfile(result.a.points, metric) }, { id: 'b', label: result.b.label, values: meanProfile(result.b.points, metric) }]} format={m.fmt} invert={m.invert} />
+          <div className="card chart" style={{ marginTop: 12 }}>
+            <h3 className="chart-title">Inside the block, minute by minute <span className="muted">· the mean of each group</span></h3>
+            <ProfileChart lines={[{ id: 'a', label: result.a.label, values: meanProfile(result.a.points, metric) }, { id: 'b', label: result.b.label, values: meanProfile(result.b.points, metric) }]} format={m.fmt} tick={m.tick} minSpan={m.minSpan} invert={m.invert} colors={AB} ariaLabel="Per-minute profile of the two groups" />
           </div>
 
           {panel && (
@@ -161,49 +148,96 @@ function ComparePage() {
   );
 }
 
-/** The difference with its interval against zero and the noise band. */
-function ForestPlot({ r }: { r: AbResult }) {
-  if (r.difference === null || !r.ci) return null;
-  const span = Math.max(Math.abs(r.ci[0]), Math.abs(r.ci[1]), r.noise ?? 0, Math.abs(r.difference)) * 1.3 || 1;
-  const W = 600;
-  const x = (v: number) => W / 2 + (v / span) * (W / 2 - 20);
+/** The two groups' colours: A the first series slot, B the second. */
+const AB = ['var(--series-1)', 'var(--series-2)'];
+
+/**
+ * The difference B − A on its own axis, in the metric's unit: zero, the noise band around it,
+ * the 95% interval as a whisker and the difference as a dot; the ends say which way is which.
+ */
+function DifferencePlot({ r, metric }: { r: AbResult; metric: BlockMetric }) {
+  const [box, width] = useWidth();
+  if (r.difference === null) return null;
+  const noise = r.noise ?? 0;
+  const reach = Math.max(Math.abs(r.ci?.[0] ?? 0), Math.abs(r.ci?.[1] ?? 0), noise, Math.abs(r.difference)) * 1.15 || 1;
+  const ticks = niceTicks(-reach, reach, 6);
+  const lo = Math.min(ticks[0], -reach);
+  const hi = Math.max(ticks[ticks.length - 1], reach);
+  const L = 16, R = 16, H = 96, mid = 40;
+  const x = (v: number) => L + ((v - lo) / (hi - lo)) * (width - L - R);
+  const pace = metric === 'speed' || metric === 'effortPace';
+  const unit = METRIC_UNIT[metric];
   return (
-    <svg viewBox={`0 0 ${W} 90`} width="100%" role="img" aria-label="Difference and interval">
-      <rect x={x(-(r.noise ?? 0))} width={x(r.noise ?? 0) - x(-(r.noise ?? 0))} y={20} height={40} fill="var(--accent-soft)" />
-      <text x={x(r.noise ?? 0) + 4} y={30} fontSize="11" fill="var(--muted)">noise</text>
-      <line x1={x(0)} x2={x(0)} y1={12} y2={68} stroke="var(--muted)" strokeDasharray="3 3" />
-      <text x={x(0)} y={84} fontSize="11" textAnchor="middle" fill="var(--muted)">0</text>
-      <line x1={x(r.ci[0])} x2={x(r.ci[1])} y1={40} y2={40} stroke="var(--text)" strokeWidth="3" />
-      <line x1={x(r.ci[0])} x2={x(r.ci[0])} y1={32} y2={48} stroke="var(--text)" strokeWidth="2" />
-      <line x1={x(r.ci[1])} x2={x(r.ci[1])} y1={32} y2={48} stroke="var(--text)" strokeWidth="2" />
-      <circle cx={x(r.difference)} cy={40} r="7" fill="var(--accent)" />
-    </svg>
+    <div ref={box} style={{ marginTop: 10 }}>
+      <svg width={width} height={H} role="img" aria-label="Difference and interval" style={{ display: 'block' }}>
+        {noise > 0 && (
+          <g>
+            <rect x={x(-noise)} width={x(noise) - x(-noise)} y={mid - 18} height={36} fill="var(--surface-2)" />
+            <text x={x(noise) + 6} y={mid - 8} fontSize="11" fill="var(--muted)">noise ±{Math.round(noise * 10) / 10} {unit}</text>
+          </g>
+        )}
+        <line x1={L} x2={width - R} y1={H - 26} y2={H - 26} stroke="var(--axis)" />
+        {ticks.map((t) => (
+          <g key={t}>
+            <line x1={x(t)} x2={x(t)} y1={H - 26} y2={H - 22} stroke="var(--axis)" />
+            <text x={x(t)} y={H - 10} fontSize="11" textAnchor="middle" fill="var(--muted)" className="tnum">{t > 0 ? '+' : ''}{t.toFixed(tickDecimals(ticks))}</text>
+          </g>
+        ))}
+        <line x1={x(0)} x2={x(0)} y1={mid - 24} y2={H - 26} stroke="var(--muted)" />
+        {r.ci && (
+          <g>
+            <line x1={x(r.ci[0])} x2={x(r.ci[1])} y1={mid} y2={mid} stroke="var(--text)" strokeWidth="2" strokeLinecap="round" />
+            <line x1={x(r.ci[0])} x2={x(r.ci[0])} y1={mid - 7} y2={mid + 7} stroke="var(--text)" strokeWidth="2" />
+            <line x1={x(r.ci[1])} x2={x(r.ci[1])} y1={mid - 7} y2={mid + 7} stroke="var(--text)" strokeWidth="2" />
+          </g>
+        )}
+        <circle cx={x(r.difference)} cy={mid} r="6" fill="var(--series-2)" stroke="var(--surface)" strokeWidth="2" />
+      </svg>
+      <div className="axis-ends small muted">
+        <span>← {r.b.label} {pace ? 'faster' : 'lower'}</span>
+        <span>{unit}, {r.b.label} − {r.a.label}{r.ci ? ' · whisker: 95% interval' : ''}</span>
+        <span>{r.b.label} {pace ? 'slower' : 'higher'} →</span>
+      </div>
+    </div>
   );
 }
 
-function Timeline({ r, format, invert, onPick }: { r: AbResult; format: (v: number) => string; invert?: boolean; onPick: (i: BlockInstance) => void }) {
-  const pts = [...r.a.points.map((p) => ({ p, g: 'a' as const })), ...r.b.points.map((p) => ({ p, g: 'b' as const }))];
+function Timeline({ r, format, tick, minSpan, invert, onPick }: { r: AbResult; format: (v: number) => string; tick: (v: number, d?: number) => string; minSpan: number; invert?: boolean; onPick: (i: BlockInstance) => void }) {
+  const [box, width] = useWidth();
+  const pts = [...r.a.points.map((p) => ({ p, g: 0 })), ...r.b.points.map((p) => ({ p, g: 1 }))];
   if (!pts.length) return null;
   const val = (p: (typeof pts)[number]['p']) => (r.corrected ? p.corrected : p.raw);
   const ts = pts.map(({ p }) => Date.parse(p.instance.runStart));
   const vs = pts.map(({ p }) => val(p));
-  const t0 = Math.min(...ts) - 4e8, t1 = Math.max(...ts) + 4e8;
-  const pad = (Math.max(...vs) - Math.min(...vs)) * 0.15 || 1;
-  const lo = Math.min(...vs) - pad, hi = Math.max(...vs) + pad;
-  const W = 900, H = 160;
-  const x = (t: number) => 50 + ((t - t0) / (t1 - t0)) * (W - 62);
-  const y = (v: number) => { const f = (v - lo) / (hi - lo); return 10 + (invert ? f : 1 - f) * (H - 30); };
+  const t0 = Math.min(...ts) - 4 * 86_400_000, t1 = Math.max(...ts) + 4 * 86_400_000;
+  const span = Math.max(...vs) - Math.min(...vs) || Math.abs(vs[0]) * 0.05 || 1;
+  const [lo0, hi0] = ensureSpan(Math.min(...vs) - span * 0.1, Math.max(...vs) + span * 0.1, minSpan);
+  const ticks = niceTicks(lo0, hi0, 3).filter((t) => t >= lo0 && t <= hi0);
+  const lo = Math.min(lo0, ...vs), hi = Math.max(hi0, ...vs);
+  const H = 180, L = 52, R = 16, B = 26, T = 8;
+  const x = (t: number) => L + ((t - t0) / (t1 - t0)) * (width - L - R);
+  const y = (v: number) => { const f = (v - lo) / (hi - lo); return T + (invert ? f : 1 - f) * (H - T - B); };
+  const labels = [r.a.label, r.b.label];
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Timeline of the two groups">
-      <text x={44} y={y(hi - pad) + 4} fontSize="11" textAnchor="end" fill="var(--muted)">{format(hi - pad)}</text>
-      <text x={44} y={y(lo + pad) + 4} fontSize="11" textAnchor="end" fill="var(--muted)">{format(lo + pad)}</text>
-      {pts.map(({ p, g }) => (
-        <circle key={p.instance.id} cx={x(Date.parse(p.instance.runStart))} cy={y(val(p))} r={5} fill={g === 'a' ? 'var(--series-1)' : 'var(--series-3)'} style={{ cursor: 'pointer' }} onClick={() => onPick(p.instance)}>
-          <title>{`${g === 'a' ? r.a.label : r.b.label} · ${p.instance.runStart.slice(0, 10)} · ${format(val(p))}`}</title>
-        </circle>
-      ))}
-      <text x={W - 10} y={H - 4} fontSize="11" textAnchor="end" fill="var(--series-1)">● {r.a.label}</text>
-      <text x={W - 10} y={H - 18} fontSize="11" textAnchor="end" fill="var(--series-3)">● {r.b.label}</text>
-    </svg>
+    <div ref={box}>
+      <div className="chart-legend">{labels.map((l, g) => <Key key={l} kind="dot" color={AB[g]} label={l} />)}</div>
+      <svg width={width} height={H} role="img" aria-label="Timeline of the two groups" style={{ display: 'block' }}>
+        {ticks.map((v) => (
+          <g key={v}>
+            <line x1={L} x2={width - R} y1={y(v)} y2={y(v)} stroke="var(--grid)" />
+            <text x={L - 8} y={y(v) + 4} fontSize="11" textAnchor="end" fill="var(--muted)" className="tnum">{tick(v, tickDecimals(ticks))}</text>
+          </g>
+        ))}
+        <line x1={L} x2={width - R} y1={H - B} y2={H - B} stroke="var(--axis)" />
+        {monthTicks(t0, t1).map((m) => <text key={m} x={x(m)} y={H - 8} fontSize="11" textAnchor="middle" fill="var(--muted)">{monthLabel(m)}</text>)}
+        {pts.map(({ p, g }) => (
+          <g key={p.instance.id} style={{ cursor: 'pointer' }} onClick={() => onPick(p.instance)}>
+            <circle cx={x(Date.parse(p.instance.runStart))} cy={y(val(p))} r={12} fill="transparent" />
+            <circle cx={x(Date.parse(p.instance.runStart))} cy={y(val(p))} r={4.5} fill={AB[g]} stroke="var(--surface)" strokeWidth="2" />
+            <title>{`${labels[g]} · ${new Date(p.instance.runStart).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })} · ${format(val(p))}`}</title>
+          </g>
+        ))}
+      </svg>
+    </div>
   );
 }

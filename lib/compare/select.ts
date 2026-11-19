@@ -11,6 +11,7 @@ export const METRIC_LABEL: Record<BlockMetric, string> = {
   power: 'Power',
   effortPace: 'Effort pace',
   legSpringStiffness: 'Leg spring stiffness',
+  efficiency: 'Efficiency',
 };
 
 
@@ -28,7 +29,8 @@ export type ContextFilter = Partial<Record<ContextField, string | null>>;
 /** The value an instance has for a metric: pace in s/km for speed, else the mean. */
 export function valueOf(i: BlockInstance, metric: BlockMetric): number | null {
   const v = i.metrics[metric];
-  if (v === null) return null;
+  // A metric an older algorithm did not compute (missing from the file) is no value either.
+  if (v === null || v === undefined || !Number.isFinite(v)) return null;
   return metric === 'speed' || metric === 'effortPace' ? (v > 0 ? 1000 / v : null) : v;
 }
 

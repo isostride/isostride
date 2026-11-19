@@ -57,7 +57,7 @@ export default function BlocksPage() {
         {busy && <span className="chip">⟳ {busy}…</span>}
       </div>
 
-      <h3 style={{ margin: '0 0 10px', fontSize: 14 }}>Suggested <span className="muted" style={{ fontWeight: 400 }}>· found in your runs</span></h3>
+      <h3 className="section-title">Suggested <span className="muted">· found in your runs</span></h3>
       {recs.length === 0 ? (
         <div className="card empty" style={{ marginBottom: 20 }}>No suggestions. Import more runs: a route passed 5 times or a lap set up in 3 workouts is proposed here.</div>
       ) : (
@@ -78,7 +78,7 @@ export default function BlocksPage() {
       )}
       {recs.length > 6 && <button className="btn" style={{ marginBottom: 20 }} onClick={() => setShowAll((s) => !s)}>{showAll ? 'Show fewer' : `Show all ${recs.length}`}</button>}
 
-      <h3 style={{ margin: '12px 0 10px', fontSize: 14 }}>My blocks</h3>
+      <h3 className="section-title" style={{ marginTop: 16 }}>My blocks</h3>
       {active.length === 0 ? (
         <div className="card empty">No blocks yet. Accept a suggestion above.</div>
       ) : (
@@ -97,7 +97,7 @@ export default function BlocksPage() {
                 </div>
                 <div className="small"><b>{s?.accepted ?? 0}</b> accepted · <span className="muted">{s?.rejected ?? 0} rejected{s?.last ? ` · last ${date(s.last)}` : ''}</span></div>
                 <div className="actions small">
-                  <Link href={`/trend?def=${d.id}`} onClick={(e) => e.stopPropagation()} className="muted">Trend →</Link>
+                  <Link href={`/analysis?items=b:${d.id}:0`} onClick={(e) => e.stopPropagation()} className="muted">Analysis →</Link>
                   <Link href={`/compare?def=${d.id}`} onClick={(e) => e.stopPropagation()} className="muted">Compare A/B →</Link>
                 </div>
               </div>
@@ -111,6 +111,7 @@ export default function BlocksPage() {
           def={editing}
           onClose={() => setEditing(null)}
           onSave={(d) => { setEditing(null); save(defs.map((x) => (x.id === d.id ? d : x)), `Re-detecting ${d.name}`); }}
+          onDelete={(d) => { setEditing(null); save(defs.filter((x) => x.id !== d.id), `Deleting ${d.name}`); }}
         />
       )}
     </div>
@@ -162,7 +163,7 @@ const FIELDS: { key: Exclude<keyof Tolerances, 'start'>; label: string; unit: st
   { key: 'routeRadius', label: 'Route: within', unit: 'm' },
 ];
 
-function ToleranceSheet({ def, onClose, onSave }: { def: BlockDefinition; onClose: () => void; onSave: (d: BlockDefinition) => void }) {
+function ToleranceSheet({ def, onClose, onSave, onDelete }: { def: BlockDefinition; onClose: () => void; onSave: (d: BlockDefinition) => void; onDelete: (d: BlockDefinition) => void }) {
   const [name, setName] = useState(def.name);
   const [tol, setTol] = useState<Tolerances>(def.tolerances);
   const show = (f: (typeof FIELDS)[number]) => {
@@ -186,7 +187,7 @@ function ToleranceSheet({ def, onClose, onSave }: { def: BlockDefinition; onClos
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
           <h3 style={{ margin: 0 }}>Block definition</h3>
           <span style={{ flex: 1 }} />
-          <button className="btn" onClick={onClose}>✕</button>
+          <button className="btn icon" aria-label="Close" onClick={onClose}>✕</button>
         </div>
         <label className="field"><span>Name</span><input value={name} onChange={(e) => setName(e.target.value)} /></label>
         <p className="muted small">Matching tolerances. Defaults come from the preliminary analysis of 18 Nov 2026; empty means not checked.</p>
@@ -208,6 +209,7 @@ function ToleranceSheet({ def, onClose, onSave }: { def: BlockDefinition; onClos
           </select>
         </label>
         <button className="btn primary" style={{ width: '100%', marginTop: 12 }} onClick={() => onSave({ ...def, name, tolerances: tol })}>Save &amp; re-detect</button>
+        <button className="btn danger" style={{ width: '100%', marginTop: 8 }} onClick={() => confirm(`Delete the block "${def.name}" and its detected instances? If it came from a suggestion, the suggestion returns.`) && onDelete(def)}>Delete block</button>
       </aside>
     </div>
   );

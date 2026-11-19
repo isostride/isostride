@@ -8,14 +8,14 @@ test.describe('Light and dark theme', () => {
   test('Theme follows the system', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await openWithFolder(page, await fitFiles(1));
-    expect(await bg(page)).toBe('rgb(14, 16, 21)');
+    expect(await bg(page)).toBe('rgb(11, 13, 18)');
     await page.getByRole('radio', { name: 'Light' }).click();
-    expect(await bg(page)).toBe('rgb(247, 247, 249)');
+    expect(await bg(page)).toBe('rgb(244, 245, 247)');
     await page.reload();
     await page.getByRole('heading', { name: 'Runs' }).waitFor();
-    expect(await bg(page)).toBe('rgb(247, 247, 249)');
+    expect(await bg(page)).toBe('rgb(244, 245, 247)');
     await page.getByRole('radio', { name: 'System' }).click();
-    expect(await bg(page)).toBe('rgb(14, 16, 21)');
+    expect(await bg(page)).toBe('rgb(11, 13, 18)');
   });
 });
 
@@ -37,11 +37,11 @@ test.describe('Journeys', () => {
     await page.locator('.block-card.suggested', { hasText: /^1\.6 km/ }).getByRole('button', { name: 'Accept' }).click();
     await expect(page.locator('.block-card:not(.suggested)')).toHaveCount(1, { timeout: 30_000 });
 
-    // Trend: the chart and a series card.
-    await nav(page, 'Trend');
+    // Analysis: the block over time, its verdict in words.
+    await nav(page, 'Analysis');
     await page.getByRole('button', { name: 'Pace', exact: true }).click();
-    await expect(page.getByRole('img', { name: 'Trend' })).toBeVisible();
-    await expect(page.getByText(/instances$/).first()).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Over time' })).toBeVisible();
+    await expect(page.getByRole('table', { name: 'Changes' })).toBeVisible();
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export CSV' }).click();
     expect((await download).suggestedFilename()).toMatch(/-instances\.csv$/);
@@ -49,7 +49,7 @@ test.describe('Journeys', () => {
     // A/B: split by watch, a difference with its interval.
     await nav(page, 'A/B comparison');
     await expect(page.getByRole('img', { name: 'Difference and interval' })).toBeVisible();
-    await expect(page.getByText(/95% interval/)).toBeVisible();
+    await expect(page.getByText(/95% interval/).first()).toBeVisible();
 
     const external = [...origins].filter((o) => o !== 'http://localhost:4173');
     await recordMeasure('externalRequests', external.length);

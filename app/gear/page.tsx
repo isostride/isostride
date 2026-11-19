@@ -89,7 +89,7 @@ export default function GearPage() {
                 <label className="muted">to <input type="date" value={g.to ?? ''} onChange={(e) => update(g, { to: e.target.value || null })} /></label>
                 {g.to === null && <span className="chip">in use</span>}
                 <span style={{ flex: 1 }} />
-                <button className="btn" style={{ padding: '2px 8px', fontSize: 12 }} onClick={() => remove(g)}>Remove</button>
+                <button className="btn sm" onClick={() => remove(g)}>Remove</button>
               </div>
             </div>
           </div>

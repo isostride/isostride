@@ -442,6 +442,24 @@
     { "element": "a1fab1e4-7b2d-4e1a-b353-7faa5260a5b8", "name": "Time trial from a standing start", "tests": [
       "tests/unit/logical.test.ts › Standing or flying start › Time trial from a standing start",
       "e2e/block-definition.spec.ts › Block attributes › Effort block shows its attributes"
+    ] },
+    { "element": "510a6296-aa7f-45bf-964f-559be6359a85", "name": "Runs compared by their averages", "tests": [
+      "tests/unit/analysis.test.ts › Analysis workspace › Runs compared by their averages"
+    ] },
+    { "element": "1f3b6c7a-8ea3-441c-ae4d-0d5e0b7582d2", "name": "Blocks and a run compared", "tests": [
+      "tests/unit/analysis.test.ts › Analysis workspace › Blocks and a run compared",
+      "e2e/trend.spec.ts › Analysis workspace › Blocks and a run compared, several metrics"
+    ] },
+    { "element": "3ada0e31-9a55-47b5-bb5c-e160ba2e68ed", "name": "Several metrics analysed together", "tests": [
+      "tests/unit/analysis.test.ts › Analysis of several metrics › Several metrics analysed together",
+      "e2e/trend.spec.ts › Analysis workspace › Blocks and a run compared, several metrics"
+    ] },
+    { "element": "035f9616-3378-4ba5-8a17-1b184317121f", "name": "Efficiency of a steady block", "tests": [
+      "tests/unit/matching.test.ts › Running efficiency metric › Efficiency of a steady block",
+      "tests/unit/trend.test.ts › Running efficiency metric › Instances from an older version have no efficiency"
+    ] },
+    { "element": "9cab11ba-c018-4316-b3e0-70b1eb1fed90", "name": "Delete a block", "tests": [
+      "e2e/block-definition.spec.ts › Accept or reject recommendation › Accept recommendation"
     ] }
   ]
 }

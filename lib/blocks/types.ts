@@ -86,9 +86,18 @@ export interface BlockDefinitionsFile {
   definitions: BlockDefinition[];
 }
 
-export const BLOCK_METRICS = [
+/** The metrics the watch records, averaged from the samples. */
+export const SAMPLE_METRICS = [
   'speed', 'heartRate', 'cadence', 'groundContactTime', 'verticalOscillation', 'stepLength', 'power', 'effortPace', 'legSpringStiffness',
 ] as const;
+
+/** Every metric of a block: the recorded ones, and efficiency, metres per heartbeat (speed × 60 / heart rate). */
+export const BLOCK_METRICS = [...SAMPLE_METRICS, 'efficiency'] as const;
+
+/** Metres per heartbeat: speed in m/s × 60 / heart rate in bpm. */
+export function efficiencyOf(speed: number | null, heartRate: number | null): number | null {
+  return speed !== null && heartRate !== null && speed > 0 && heartRate > 0 ? (speed * 60) / heartRate : null;
+}
 export type BlockMetric = (typeof BLOCK_METRICS)[number];
 
 export interface InstanceContext {

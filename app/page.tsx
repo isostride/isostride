@@ -117,11 +117,11 @@ function RunsPage() {
       {message && <div className="banner">{message}</div>}
 
       {runs.length > 0 && (
-        <div className="stats">
-          <div className="card stat"><div className="v">{runs.length}</div><div className="l">runs</div></div>
-          <div className="card stat"><div className="v">{totalKm.toFixed(0)} km</div><div className="l">total distance</div></div>
-          <div className="card stat"><div className="v">{date(runs[runs.length - 1].startTime)}</div><div className="l">first run</div></div>
-          <div className="card stat"><div className="v">{devices.length}</div><div className="l">{devices.join(', ')}</div></div>
+        <div className="stats card">
+          <div className="stat"><div className="v">{runs.length}</div><div className="l">runs</div></div>
+          <div className="stat"><div className="v">{totalKm.toFixed(0)} km</div><div className="l">total distance</div></div>
+          <div className="stat"><div className="v">{date(runs[runs.length - 1].startTime)}</div><div className="l">first run</div></div>
+          <div className="stat"><div className="v">{devices.length}</div><div className="l">{devices.join(', ')}</div></div>
         </div>
       )}
 
@@ -139,28 +139,28 @@ function RunsPage() {
           <table className="data">
             <thead>
               <tr>
-                <th>Date</th><th>Start</th><th>Distance km</th><th>Time</th><th>Pace /km</th><th>Avg HR</th><th>HR from</th><th>Shoes</th><th>Tags</th><th>Load 7 d</th><th />
+                <th>Date</th><th>Start</th><th className="num">Distance km</th><th className="num">Time</th><th className="num">Pace /km</th><th className="num">Avg HR</th><th>HR from</th><th>Shoes</th><th>Tags</th><th className="num">Load 7 d</th><th />
               </tr>
             </thead>
             <tbody>
               {runs.map((r) => (
                 <Fragment key={r.id}>
                   <tr className="row" onClick={() => router.push(`/run?id=${r.id}`)}>
-                    <td>{date(r.startTime)}</td>
+                    <td className="strong">{date(r.startTime)}</td>
                     <td className="muted">{time(r.startTime)}</td>
-                    <td>{km(r.distance)}</td>
-                    <td>{duration(r.duration)}</td>
-                    <td>{pace(r.avgSpeed)}</td>
-                    <td>{r.avgHeartRate ?? '–'}</td>
+                    <td className="num">{km(r.distance)}</td>
+                    <td className="num">{duration(r.duration)}</td>
+                    <td className="num strong">{pace(r.avgSpeed)}</td>
+                    <td className="num">{r.avgHeartRate ?? '–'}</td>
                     <td><span className="chip">{(r.heartRateSource ?? r.device).replace('COROS ', '')}</span></td>
                     <td>{r.shoes ? <span className="chip" title={r.shoesOverridden ? 'set for this run' : 'by date'}>{r.shoes}{r.shoesOverridden ? ' ✎' : ''}</span> : <span className="muted">–</span>}</td>
                     <td>
                       {[r.workoutType, r.techniqueCue].filter(Boolean).map((t) => <span key={t} className="chip" style={{ marginRight: 4 }}>{t}</span>)}
                       {r.note && <span className="muted" title={r.note}>✉</span>}
                     </td>
-                    <td className="muted">{r.load7 ? `${r.load7} min` : '–'}</td>
+                    <td className="num muted">{r.load7 ? `${r.load7} min` : '–'}</td>
                     <td>
-                      <button className="btn" style={{ padding: '2px 8px', fontSize: 12 }} onClick={(e) => { e.stopPropagation(); setEditing(editing === r.id ? null : r.id); }}>Edit</button>
+                      <button className="btn sm" onClick={(e) => { e.stopPropagation(); setEditing(editing === r.id ? null : r.id); }}>Edit</button>
                     </td>
                   </tr>
                   {editing === r.id && tags && (

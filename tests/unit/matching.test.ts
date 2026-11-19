@@ -97,3 +97,19 @@ describe('Route direction', () => {
     expect(findPasses(ref, south)).toHaveLength(0);
   });
 });
+
+describe('Running efficiency metric', () => {
+  it('Efficiency of a steady block', () => {
+    // 5:00/km at 150 bpm: 1.33 metres per beat; 4:40/km at 150 bpm: 1.43, an improvement.
+    const at = (secPerKm: number, hr: number | null) => {
+      const run = syntheticRun(1500, () => ({ speed: 1000 / secPerKm, heartRate: hr }));
+      return buildInstance(steadyDef({ paceMin: null, paceMax: null }), run, rowFor(run), 720, 1020);
+    };
+    const easy = at(300, 150);
+    expect(easy.metrics.efficiency).toBeCloseTo(1.33, 2);
+    expect(easy.profile.efficiency.every((v) => v !== null && Math.abs(v - 1.333) < 0.01)).toBe(true);
+    expect(at(280, 150).metrics.efficiency).toBeCloseTo(1.43, 2);
+    // A run without heart rate has no efficiency.
+    expect(at(300, null).metrics.efficiency).toBeNull();
+  });
+});

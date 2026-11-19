@@ -11,3 +11,4 @@ test_data/
 .next-build-out/
 test-results/
 playwright-report/
+.shots/

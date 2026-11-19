@@ -13,6 +13,12 @@ test.describe('Accept or reject recommendation', () => {
     const mine = page.locator('.block-card:not(.suggested)', { hasText: name });
     await expect(mine).toHaveCount(1, { timeout: 30_000 });
     await expect(page.locator('.block-card.suggested', { hasText: name })).toHaveCount(0);
+    // Deleted from its sheet: gone from My blocks, suggested again.
+    page.once('dialog', (d) => d.accept());
+    await mine.click();
+    await page.getByRole('button', { name: 'Delete block' }).click();
+    await expect(mine).toHaveCount(0, { timeout: 30_000 });
+    await expect(page.locator('.block-card.suggested', { hasText: name })).toHaveCount(1, { timeout: 30_000 });
   });
 });
 
@@ -22,7 +28,7 @@ test.describe('Definition from selection', () => {
     await importAll(page);
     await page.locator('tr.row').first().click();
     // Drag across the pace chart, a third of the run.
-    const chart = page.getByRole('img', { name: 'Pace /km', exact: true });
+    const chart = page.getByRole('img', { name: 'Pace · min/km', exact: true });
     await chart.waitFor();
     const box = (await chart.boundingBox())!;
     await page.mouse.move(box.x + box.width * 0.4, box.y + box.height / 2);

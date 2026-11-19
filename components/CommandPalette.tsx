@@ -50,12 +50,12 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
       const list: Item[] = [
         { group: 'Screens', label: 'Runs', run: go('/') },
         { group: 'Screens', label: 'Blocks', run: go('/blocks') },
-        { group: 'Screens', label: 'Trend', run: go('/trend') },
+        { group: 'Screens', label: 'Analysis', run: go('/analysis') },
         { group: 'Screens', label: 'A/B comparison', run: go('/compare') },
         { group: 'Screens', label: 'Gear and tags', run: go('/gear') },
       ];
       for (const d of (await readDefinitions(state.folder)).filter((x) => x.status === 'active')) {
-        list.push({ group: 'Blocks', label: `${d.name} · Trend`, run: go(`/trend?def=${d.id}`) });
+        list.push({ group: 'Blocks', label: `${d.name} · Analysis`, run: go(`/analysis?items=b:${d.id}:0`) });
         list.push({ group: 'Blocks', label: `${d.name} · Compare A/B`, run: go(`/compare?def=${d.id}`) });
       }
       const runs = (await readJson<RunsIndex>(state.folder, PATHS.runsIndex))?.runs ?? [];

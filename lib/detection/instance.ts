@@ -1,6 +1,6 @@
 import type { IndexedRun, RunFile, Series } from '@/lib/kernel';
 
-import { BLOCK_METRICS, MIN_SECONDS, STANDING_WINDOW, type BlockDefinition, type BlockInstance, type BlockMetric, type Tolerances } from '@/lib/blocks';
+import { MIN_SECONDS, SAMPLE_METRICS, efficiencyOf, STANDING_WINDOW, type BlockDefinition, type BlockInstance, type BlockMetric, type Tolerances } from '@/lib/blocks';
 
 const STOPPED_SPEED = 0.5;
 /** seconds between two samples above which the watch was paused */
@@ -68,7 +68,7 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
   const metrics = {} as Record<BlockMetric, number | null>;
   const profile = {} as Record<BlockMetric, (number | null)[]>;
   const minutes = Math.max(1, Math.ceil((end - start) / 60));
-  for (const m of BLOCK_METRICS) {
+  for (const m of SAMPLE_METRICS) {
     const series = s[m] as Series;
     metrics[m] = mean(moving.map((i) => series[i]));
     profile[m] = Array.from({ length: minutes }, (_, k) => {
@@ -98,10 +98,16 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
   const begins = startKind(s.t, s.speed, start);
   if (tol.start !== 'any' && begins !== tol.start) reasons.push(`start: ${begins}, the block needs a ${tol.start} start`);
   // Heart rate from the block's own heart rate start, when it has one: the same in every instance.
+  // Efficiency (metres per heartbeat) from the same samples as the heart rate.
+  const hrIdx = tol.hrSkip !== null ? moving.filter((i) => s.t[i] >= start + tol.hrSkip!) : moving;
   if (tol.hrSkip !== null) {
-    const hr = mean(moving.filter((i) => s.t[i] >= start + tol.hrSkip!).map((i) => s.heartRate[i]));
+    const hr = mean(hrIdx.map((i) => s.heartRate[i]));
     metrics.heartRate = hr === null ? null : round(hr, 3);
   }
+  const effSpeed = mean(hrIdx.map((i) => s.speed[i]));
+  const eff = efficiencyOf(effSpeed, metrics.heartRate);
+  metrics.efficiency = eff === null ? null : round(eff, 4);
+  profile.efficiency = profile.speed.map((sp, k) => { const e = efficiencyOf(sp, profile.heartRate[k]); return e === null ? null : round(e, 4); });
   if (tol.paceMin !== null && tol.paceMax !== null && (pace < tol.paceMin || pace > tol.paceMax))
     reasons.push(`pace: ${fmtPace(pace)} outside ${fmtPace(tol.paceMin)}–${fmtPace(tol.paceMax)}`);
   if (grade > tol.gradeMax) reasons.push(`grade: effort pace differs by ${pct(grade)}, limit ${pct(tol.gradeMax)}`);

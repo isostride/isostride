@@ -9,7 +9,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EXPORT = path.join(ROOT, '.next-build');
 /** web-vitals, loaded by the test only (never part of the app, nothing sent over the network). */
 const WEB_VITALS = path.join(ROOT, 'node_modules/web-vitals/dist/web-vitals.iife.js');
-const SCREENS = [['Runs', '/'], ['Blocks', '/blocks'], ['Trend', '/trend'], ['A/B comparison', '/compare'], ['Gear and tags', '/gear']] as const;
+const SCREENS = [['Runs', '/'], ['Blocks', '/blocks'], ['Analysis', '/analysis'], ['A/B comparison', '/compare'], ['Gear and tags', '/gear']] as const;
 const BUDGET = { lcp: 2500, cls: 0.1, tbt: 200, inp: 200, scriptKB: 200 };
 
 async function instrument(page: Page) {
@@ -65,9 +65,9 @@ test.describe('Core Web Vitals met', () => {
       worst.lcp = Math.max(worst.lcp, v.LCP); worst.cls = Math.max(worst.cls, v.CLS); worst.tbt = Math.max(worst.tbt, v.TBT); worst.scriptKB = Math.max(worst.scriptKB, kb);
     }
     // INP in the journeys' interactions: the trend's metric and filter, the A/B split.
-    await page.goto('/trend');
-    await page.getByRole('heading', { level: 1, name: 'Trend' }).waitFor();
-    for (const m of ['Pace', 'HR', 'Cadence', 'Pace']) {
+    await page.goto('/analysis');
+    await page.getByRole('heading', { level: 1, name: 'Analysis' }).waitFor();
+    for (const m of ['Pace', 'Heart rate', 'Cadence', 'Pace']) {
       const b = page.getByRole('button', { name: m, exact: true });
       if (await b.count()) await b.click();
     }
@@ -75,7 +75,7 @@ test.describe('Core Web Vitals met', () => {
     worst.inp = Math.max(worst.inp, (await vitals(page)).INP);
     await page.goto('/compare');
     await page.getByRole('heading', { level: 1, name: 'A/B comparison' }).waitFor();
-    for (const m of ['Pace', 'HR', 'GCT']) await page.getByRole('button', { name: m, exact: true }).click();
+    for (const m of ['Pace', 'Heart rate', 'Ground contact']) await page.getByRole('button', { name: m, exact: true }).click();
     worst.inp = Math.max(worst.inp, (await vitals(page)).INP);
     console.log(rows.join('\n'), `\nINP ${Math.round(worst.inp)} ms`);
 
