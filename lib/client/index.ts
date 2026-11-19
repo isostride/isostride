@@ -2,3 +2,4 @@
 export * from './folderContext';
 export * from './handleStore';
 export * from './worker';
+export * from './settings';

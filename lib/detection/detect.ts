@@ -1,6 +1,7 @@
 import type { TrackPoint } from '@/lib/geo';
 import type { IndexedRun, RunFile } from '@/lib/kernel';
 import { buildInstance } from './instance';
+import { effortIn, followsPattern, mainEffort } from './logical';
 import { findPasses } from './routeMatch';
 import { lapKey, type BlockDefinition, type BlockInstance } from '@/lib/blocks';
 
@@ -20,6 +21,20 @@ export function detectInstances(def: BlockDefinition, run: RunFile, row: Indexed
       const value = p.kind === 'time' ? lap.duration : lap.distance;
       return k && k.kind === p.kind && Math.abs(value - p.target) <= p.target * p.tolerance ? [buildInstance(def, run, row, lap.start, lap.end, { lap: i + 1 })] : [];
     });
+  }
+  if (p.type === 'effort') {
+    // On any route: the run's fastest fragment of this length, when it is an effort.
+    const e = effortIn(run, p.kind, p.target, def.tolerances.start);
+    return e ? [buildInstance(def, run, row, e.from, e.to)] : [];
+  }
+  if (p.type === 'tag') {
+    if (row.workoutType !== p.workoutType) return [];
+    const m = mainEffort(run);
+    return [buildInstance(def, run, row, m.from, m.to, { lap: m.lap })];
+  }
+  if (p.type === 'pattern') {
+    if (!followsPattern(run.laps, p.laps, p.tolerance)) return [];
+    return p.laps.flatMap((lap, i) => (lap.effort ? [buildInstance(def, run, row, run.laps[i].start, run.laps[i].end, { lap: i + 1 })] : []));
   }
   return steadyFragments(def, run).map(([from, to]) => buildInstance(def, run, row, from, to));
 }

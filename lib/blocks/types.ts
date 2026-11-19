@@ -1,6 +1,6 @@
 /** Block definitions and instances (spec sections 2, 3 and 5). */
 
-export type BlockType = 'route' | 'structure' | 'steady';
+export type BlockType = 'route' | 'structure' | 'steady' | 'effort' | 'tag' | 'pattern';
 
 export interface RefPoint {
   lat: number;
@@ -11,7 +11,21 @@ export interface RefPoint {
 export type BlockParams =
   | { type: 'route'; track: RefPoint[]; length: number; heading: number }
   | { type: 'structure'; kind: 'time' | 'distance'; /** s or m */ target: number; /** share, e.g. 0.03 */ tolerance: number }
-  | { type: 'steady'; /** s */ minDuration: number };
+  | { type: 'steady'; /** s */ minDuration: number }
+  /** the fastest fragment of a distance or duration in a run, on any route, when it is an effort */
+  | { type: 'effort'; kind: 'time' | 'distance'; /** s or m */ target: number }
+  /** the main effort of every run tagged with a workout type */
+  | { type: 'tag'; workoutType: string }
+  /** runs whose laps follow one layout; its effort laps are the instances */
+  | { type: 'pattern'; laps: PatternLap[]; tolerance: number };
+
+/** One lap of a lap pattern: set by time or distance, or free (a warm-up to a point, the last lap); effort laps are compared. */
+export interface PatternLap {
+  kind: 'time' | 'distance' | 'free';
+  /** s or m; 0 for a free lap */
+  target: number;
+  effort: boolean;
+}
 
 /** Matching tolerances (spec section 5 defaults; editable per definition). */
 export interface Tolerances {
@@ -27,11 +41,19 @@ export interface Tolerances {
   cvMax: number;
   /** max |speed over the 2 min before / block speed − 1|; null = not checked */
   effortBeforeMax: number | null;
-  /** heart rate: max seconds stopped inside the block (a stop never rejects the block itself) */
-  hrStoppedMax: number;
-  /** heart rate: block start at least this many s into the run */
-  hrStartMin: number;
+  /** heart rate from this many s after the block's start, the same in every instance; null = the whole block */
+  hrSkip: number | null;
+  /** how every instance starts: right after a stop (standing), on the move (flying), or either */
+  start: BlockStart;
 }
+
+export type BlockStart = 'any' | 'standing' | 'flying';
+
+/** A standing start: a stop (or auto-pause, or the run's start) within this many s before the block. */
+export const STANDING_WINDOW = 10;
+
+/** Heart rate starts at this minute of the block by default for effort and workout-type blocks (model's choice). */
+export const LOGICAL_HR_SKIP = 5 * 60;
 
 export const DEFAULT_TOLERANCES: Tolerances = {
   paceMin: null,
@@ -41,15 +63,12 @@ export const DEFAULT_TOLERANCES: Tolerances = {
   routeRadius: 30,
   cvMax: 0.15,
   effortBeforeMax: 0.12,
-  hrStoppedMax: 30,
-  hrStartMin: 8 * 60,
+  hrSkip: null,
+  start: 'any',
 };
 
-/** Heart rate: no stop in this many seconds before the block's end (heart rate drops while standing). */
-export const HR_STOP_TAIL = 120;
-
-/** Minimum block length per metric (spec section 5). */
-export const MIN_SECONDS = { heartRate: 4 * 60, gait: 60 } as const;
+/** Minimum block length: shorter fragments are rejected for every metric (one decision per run). */
+export const MIN_SECONDS = { block: 60 } as const;
 
 export interface BlockDefinition {
   id: string;
@@ -74,7 +93,7 @@ export type BlockMetric = (typeof BLOCK_METRICS)[number];
 
 export interface InstanceContext {
   /** stopped: seconds standing inside the block (slow samples and auto-pause), left out of its metrics */
-  block: { pace: number; grade: number; duration: number; heading: number | null; cv: number; stopped: number };
+  block: { pace: number; grade: number; duration: number; heading: number | null; cv: number; stopped: number; start: 'standing' | 'flying' };
   before: { minuteOfRun: number; kmOfRun: number; effortBefore: number | null; lap: number | null };
   run: { device: string; shoes: string | null; heartRateSource: string; workoutType: string | null; techniqueCue: string | null };
   day: { load3: number; load7: number; temperature: number | null };
@@ -98,10 +117,6 @@ export interface BlockInstance {
   status: 'accepted' | 'rejected';
   /** why it was rejected (every failed condition) */
   reasons: string[];
-  /** heart rate usable: long enough and late enough; else why not */
-  heartRate: { valid: boolean; reason?: string };
-  /** gait metrics usable (≥ 60 s) */
-  gaitValid: boolean;
 }
 
 export interface BlockInstancesFile {

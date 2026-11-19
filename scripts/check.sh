@@ -5,6 +5,8 @@
 # that does not hold, a scenario or fitness function left without a check).
 mkdir -p reports
 rm -rf reports/measures.d reports/measures-e2e.json reports/coverage
+# Unit tests alone, without coverage instrumentation: their times for the 100 ms rule.
+npx vitest run --project unit --reporter=dot --reporter=json --outputFile=reports/vitest-unit.json
 t0=$(date +%s)
 npx vitest run --coverage --reporter=default --reporter=json --outputFile=reports/vitest.json
 t1=$(date +%s)

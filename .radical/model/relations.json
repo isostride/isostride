@@ -104,6 +104,12 @@
     "targetId": "a694fdc9-58ad-462b-a996-c49812b6da79"
   },
   {
+    "id": "06f093c9-6198-4d51-ae38-2f16120e1689",
+    "relationType": "verifies",
+    "sourceId": "c3fc17c7-6d32-4f4f-af0a-99941dace532",
+    "targetId": "949954b9-adb0-4734-b87e-0918c955d4ba"
+  },
+  {
     "id": "07089dd6-35ad-4187-91fd-29bb1f86ad9b",
     "relationType": "illustrates",
     "sourceId": "a58faa23-2592-4664-90ca-6b1c0143af21",
@@ -208,6 +214,13 @@
     "targetId": "1a7ad257-fd5a-4d25-b529-e09dd80998a7"
   },
   {
+    "id": "0aa230aa-7140-4f65-a70c-57efc4813cbe",
+    "quote": "nie ma problemu pod warunkiem ze wszystkie runy w bloku beda mialy tak samo ...... zaznacz to jako atrybut bloku",
+    "relationType": "derives",
+    "sourceId": "a68e5272-8d6d-4b4e-b4c9-69e5daeeedbe",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "0b2317e0-2e9f-4605-990f-fcfca64474d8",
     "relationType": "satisfies",
     "sourceId": "2a60339a-0a2c-4da8-b12e-4227eba8f4d1",
@@ -255,6 +268,13 @@
     "relationType": "verifies",
     "sourceId": "eac14764-4083-489d-82f3-63493d94a4c2",
     "targetId": "063a771e-2d84-49e2-8c92-d15fc52a2bce"
+  },
+  {
+    "id": "0d241330-84b1-45ee-ae95-817c18a3cb69",
+    "quote": "A: Effort from a standing start: Like a time trial or test: the block starts from a stop (standing still or auto-pause just before it), not on the move. A block attribute 'start: standing / flying'; with 'standing', an instance must begin right after a stop, and every instance of the block starts the same way.",
+    "relationType": "derives",
+    "sourceId": "72290154-1cea-4ab3-87ce-510728d1f077",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "0dcbb53b-f004-48dc-bcdb-0d31fcf97707",
@@ -854,6 +874,12 @@
     "relationType": "satisfies",
     "sourceId": "ce42067b-80ea-40e1-a577-39607ab89630",
     "targetId": "e2655705-21da-4c0c-a826-88ae821ed3dd"
+  },
+  {
+    "id": "24da8cd7-79eb-4f25-a084-41e4550992c5",
+    "relationType": "verifies",
+    "sourceId": "475837a5-3b10-4b07-9852-d560980a6540",
+    "targetId": "cda60bc3-ebf8-413e-9971-4ae85d39e42b"
   },
   {
     "id": "24e4bff9-2a31-4856-bc56-091734bc0fdb",
@@ -1536,6 +1562,12 @@
     "targetId": "964eadcd-50c1-40ea-a603-6d00a7f4ce53"
   },
   {
+    "id": "46c7b005-449d-4262-85a4-f68ea2a73c62",
+    "relationType": "verifies",
+    "sourceId": "bcecd863-7234-43e1-b545-4433ea3b684c",
+    "targetId": "c647f82f-e4f1-4c37-b71e-08a72a967714"
+  },
+  {
     "id": "46d0dbeb-ff62-4c1a-862f-0fd9cc695271",
     "quote": "A/B verdict. “Change” when the uncertainty interval of the difference excludes zero and the difference exceeds the noise threshold. Otherwise “no detectable change”.",
     "relationType": "derives",
@@ -1748,6 +1780,12 @@
     "relationType": "derives",
     "sourceId": "36038f78-a505-4196-a7a7-9dbac6a637e8",
     "targetId": "aec32856-5ea5-4f0e-8316-178aff6a9838"
+  },
+  {
+    "id": "53f46d3f-d578-41c6-a7de-d0534361bf55",
+    "relationType": "verifies",
+    "sourceId": "a014a923-cfeb-4a70-b3fc-72cd6469ec68",
+    "targetId": "4707069b-7d1d-4655-ab89-8a63e7841dc6"
   },
   {
     "id": "541d6785-5c5a-49ae-9068-f8c1300a19df",
@@ -2233,6 +2271,12 @@
     "targetId": "c68701bb-cda9-41a6-a434-1fb4199752aa"
   },
   {
+    "id": "7057642f-3c6c-4a47-8181-5e44b38bfb34",
+    "relationType": "verifies",
+    "sourceId": "a1fab1e4-7b2d-4e1a-b353-7faa5260a5b8",
+    "targetId": "72290154-1cea-4ab3-87ce-510728d1f077"
+  },
+  {
     "id": "70e3b88a-a717-4b8a-b4fb-f991c3ca906d",
     "relationType": "emits",
     "sourceId": "f58f1376-76ae-401e-9a0b-97fb2c636e4f",
@@ -2281,6 +2325,13 @@
     "relationType": "traces-to",
     "sourceId": "09cf7a07-fee6-4808-ba18-ca6b6d9d5125",
     "targetId": "9cfc48bd-cdf2-4149-8d34-802f3393de9c"
+  },
+  {
+    "id": "71d51588-65ae-4ae3-af39-8afe7ec7cf04",
+    "quote": "A: COROS test by its structure, By workout type tag, Effort (time trial)",
+    "relationType": "derives",
+    "sourceId": "cda60bc3-ebf8-413e-9971-4ae85d39e42b",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "7206e21f-55ef-4a03-aaa6-0c5d8f7bd538",
@@ -2711,6 +2762,13 @@
     "relationType": "verifies",
     "sourceId": "2bb96b35-76c1-4914-82ab-a4bbc9728fd7",
     "targetId": "d3295c52-b649-4492-aa82-5539aa4a1a1b"
+  },
+  {
+    "id": "85d42451-2847-429b-8288-432928a75dda",
+    "quote": "np. coros testy sa dobrymi kandydatamia",
+    "relationType": "derives",
+    "sourceId": "4707069b-7d1d-4655-ab89-8a63e7841dc6",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "86735ee5-e733-40d2-8b52-1a77bf3bc284",
@@ -3200,6 +3258,13 @@
     "targetId": "b1000ab5-2a4b-4f8a-98d5-7eba138c0bfa"
   },
   {
+    "id": "9e8b5d30-2e14-487e-8679-92faeda6bf4c",
+    "quote": "A: Online tiles (OpenStreetMap): Background from the OSM tile server, switched on by you in settings.",
+    "relationType": "derives",
+    "sourceId": "949954b9-adb0-4734-b87e-0918c955d4ba",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "9e93fe24-1c3c-451f-b00f-b4044733af91",
     "relationType": "satisfies",
     "sourceId": "0e952c97-92a0-4037-846e-9154619a2261",
@@ -3379,6 +3444,13 @@
     "relationType": "verifies",
     "sourceId": "7d17eb04-3492-4f0e-aeeb-19d8c09e5022",
     "targetId": "318c99a5-6ed7-45ae-98f1-d7daa3f364c2"
+  },
+  {
+    "id": "a9c3c244-ec9b-481b-8784-6303b0100e5c",
+    "quote": "every view sends the area of your route to the server: the 'no network' requirement and its fitness function change.",
+    "relationType": "derives",
+    "sourceId": "505e6fba-5b0d-4595-8792-d8e0cf2751c0",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "aa64129c-dbb2-4d20-920a-566b33cda5f1",
@@ -3851,6 +3923,12 @@
     "targetId": "a818e503-7a21-40b5-b96e-8b4b23a95c79"
   },
   {
+    "id": "c10414df-49df-434f-8c8f-310e7603019c",
+    "relationType": "verifies",
+    "sourceId": "c3fc17c7-6d32-4f4f-af0a-99941dace532",
+    "targetId": "505e6fba-5b0d-4595-8792-d8e0cf2751c0"
+  },
+  {
     "id": "c14db304-c351-4fc4-89a3-ca50db863c6a",
     "quote": "F7. Three types of block definition: route segment (GPS), workout structure element (a lap of a given duration or distance), steady fragment within a given pace range.",
     "relationType": "derives",
@@ -4274,6 +4352,12 @@
     "targetId": "d3a03d2c-8b8d-41a1-9028-ce00ca6f8177"
   },
   {
+    "id": "d4a5bf16-105a-438f-a688-15622d980ffa",
+    "relationType": "verifies",
+    "sourceId": "3cd8560b-fa73-4d5d-8ff2-70be65c42c06",
+    "targetId": "a68e5272-8d6d-4b4e-b4c9-69e5daeeedbe"
+  },
+  {
     "event": "494a6225-a5ae-4d1a-bdc8-399d32fed054",
     "id": "d4e5eb04-642f-4f6a-8c38-a4f00b9656f6",
     "relationType": "transition",
@@ -4497,6 +4581,13 @@
     "relationType": "realises",
     "sourceId": "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7",
     "targetId": "28133512-0955-4030-aed2-ebbae2df888f"
+  },
+  {
+    "id": "e1a543cb-e36f-47fc-86e4-4ca4366a5f42",
+    "quote": "bloki powinny byc znajdywane po trasie ale tez powinny byc bloki logiczne ... np. 2 rozne trasy ale czasowka",
+    "relationType": "derives",
+    "sourceId": "c647f82f-e4f1-4c37-b71e-08a72a967714",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "e1db0039-ebd8-4c54-8dd1-a8c72b16dc8d",

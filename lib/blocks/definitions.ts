@@ -1,6 +1,7 @@
 import { meanHeading, resample } from '@/lib/geo';
 import type { RunFile } from '@/lib/kernel';
-import { DEFAULT_TOLERANCES, type BlockType, type BlockDefinition, type BlockDefinitionsFile, type Recommendation, type Tolerances } from './types';
+import { DEFAULT_TOLERANCES, LOGICAL_HR_SKIP, type BlockType, type BlockDefinition, type BlockDefinitionsFile, type Recommendation, type Tolerances } from './types';
+import { effortName, patternName, patternOf } from './logical';
 import { lapKey, structureName } from './structure';
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
 
@@ -8,11 +9,16 @@ import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
 /** The definitions, with a default for each tolerance an older file lacks (and none it no longer has). */
 export async function readDefinitions(folder: DataFolder): Promise<BlockDefinition[]> {
   const defs = (await readJson<BlockDefinitionsFile>(folder, PATHS.blockDefinitions))?.definitions ?? [];
-  return defs.map((d) => ({ ...d, tolerances: withDefaults(d.tolerances) }));
+  return defs.map((d) => ({ ...d, tolerances: withDefaults(d.tolerances, d.params.type) }));
 }
 
-function withDefaults(t: Partial<Tolerances>): Tolerances {
-  const out = { ...DEFAULT_TOLERANCES } as Tolerances;
+/** Tolerances for a block of a type: effort and workout-type blocks measure heart rate from minute 5 of the block. */
+export function defaultTolerances(type: BlockType): Tolerances {
+  return { ...DEFAULT_TOLERANCES, hrSkip: type === 'effort' || type === 'tag' ? LOGICAL_HR_SKIP : null };
+}
+
+function withDefaults(t: Partial<Tolerances>, type: BlockType): Tolerances {
+  const out = defaultTolerances(type);
   for (const k of Object.keys(DEFAULT_TOLERANCES) as (keyof Tolerances)[]) if (k in t) (out as unknown as Record<string, unknown>)[k] = t[k];
   return out;
 }
@@ -50,7 +56,42 @@ export function selectionOptions(run: RunFile, from: number, to: number): BlockT
   if (gps > 30) out.push('route');
   if (lapFor(run, from, to) !== null) out.push('structure');
   out.push('steady');
+  // An effort of the selection's length (rounded to 0.5 km), at least 1 km.
+  if (selectionDistance(run, from, to) >= 1000) out.push('effort');
   return out;
+}
+
+function selectionDistance(run: RunFile, from: number, to: number): number {
+  const s = run.samples;
+  let first: number | null = null;
+  let last = 0;
+  for (let i = 0; i < s.t.length; i++) {
+    if (s.t[i] < from || s.t[i] >= to || s.distance[i] === null) continue;
+    if (first === null) first = s.distance[i]!;
+    last = s.distance[i]!;
+  }
+  return first === null ? 0 : last - first;
+}
+
+/**
+ * A lap-pattern block made from one run's laps (a COROS test, a planned workout): runs with
+ * the same layout on any route are its instances, their faster-than-average set laps compared.
+ */
+export function definitionFromLaps(run: RunFile, now = new Date()): BlockDefinition {
+  const laps = patternOf(run.laps, run.distance > 0 ? run.duration / run.distance : 0);
+  if (laps.filter((l) => l.kind !== 'free').length < 2 || !laps.some((l) => l.effort)) throw new Error('the run has fewer than 2 set laps or no effort lap');
+  return {
+    id: newDefinitionId(), origin: 'manual', status: 'active', createdAt: now.toISOString(),
+    name: patternName(laps),
+    params: { type: 'pattern', laps, tolerance: 0.03 },
+    tolerances: { ...DEFAULT_TOLERANCES, effortBeforeMax: null },
+  };
+}
+
+/** True when a run's laps can make a lap-pattern block. */
+export function canDefineFromLaps(run: RunFile): boolean {
+  const laps = patternOf(run.laps, run.distance > 0 ? run.duration / run.distance : 0);
+  return laps.filter((l) => l.kind !== 'free').length >= 2 && laps.some((l) => l.effort);
 }
 
 /** The lap a fragment covers: one lap overlapping at least 80 % of the fragment and of itself. */
@@ -104,6 +145,15 @@ export function definitionFromSelection(run: RunFile, from: number, to: number, 
       name: structureName(key.kind, key.target),
       params: { type: 'structure', kind: key.kind, target: key.target, tolerance: 0.03 },
       tolerances: { ...DEFAULT_TOLERANCES, effortBeforeMax: null },
+    };
+  }
+  if (type === 'effort') {
+    const target = Math.max(1000, Math.round(selectionDistance(run, from, to) / 500) * 500);
+    return {
+      ...base,
+      name: effortName('distance', target),
+      params: { type: 'effort', kind: 'distance', target },
+      tolerances: { ...defaultTolerances('effort'), effortBeforeMax: null },
     };
   }
   const minDuration = Math.max(60, Math.floor((to - from) / 60) * 60);

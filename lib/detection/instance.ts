@@ -1,6 +1,6 @@
 import type { IndexedRun, RunFile, Series } from '@/lib/kernel';
 
-import { BLOCK_METRICS, HR_STOP_TAIL, MIN_SECONDS, type BlockDefinition, type BlockInstance, type BlockMetric, type Tolerances } from '@/lib/blocks';
+import { BLOCK_METRICS, MIN_SECONDS, STANDING_WINDOW, type BlockDefinition, type BlockInstance, type BlockMetric, type Tolerances } from '@/lib/blocks';
 
 const STOPPED_SPEED = 0.5;
 /** seconds between two samples above which the watch was paused */
@@ -14,6 +14,28 @@ const STOP_MARGIN = 10;
  * indices that are moving, away from any stop by STOP_MARGIN, the seconds stopped (slow samples
  * plus the gaps of auto-pause), and the time of the last stop.
  */
+/** The times a run is stopped: samples below walking speed, and the first sample after an auto-pause gap. */
+export function stopTimes(t: number[], speed: Series): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < t.length; i++) {
+    const v = speed[i];
+    if ((v !== null && v < STOPPED_SPEED) || (i > 0 && t[i] - t[i - 1] > MAX_SAMPLE_GAP)) out.push(t[i]);
+  }
+  return out;
+}
+
+/**
+ * How a fragment starting at `start` s begins: standing when the run starts there or a stop
+ * falls within STANDING_WINDOW s before it (up to 2 s after, for the sample that resumes).
+ */
+export function startKind(t: number[], speed: Series, start: number, stops = stopTimes(t, speed)): 'standing' | 'flying' {
+  if (start <= (t[0] ?? 0) + STANDING_WINDOW) return 'standing';
+  let lo = 0;
+  let hi = stops.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (stops[mid] < start - STANDING_WINDOW) lo = mid + 1; else hi = mid; }
+  return lo < stops.length && stops[lo] <= start + 2 ? 'standing' : 'flying';
+}
+
 export function movingPart(t: number[], speed: Series, idx: number[]): { moving: number[]; stopped: number; lastStop: number | null } {
   const stops: [number, number][] = [];
   let stopped = 0;
@@ -42,7 +64,7 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
   for (let i = 0; i < s.t.length; i++) if (s.t[i] >= start && s.t[i] < end) idx.push(i);
 
   // Metrics and conditions from the moving part; time stopped is recorded, not rejected.
-  const { moving, stopped, lastStop } = movingPart(s.t, s.speed, idx);
+  const { moving, stopped } = movingPart(s.t, s.speed, idx);
   const metrics = {} as Record<BlockMetric, number | null>;
   const profile = {} as Record<BlockMetric, (number | null)[]>;
   const minutes = Math.max(1, Math.ceil((end - start) / 60));
@@ -73,25 +95,24 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
 
   const tol: Tolerances = def.tolerances;
   const reasons: string[] = [];
+  const begins = startKind(s.t, s.speed, start);
+  if (tol.start !== 'any' && begins !== tol.start) reasons.push(`start: ${begins}, the block needs a ${tol.start} start`);
+  // Heart rate from the block's own heart rate start, when it has one: the same in every instance.
+  if (tol.hrSkip !== null) {
+    const hr = mean(moving.filter((i) => s.t[i] >= start + tol.hrSkip!).map((i) => s.heartRate[i]));
+    metrics.heartRate = hr === null ? null : round(hr, 3);
+  }
   if (tol.paceMin !== null && tol.paceMax !== null && (pace < tol.paceMin || pace > tol.paceMax))
     reasons.push(`pace: ${fmtPace(pace)} outside ${fmtPace(tol.paceMin)}–${fmtPace(tol.paceMax)}`);
   if (grade > tol.gradeMax) reasons.push(`grade: effort pace differs by ${pct(grade)}, limit ${pct(tol.gradeMax)}`);
   if (cv >= tol.cvMax) reasons.push(`pace steadiness: CV ${cv.toFixed(2)}, limit ${tol.cvMax}`);
+  // One decision per run (the author's decision of 19 Nov 2026): no metric is left out of an
+  // instance on its own; a fragment too short for any meaningful mean is rejected as a whole.
+  if (duration < MIN_SECONDS.block) reasons.push(`block ${Math.round(duration)} s, minimum ${MIN_SECONDS.block} s`);
   if (tol.effortBeforeMax !== null) {
     if (effortBefore === null) reasons.push('effort before the block: less than 1 min of data');
     else if (Math.abs(effortBefore) > tol.effortBeforeMax) reasons.push(`effort before the block: ${pct(Math.abs(effortBefore))}, limit ${pct(tol.effortBeforeMax)}`);
   }
-
-  const heartRate =
-    duration < MIN_SECONDS.heartRate
-      ? { valid: false, reason: `block ${Math.round(duration / 60 * 10) / 10} min, minimum 4 min` }
-      : start < tol.hrStartMin
-        ? { valid: false, reason: `block start ${Math.floor(start / 60)} min, minimum ${tol.hrStartMin / 60} min` }
-        : stopped > tol.hrStoppedMax
-          ? { valid: false, reason: `stopped ${stopped} s in the block, limit ${tol.hrStoppedMax} s` }
-          : lastStop !== null && lastStop > end - HR_STOP_TAIL
-            ? { valid: false, reason: `stopped in the last ${HR_STOP_TAIL / 60} min of the block` }
-            : { valid: true };
 
   // Lap number (1-based): given for structure blocks, else the lap the block starts in.
   const lapNumber = extra.lap ?? run.laps.findIndex((l) => start >= l.start && start < l.end) + 1;
@@ -107,15 +128,13 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
     metrics,
     profile,
     context: {
-      block: { pace: Math.round(pace), grade: round(grade, 3), duration: Math.round(duration), heading: extra.heading ?? null, cv: round(cv, 3), stopped },
+      block: { pace: Math.round(pace), grade: round(grade, 3), duration: Math.round(duration), heading: extra.heading ?? null, cv: round(cv, 3), stopped, start: begins },
       before: { minuteOfRun: Math.floor(start / 60), kmOfRun: round(dist0 / 1000, 2), effortBefore: effortBefore === null ? null : round(effortBefore, 3), lap: lapNumber > 0 ? lapNumber : null },
       run: { device: run.device, shoes: row.shoes ?? null, heartRateSource: row.heartRateSource ?? `wrist (${run.device})`, workoutType: row.workoutType ?? null, techniqueCue: row.techniqueCue ?? null },
       day: { load3: row.load3 ?? 0, load7: row.load7 ?? 0, temperature: run.temperature },
     },
     status: reasons.length ? 'rejected' : 'accepted',
     reasons,
-    heartRate,
-    gaitValid: duration >= MIN_SECONDS.gait,
   };
 }
 

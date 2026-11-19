@@ -13,7 +13,6 @@ export const METRIC_LABEL: Record<BlockMetric, string> = {
   legSpringStiffness: 'Leg spring stiffness',
 };
 
-const GAIT: BlockMetric[] = ['cadence', 'groundContactTime', 'verticalOscillation', 'stepLength', 'legSpringStiffness'];
 
 /** Context fields a trend can be filtered by and an A/B comparison split by. */
 export const CONTEXT_FIELDS = {
@@ -59,8 +58,6 @@ export function selectInstances(all: BlockInstance[], definitionId: string, metr
   const mine = all.filter((i) => i.definitionId === definitionId).sort((a, b) => a.runStart.localeCompare(b.runStart) || a.start - b.start);
   for (const i of mine) {
     const reasons = [...i.reasons];
-    if (metric === 'heartRate' && !i.heartRate.valid) reasons.push(`heart rate: ${i.heartRate.reason}`);
-    if (GAIT.includes(metric) && !i.gaitValid) reasons.push(`${METRIC_LABEL[metric].toLowerCase()}: block shorter than 60 s`);
     if (valueOf(i, metric) === null) reasons.push(`${METRIC_LABEL[metric].toLowerCase()}: not recorded`);
     for (const [field, want] of Object.entries(filter) as [ContextField, string | null | undefined][]) {
       if (want === undefined) continue;

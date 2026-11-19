@@ -9,6 +9,8 @@ const read = (f) => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) :
 const vitest = read('reports/vitest.json');
 const pw = read('reports/playwright.json');
 const timing = read('reports/timing.json') ?? {};
+// Unit times come from the unit-only run (no coverage, no integration tests beside them).
+const unitRun = read('reports/vitest-unit.json');
 if (!vitest) throw new Error('reports/vitest.json missing: run npm run test:report');
 
 const tests = vitest.testResults.flatMap((f) =>
@@ -26,7 +28,7 @@ const m = {
   testsE2e: e2eCount,
   unitSharePercent: pct(unit.length),
   e2eSharePercent: pct(e2eCount),
-  unitOver100ms: unit.filter((t) => (t.duration ?? 0) > 100).length,
+  unitOver100ms: (unitRun ? unitRun.testResults.flatMap((f) => f.assertionResults) : unit).filter((t) => (t.duration ?? 0) > 100).length,
   unitNetworkCalls: unit.filter((t) => (t.failureMessages ?? []).some((x) => x.includes('unit tests touch no network'))).length,
   vitestFailed: tests.filter((t) => t.status === 'failed').length,
   vitestSkipped: tests.filter((t) => t.status === 'skipped' || t.status === 'pending' || t.status === 'todo').length,

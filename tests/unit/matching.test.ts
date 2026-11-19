@@ -14,7 +14,7 @@ describe('Strict condition matching', () => {
     expect(inst.status).toBe('accepted');
     expect(inst.reasons).toEqual([]);
     expect(inst.context.block.cv).toBeLessThan(0.15);
-    expect(inst.heartRate.valid).toBe(true);
+    expect(inst.metrics.heartRate).toBe(150);
   });
 
   it('Hilly fragment rejected', () => {
@@ -30,20 +30,16 @@ describe('Strict condition matching', () => {
     const keep = paused.samples.t.map((t) => t < 850 || t >= 890);
     for (const k of Object.keys(paused.samples) as (keyof typeof paused.samples)[]) (paused.samples as any)[k] = (paused.samples[k] as unknown[]).filter((_, i) => keep[i]);
     const inst = buildInstance(steadyDef(), paused, rowFor(paused), 720, 1020);
-    // Accepted, pace 5:00/km from the moving samples; heart rate not used.
+    // Accepted, pace 5:00/km and heart rate from the moving samples; the stop of 40 s recorded.
     expect(inst.status).toBe('accepted');
     expect(inst.context.block.pace).toBe(300);
+    expect(inst.metrics.heartRate).toBe(150);
     expect(inst.context.block.stopped).toBe(40);
-    expect(inst.heartRate).toEqual({ valid: false, reason: 'stopped 40 s in the block, limit 30 s' });
 
-    // A 20 s stop in its first minutes keeps its heart rate.
-    const early = syntheticRun(1500, (t) => ({ speed: t >= 740 && t < 760 ? 0 : PACE_5_00, heartRate: 150 }));
-    const e = buildInstance(steadyDef(), early, rowFor(early), 720, 1020);
-    expect(e.status).toBe('accepted');
-    expect(e.heartRate.valid).toBe(true);
-    // A 5 s stop in its last 2 minutes does not.
+    // A block with a stop in its last 2 minutes is accepted the same way, every metric included.
     const late = syntheticRun(1500, (t) => ({ speed: t >= 960 && t < 965 ? 0 : PACE_5_00, heartRate: 150 }));
-    expect(buildInstance(steadyDef(), late, rowFor(late), 720, 1020).heartRate).toEqual({ valid: false, reason: 'stopped in the last 2 min of the block' });
+    const l = buildInstance(steadyDef(), late, rowFor(late), 720, 1020);
+    expect([l.status, l.metrics.heartRate]).toEqual(['accepted', 150]);
   });
 
   it('Effort before differs', () => {
@@ -63,28 +59,31 @@ describe('Reject with reason', () => {
     expect(inst.reasons.join()).toMatch(/^pace steadiness: CV 0\.2\d, limit 0\.15$/);
   });
 
-  it('Early pass rejected for HR', () => {
-    const run = syntheticRun(1500, () => ({ speed: PACE_5_00, heartRate: 140 }));
+  it('Early pass keeps its heart rate', () => {
+    // A pass 6 minutes into the run: accepted for every metric, heart rate over the whole pass.
+    const run = syntheticRun(1500, (t) => ({ speed: PACE_5_00, heartRate: t < 510 ? 130 : 150, groundContactTime: 240 }));
     const inst = buildInstance(steadyDef({ effortBeforeMax: null }), run, rowFor(run), 360, 660);
-    expect(inst.heartRate).toEqual({ valid: false, reason: 'block start 6 min, minimum 8 min' });
-    // The block still counts for the gait metrics.
-    expect(inst.gaitValid).toBe(true);
+    expect(inst.status).toBe('accepted');
+    expect(inst.metrics.heartRate).toBe(140);
+    expect(inst.metrics.groundContactTime).toBe(240);
   });
 });
 
-describe('Minimum length per metric', () => {
-  it('Short block, no HR result', () => {
-    const run = syntheticRun(1500, () => ({ speed: PACE_5_00, heartRate: 140, groundContactTime: 240 }));
+describe('Minimum block length', () => {
+  it('Short block has every result', () => {
+    // 3 minutes: heart rate, ground contact time, cadence, vertical oscillation and step length.
+    const run = syntheticRun(1500, () => ({ speed: PACE_5_00, heartRate: 140, groundContactTime: 240, cadence: 172, verticalOscillation: 80, stepLength: 1160 }));
     const inst = buildInstance(steadyDef(), run, rowFor(run), 720, 900);
-    expect(inst.gaitValid).toBe(true);
-    expect(inst.heartRate).toEqual({ valid: false, reason: 'block 3 min, minimum 4 min' });
+    expect(inst.status).toBe('accepted');
+    expect([inst.metrics.heartRate, inst.metrics.groundContactTime, inst.metrics.cadence, inst.metrics.verticalOscillation, inst.metrics.stepLength]).toEqual([140, 240, 172, 80, 1160]);
   });
 
   it('Very short block, no result', () => {
+    // 45 s: rejected for every metric.
     const run = syntheticRun(1500, () => ({ speed: PACE_5_00 }));
     const inst = buildInstance(steadyDef(), run, rowFor(run), 720, 765);
-    expect(inst.gaitValid).toBe(false);
-    expect(inst.heartRate.valid).toBe(false);
+    expect(inst.status).toBe('rejected');
+    expect(inst.reasons).toContain('block 45 s, minimum 60 s');
   });
 });
 

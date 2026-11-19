@@ -314,3 +314,19 @@ A: FF "Detects real change" becomes automated: on the author's runs, with every 
 Q: (użytkownik) widze ... problem ... prism sugeruje bloki a pozniej jak przechodze do trend to czasami wszystkie biegi sa rejected
 Q: On city routes you stop at the lights: on the 1.2 km SW segment 67 of 78 passes have 12–152 s of standing, so the current 'stopped ≤ 10 s' rule rejects them. How should a block with a stop be handled?
 A: Measure on the moving part (Recommended): A stop does not reject the pass: pace and gait (cadence, GCT, VO…) are computed only from moving samples. HR is rejected only when the stop is long (>30 s) or happens in the last minutes of the block, because HR drops while standing. The rejection list shows how long the stop was.
+Q: (użytkownik) ok po zakonczeniu 2 rzeczy 1. bloki powinny byc znajdywane po trasie ale tez powinny byc bloki logiczne ... np. 2 rozne trasy ale czasowka ... np. coros testy sa dobrymi kandydatamia 2. chce miec podglad z map
+Q: Logical blocks (independent of route): COROS FIT exports carry no workout name or plan steps, so a test or time trial has to be recognised from the run itself. Which kinds should I add? (Lap-based 'structure' blocks, e.g. '25-minute lap', already work on any route.)
+A: COROS test by its structure, By workout type tag, Effort (time trial)
+Q: Map preview: today the map draws only the route line, with no background, because the app sends nothing over the network (requirement 'Data stays local', ADR 'Charts and map library'). Map tiles from a server reveal where you run. How do you want it?
+A: Online tiles (OpenStreetMap): Background from the OSM tile server, switched on by you in settings. Simple and detailed, but every view sends the area of your route to the server: the 'no network' requirement and its fitness function change.
+Q: (użytkownik) mam blok 30 min effort i tam nie mam tetna ... dlaczego ?
+Q: Your 30-minute efforts start at minute 3–7 of the run, so the spec's rule 'heart rate only for a block starting at least 8 minutes into the run' drops HR for the whole block. How should heart rate be handled for a block that starts before minute 8?
+A: nie ma problemu pod warunkiem ze wszystkie runy w bloku beda mialy tak samo ...... zaznacz to jako atrybut bloku
+Q: (użytkownik) chce tez miec blokki ktore zaczynaja sie od startu zatrzymanego .....
+Q: "Bloki, które zaczynają się od startu zatrzymanego": which do you mean?
+A: Effort from a standing start: Like a time trial or test: the block starts from a stop (standing still or auto-pause just before it), not on the move. A block attribute 'start: standing / flying'; with 'standing', an instance must begin right after a stop, and every instance of the block starts the same way.
+Q: The heart-rate attribute I was adding (HR from minute X of the block, the same for all its instances; 5 min by default for effort and workout-type blocks): should I carry on with it as well?
+A: Yes, carry on
+Q: (użytkownik) ok ... inny problem .... hr zostalo wykluiczone ale inne metryki sa ...w tym bloku ... jak to mozewe ? kryteria powinny wygladac bieg albo nie wykluczqac
+Q: Today an instance can be accepted for pace/gait but left out for heart rate (block shorter than 4 min, starts before minute 8, a stop over 30 s or in the last 2 min). You want one decision per run: in the block or not. How?
+A: Never exclude for HR: Acceptance depends only on the general conditions (pace, grade, steadiness, effort before, start); HR is always computed for accepted runs from the block's HR window, even after a stop or early in the run.

@@ -178,13 +178,13 @@
       "tests/unit/matching.test.ts › Reject with reason › Unsteady pass rejected"
     ] },
     { "element": "49ca3dc4-6bd9-4cc2-9e66-d0167cd137c8", "name": "Early pass rejected for HR", "tests": [
-      "tests/unit/matching.test.ts › Reject with reason › Early pass rejected for HR"
+      "tests/unit/matching.test.ts › Reject with reason › Early pass keeps its heart rate"
     ] },
     { "element": "e1dd5d44-08ba-4641-b568-dc638874fbca", "name": "Short block, no HR result", "tests": [
-      "tests/unit/matching.test.ts › Minimum length per metric › Short block, no HR result"
+      "tests/unit/matching.test.ts › Minimum block length › Short block has every result"
     ] },
     { "element": "bce684cd-a33b-41b5-afe7-ab471102446f", "name": "Very short block, no result", "tests": [
-      "tests/unit/matching.test.ts › Minimum length per metric › Very short block, no result"
+      "tests/unit/matching.test.ts › Minimum block length › Very short block, no result"
     ] },
     { "element": "03271319-70c9-4537-8fa4-5f936cae0979", "name": "Southbound pass rejected", "tests": [
       "tests/unit/matching.test.ts › Route direction › Southbound pass rejected"
@@ -276,7 +276,8 @@
       "e2e/journeys.spec.ts › Journeys › Import, recompute, block definition, trend, export and A/B without the network"
     ] },
     { "element": "d7d1886c-0eda-4086-931c-fe3a0b2be1d9", "name": "No data leaves computer", "tests": [
-      "e2e/journeys.spec.ts › Journeys › Import, recompute, block definition, trend, export and A/B without the network"
+      "e2e/journeys.spec.ts › Journeys › Import, recompute, block definition, trend, export and A/B without the network",
+      "e2e/map.spec.ts › Map background › Map tiles only when switched on"
     ] },
     { "element": "6f9ae10d-bb61-43c7-b0d8-c0b4996e419f", "name": "Unsupported browser stopped", "tests": [
       "e2e/unsupported.spec.ts › Unsupported browser message › Firefox gets message",
@@ -421,6 +422,26 @@
     ] },
     { "element": "02308173-57c8-4489-9256-edd79dd7f2cb", "name": "Trend opens on a metric with a result", "tests": [
       "tests/unit/trend.test.ts › Show trend › Trend opens on a metric with a result"
+    ] },
+    { "element": "bcecd863-7234-43e1-b545-4433ea3b684c", "name": "Time trial on two routes", "tests": [
+      "tests/unit/logical.test.ts › Effort blocks on any route › Time trial on two routes"
+    ] },
+    { "element": "475837a5-3b10-4b07-9852-d560980a6540", "name": "Tagged test runs compared", "tests": [
+      "tests/unit/logical.test.ts › Blocks by workout type › Tagged test runs compared"
+    ] },
+    { "element": "a014a923-cfeb-4a70-b3fc-72cd6469ec68", "name": "Same workout found by its laps", "tests": [
+      "tests/unit/logical.test.ts › Blocks by lap pattern › Same workout found by its laps"
+    ] },
+    { "element": "c3fc17c7-6d32-4f4f-af0a-99941dace532", "name": "Map tiles only when switched on", "tests": [
+      "e2e/map.spec.ts › Map background › Map tiles only when switched on"
+    ] },
+    { "element": "3cd8560b-fa73-4d5d-8ff2-70be65c42c06", "name": "Heart rate from the same minute of every effort", "tests": [
+      "tests/unit/logical.test.ts › Heart rate window per block › Heart rate from the same minute of every effort",
+      "e2e/block-definition.spec.ts › Block attributes › Effort block shows its attributes"
+    ] },
+    { "element": "a1fab1e4-7b2d-4e1a-b353-7faa5260a5b8", "name": "Time trial from a standing start", "tests": [
+      "tests/unit/logical.test.ts › Standing or flying start › Time trial from a standing start",
+      "e2e/block-definition.spec.ts › Block attributes › Effort block shows its attributes"
     ] }
   ]
 }

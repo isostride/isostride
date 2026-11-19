@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { useFolder } from '@/lib/client';
+import { useFolder, useMapTiles } from '@/lib/client';
 import { Welcome } from './Welcome';
 import { CommandPalette } from './CommandPalette';
 
@@ -23,6 +23,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [theme, setTheme] = useState<Theme>('system');
+  const [mapTiles, setMapTiles] = useMapTiles();
 
   useEffect(() => {
     const saved = (localStorage.getItem('theme') as Theme | null) ?? 'system';
@@ -61,6 +62,12 @@ export function Shell({ children }: { children: ReactNode }) {
                 </button>
               ))}
             </div>
+          )}
+          {!collapsed && (
+            <label className="setting" title="Map tiles from the OpenStreetMap server: it learns the area of the route shown">
+              <input type="checkbox" checked={mapTiles} onChange={(e) => setMapTiles(e.target.checked)} />
+              Map background <span className="muted">(online)</span>
+            </label>
           )}
         </div>
       </aside>

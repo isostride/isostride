@@ -1,9 +1,10 @@
 import { angleBetween, distance, type TrackPoint } from '@/lib/geo';
-import type { RunFile } from '@/lib/kernel';
+import type { IndexedRun, RunFile } from '@/lib/kernel';
 import type { RouteSegment } from './segments';
 import { movingPart } from './instance';
+import { EFFORT_TARGETS, effortIn, effortName, patternKey, patternName, patternOf, tagName, workoutTypes } from './logical';
 import { findPasses } from './routeMatch';
-import { lapKey, structureName, DEFAULT_TOLERANCES, type BlockDefinition, type RefPoint, type Recommendation } from '@/lib/blocks';
+import { defaultTolerances, lapKey, structureName, DEFAULT_TOLERANCES, type BlockDefinition, type RefPoint, type Recommendation } from '@/lib/blocks';
 
 /** Route segments need this many passes, workout structures this many workouts (spec F9). */
 export const MIN_ROUTE_INSTANCES = 5;
@@ -46,7 +47,7 @@ export function sameRoute(a: RefPoint[], b: RefPoint[]): boolean {
  * a workout structure element found in at least 3 workouts. Nothing is proposed
  * that matches a definition the runner has, or one they rejected.
  */
-export function recommend(segments: RouteSegment[], runs: RunFile[], tracks: Map<string, TrackPoint[]>, defs: BlockDefinition[]): Recommendation[] {
+export function recommend(segments: RouteSegment[], runs: RunFile[], tracks: Map<string, TrackPoint[]>, defs: BlockDefinition[], rows: IndexedRun[] = []): Recommendation[] {
   const out: Recommendation[] = [];
 
   for (const seg of segments) {
@@ -102,5 +103,40 @@ export function recommend(segments: RouteSegment[], runs: RunFile[], tracks: Map
       basis: `lap found in ${e.runs.size} workouts`,
     });
   }
+  out.push(...logicalRecommendations(runs, defs, rows));
   return out.sort((a, b) => b.runs - a.runs);
+}
+
+/** Logical blocks (any route): efforts of a standard length, workout types, lap patterns. */
+function logicalRecommendations(runs: RunFile[], defs: BlockDefinition[], rows: IndexedRun[]): Recommendation[] {
+  const out: Recommendation[] = [];
+  // No pace band and no effort-before check: an effort follows its warm-up by nature.
+  const tolerances = { ...defaultTolerances('effort'), effortBeforeMax: null };
+  for (const { kind, target } of EFFORT_TARGETS) {
+    if (defs.some((d) => d.params.type === 'effort' && d.params.kind === kind && d.params.target === target)) continue;
+    const found = runs.filter((r) => effortIn(r, kind, target));
+    if (found.length < MIN_STRUCTURE_WORKOUTS) continue;
+    out.push({ id: `rec-effort-${kind}:${target}`, name: effortName(kind, target), params: { type: 'effort', kind, target }, tolerances, runs: found.length, instances: found.length, basis: `effort found in ${found.length} runs, on any route` });
+  }
+  for (const [type, n] of workoutTypes(rows)) {
+    if (n < MIN_STRUCTURE_WORKOUTS || defs.some((d) => d.params.type === 'tag' && d.params.workoutType === type)) continue;
+    out.push({ id: `rec-tag-${type}`, name: tagName(type), params: { type: 'tag', workoutType: type }, tolerances, runs: n, instances: n, basis: `${n} runs tagged ${type}` });
+  }
+  const byLayout = new Map<string, RunFile[]>();
+  for (const r of runs) {
+    const p = patternOf(r.laps, r.distance > 0 ? r.duration / r.distance : 0);
+    if (p.filter((x) => x.kind !== 'free').length < 2) continue;
+    const k = patternKey(p);
+    byLayout.set(k, [...(byLayout.get(k) ?? []), r]);
+  }
+  for (const [key, group] of byLayout) {
+    if (group.length < MIN_STRUCTURE_WORKOUTS) continue;
+    if (defs.some((d) => d.params.type === 'pattern' && patternKey(d.params.laps) === key)) continue;
+    // An effort lap is one faster than its run's average in most of the runs.
+    const patterns = group.map((r) => patternOf(r.laps, r.distance > 0 ? r.duration / r.distance : 0));
+    const laps = patterns[0].map((p, i) => ({ ...p, effort: patterns.filter((q) => q[i].effort).length * 2 > patterns.length }));
+    if (!laps.some((l) => l.effort)) continue;
+    out.push({ id: `rec-pattern-${key}`, name: patternName(laps), params: { type: 'pattern', laps, tolerance: 0.03 }, tolerances: { ...DEFAULT_TOLERANCES, effortBeforeMax: null }, runs: group.length, instances: group.length * laps.filter((l) => l.effort).length, basis: `lap pattern found in ${group.length} runs, on any route` });
+  }
+  return out;
 }

@@ -26,15 +26,13 @@ export function inst(day: string, o: Over = {}): BlockInstance {
     metrics,
     profile: Object.fromEntries(BLOCK_METRICS.map((m) => [m, [metrics[m], metrics[m], metrics[m], metrics[m], metrics[m]]])) as BlockInstance['profile'],
     context: {
-      block: { pace, grade: 0, duration: 300, heading: 45, cv: 0.05, stopped: 0 },
+      block: { pace, grade: 0, duration: 300, heading: 45, cv: 0.05, stopped: 0, start: 'flying' },
       before: { minuteOfRun: 12, kmOfRun: 2.4, effortBefore: 0.03, lap: 1 },
       run: { device: 'COROS PACE 4', shoes: 'Shoes A', heartRateSource: 'wrist (COROS PACE 4)', workoutType: 'long', techniqueCue: null, ...o.run },
       day: { load3: 100, load7: 300, temperature: 15 },
     },
     status: o.status ?? 'accepted',
     reasons: o.reasons ?? [],
-    heartRate: o.heartRate ?? { valid: true },
-    gaitValid: o.gaitValid ?? true,
   };
 }
 

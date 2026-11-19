@@ -37,6 +37,7 @@ E=reports/measures-e2e.json
 if [ -f "$E" ]; then
   sensee() { sh radical.sh sense json "$E" --folder .radical/model "$@" >/dev/null; }
   sensee --label origin=external --metric app.network.requests=/externalRequests
+  sensee --label origin=other-than-map-tiles --label map=on --metric app.network.requests=/mapOnOtherRequests 2>/dev/null || true
   sensee --label impact=serious-or-critical --metric a11y.violations=/a11ySeriousViolations 2>/dev/null || true
   sensee --metric e2e.keyboard_journey.completed=/keyboardJourneyCompleted 2>/dev/null || true
   sensee --metric e2e.lcp.max=/lcpMaxMs@ms --metric e2e.cls.max=/clsMax --metric e2e.tbt.max=/tbtMaxMs@ms --metric e2e.inp.max=/inpMaxMs@ms 2>/dev/null || true

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useOpenFolder, runInWorker } from '@/lib/client';
-import { RECOMMENDATIONS_PATH, fromRecommendation, readDefinitions, writeDefinitions, type BlockDefinition, type BlockInstancesFile, type BlockParams, type Recommendation, type RefPoint, type Tolerances } from '@/lib/blocks';
+import { RECOMMENDATIONS_PATH, fromRecommendation, readDefinitions, writeDefinitions, type BlockDefinition, type BlockInstancesFile, type BlockParams, type Recommendation, type RefPoint, type Tolerances, type BlockStart } from '@/lib/blocks';
 import { PATHS, readJson } from '@/lib/fs';
 import { date } from '@/lib/format';
 
@@ -90,8 +90,10 @@ export default function BlocksPage() {
                 <Thumb params={d.params} />
                 <div className="title">{d.name}</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <span className="chip">{d.params.type === 'route' ? 'route segment' : d.params.type === 'structure' ? 'workout structure' : 'steady fragment'}</span>
+                  <span className="chip">{TYPE_LABEL[d.params.type]}</span>
                   <span className="chip">{d.origin}</span>
+                  {d.tolerances.start !== 'any' && <span className="chip">{d.tolerances.start} start</span>}
+                  {d.tolerances.hrSkip !== null && <span className="chip">heart rate from minute {d.tolerances.hrSkip / 60}</span>}
                 </div>
                 <div className="small"><b>{s?.accepted ?? 0}</b> accepted · <span className="muted">{s?.rejected ?? 0} rejected{s?.last ? ` · last ${date(s.last)}` : ''}</span></div>
                 <div className="actions small">
@@ -115,10 +117,21 @@ export default function BlocksPage() {
   );
 }
 
-/** A tiny picture of a definition: the route's shape, or the lap. */
+const TYPE_LABEL: Record<BlockParams['type'], string> = {
+  route: 'route segment', structure: 'workout structure', steady: 'steady fragment',
+  effort: 'effort, any route', tag: 'workout type', pattern: 'lap pattern, any route',
+};
+
+/** A tiny picture of a definition: the route's shape, or what it is made of. */
 function Thumb({ params }: { params: BlockParams }) {
   if (params.type === 'route') return <RouteThumb track={params.track} />;
-  const label = params.type === 'structure' ? (params.kind === 'time' ? `⏱ ${params.target / 60} min` : `↔ ${params.target / 1000} km`) : '≈ steady';
+  const len = (kind: 'time' | 'distance', target: number) => (kind === 'time' ? `${target / 60} min` : `${target / 1000} km`);
+  const label =
+    params.type === 'structure' ? (params.kind === 'time' ? `⏱ ${params.target / 60} min` : `↔ ${params.target / 1000} km`)
+    : params.type === 'effort' ? `⚡ ${len(params.kind, params.target)}`
+    : params.type === 'tag' ? `# ${params.workoutType}`
+    : params.type === 'pattern' ? `▤ ${params.laps.filter((l) => l.effort).length} laps`
+    : '≈ steady';
   return <div className="thumb">{label}</div>;
 }
 
@@ -138,14 +151,13 @@ function RouteThumb({ track }: { track: RefPoint[] }) {
   );
 }
 
-const FIELDS: { key: keyof Tolerances; label: string; unit: string; scale?: number; pace?: boolean }[] = [
+const FIELDS: { key: Exclude<keyof Tolerances, 'start'>; label: string; unit: string; scale?: number; pace?: boolean }[] = [
   { key: 'paceMin', label: 'Pace band from', unit: '/km', pace: true },
   { key: 'paceMax', label: 'Pace band to', unit: '/km', pace: true },
   { key: 'gradeMax', label: 'Grade: effort pace vs pace, max', unit: '%', scale: 100 },
   { key: 'cvMax', label: 'Pace steadiness: CV below', unit: '' },
   { key: 'effortBeforeMax', label: 'Effort in the 2 min before, max difference', unit: '%', scale: 100 },
-  { key: 'hrStoppedMax', label: 'Heart rate: stopped inside the block, max', unit: 's' },
-  { key: 'hrStartMin', label: 'Heart rate: block starts after', unit: 'min', scale: 1 / 60 },
+  { key: 'hrSkip', label: 'Heart rate from minute (of the block, every instance); empty: the whole block', unit: 'min', scale: 1 / 60 },
   { key: 'routeShare', label: 'Route: points matched, min', unit: '%', scale: 100 },
   { key: 'routeRadius', label: 'Route: within', unit: 'm' },
 ];
@@ -187,6 +199,14 @@ function ToleranceSheet({ def, onClose, onSave }: { def: BlockDefinition; onClos
             </span>
           </label>
         ))}
+        <label className="field">
+          <span>Start of every instance</span>
+          <select aria-label="Start of every instance" value={tol.start} onChange={(e) => setTol({ ...tol, start: e.target.value as BlockStart })}>
+            <option value="any">any</option>
+            <option value="standing">standing (right after a stop)</option>
+            <option value="flying">flying (on the move)</option>
+          </select>
+        </label>
         <button className="btn primary" style={{ width: '100%', marginTop: 12 }} onClick={() => onSave({ ...def, name, tolerances: tol })}>Save &amp; re-detect</button>
       </aside>
     </div>

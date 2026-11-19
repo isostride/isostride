@@ -44,7 +44,7 @@ export async function runBlocks(folder: DataFolder): Promise<BlocksReport> {
   // A suggestion only when enough of its instances meet the matching conditions (the author's
   // report of 19 Nov 2026: a block whose passes were all rejected left the Trend empty).
   const recommendations: Recommendation[] = [];
-  for (const rec of recommend(segments, runs, tracks, defs)) {
+  for (const rec of recommend(segments, runs, tracks, defs, index?.runs ?? [])) {
     const def = fromRecommendation(rec, 'active');
     const accepted = runs.flatMap((run) => detectInstances(def, run, rows.get(run.id)!, tracks.get(run.id)!)).filter((i) => i.status === 'accepted');
     const enough = rec.params.type === 'route' ? accepted.length >= MIN_ROUTE_INSTANCES : new Set(accepted.map((i) => i.runId)).size >= MIN_STRUCTURE_WORKOUTS;

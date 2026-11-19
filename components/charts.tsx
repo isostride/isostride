@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState, type MouseEvent } from 'react';
+import { useMapTiles } from '@/lib/client';
 
 type Band = { from: number; to: number };
 
@@ -114,28 +115,45 @@ interface RouteMapProps {
 }
 
 /** The route drawn from GPS points alone (no map tiles: nothing is fetched, the data never leaves the computer). */
+/** Web Mercator: world pixels at a zoom level, as the OpenStreetMap tiles are cut. */
+function mercator(lat: number, lon: number, z: number): [number, number] {
+  const n = 256 * 2 ** z;
+  const s = Math.sin((lat * Math.PI) / 180);
+  return [((lon + 180) / 360) * n, (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n];
+}
+
 export function RouteMap({ lat, lon, t, cursor, selection = null, onSelect }: RouteMapProps) {
   const size = 320;
+  const pad = 16;
   const svgRef = useRef<SVGSVGElement>(null);
   const [first, setFirst] = useState<number | null>(null);
+  const [tiles] = useMapTiles();
   const geo = useMemo(() => {
     const pts: [number, number, number][] = [];
     for (let i = 0; i < lat.length; i++) if (lat[i] !== null && lon[i] !== null) pts.push([lat[i]!, lon[i]!, t[i]]);
     if (!pts.length) return null;
     const lats = pts.map((p) => p[0]);
     const lons = pts.map((p) => p[1]);
-    const midLat = ((Math.min(...lats) + Math.max(...lats)) / 2) * (Math.PI / 180);
-    const kx = Math.cos(midLat);
-    const minX = Math.min(...lons) * kx, maxX = Math.max(...lons) * kx;
-    const minY = Math.min(...lats), maxY = Math.max(...lats);
-    const span = Math.max(maxX - minX, maxY - minY) || 1;
-    const pad = 16;
-    const s = (size - 2 * pad) / span;
-    const ox = pad + ((size - 2 * pad) - (maxX - minX) * s) / 2;
-    const oy = pad + ((size - 2 * pad) - (maxY - minY) * s) / 2;
-    const proj = (la: number, lo: number): [number, number] => [ox + (lo * kx - minX) * s, size - (oy + (la - minY) * s)];
+    // The highest zoom (up to 17) at which the route fits the map, one map unit per tile pixel.
+    let z = 17;
+    for (; z > 1; z--) {
+      const [x0, y0] = mercator(Math.max(...lats), Math.min(...lons), z);
+      const [x1, y1] = mercator(Math.min(...lats), Math.max(...lons), z);
+      if (x1 - x0 <= size - 2 * pad && y1 - y0 <= size - 2 * pad) break;
+    }
+    const [x0, y0] = mercator(Math.max(...lats), Math.min(...lons), z);
+    const [x1, y1] = mercator(Math.min(...lats), Math.max(...lons), z);
+    const ox = (x0 + x1) / 2 - size / 2;
+    const oy = (y0 + y1) / 2 - size / 2;
+    const proj = (la: number, lo: number): [number, number] => { const [x, y] = mercator(la, lo, z); return [x - ox, y - oy]; };
     const d = pts.map((p, i) => { const [x, y] = proj(p[0], p[1]); return `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`; }).join('');
-    return { d, pts, proj };
+    // The tiles covering the map.
+    const cover: { href: string; x: number; y: number }[] = [];
+    const max = 2 ** z;
+    for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + size) / 256); tx++)
+      for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + size) / 256); ty++)
+        if (ty >= 0 && ty < max) cover.push({ href: `https://tile.openstreetmap.org/${z}/${((tx % max) + max) % max}/${ty}.png`, x: tx * 256 - ox, y: ty * 256 - oy });
+    return { d, pts, proj, cover };
   }, [lat, lon, t]);
 
   if (!geo) return <div className="card empty">No GPS in this run.</div>;
@@ -164,13 +182,21 @@ export function RouteMap({ lat, lon, t, cursor, selection = null, onSelect }: Ro
   return (
     <div className="card" style={{ padding: 8 }}>
       <svg ref={svgRef} viewBox={`0 0 ${size} ${size}`} width="100%" role="img" aria-label="Route" onClick={pick} style={{ cursor: onSelect ? 'crosshair' : undefined }}>
+        {tiles && (
+          <g className="map-tiles" aria-hidden="true">
+            {geo.cover.map((c) => <image key={c.href} href={c.href} x={c.x} y={c.y} width={256} height={256} />)}
+          </g>
+        )}
         <path d={geo.d} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" opacity={selection ? 0.35 : 1} />
         {selD && <path d={selD} fill="none" stroke="var(--accent)" strokeWidth="5" strokeLinecap="round" />}
         {firstPt && <circle cx={geo.proj(firstPt[0], firstPt[1])[0]} cy={geo.proj(firstPt[0], firstPt[1])[1]} r="6" fill="var(--accent)" />}
         <circle cx={start[0]} cy={start[1]} r="5" fill="var(--ok)" />
         {marker && <circle cx={marker[0]} cy={marker[1]} r="6" fill="var(--surface)" stroke="var(--text)" strokeWidth="2" />}
       </svg>
-      {onSelect && <div className="muted small" style={{ padding: '2px 6px' }}>{first === null ? 'Click two points on the route to select the stretch between them.' : 'Now click the end of the stretch.'}</div>}
+      <div className="muted small" style={{ padding: '2px 6px', display: 'flex', gap: 8 }}>
+        <span style={{ flex: 1 }}>{onSelect ? (first === null ? 'Click two points on the route to select the stretch between them.' : 'Now click the end of the stretch.') : ''}</span>
+        {tiles && <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>}
+      </div>
     </div>
   );
 }

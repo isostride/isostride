@@ -7,7 +7,7 @@ import { LineChart, RouteMap } from '@/components';
 import { useOpenFolder, runInWorker } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
 import type { RunFile } from '@/lib/kernel';
-import { definitionFromSelection, readDefinitions, selectionOptions, writeDefinitions, type BlockInstance, type BlockType } from '@/lib/blocks';
+import { canDefineFromLaps, definitionFromLaps, definitionFromSelection, readDefinitions, selectionOptions, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockType } from '@/lib/blocks';
 import { date, duration, km, pace, time } from '@/lib/format';
 
 export default function RunPageWrapper() {
@@ -52,14 +52,13 @@ function RunPage() {
     return { w, x, flagged, laps, flags: { stopped: count('stopped'), grade: count('grade'), first150: count('first150'), missing: w.flags.missingSignal.filter(Boolean).length } };
   }, [run]);
 
-  const create = async (type: BlockType) => {
-    if (!run || !selection) return;
+  const save = async (def: BlockDefinition) => {
     setCreating(true);
-    const def = definitionFromSelection(run, selection.from, selection.to, type);
     await writeDefinitions(folder, [...(await readDefinitions(folder)), def]);
     await runInWorker('blocks', handle);
     router.push('/blocks');
   };
+  const create = (type: BlockType) => run && selection && save(definitionFromSelection(run, selection.from, selection.to, type));
 
   if (run === undefined) return <div className="page muted">Loading…</div>;
   if (!run || !view) return <div className="page">Run not found. <Link href="/" className="muted">← Runs</Link></div>;
@@ -99,11 +98,16 @@ function RunPage() {
                 <span className="dot" style={{ background: b.status === 'accepted' ? 'var(--ok)' : 'var(--muted)', marginRight: 6 }} />
                 <b>{b.name}</b> <span className="muted">min {Math.floor(b.start / 60)}–{Math.ceil(b.end / 60)} · {pace(b.metrics.speed)} /km{b.metrics.heartRate ? ` · ${Math.round(b.metrics.heartRate)} bpm` : ''}</span>
                 {b.reasons.length > 0 && <div className="muted" style={{ marginLeft: 14 }}>✗ {b.reasons.join(' · ')}</div>}
-                {b.status === 'accepted' && !b.heartRate.valid && <div className="muted" style={{ marginLeft: 14 }}>♥ not used: {b.heartRate.reason}</div>}
               </div>
             ))}
           </div>
           <div className="card" style={{ marginTop: 12 }}>
+            {canDefineFromLaps(run) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderBottom: '1px solid var(--border)' }}>
+                <span className="muted small" style={{ flex: 1 }}>A test or a planned workout? Find the runs with the same laps, on any route.</span>
+                <button className="btn" disabled={creating} onClick={() => save(definitionFromLaps(run))}>Block from these laps</button>
+              </div>
+            )}
             <table className="data">
               <thead><tr><th>Lap</th><th>km</th><th>Time</th><th>Pace</th></tr></thead>
               <tbody>
@@ -129,7 +133,7 @@ function RunPage() {
           <span>Selected min {(selection.from / 60).toFixed(1)}–{(selection.to / 60).toFixed(1)} · {Math.round(selection.to - selection.from)} s</span>
           <span className="muted">Create block definition as</span>
           {selectionOptions(run, selection.from, selection.to).map((t) => (
-            <button key={t} className="btn primary" disabled={creating} onClick={() => create(t)}>{t === 'route' ? 'Route segment' : t === 'structure' ? 'Workout structure (lap)' : 'Steady fragment'}</button>
+            <button key={t} className="btn primary" disabled={creating} onClick={() => create(t)}>{t === 'route' ? 'Route segment' : t === 'structure' ? 'Workout structure (lap)' : t === 'effort' ? 'Effort (time trial)' : 'Steady fragment'}</button>
           ))}
           <button className="btn" onClick={() => setSelection(null)}>✕</button>
         </div>

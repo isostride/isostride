@@ -85,10 +85,10 @@ describe('Result transparency', () => {
   it('Open instances of a result', () => {
     const ok = inst('2026-08-01', { metrics: { heartRate: 150 } });
     const unsteady = inst('2026-08-08', { status: 'rejected', reasons: ['pace steadiness: CV 0.22, limit 0.15'], metrics: { heartRate: 150 } });
-    const early = inst('2026-08-15', { heartRate: { valid: false, reason: 'block start 6 min, minimum 8 min' }, metrics: { heartRate: 150 } });
-    const t = computeTrend([ok, unsteady, early], 'def', 'heartRate');
+    const noHr = inst('2026-08-15', { metrics: { heartRate: null } });
+    const t = computeTrend([ok, unsteady, noHr], 'def', 'heartRate');
     expect(t.included).toBe(1);
-    expect(t.rejected.map((r) => r.reasons)).toEqual([['pace steadiness: CV 0.22, limit 0.15'], ['heart rate: block start 6 min, minimum 8 min']]);
+    expect(t.rejected.map((r) => r.reasons)).toEqual([['pace steadiness: CV 0.22, limit 0.15'], ['heart rate: not recorded']]);
   });
 });
 
@@ -129,8 +129,8 @@ describe('Export to CSV', () => {
 describe('Show trend', () => {
   it('Trend opens on a metric with a result', async () => {
     const { firstUsableMetric, reasonSummary } = await import('@/lib/compare');
-    // Heart rate usable in 2 instances only (started too early), pace in all 6.
-    const all = days('2026-08-03', 6).map((d, k) => inst(d, { metrics: { heartRate: 150 }, heartRate: k < 2 ? { valid: true } : { valid: false, reason: 'block start 5 min, minimum 8 min' } }));
+    // Heart rate recorded in 2 instances only (no heart rate in the other runs), pace in all 6.
+    const all = days('2026-08-03', 6).map((d, k) => inst(d, { metrics: { heartRate: k < 2 ? 150 : null } }));
     expect(firstUsableMetric(all, 'def', ['heartRate', 'speed'])).toBe('speed');
     expect(firstUsableMetric(all, 'def', ['heartRate', 'speed'], 2)).toBe('heartRate');
     expect(reasonSummary([{ instance: all[0], reasons: ['pace: 5:40 outside 4:45–5:15', 'grade: 6%'] }, { instance: all[1], reasons: ['pace: 5:30 outside 4:45–5:15'] }])).toEqual(['pace (2)', 'grade (1)']);
