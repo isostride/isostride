@@ -61,7 +61,7 @@ function Context({ i }: { i: BlockInstance }) {
   const c = i.context;
   const pct = (x: number | null) => (x === null ? '–' : `${x > 0 ? '+' : ''}${Math.round(x * 100)}%`);
   const groups: [string, [string, string][]][] = [
-    ['Block', [['pace', `${fmtPace(c.block.pace)} /km`], ['duration', `${Math.round(c.block.duration / 60 * 10) / 10} min`], ['grade', pct(c.block.grade)], ['steadiness CV', String(c.block.cv)], ['heading', c.block.heading === null ? '–' : `${c.block.heading}°`]]],
+    ['Block', [['pace', `${fmtPace(c.block.pace)} /km`], ['duration', `${Math.round(c.block.duration / 60 * 10) / 10} min`], ['grade', pct(c.block.grade)], ['steadiness CV', String(c.block.cv)], ['stopped', c.block.stopped ? `${c.block.stopped} s (left out)` : '–'], ['heading', c.block.heading === null ? '–' : `${c.block.heading}°`]]],
     ['Before', [['minute of run', String(c.before.minuteOfRun)], ['km of run', String(c.before.kmOfRun)], ['effort 2 min before', pct(c.before.effortBefore)], ['lap', String(c.before.lap ?? '–')]]],
     ['Run', [['watch', c.run.device], ['shoes', c.run.shoes ?? '–'], ['heart rate', c.run.heartRateSource], ['workout', c.run.workoutType ?? '–'], ['cue', c.run.techniqueCue ?? '–']]],
     ['Day', [['load 3 d', `${c.day.load3} min`], ['load 7 d', `${c.day.load7} min`], ['temperature', c.day.temperature === null ? '–' : `${c.day.temperature} °C`]]],

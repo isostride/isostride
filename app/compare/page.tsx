@@ -5,7 +5,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { InstancePanel, ProfileChart } from '@/components';
 import { useOpenFolder } from '@/lib/client';
 import { readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric } from '@/lib/blocks';
-import { MIN_AB_INSTANCES, abCsv, byField, computeAb, meanProfile, type AbResult, instancesCsv, CONTEXT_FIELDS, METRIC_LABEL, valueOf, type ContextField } from '@/lib/compare';
+import { MIN_AB_INSTANCES, abCsv, byField, computeAb, firstUsableMetric, meanProfile, type AbResult, instancesCsv, CONTEXT_FIELDS, METRIC_LABEL, valueOf, type ContextField } from '@/lib/compare';
 import { PATHS, readJson } from '@/lib/fs';
 
 const METRICS: { key: BlockMetric; short: string; fmt: (v: number) => string; unit: string; invert?: boolean }[] = [
@@ -30,7 +30,7 @@ function ComparePage() {
   const { folder } = useOpenFolder();
   const [defs, setDefs] = useState<BlockDefinition[]>([]);
   const [all, setAll] = useState<BlockInstance[]>([]);
-  const [metric, setMetric] = useState<BlockMetric>('groundContactTime');
+  const [chosen, setMetric] = useState<BlockMetric | null>(null);
   const [corrected, setCorrected] = useState(true);
   const [field, setField] = useState<ContextField>('shoes');
   const [pair, setPair] = useState<[string, string] | null>(null);
@@ -46,6 +46,9 @@ function ComparePage() {
 
   const defId = params.get('def') ?? defs[0]?.id ?? '';
   const def = defs.find((d) => d.id === defId);
+  // Opens on ground contact time, or the first metric with accepted instances.
+  const metric = useMemo(() => chosen ?? firstUsableMetric(all, defId, METRICS.map((x) => x.key), 2 * MIN_AB_INSTANCES), [chosen, all, defId]);
+  useEffect(() => setMetric(null), [defId]);
   const m = METRICS.find((x) => x.key === metric)!;
   const mine = useMemo(() => all.filter((i) => i.definitionId === defId && i.status === 'accepted'), [all, defId]);
 

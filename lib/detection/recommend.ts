@@ -1,6 +1,7 @@
 import { angleBetween, distance, type TrackPoint } from '@/lib/geo';
 import type { RunFile } from '@/lib/kernel';
 import type { RouteSegment } from './segments';
+import { movingPart } from './instance';
 import { findPasses } from './routeMatch';
 import { lapKey, structureName, DEFAULT_TOLERANCES, type BlockDefinition, type RefPoint, type Recommendation } from '@/lib/blocks';
 
@@ -21,15 +22,13 @@ function band(paces: number[]): { paceMin: number; paceMax: number } {
   return { paceMin: centre - BAND / 2, paceMax: centre + BAND / 2 };
 }
 
+/** Mean speed of the moving part of [from, to): the measure an instance's pace condition uses. */
 function meanSpeed(run: RunFile, from: number, to: number): number {
-  let sum = 0;
-  let n = 0;
   const { t, speed } = run.samples;
-  for (let i = 0; i < t.length; i++) {
-    const v = speed[i];
-    if (t[i] >= from && t[i] < to && v !== null) { sum += v; n++; }
-  }
-  return n ? sum / n : 0;
+  const idx: number[] = [];
+  for (let i = 0; i < t.length; i++) if (t[i] >= from && t[i] < to) idx.push(i);
+  const v = movingPart(t, speed, idx).moving.map((i) => speed[i]).filter((x): x is number => x !== null);
+  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0;
 }
 
 /** True when two reference tracks are the same route (each covers the other). */

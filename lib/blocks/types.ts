@@ -27,8 +27,8 @@ export interface Tolerances {
   cvMax: number;
   /** max |speed over the 2 min before / block speed − 1|; null = not checked */
   effortBeforeMax: number | null;
-  /** max seconds stopped inside the block */
-  stoppedMax: number;
+  /** heart rate: max seconds stopped inside the block (a stop never rejects the block itself) */
+  hrStoppedMax: number;
   /** heart rate: block start at least this many s into the run */
   hrStartMin: number;
 }
@@ -41,9 +41,12 @@ export const DEFAULT_TOLERANCES: Tolerances = {
   routeRadius: 30,
   cvMax: 0.15,
   effortBeforeMax: 0.12,
-  stoppedMax: 10,
+  hrStoppedMax: 30,
   hrStartMin: 8 * 60,
 };
+
+/** Heart rate: no stop in this many seconds before the block's end (heart rate drops while standing). */
+export const HR_STOP_TAIL = 120;
 
 /** Minimum block length per metric (spec section 5). */
 export const MIN_SECONDS = { heartRate: 4 * 60, gait: 60 } as const;
@@ -70,7 +73,8 @@ export const BLOCK_METRICS = [
 export type BlockMetric = (typeof BLOCK_METRICS)[number];
 
 export interface InstanceContext {
-  block: { pace: number; grade: number; duration: number; heading: number | null; cv: number };
+  /** stopped: seconds standing inside the block (slow samples and auto-pause), left out of its metrics */
+  block: { pace: number; grade: number; duration: number; heading: number | null; cv: number; stopped: number };
   before: { minuteOfRun: number; kmOfRun: number; effortBefore: number | null; lap: number | null };
   run: { device: string; shoes: string | null; heartRateSource: string; workoutType: string | null; techniqueCue: string | null };
   day: { load3: number; load7: number; temperature: number | null };
@@ -113,6 +117,8 @@ export interface Recommendation {
   /** runs the block was found in */
   runs: number;
   instances: number;
+  /** instances that meet the matching conditions (counted before it is proposed) */
+  accepted?: number;
   /** why it is proposed */
   basis: string;
 }

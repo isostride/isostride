@@ -125,3 +125,14 @@ describe('Export to CSV', () => {
     expect(csv[2]).toContain('rejected,"grade: effort pace differs by 7%, limit 4%"');
   });
 });
+
+describe('Show trend', () => {
+  it('Trend opens on a metric with a result', async () => {
+    const { firstUsableMetric, reasonSummary } = await import('@/lib/compare');
+    // Heart rate usable in 2 instances only (started too early), pace in all 6.
+    const all = days('2026-08-03', 6).map((d, k) => inst(d, { metrics: { heartRate: 150 }, heartRate: k < 2 ? { valid: true } : { valid: false, reason: 'block start 5 min, minimum 8 min' } }));
+    expect(firstUsableMetric(all, 'def', ['heartRate', 'speed'])).toBe('speed');
+    expect(firstUsableMetric(all, 'def', ['heartRate', 'speed'], 2)).toBe('heartRate');
+    expect(reasonSummary([{ instance: all[0], reasons: ['pace: 5:40 outside 4:45–5:15', 'grade: 6%'] }, { instance: all[1], reasons: ['pace: 5:30 outside 4:45–5:15'] }])).toEqual(['pace (2)', 'grade (1)']);
+  });
+});

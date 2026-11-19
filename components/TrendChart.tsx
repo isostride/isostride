@@ -23,10 +23,12 @@ interface Props {
   markers: Marker[];
   selected: Set<string>;
   onSelect: (i: BlockInstance) => void;
+  /** when nothing is included: the most common reasons, shown in the empty state */
+  emptyReasons?: string[];
 }
 
 /** Instances over time: one colour per series (device), its fitted line and noise band, gear changes as vertical lines. */
-export function TrendChart({ trend, format, invert, markers, selected, onSelect }: Props) {
+export function TrendChart({ trend, format, invert, markers, selected, onSelect, emptyReasons }: Props) {
   const ref = useRef<SVGSVGElement>(null);
   const [hover, setHover] = useState<{ x: number; y: number; i: BlockInstance; v: number; color: string } | null>(null);
   const corrected = trend.corrected;
@@ -49,7 +51,13 @@ export function TrendChart({ trend, format, invert, markers, selected, onSelect 
     return { x, y, t0, t1, lo, hi };
   }, [trend, corrected, invert]);
 
-  if (!scale) return <div className="card empty">No accepted instances for this metric and filter.</div>;
+  if (!scale)
+    return (
+      <div className="card empty">
+        No accepted instances for this metric and filter.
+        {emptyReasons && emptyReasons.length > 0 && <div className="small" style={{ marginTop: 6 }}>Left out most often for: {emptyReasons.join(' · ')}. Open Instances for each one&apos;s reason, or try another metric.</div>}
+      </div>
+    );
   const { x, y, t0, t1, lo, hi } = scale;
   const ticks = Array.from({ length: 5 }, (_, k) => lo + ((hi - lo) * k) / 4);
   const months: number[] = [];

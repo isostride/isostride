@@ -144,7 +144,7 @@ const FIELDS: { key: keyof Tolerances; label: string; unit: string; scale?: numb
   { key: 'gradeMax', label: 'Grade: effort pace vs pace, max', unit: '%', scale: 100 },
   { key: 'cvMax', label: 'Pace steadiness: CV below', unit: '' },
   { key: 'effortBeforeMax', label: 'Effort in the 2 min before, max difference', unit: '%', scale: 100 },
-  { key: 'stoppedMax', label: 'Stopped inside the block, max', unit: 's' },
+  { key: 'hrStoppedMax', label: 'Heart rate: stopped inside the block, max', unit: 's' },
   { key: 'hrStartMin', label: 'Heart rate: block starts after', unit: 'min', scale: 1 / 60 },
   { key: 'routeShare', label: 'Route: points matched, min', unit: '%', scale: 100 },
   { key: 'routeRadius', label: 'Route: within', unit: 'm' },

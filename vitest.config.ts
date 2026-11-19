@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
-const alias = { '@': path.resolve(__dirname) };
+const alias = { '@': path.resolve(import.meta.dirname) };
 
 /**
  * Two projects (ADR "A test pyramid"): unit tests on synthetic data, with the network

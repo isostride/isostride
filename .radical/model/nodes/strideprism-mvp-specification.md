@@ -311,3 +311,6 @@ Q: Items the packs tie to GitHub/SonarQube/Lighthouse CI (PR merge gate, nightly
 A: Local only
 Q: (użytkownik) chodzi mi o to ze to ff powinno byc weryfikowawalne ... nawet teraz ... bo inaczej radical check nie przechodzi
 A: FF "Detects real change" becomes automated: on the author's runs, with every suggested block accepted, the trends of all metrics are computed and at least one must have the verdict "change" (larger than the noise, its interval clear of zero, at least 5 instances); the random-split negative test keeps guarding against false alarms.
+Q: (użytkownik) widze ... problem ... prism sugeruje bloki a pozniej jak przechodze do trend to czasami wszystkie biegi sa rejected
+Q: On city routes you stop at the lights: on the 1.2 km SW segment 67 of 78 passes have 12–152 s of standing, so the current 'stopped ≤ 10 s' rule rejects them. How should a block with a stop be handled?
+A: Measure on the moving part (Recommended): A stop does not reject the pass: pace and gait (cadence, GCT, VO…) are computed only from moving samples. HR is rejected only when the stop is long (>30 s) or happens in the last minutes of the block, because HR drops while standing. The rejection list shows how long the stop was.

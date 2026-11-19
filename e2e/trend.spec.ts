@@ -31,8 +31,8 @@ test.describe('Denormalized index files', () => {
 });
 test.describe('Show trend', () => {
   test('Trend draws noise threshold and gear changes', async ({ page }) => {
-    // The 3-minute laps of interval workouts: five accepted since August, on one watch.
-    await setUpWithBlock(page, { files: fitFiles(200, '2026-08-03'), gear: GEAR_AUTUMN, block: /3-minute lap/ });
+    // The promenade northbound: five passes meet the conditions, from August to October, on one watch.
+    await setUpWithBlock(page, { files: fitFiles(200, '2026-08-03'), gear: GEAR_AUTUMN, block: /^1\.0 km northeast/ });
     await nav(page, 'Trend');
     await page.getByRole('button', { name: 'Pace', exact: true }).click();
     const chart = page.getByRole('img', { name: 'Trend' });

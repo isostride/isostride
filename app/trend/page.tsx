@@ -6,7 +6,7 @@ import { InstancePanel, ProfileChart, TrendChart, type Marker } from '@/componen
 import { useOpenFolder } from '@/lib/client';
 import { readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric } from '@/lib/blocks';
 import { readGear, type Gear } from '@/lib/gear';
-import { instancesCsv, CONTEXT_FIELDS, METRIC_LABEL, valueOf, type ContextField, type ContextFilter, MIN_TREND_INSTANCES, computeTrend, profiles } from '@/lib/compare';
+import { instancesCsv, CONTEXT_FIELDS, METRIC_LABEL, valueOf, type ContextField, type ContextFilter, MIN_TREND_INSTANCES, computeTrend, firstUsableMetric, profiles, reasonSummary } from '@/lib/compare';
 import { PATHS, readJson } from '@/lib/fs';
 
 const METRICS: { key: BlockMetric; short: string; fmt: (v: number) => string; invert?: boolean }[] = [
@@ -32,7 +32,7 @@ function TrendPage() {
   const [defs, setDefs] = useState<BlockDefinition[]>([]);
   const [all, setAll] = useState<BlockInstance[]>([]);
   const [gear, setGear] = useState<Gear[]>([]);
-  const [metric, setMetric] = useState<BlockMetric>('heartRate');
+  const [chosen, setMetric] = useState<BlockMetric | null>(null);
   const [corrected, setCorrected] = useState(true);
   const [filter, setFilter] = useState<ContextFilter>({});
   const [selected, setSelected] = useState<BlockInstance[]>([]);
@@ -49,6 +49,9 @@ function TrendPage() {
 
   const defId = params.get('def') ?? defs[0]?.id ?? '';
   const def = defs.find((d) => d.id === defId);
+  // Opens on heart rate, or the first metric with accepted instances; the runner's choice then holds.
+  const metric = useMemo(() => chosen ?? firstUsableMetric(all, defId, METRICS.map((x) => x.key)), [chosen, all, defId]);
+  useEffect(() => setMetric(null), [defId]);
   const m = METRICS.find((x) => x.key === metric)!;
   const trend = useMemo(() => computeTrend(all, defId, metric, filter, corrected), [all, defId, metric, filter, corrected]);
   const mine = useMemo(() => all.filter((i) => i.definitionId === defId), [all, defId]);
@@ -114,7 +117,7 @@ function TrendPage() {
         ))}
       </div>
 
-      <TrendChart trend={trend} format={m.fmt} invert={m.invert} markers={markers} selected={new Set(selected.map((s) => s.id))} onSelect={toggle} />
+      <TrendChart trend={trend} emptyReasons={reasonSummary(trend.rejected)} format={m.fmt} invert={m.invert} markers={markers} selected={new Set(selected.map((s) => s.id))} onSelect={toggle} />
 
       <div className="cards" style={{ marginTop: 12 }}>
         {trend.series.map((s) => (

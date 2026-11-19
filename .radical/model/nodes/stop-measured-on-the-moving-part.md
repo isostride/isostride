@@ -1,10 +1,12 @@
 ---
 id: "b4dabb76-4038-490d-b824-c77328ba52ac"
 type: "scenario"
-label: "Auto-pause counts as stopped"
-gherkin: "And the mean speed of the recorded samples alone would still read 5:00/km"
-given: "a steady 5:00/km block during which the watch paused for 40 s at a crossing (no samples recorded)"
-then: "it is rejected with the reason \"stopped: 40 s in the block, limit 10 s\""
+label: "Stop measured on the moving part"
+gherkin: |
+  And a block with a 20 s stop in its first minutes keeps its heart rate
+  And one with a 5 s stop in its last 2 minutes does not
+given: "a steady 5:00/km block 10 minutes into the run, during which the watch paused for 40 s at a crossing (no samples recorded)"
+then: "it is accepted with pace 5:00/km from the moving samples, and its heart rate is not used, with the reason \"stopped 40 s in the block, limit 30 s\""
 when: "the instance is matched"
 ---
 

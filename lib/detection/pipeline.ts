@@ -2,9 +2,9 @@ import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
 import { resample, type TrackPoint } from '@/lib/geo';
 import { type RunFile, type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { detectRouteSegments } from './segments';
-import { RECOMMENDATIONS_PATH, readDefinitions, type BlockInstance, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
+import { RECOMMENDATIONS_PATH, fromRecommendation, readDefinitions, type BlockInstance, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
 import { detectInstances } from './detect';
-import { recommend } from './recommend';
+import { MIN_ROUTE_INSTANCES, MIN_STRUCTURE_WORKOUTS, recommend } from './recommend';
 
 export interface BlocksReport {
   segments: number;
@@ -41,7 +41,15 @@ export async function runBlocks(folder: DataFolder): Promise<BlocksReport> {
   }
   await writeJson(folder, PATHS.blockInstances, { algorithmVersion: ALGORITHM_VERSION, instances } satisfies BlockInstancesFile);
 
-  const recommendations: Recommendation[] = recommend(segments, runs, tracks, defs);
+  // A suggestion only when enough of its instances meet the matching conditions (the author's
+  // report of 19 Nov 2026: a block whose passes were all rejected left the Trend empty).
+  const recommendations: Recommendation[] = [];
+  for (const rec of recommend(segments, runs, tracks, defs)) {
+    const def = fromRecommendation(rec, 'active');
+    const accepted = runs.flatMap((run) => detectInstances(def, run, rows.get(run.id)!, tracks.get(run.id)!)).filter((i) => i.status === 'accepted');
+    const enough = rec.params.type === 'route' ? accepted.length >= MIN_ROUTE_INSTANCES : new Set(accepted.map((i) => i.runId)).size >= MIN_STRUCTURE_WORKOUTS;
+    if (enough) recommendations.push({ ...rec, accepted: accepted.length, basis: `${rec.basis}; ${accepted.length} meet the conditions` });
+  }
   await writeJson(folder, RECOMMENDATIONS_PATH, { algorithmVersion: ALGORITHM_VERSION, recommendations });
 
   return { segments: segments.length, instances: instances.length, recommendations: recommendations.length };

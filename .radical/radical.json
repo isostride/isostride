@@ -301,7 +301,7 @@
       "e2e/export.spec.ts › Static export build › Static export builds"
     ] },
     { "element": "b4dabb76-4038-490d-b824-c77328ba52ac", "name": "Auto-pause counts as stopped", "tests": [
-      "tests/unit/matching.test.ts › Strict condition matching › Auto-pause counts as stopped"
+      "tests/unit/matching.test.ts › Strict condition matching › Stop measured on the moving part"
     ] },
     { "element": "b0e29eb0-ab9e-4b68-be1e-f42e6071ba9f", "name": "Matches preliminary analysis", "tests": [
       "tests/integration/acceptance.test.ts › Agreement with the preliminary analysis › Promenade heart rate trend"
@@ -415,6 +415,12 @@
     ] },
     { "element": "226353bd-e1a4-4d07-b2db-bf1aecd05a15", "name": "Detects real change", "tests": [
       "tests/integration/acceptance.test.ts › Success criterion of step 1 › Detects real change"
+    ] },
+    { "element": "9c5ba92a-70c2-4727-8cc9-65b817cf9377", "name": "Suggestions have usable passes", "tests": [
+      "tests/integration/blocks.test.ts › Recommend route segment › Suggestions have usable passes"
+    ] },
+    { "element": "02308173-57c8-4489-9256-edd79dd7f2cb", "name": "Trend opens on a metric with a result", "tests": [
+      "tests/unit/trend.test.ts › Show trend › Trend opens on a metric with a result"
     ] }
   ]
 }

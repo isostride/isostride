@@ -1,12 +1,20 @@
 import { meanHeading, resample } from '@/lib/geo';
 import type { RunFile } from '@/lib/kernel';
-import { DEFAULT_TOLERANCES, type BlockType, type BlockDefinition, type BlockDefinitionsFile, type Recommendation } from './types';
+import { DEFAULT_TOLERANCES, type BlockType, type BlockDefinition, type BlockDefinitionsFile, type Recommendation, type Tolerances } from './types';
 import { lapKey, structureName } from './structure';
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
 
 /** user/block-definitions.json: the runner's definitions and the recommendations they rejected. */
+/** The definitions, with a default for each tolerance an older file lacks (and none it no longer has). */
 export async function readDefinitions(folder: DataFolder): Promise<BlockDefinition[]> {
-  return (await readJson<BlockDefinitionsFile>(folder, PATHS.blockDefinitions))?.definitions ?? [];
+  const defs = (await readJson<BlockDefinitionsFile>(folder, PATHS.blockDefinitions))?.definitions ?? [];
+  return defs.map((d) => ({ ...d, tolerances: withDefaults(d.tolerances) }));
+}
+
+function withDefaults(t: Partial<Tolerances>): Tolerances {
+  const out = { ...DEFAULT_TOLERANCES } as Tolerances;
+  for (const k of Object.keys(DEFAULT_TOLERANCES) as (keyof Tolerances)[]) if (k in t) (out as unknown as Record<string, unknown>)[k] = t[k];
+  return out;
 }
 
 export async function writeDefinitions(folder: DataFolder, definitions: BlockDefinition[]): Promise<void> {

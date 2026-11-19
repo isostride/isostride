@@ -99,3 +99,20 @@ export function correctForPace(instances: BlockInstance[], metric: BlockMetric):
 export function noiseThreshold(values: number[]): number {
   return sd(values);
 }
+
+/**
+ * The metric a screen opens on: the first in `order` with at least `enough` instances included
+ * (enough for a verdict), else the first with any, else the first; so a block whose heart rate
+ * is rarely usable (too short, too early, a long stop) opens on a metric that shows a result.
+ */
+export function firstUsableMetric(all: BlockInstance[], definitionId: string, order: BlockMetric[], enough = 5): BlockMetric {
+  const n = new Map(order.map((m) => [m, selectInstances(all, definitionId, m).included.length]));
+  return order.find((m) => n.get(m)! >= enough) ?? order.find((m) => n.get(m)! > 0) ?? order[0];
+}
+
+/** The most common reasons instances were left out, e.g. "pace (12)"; the condition's name only. */
+export function reasonSummary(rejected: Rejected[], top = 3): string[] {
+  const count = new Map<string, number>();
+  for (const r of rejected) for (const reason of new Set(r.reasons.map((x) => x.split(':')[0]))) count.set(reason, (count.get(reason) ?? 0) + 1);
+  return [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, top).map(([k, n]) => `${k} (${n})`);
+}

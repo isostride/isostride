@@ -79,6 +79,19 @@ describe('Recommend route segment', () => {
     }
   }, 120_000);
 
+  it('Suggestions have usable passes', async () => {
+    // City segments: most passes include a wait at the lights; only passes that meet the
+    // conditions count, so a segment passed often but never cleanly is not proposed.
+    const routes = (await recs(all)).filter((r) => r.params.type === 'route');
+    expect(routes.length).toBeGreaterThan(0);
+    for (const r of routes) {
+      expect(r.accepted, r.name).toBeGreaterThanOrEqual(5);
+      expect(r.basis).toMatch(new RegExp(`; ${r.accepted} meet the conditions$`));
+    }
+    const segments = (await readJson<{ segments: { passes: number }[] }>(all, PATHS.segments))!.segments.filter((s) => s.passes >= 5);
+    expect(segments.length).toBeGreaterThan(routes.length);
+  }, 120_000);
+
   it('Four passes not enough', async () => {
     const folder = await makeDataFolder(SINCE_AUG.slice(-4));
     await importFolder(folder);
@@ -138,11 +151,12 @@ describe('Accept or reject recommendation', () => {
 
 describe('Rejected not proposed again', () => {
   it('Rejected stays rejected', async () => {
-    const folder = await makeDataFolder(SINCE_AUG.slice(0, 30));
+    // Enough runs for the promenade to have 5 passes that meet the conditions.
+    const folder = await makeDataFolder(SINCE_AUG.slice(0, -5));
     await importFolder(folder);
     const promenade = (await recs(folder)).find(isPromenade)!;
     await writeDefinitions(folder, [fromRecommendation(promenade, 'rejected')]);
-    for (const f of SINCE_AUG.slice(30, 35)) await addFile(folder, f);
+    for (const f of SINCE_AUG.slice(-5)) await addFile(folder, f);
     await importFolder(folder);
     const same = (r: Recommendation) => r.params.type === 'route' && r.id === promenade.id;
     expect((await recs(folder)).find(same)).toBeUndefined();

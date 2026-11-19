@@ -24,15 +24,26 @@ describe('Strict condition matching', () => {
     expect(inst.reasons).toContain('grade: effort pace differs by 7%, limit 4%');
   });
 
-  it('Auto-pause counts as stopped', () => {
-    // The watch paused for 40 s at a crossing in the middle of the block: no samples, so
-    // the mean speed of the samples still reads 5:00/km, but the runner stood for 40 s.
-    const run = syntheticRun(1500, () => ({ speed: PACE_5_00, heartRate: 150 }));
-    const keep = run.samples.t.map((t) => t < 850 || t >= 890);
-    for (const k of Object.keys(run.samples) as (keyof typeof run.samples)[]) (run.samples as any)[k] = (run.samples[k] as unknown[]).filter((_, i) => keep[i]);
-    const inst = buildInstance(steadyDef(), run, rowFor(run), 720, 1020);
-    expect(inst.status).toBe('rejected');
-    expect(inst.reasons).toContain('stopped: 40 s in the block, limit 10 s');
+  it('Stop measured on the moving part', () => {
+    // A steady 5:00/km block 12 minutes in; the watch paused for 40 s at a crossing (no samples).
+    const paused = syntheticRun(1500, () => ({ speed: PACE_5_00, heartRate: 150 }));
+    const keep = paused.samples.t.map((t) => t < 850 || t >= 890);
+    for (const k of Object.keys(paused.samples) as (keyof typeof paused.samples)[]) (paused.samples as any)[k] = (paused.samples[k] as unknown[]).filter((_, i) => keep[i]);
+    const inst = buildInstance(steadyDef(), paused, rowFor(paused), 720, 1020);
+    // Accepted, pace 5:00/km from the moving samples; heart rate not used.
+    expect(inst.status).toBe('accepted');
+    expect(inst.context.block.pace).toBe(300);
+    expect(inst.context.block.stopped).toBe(40);
+    expect(inst.heartRate).toEqual({ valid: false, reason: 'stopped 40 s in the block, limit 30 s' });
+
+    // A 20 s stop in its first minutes keeps its heart rate.
+    const early = syntheticRun(1500, (t) => ({ speed: t >= 740 && t < 760 ? 0 : PACE_5_00, heartRate: 150 }));
+    const e = buildInstance(steadyDef(), early, rowFor(early), 720, 1020);
+    expect(e.status).toBe('accepted');
+    expect(e.heartRate.valid).toBe(true);
+    // A 5 s stop in its last 2 minutes does not.
+    const late = syntheticRun(1500, (t) => ({ speed: t >= 960 && t < 965 ? 0 : PACE_5_00, heartRate: 150 }));
+    expect(buildInstance(steadyDef(), late, rowFor(late), 720, 1020).heartRate).toEqual({ valid: false, reason: 'stopped in the last 2 min of the block' });
   });
 
   it('Effort before differs', () => {

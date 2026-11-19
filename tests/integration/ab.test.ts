@@ -25,10 +25,10 @@ describe('Real data', () => {
     const folder = await makeDataFolder(files);
     await importFolder(folder);
     const recs = (await readJson<{ recommendations: Recommendation[] }>(folder, RECOMMENDATIONS_PATH))!.recommendations;
-    // The two most-passed promenade segments, with a pace band wide enough for the year's runs
-    // and waits at the crossings allowed: these tests judge the verdict rule, not the matching.
+    // The two most-passed promenade segments, with a pace band wide enough for the year's runs:
+    // these tests judge the verdict rule, not the matching.
     const defs = recs.filter((r) => r.params.type === 'route').slice(0, 2).map((r) => fromRecommendation(r, 'active'));
-    for (const d of defs) d.tolerances = { ...d.tolerances, paceMin: 240, paceMax: 390, stoppedMax: 120 };
+    for (const d of defs) d.tolerances = { ...d.tolerances, paceMin: 240, paceMax: 390 };
     await writeDefinitions(folder, defs);
     await runBlocks(folder);
     all = (await readJson<BlockInstancesFile>(folder, PATHS.blockInstances))!.instances;
