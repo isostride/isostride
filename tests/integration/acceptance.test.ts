@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
-import { RECOMMENDATIONS_PATH, fromRecommendation, writeDefinitions, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
+import { BLOCK_METRICS, RECOMMENDATIONS_PATH, fromRecommendation, readDefinitions, writeDefinitions, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
 import { runBlocks } from '@/lib/detection';
-import { selectInstances } from '@/lib/compare';
+import { MIN_TREND_INSTANCES, computeTrend, selectInstances } from '@/lib/compare';
 import { PATHS, readJson } from '@/lib/fs';
 import { importFolder } from '@/lib/pipeline';
 import { TEST_DATA, makeDataFolder, recordMeasure } from '../support/fixtures';
@@ -45,4 +45,34 @@ describe('Agreement with the preliminary analysis', () => {
     expect(augSep).toEqual([]);
     expect(Math.abs(nov14!.metrics.heartRate! - 135)).toBeLessThanOrEqual(2);
   }, 120_000);
+});
+
+/**
+ * Success criterion of step 1 (FF "Detects real change"): in the author's runs the tool finds
+ * at least one change larger than the noise. Every suggested block is accepted and the trend
+ * of every metric computed; a "change" verdict needs the change beyond the noise threshold,
+ * its 95% interval clear of zero, and at least 5 instances.
+ */
+describe('Success criterion of step 1', () => {
+  it('Detects real change', async () => {
+    const files = (await fs.readdir(TEST_DATA)).filter((f) => f.endsWith('.fit'));
+    const folder = await makeDataFolder(files);
+    await importFolder(folder);
+    const recs = (await readJson<{ recommendations: Recommendation[] }>(folder, RECOMMENDATIONS_PATH))!.recommendations;
+    await writeDefinitions(folder, recs.map((r) => fromRecommendation(r, 'active')));
+    await runBlocks(folder);
+    const all = (await readJson<BlockInstancesFile>(folder, PATHS.blockInstances))!.instances;
+    const changes: string[] = [];
+    for (const d of await readDefinitions(folder))
+      for (const m of BLOCK_METRICS)
+        for (const s of computeTrend(all, d.id, m).series)
+          if (s.fit?.verdict === 'change') {
+            expect(s.points.length).toBeGreaterThanOrEqual(MIN_TREND_INSTANCES);
+            expect(Math.abs(s.fit.change)).toBeGreaterThan(s.noise);
+            expect(s.fit.ci[0] > 0 || s.fit.ci[1] < 0).toBe(true);
+            changes.push(`${d.name} · ${m} · ${s.source}`);
+          }
+    await recordMeasure('trendChangesDetected', changes.length);
+    expect(changes.length).toBeGreaterThanOrEqual(1);
+  }, 300_000);
 });

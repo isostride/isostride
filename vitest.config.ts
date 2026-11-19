@@ -12,7 +12,7 @@ export default defineConfig({
   test: {
     sequence: { shuffle: true },
     // Coverage of the processing code, for the new-code coverage check (scripts/coverage-new.mjs).
-    coverage: { provider: 'v8', include: ['lib/**', 'workers/**'], exclude: ['lib/client/**'], reporter: ['json'], reportsDirectory: 'reports/coverage' },
+    coverage: { provider: 'v8', include: ['lib/**'], exclude: ['lib/client/**'], reporter: ['json'], reportsDirectory: 'reports/coverage' },
     projects: [
       { resolve: { alias }, test: { name: 'unit', environment: 'node', include: ['tests/unit/**/*.test.ts'], setupFiles: ['tests/support/noNetwork.ts'] } },
       { resolve: { alias }, test: { name: 'integration', environment: 'node', include: ['tests/integration/**/*.test.ts'], globalSetup: ['tests/support/globalSetup.ts'], testTimeout: 120_000 } },

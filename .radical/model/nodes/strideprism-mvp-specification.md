@@ -309,3 +309,5 @@ Q: The 'A test pyramid' pack wants unit tests ≥70% of all tests, E2E ≤10%, e
 A: Adjust the thresholds (Recommended): Change the FF in the model for this project: unit ≥40%, E2E ≤15%, unit <100 ms, integration on real data counted separately. Plus split tests into tests/unit and tests/integration, and add unit tests where they have value (stats, geo, structure, CSV, select).
 Q: Items the packs tie to GitHub/SonarQube/Lighthouse CI (PR merge gate, nightly flaky quarantine, new-code coverage in SonarQube, Lighthouse): how should I do them while the project is local-only?
 A: Local only
+Q: (użytkownik) chodzi mi o to ze to ff powinno byc weryfikowawalne ... nawet teraz ... bo inaczej radical check nie przechodzi
+A: FF "Detects real change" becomes automated: on the author's runs, with every suggested block accepted, the trends of all metrics are computed and at least one must have the verdict "change" (larger than the noise, its interval clear of zero, at least 5 instances); the random-split negative test keeps guarding against false alarms.

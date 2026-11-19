@@ -10,7 +10,7 @@ scope: "atomic"
 trigger: "pull-request"
 ---
 
-Vitest measures coverage of the processing code (lib/ and workers/, the main-thread lib/client excepted) with @vitest/coverage-v8, branches included; scripts/coverage-new.mjs takes the lines changed since the last commit (or, with a clean tree, in the last commit) and computes the share of their statements and branches the tests run, listing each uncovered line. Local only for now (the author's decision of 19 Nov 2026): npm run check runs it with the tests and exits non-zero on a failure.
+Vitest measures coverage of the processing code (lib/, the main-thread lib/client excepted) with @vitest/coverage-v8, branches included; scripts/coverage-new.mjs takes the lines changed since the last commit (or, with a clean tree, in the last commit) and computes the share of their statements and branches the tests run, listing each uncovered line. The worker's message handler (workers/) runs only in the browser and is covered by the end-to-end tests. Local only for now (the author's decision of 19 Nov 2026): npm run check runs it with the tests and exits non-zero on a failure.
 
 Threshold: at least 80% of new and changed statements and branches covered
 

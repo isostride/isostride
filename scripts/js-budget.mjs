@@ -1,6 +1,6 @@
 // JavaScript per route (ADR "Built with React": 200 KB per route): for each screen's page in
 // the static export, the gzip size of every script it references, which is what a host that
-// compresses sends. Writes reports/measures-js.json; exits 1 when a route is over budget.
+// compresses sends; noModule scripts, which the listed browsers skip, are left out. Writes reports/measures-js.json; exits 1 when a route is over budget.
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
@@ -12,7 +12,9 @@ export function routeScripts(exportDir) {
   const pages = fs.readdirSync(exportDir).filter((f) => f.endsWith('.html') && f !== '404.html');
   return Object.fromEntries(pages.map((page) => {
     const html = fs.readFileSync(path.join(exportDir, page), 'utf8');
-    const srcs = [...new Set([...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1].split('?')[0]))];
+    // A noModule script (polyfills for old browsers) is never loaded by the listed browsers.
+    const tags = [...html.matchAll(/<script\b[^>]*>/gi)].map((m) => m[0]).filter((t) => !/\bnomodule\b/i.test(t));
+    const srcs = [...new Set(tags.map((t) => t.match(/\bsrc="([^"]+)"/)?.[1]).filter(Boolean).map((s) => s.split('?')[0]))];
     const bytes = srcs.reduce((n, s) => n + zlib.gzipSync(fs.readFileSync(path.join(exportDir, s.replace(/^\//, '')))).length, 0);
     return [page.replace(/\.html$/, ''), Math.round(bytes / 102.4) / 10];
   }));

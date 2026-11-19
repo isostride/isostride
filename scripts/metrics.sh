@@ -30,6 +30,7 @@ sense --metric import.repeat.records_added=/repeatRecordsAdded
 sense --label dataset=author --metric import.errors=/historicalImportErrors --metric import.runs_missing_developer_fields=/historicalRunsMissingDeveloperFields
 # Acceptance criterion 3: a value the run could not compute (no pass in the period) is left unmeasured.
 sense --metric acceptance.promenade.steady_passes=/promenadeSteadyPasses
+sense --label dataset=author --metric compare.trend.changes_detected=/trendChangesDetected
 sense --label expected=135 --metric acceptance.promenade.hr_2026_11_14.abs_error=/promenadeHrNov14AbsError@bpm 2>/dev/null || true
 # End-to-end measurements (reports/measures-e2e.json, from npm run e2e).
 E=reports/measures-e2e.json

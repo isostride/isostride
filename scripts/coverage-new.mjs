@@ -32,7 +32,8 @@ export function newCodeCoverage(changed, coverage, root = process.cwd()) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const SCOPE = ['lib', 'workers'];
+  // The worker's message handler runs only in the browser; the end-to-end tests cover it.
+  const SCOPE = ['lib'];
   const sh = (c) => execSync(c, { encoding: 'utf8' });
   let base = 'HEAD';
   let diff = sh(`git diff -U0 HEAD -- ${SCOPE.join(' ')}`);
