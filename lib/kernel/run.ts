@@ -87,6 +87,8 @@ export interface RunContext {
   hrSensorId: string | null;
   /** the device behind the heart rate: the registered sensor worn, or the watch's wrist sensor */
   heartRateSource: string;
+  /** the runner's own title of the run */
+  title: string | null;
   workoutType: string | null;
   techniqueCue: string | null;
   note: string | null;

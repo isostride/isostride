@@ -6,7 +6,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { LANE, LineChart, RouteMap, clock, useWidth } from '@/components';
 import { useOpenFolder, runInWorker } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
-import type { RunFile } from '@/lib/kernel';
+import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { canDefineFromLaps, definitionFromLaps, efficiencyOf, definitionFromSelection, readDefinitions, selectionOptions, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockType } from '@/lib/blocks';
 import { date, duration, km, pace, time } from '@/lib/format';
 
@@ -76,12 +76,19 @@ export default function RunPageWrapper() {
 
 /** Run: metrics over time on 10 s windows, the route, laps and quality-flagged windows. */
 function RunPage() {
-  const id = useSearchParams().get('id') ?? '';
+  const params = useSearchParams();
+  const id = params.get('id') ?? '';
   const { folder, handle } = useOpenFolder();
   const router = useRouter();
-  const [selection, setSelection] = useState<{ from: number; to: number } | null>(null);
+  // A stretch named in the link (an answer's fastest 10 min) opens selected.
+  const [selection, setSelection] = useState<{ from: number; to: number } | null>(() => {
+    const from = Number(params.get('from'));
+    const to = Number(params.get('to'));
+    return from >= 0 && to > from ? { from, to } : null;
+  });
   const [creating, setCreating] = useState(false);
   const [run, setRun] = useState<RunFile | null | undefined>(undefined);
+  const [title, setTitle] = useState<string | null>(null);
   const [cursor, setCursor] = useState<number | null>(null);
   const [blocks, setBlocks] = useState<(BlockInstance & { name: string })[]>([]);
   const [shown, setShown] = useState<WindowKey[]>(DEFAULT_SHOWN);
@@ -100,6 +107,7 @@ function RunPage() {
 
   useEffect(() => {
     readJson<RunFile>(folder, PATHS.runFile(id)).then(setRun).catch(() => setRun(null));
+    readJson<RunsIndex>(folder, PATHS.runsIndex).then((idx) => setTitle(idx?.runs.find((r) => r.id === id)?.title ?? null));
     (async () => {
       const names = new Map((await readDefinitions(folder)).map((d) => [d.id, d.name]));
       const all = (await readJson<{ instances: BlockInstance[] }>(folder, PATHS.blockInstances))?.instances ?? [];
@@ -155,8 +163,8 @@ function RunPage() {
     <div className="page">
       <div className="page-head">
         <div>
-          <div className="eyebrow"><Link href="/">← Runs</Link></div>
-          <h1>{date(run.startTime)} <span className="muted">· {time(run.startTime)}</span></h1>
+          <div className="eyebrow"><Link href="/">← Runs</Link>{title && <span> · {date(run.startTime)} · {time(run.startTime)}</span>}</div>
+          <h1>{title ?? <>{date(run.startTime)} <span className="muted">· {time(run.startTime)}</span></>}</h1>
         </div>
         <span className="spacer" />
         <span className="chip">{run.device}</span>

@@ -6,6 +6,7 @@ import { useOpenFolder, runInWorker } from '@/lib/client';
 import { RECOMMENDATIONS_PATH, fromRecommendation, readDefinitions, writeDefinitions, type BlockDefinition, type BlockInstancesFile, type BlockParams, type Recommendation, type RefPoint, type Tolerances, type BlockStart } from '@/lib/blocks';
 import { PATHS, readJson } from '@/lib/fs';
 import { date } from '@/lib/format';
+import { CriteriaSheet } from './CriteriaSheet';
 
 const fmtPace = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
@@ -17,6 +18,7 @@ export default function BlocksPage() {
   const [inst, setInst] = useState<BlockInstancesFile['instances']>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [editing, setEditing] = useState<BlockDefinition | null>(null);
+  const [creating, setCreating] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
   const load = useCallback(async () => {
@@ -55,6 +57,7 @@ export default function BlocksPage() {
         <h1>Blocks</h1>
         <span className="spacer" />
         {busy && <span className="chip">⟳ {busy}…</span>}
+        <button className="btn primary" disabled={!!busy} onClick={() => setCreating(true)}>+ New block from criteria</button>
       </div>
 
       <h3 className="section-title">Suggested <span className="muted">· found in your runs</span></h3>
@@ -106,7 +109,12 @@ export default function BlocksPage() {
         </div>
       )}
 
-      {editing && (
+      {creating && <CriteriaSheet onClose={() => setCreating(false)} onSave={(d) => { setCreating(false); save([...defs, d], `Adding ${d.name}`); }} />}
+      {editing && editing.params.type === 'criteria' && (
+        <CriteriaSheet def={editing} onClose={() => setEditing(null)} onSave={(d) => { setEditing(null); save(defs.map((x) => (x.id === d.id ? d : x)), `Re-detecting ${d.name}`); }}
+          onDelete={(d) => { setEditing(null); save(defs.filter((x) => x.id !== d.id), `Deleting ${d.name}`); }} />
+      )}
+      {editing && editing.params.type !== 'criteria' && (
         <ToleranceSheet
           def={editing}
           onClose={() => setEditing(null)}
@@ -120,7 +128,7 @@ export default function BlocksPage() {
 
 const TYPE_LABEL: Record<BlockParams['type'], string> = {
   route: 'route segment', structure: 'workout structure', steady: 'steady fragment',
-  effort: 'effort, any route', tag: 'workout type', pattern: 'lap pattern, any route',
+  effort: 'effort, any route', tag: 'workout type', pattern: 'lap pattern, any route', criteria: 'criteria',
 };
 
 /** A tiny picture of a definition: the route's shape, or what it is made of. */
@@ -132,6 +140,7 @@ function Thumb({ params }: { params: BlockParams }) {
     : params.type === 'effort' ? `⚡ ${len(params.kind, params.target)}`
     : params.type === 'tag' ? `# ${params.workoutType}`
     : params.type === 'pattern' ? `▤ ${params.laps.filter((l) => l.effort).length} laps`
+    : params.type === 'criteria' ? `⚲ ${params.scope === 'lap' ? 'laps by criteria' : 'runs by criteria'}`
     : '≈ steady';
   return <div className="thumb">{label}</div>;
 }

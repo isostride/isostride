@@ -1,6 +1,7 @@
 import { meanHeading, resample } from '@/lib/geo';
 import type { RunFile } from '@/lib/kernel';
-import { DEFAULT_TOLERANCES, LOGICAL_HR_SKIP, type BlockType, type BlockDefinition, type BlockDefinitionsFile, type Recommendation, type Tolerances } from './types';
+import { CRITERIA_TOLERANCES, DEFAULT_TOLERANCES, LOGICAL_HR_SKIP, type BlockType, type BlockDefinition, type BlockDefinitionsFile, type Criteria, type CriteriaScope, type Recommendation, type Tolerances } from './types';
+import { criteriaName } from './criteria';
 import { effortName, patternName, patternOf } from './logical';
 import { lapKey, structureName } from './structure';
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
@@ -14,7 +15,18 @@ export async function readDefinitions(folder: DataFolder): Promise<BlockDefiniti
 
 /** Tolerances for a block of a type: effort and workout-type blocks measure heart rate from minute 5 of the block. */
 export function defaultTolerances(type: BlockType): Tolerances {
+  if (type === 'criteria') return { ...CRITERIA_TOLERANCES };
   return { ...DEFAULT_TOLERANCES, hrSkip: type === 'effort' || type === 'tag' ? LOGICAL_HR_SKIP : null };
+}
+
+/** A block from the runner's criteria: the criteria decide, the general conditions are off. */
+export function definitionFromCriteria(name: string, criteria: Criteria, scope: CriteriaScope, now = new Date()): BlockDefinition {
+  return {
+    id: newDefinitionId(), origin: 'manual', status: 'active', createdAt: now.toISOString(),
+    name: name.trim() || criteriaName(criteria, scope),
+    params: { type: 'criteria', criteria, scope },
+    tolerances: { ...CRITERIA_TOLERANCES },
+  };
 }
 
 function withDefaults(t: Partial<Tolerances>, type: BlockType): Tolerances {

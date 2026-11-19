@@ -139,7 +139,7 @@ function RunsPage() {
           <table className="data">
             <thead>
               <tr>
-                <th>Date</th><th>Start</th><th className="num">Distance km</th><th className="num">Time</th><th className="num">Pace /km</th><th className="num">Avg HR</th><th>HR from</th><th>Shoes</th><th>Tags</th><th className="num">Load 7 d</th><th />
+                <th>Date</th><th>Start</th><th>Title</th><th className="num">Distance km</th><th className="num">Time</th><th className="num">Pace /km</th><th className="num">Avg HR</th><th>HR from</th><th>Shoes</th><th>Tags</th><th className="num">Load 7 d</th><th />
               </tr>
             </thead>
             <tbody>
@@ -148,6 +148,7 @@ function RunsPage() {
                   <tr className="row" onClick={() => router.push(`/run?id=${r.id}`)}>
                     <td className="strong">{date(r.startTime)}</td>
                     <td className="muted">{time(r.startTime)}</td>
+                    <td>{r.title ? <span className="title-cell">{r.title}</span> : <span className="muted">–</span>}</td>
                     <td className="num">{km(r.distance)}</td>
                     <td className="num">{duration(r.duration)}</td>
                     <td className="num strong">{pace(r.avgSpeed)}</td>
@@ -165,7 +166,7 @@ function RunsPage() {
                   </tr>
                   {editing === r.id && tags && (
                     <tr>
-                      <td colSpan={11} style={{ background: 'var(--surface-2)' }}>
+                      <td colSpan={12} style={{ background: 'var(--surface-2)' }}>
                         <TagEditor tag={tags.tags[r.id] ?? {}} gear={gear} dictionary={tags.dictionary} onSave={(t) => saveTag(r.id, t)} onCancel={() => setEditing(null)} />
                       </td>
                     </tr>
@@ -191,6 +192,7 @@ function TagEditor({ tag, gear, dictionary, onSave, onCancel }: {
   const set = (k: keyof RunTag, v: string) => setT({ ...t, [k]: v || undefined });
   return (
     <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', padding: '4px 0' }}>
+      <label className="muted">Title <input value={t.title ?? ''} placeholder="e.g. COROS test" onChange={(e) => set('title', e.target.value)} style={{ width: 180 }} /></label>
       <label className="muted">Shoe override{' '}
         <select value={t.shoesOverride ?? ''} onChange={(e) => set('shoesOverride', e.target.value)}>
           <option value="">by date</option>

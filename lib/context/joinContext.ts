@@ -17,6 +17,7 @@ export function contextFor(row: RunIndexRow, gear: Gear[], tags: RunTagsFile, da
     shoesOverridden: override !== null,
     hrSensorId: sensor?.id ?? null,
     heartRateSource: sensor ? sensor.name : `wrist (${row.device})`,
+    title: tag.title ?? null,
     workoutType: tag.workoutType ?? null,
     techniqueCue: tag.techniqueCue ?? null,
     note: tag.note ?? null,

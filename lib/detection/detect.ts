@@ -3,7 +3,7 @@ import type { IndexedRun, RunFile } from '@/lib/kernel';
 import { buildInstance } from './instance';
 import { effortIn, followsPattern, mainEffort } from './logical';
 import { findPasses } from './routeMatch';
-import { lapKey, type BlockDefinition, type BlockInstance } from '@/lib/blocks';
+import { lapKey, lapSubject, matchesCriteria, runSubject, type BlockDefinition, type BlockInstance } from '@/lib/blocks';
 
 /** Detects the instances of one block definition in one run (spec F10). */
 export function detectInstances(def: BlockDefinition, run: RunFile, row: IndexedRun, track: TrackPoint[]): BlockInstance[] {
@@ -35,6 +35,14 @@ export function detectInstances(def: BlockDefinition, run: RunFile, row: Indexed
   if (p.type === 'pattern') {
     if (!followsPattern(run.laps, p.laps, p.tolerance)) return [];
     return p.laps.flatMap((lap, i) => (lap.effort ? [buildInstance(def, run, row, run.laps[i].start, run.laps[i].end, { lap: i + 1 })] : []));
+  }
+  if (p.type === 'criteria') {
+    // The runner's own criteria: the whole run that meets them, or each of its laps that does.
+    if (p.scope === 'run') {
+      const end = run.samples.t[run.samples.t.length - 1] ?? 0;
+      return matchesCriteria(p.criteria, runSubject(row)) ? [buildInstance(def, run, row, 0, end + 1)] : [];
+    }
+    return run.laps.flatMap((lap, i) => (matchesCriteria(p.criteria, lapSubject(run, row, i)) ? [buildInstance(def, run, row, lap.start, lap.end, { lap: i + 1 })] : []));
   }
   return steadyFragments(def, run).map(([from, to]) => buildInstance(def, run, row, from, to));
 }

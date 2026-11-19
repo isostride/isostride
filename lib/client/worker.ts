@@ -1,6 +1,7 @@
 'use client';
 
-import type { WorkerEvent, WorkerJob } from '@/workers';
+import type { Answer, Query } from '@/lib/ask';
+import type { WorkerEvent, WorkerJob, WorkerRequest } from '@/workers';
 
 export type DoneEvent = Extract<WorkerEvent, { type: 'done' }>;
 export interface JobState {
@@ -29,12 +30,11 @@ export function watchJob(listener: (s: JobState | null) => void): () => void {
   return () => listeners.delete(listener);
 }
 
-/** Runs one job in a fresh Processing Worker; resolves when it is done. */
-export function runInWorker(
-  job: WorkerJob,
-  handle: FileSystemDirectoryHandle,
-  onProgress?: (p: { done: number; total: number; file: string }) => void,
-): Promise<DoneEvent> {
+type Progress = (p: { done: number; total: number; file: string }) => void;
+
+/** Starts a request in a fresh Processing Worker; resolves with its final event. */
+function start(request: WorkerRequest, onProgress?: Progress, signal?: AbortSignal): Promise<Exclude<WorkerEvent, { type: 'progress' | 'error' }>> {
+  const job = request.type;
   const w = new Worker(new URL('../../workers/pipeline.worker.ts', import.meta.url));
   running.add(w);
   const end = () => {
@@ -43,6 +43,8 @@ export function runInWorker(
     if (current?.job === job) publish(null);
   };
   publish({ job, done: 0, total: 0 });
+  // Abandoned (the controls changed again): the worker stops reading, and the promise never settles.
+  signal?.addEventListener('abort', end, { once: true });
   return new Promise((resolve, reject) => {
     w.onmessage = (e: MessageEvent<WorkerEvent>) => {
       const m = e.data;
@@ -51,14 +53,28 @@ export function runInWorker(
         onProgress?.(m);
       } else {
         end();
-        if (m.type === 'done') resolve(m);
-        else reject(new Error(m.message));
+        if (m.type === 'error') reject(new Error(m.message));
+        else resolve(m);
       }
     };
     w.onerror = (e) => {
       end();
       reject(new Error(e.message));
     };
-    w.postMessage({ type: job, handle });
+    w.postMessage(request);
   });
+}
+
+/** Runs one job in a fresh Processing Worker; resolves when it is done. */
+export async function runInWorker(job: Exclude<WorkerJob, 'ask'>, handle: FileSystemDirectoryHandle, onProgress?: Progress): Promise<DoneEvent> {
+  const m = await start({ type: job, handle }, onProgress);
+  if (m.type !== 'done') throw new Error(`unexpected ${m.type}`);
+  return m;
+}
+
+/** Answers a question about the data in the Processing Worker (it reads every run the question covers). */
+export async function askInWorker(query: Query, handle: FileSystemDirectoryHandle, onProgress?: Progress, signal?: AbortSignal): Promise<Answer> {
+  const m = await start({ type: 'ask', handle, query }, onProgress, signal);
+  if (m.type !== 'answer') throw new Error(`unexpected ${m.type}`);
+  return m.answer;
 }

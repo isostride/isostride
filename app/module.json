@@ -2,6 +2,7 @@
   "$comment": "Parts this part may import, each through its index (ADR \"Declared dependencies only\"); runs: main thread, worker or both.",
   "uses": [
     "components",
+    "lib/ask",
     "lib/blocks",
     "lib/client",
     "lib/compare",

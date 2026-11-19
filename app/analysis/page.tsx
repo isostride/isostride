@@ -13,8 +13,8 @@ import type { RunFile, RunsIndex } from '@/lib/kernel';
 
 const DAY = 86_400_000;
 const METRICS = METRIC_VIEW;
-const runName = (start: string, distance: number) =>
-  `${new Date(start).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })} · ${(distance / 1000).toFixed(1)} km`;
+const runName = (start: string, distance: number, title?: string | null) =>
+  `${title ? `${title} · ` : ''}${new Date(start).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })} · ${(distance / 1000).toFixed(1)} km`;
 
 export default function AnalysisPageWrapper() {
   return <Suspense><AnalysisPage /></Suspense>;
@@ -94,7 +94,7 @@ function AnalysisPage() {
   const label = (i: AnalysisItem) => {
     if (i.kind === 'block') return defs.find((d) => d.id === i.id)?.name ?? 'block';
     const r = runs.find((x) => x.id === i.id);
-    return r ? `Run ${runName(r.startTime, r.distance)}` : 'run';
+    return r ? `Run ${runName(r.startTime, r.distance, r.title)}` : 'run';
   };
 
   /** Each metric's trends of the blocks added. */
@@ -260,8 +260,8 @@ function AddDialog({ defs, runs, items, onAdd, onClose }: { defs: BlockDefinitio
   const options = [
     ...defs.filter((d) => !items.some((i) => i.id === d.id) && match(`${d.name} block`)).map((d) => ({ kind: 'block' as const, id: d.id, text: d.name, hint: 'block' })),
     ...[...runs].reverse().filter((r) => !items.some((i) => i.id === r.id))
-      .filter((r) => match(`${runName(r.startTime, r.distance)} ${r.workoutType ?? ''} ${r.startTime.slice(0, 10)} run`))
-      .map((r) => ({ kind: 'run' as const, id: r.id, text: runName(r.startTime, r.distance), hint: [r.workoutType, `${Math.floor(r.duration / 60)} min`].filter(Boolean).join(' · ') })),
+      .filter((r) => match(`${runName(r.startTime, r.distance, r.title)} ${r.workoutType ?? ''} ${r.startTime.slice(0, 10)} run`))
+      .map((r) => ({ kind: 'run' as const, id: r.id, text: runName(r.startTime, r.distance, r.title), hint: [r.workoutType, `${Math.floor(r.duration / 60)} min`].filter(Boolean).join(' · ') })),
   ].slice(0, 60);
   return (
     <div className="palette-backdrop" onClick={onClose}>

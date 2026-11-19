@@ -2,6 +2,8 @@ import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
 
 /** What the runner says about one run (user/run-tags.json). */
 export interface RunTag {
+  /** the runner's own title of the run (a COROS test, a race): criteria blocks filter by it */
+  title?: string;
   workoutType?: string;
   techniqueCue?: string;
   /** id of the shoes worn instead of the ones assigned by date */

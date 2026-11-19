@@ -175,6 +175,12 @@
     "targetId": "ca29b4d4-2e21-4bd0-8a7d-dedef3dab8b4"
   },
   {
+    "id": "09bde772-0877-4f4b-a50c-0290814fd623",
+    "relationType": "verifies",
+    "sourceId": "6f1b8ec1-b966-4c32-989d-1d3c4b25e97b",
+    "targetId": "fbf51618-db00-4dd1-aec6-aa5cb4d17b84"
+  },
+  {
     "id": "0a154552-e615-40e5-bd88-393686ae2020",
     "label": "Reads fit/",
     "relationType": "interacts",
@@ -244,6 +250,12 @@
     "relationType": "performed-by",
     "sourceId": "3479a61f-e20a-4dbc-a02d-afa8af07998e",
     "targetId": "af580e00-9fde-4182-89d8-479d71707a14"
+  },
+  {
+    "id": "0bdf98da-a8c2-4681-b41f-6f862dae870d",
+    "relationType": "illustrates",
+    "sourceId": "a58faa23-2592-4664-90ca-6b1c0143af21",
+    "targetId": "fbf51618-db00-4dd1-aec6-aa5cb4d17b84"
   },
   {
     "id": "0be6994d-17f9-4f71-8c54-9c524594fdee",
@@ -319,6 +331,13 @@
     "relationType": "performed-by",
     "sourceId": "0b3d0cd1-40e5-4e17-8be1-be991ab74595",
     "targetId": "ce42067b-80ea-40e1-a577-39607ab89630"
+  },
+  {
+    "id": "0f848260-7113-4cc1-af65-b698f59a8aac",
+    "quote": "Nowe pole „tytuł” biegu: Dowolny tekst nadawany biegowi na ekranie Runs; kryterium = fragment tytułu (zawiera „coros test”).",
+    "relationType": "derives",
+    "sourceId": "2f20802d-6d6a-4eac-9620-f016383fc5be",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "0fa574d7-45d1-4ecd-90e7-9ef4f0f35d81",
@@ -413,6 +432,24 @@
     "relationType": "references",
     "sourceId": "3614e7f4-9407-407b-a23b-56e0b424d992",
     "targetId": "2f223517-a575-43e4-bac5-c331d15faa41"
+  },
+  {
+    "id": "12e524b3-f89d-4230-9ad5-286ed2dc3d17",
+    "relationType": "verifies",
+    "sourceId": "b2ecee7e-c463-4adf-9bdc-167842a010a9",
+    "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
+  },
+  {
+    "id": "1335cf89-958a-424a-9e81-7757c333a062",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "fbf51618-db00-4dd1-aec6-aa5cb4d17b84"
+  },
+  {
+    "id": "1348396d-6377-4996-be6e-bad45622f75c",
+    "relationType": "verifies",
+    "sourceId": "e1fb2839-eff8-4d39-a460-d51388a469d5",
+    "targetId": "909a96f5-edf8-4706-9ed2-f2623dc00f62"
   },
   {
     "id": "136100cf-510e-466e-9ca3-c34a06b08942",
@@ -1021,6 +1058,12 @@
     "targetId": "6c5841aa-eb91-46d4-bad2-10d27bb0ea15"
   },
   {
+    "id": "2b96460c-4bc5-4442-ba69-58512c9efff8",
+    "relationType": "verifies",
+    "sourceId": "d72ff93a-47b3-4b30-937d-abc0d5f8fe77",
+    "targetId": "fbf51618-db00-4dd1-aec6-aa5cb4d17b84"
+  },
+  {
     "id": "2bf98086-6573-405c-8907-81a6aa417d78",
     "relationType": "constrains",
     "sourceId": "a5a56b28-2ba1-46be-8b29-9d87439949a9",
@@ -1383,6 +1426,13 @@
     "relationType": "illustrates",
     "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
     "targetId": "b0289efc-ad5a-46b3-b57d-9abbb703ae9a"
+  },
+  {
+    "id": "3da07c05-e820-4b4c-a698-d535815c61d9",
+    "quote": "chce opcji tworzenia wlasnych blokow .... poprzez kryteria i real time filtrowanie\nkombinacje powyzszych\nDo wyboru w bloku: Przełącznik w definicji: cały bieg albo lap; kryteria te same.\nTagi i sprzęt (typ treningu, wskazówka techniczna, buty, czujnik HR), Dystans, tempo, czas (zakresy od–do), Daty i zegarek (zakres dat, urządzenie), Tętno i laps (średnie HR od–do, liczba lapów od–do).",
+    "relationType": "derives",
+    "sourceId": "fbf51618-db00-4dd1-aec6-aa5cb4d17b84",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "3dbb5b04-c134-40a2-b67a-1acefccbc3d7",
@@ -2264,6 +2314,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "6df36afc-0a5e-4d46-8d51-ecaa7f689a86",
+    "relationType": "verifies",
+    "sourceId": "7ec54c1a-41c2-45c6-b21c-d0d8e608512c",
+    "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
+  },
+  {
     "id": "6df4c675-c248-4989-8c5f-aadf6909d925",
     "relationType": "satisfies",
     "sourceId": "2a60339a-0a2c-4da8-b12e-4227eba8f4d1",
@@ -2274,6 +2330,12 @@
     "relationType": "satisfies",
     "sourceId": "0e952c97-92a0-4037-846e-9154619a2261",
     "targetId": "44d77356-e7fd-4ab0-82f4-8e0e015d2cc0"
+  },
+  {
+    "id": "6ee12c44-64b9-4407-af9a-15cff22cb21b",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "2f20802d-6d6a-4eac-9620-f016383fc5be"
   },
   {
     "id": "6f12cb42-ad2d-49a5-bf3a-ed7b266c99b6",
@@ -2452,6 +2514,12 @@
     "targetId": "6571fdbf-e3a5-4871-8aec-2f04b8ff4a85"
   },
   {
+    "id": "7576164c-988a-4ff7-820d-56c63e6f3d04",
+    "relationType": "verifies",
+    "sourceId": "20280dd4-9d43-4d15-bb62-dd3ca3050e95",
+    "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
+  },
+  {
     "id": "75a3b6d7-67ab-445c-ac5e-74eb2a8238bd",
     "relationType": "traces-to",
     "sourceId": "e6a5afbb-9945-4524-9a7e-6aa34d59ea8e",
@@ -2499,6 +2567,12 @@
     "relationType": "illustrates",
     "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
     "targetId": "d4c8693a-3fc7-4b32-ba42-56c6eda61fbc"
+  },
+  {
+    "id": "7830b8a1-8048-4418-af64-2004ca7e590c",
+    "relationType": "satisfies",
+    "sourceId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d",
+    "targetId": "909a96f5-edf8-4706-9ed2-f2623dc00f62"
   },
   {
     "id": "78c6f88a-1433-42e8-9ef7-4347d1b1eb43",
@@ -2840,6 +2914,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "86fa9580-abd1-4d1a-ab16-4fe44b0b3b72",
+    "relationType": "verifies",
+    "sourceId": "52115b3a-c9d3-449a-afa7-39a4659d8531",
+    "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
+  },
+  {
     "id": "8721d059-6259-47a8-9ec7-cef5838c8031",
     "quote": "The element changes often, and every change must be releasable without fear: the tests have to catch a broken rule, a broken integration and a broken journey before users do, give that answer quickly enough that people wait for it, and give the same answer every time they run on the same code. A green build must mean something. The checks below share one layout: unit tests under test/unit, integration tests under test/integration, end-to-end journeys as Playwright specs under e2e/<journey>.spec.ts, JUnit reports written to reports/<suite>.xml, quarantined tests listed in quarantine.json.",
     "relationType": "derives",
@@ -2929,6 +3009,12 @@
     "relationType": "constrains",
     "sourceId": "9ab44fc6-cc41-4349-925f-e27ed3d61d4e",
     "targetId": "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7"
+  },
+  {
+    "id": "8a74f997-075b-42a9-915e-409caaa6d68a",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
   },
   {
     "id": "8a9a0a26-faf5-4183-80d3-09b756cef6f7",
@@ -3107,6 +3193,12 @@
     "targetId": "a90357d6-8d79-4dd5-bb07-f49493d04b3c"
   },
   {
+    "id": "946eab2c-20d8-43d4-863d-cfaf588efb46",
+    "relationType": "constrains",
+    "sourceId": "5ba5e99c-da08-4beb-bd36-da1fd533abce",
+    "targetId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d"
+  },
+  {
     "id": "9499b30c-4ef3-491c-9f20-56d7e413caf1",
     "quote": "The code in this element must stay easy to understand, test and change as it grows and as people come and go. That needs parts with clear boundaries: a change to one part should not ripple through the others, each part should be testable on its own, and the rules about what may depend on what should hold because the build checks them, not because everyone remembers them. The checks below share one layout: each part lives in src/modules/<name> with its published API in src/modules/<name>/index.ts and its declarations in src/modules/<name>/module.json; shared code, where allowed, lives in src/shared-kernel; the rules are in .dependency-cruiser.cjs and run as `npm run check:deps` (depcruise src --config .dependency-cruiser.cjs); known violations, where frozen, are in .dependency-cruiser-known-violations.json.",
     "relationType": "derives",
@@ -3162,6 +3254,12 @@
     "relationType": "satisfies",
     "sourceId": "a694fdc9-58ad-462b-a996-c49812b6da79",
     "targetId": "c5829292-1066-494a-9c63-78abe795aa96"
+  },
+  {
+    "id": "976cad5f-4d0b-4680-899a-47ffff661e8d",
+    "relationType": "illustrates",
+    "sourceId": "39baf51f-e6cc-4383-a2f9-fee0ada8d95a",
+    "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
   },
   {
     "id": "977c1b90-53a3-49a5-bd4d-b2ea342b5622",
@@ -3328,6 +3426,13 @@
     "targetId": "e34e41c2-1850-4479-8a3f-380d7834213d"
   },
   {
+    "id": "9fbd07f2-69b4-440e-b9f6-c39b8b65ce0e",
+    "quote": "chce rozsszerzyc aplikacje, nie tylko do modulow i porownan - chce miec mozliwosc doglebnej analizy danych ktore sa, - np. chce miec mozliwosc zadania pytanie - pokaz mi jak sie zmieniala efektywnosc od lutego\nodpowiedź to najlepszy z nich (bieg, minuta startu, tempo), plus ranking kolejnych.\nWykres + tabela + zdanie: Wykres w czasie (gdy pytanie o zmianę), tabela wyników z linkami do biegów, i jedno zdanie werdyktu",
+    "relationType": "derives",
+    "sourceId": "83816ea6-8c1f-42fc-bc74-944304c249f5",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "a052c5c7-59e0-4405-87f0-af44f5d6ca7e",
     "relationType": "verifies",
     "sourceId": "058838f5-1eff-4381-9e09-dd4cd1504ae1",
@@ -3427,6 +3532,12 @@
     "relationType": "derives",
     "sourceId": "31ec5c9f-dc19-4487-a84b-67fbd381ead5",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "a5c0594b-c03b-43fa-8fd4-c0e03a6f240f",
+    "relationType": "verifies",
+    "sourceId": "a23ad5ec-41a8-4148-9fcd-a762769f05a9",
+    "targetId": "fbf51618-db00-4dd1-aec6-aa5cb4d17b84"
   },
   {
     "id": "a5f0f292-c453-4789-9213-fbaac62a0e66",
@@ -3887,6 +3998,12 @@
     "targetId": "368d77bf-f7ca-4698-8943-e0f8518b648a"
   },
   {
+    "id": "baeb2ede-d306-4875-b301-e466f52052a0",
+    "relationType": "verifies",
+    "sourceId": "a23ad5ec-41a8-4148-9fcd-a762769f05a9",
+    "targetId": "2f20802d-6d6a-4eac-9620-f016383fc5be"
+  },
+  {
     "id": "baf9a9d1-da1a-43db-b811-def4f575bd9f",
     "quote": "Co się dzieje z odrzuconą rekomendacją\nZapamiętana (Recommended)",
     "relationType": "derives",
@@ -4128,6 +4245,12 @@
     "relationType": "verifies",
     "sourceId": "26649d2f-ac65-4841-bce8-8b156e16b6fe",
     "targetId": "820d6ab8-673f-4836-909f-a74779044ff5"
+  },
+  {
+    "id": "c730164e-4315-45c8-b925-a8d6e67a1887",
+    "relationType": "verifies",
+    "sourceId": "5fd6562d-deca-4509-86a8-a28b84e52f3e",
+    "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
   },
   {
     "id": "c743ddbc-9db7-4796-a507-1f3c337a4f3a",
@@ -4511,6 +4634,12 @@
     "targetId": "f86ec633-9755-4307-8d23-37eec49e8e9a"
   },
   {
+    "id": "d922b1a6-5983-47a0-961f-3fee666882e0",
+    "relationType": "implements",
+    "sourceId": "d7d1886c-0eda-4086-931c-fe3a0b2be1d9",
+    "targetId": "5ba5e99c-da08-4beb-bd36-da1fd533abce"
+  },
+  {
     "id": "d965fe56-c969-4ef4-b4bf-c1c6303afc23",
     "relationType": "verifies",
     "sourceId": "4694d757-ae1c-4238-b0f7-1de633e81d8a",
@@ -4834,6 +4963,12 @@
     "targetId": "e994cb73-b961-4a9d-8334-de1cd8a785e4"
   },
   {
+    "id": "e945b8bf-d53e-4be6-b6f3-b3fd998afa26",
+    "relationType": "verifies",
+    "sourceId": "7ec54c1a-41c2-45c6-b21c-d0d8e608512c",
+    "targetId": "909a96f5-edf8-4706-9ed2-f2623dc00f62"
+  },
+  {
     "id": "e9865b1b-25bb-496a-bf60-2c6671738844",
     "relationType": "emits",
     "sourceId": "f58f1376-76ae-401e-9a0b-97fb2c636e4f",
@@ -4993,6 +5128,13 @@
     "targetId": "39491f93-4fcc-4f9c-960b-e12750deef8f"
   },
   {
+    "id": "ef7f60ef-2b2b-4869-a3b0-2751e011c942",
+    "quote": "Tekst + lokalny parser: Wpisujesz pytanie po polsku lub angielsku; aplikacja rozpoznaje metrykę, okres, filtr i rodzaj odpowiedzi własną gramatyką (bez sieci, bez AI) i pokazuje interpretację jako chipy, które możesz poprawić. Ograniczony zestaw wzorców, ale dane nie opuszczają komputera.",
+    "relationType": "derives",
+    "sourceId": "909a96f5-edf8-4706-9ed2-f2623dc00f62",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "efaa3911-9072-4fb9-b094-516a35e22301",
     "relationType": "realises",
     "sourceId": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9",
@@ -5134,6 +5276,12 @@
     "relationType": "verifies",
     "sourceId": "9c5ba92a-70c2-4727-8cc9-65b817cf9377",
     "targetId": "e59886da-dd99-4f9a-a722-ee9026468a35"
+  },
+  {
+    "id": "f8806139-6ac8-4b16-ad8e-eb8d29e11d45",
+    "relationType": "satisfies",
+    "sourceId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d",
+    "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
   },
   {
     "actions": "status = accepted",

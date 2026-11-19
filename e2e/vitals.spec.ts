@@ -31,11 +31,17 @@ async function instrument(page: Page) {
 }
 const vitals = (page: Page) => page.evaluate(() => (window as any).__vitals as Record<'LCP' | 'CLS' | 'INP' | 'TBT', number>);
 
-/** gzip size of the scripts a page loaded, from the export (the transfer size a compressing host sends). */
-async function scriptKB(page: Page): Promise<number> {
+/**
+ * gzip size of the route's own scripts the page loaded, from the export (the transfer size a
+ * compressing host sends): those its HTML lists. Chunks the router prefetches for the screens
+ * linked in the sidebar belong to those routes' budgets, not this one's.
+ */
+async function scriptKB(page: Page, route: string): Promise<number> {
+  const html = fs.readFileSync(path.join(EXPORT, route === '/' ? 'index.html' : `${route.slice(1)}.html`), 'utf8');
+  const own = new Set([...html.matchAll(/<script\b[^>]*\bsrc="([^"?]+)/gi)].map((m) => m[1]));
   const urls: string[] = await page.evaluate(() => performance.getEntriesByType('resource').filter((r) => (r as PerformanceResourceTiming).initiatorType === 'script').map((r) => new URL(r.name).pathname));
   let bytes = 0;
-  for (const u of new Set(urls)) bytes += zlib.gzipSync(fs.readFileSync(path.join(EXPORT, u))).length;
+  for (const u of new Set(urls)) if (own.has(u)) bytes += zlib.gzipSync(fs.readFileSync(path.join(EXPORT, u))).length;
   return Math.round(bytes / 102.4) / 10;
 }
 
@@ -60,7 +66,7 @@ test.describe('Core Web Vitals met', () => {
       await page.getByRole('heading', { level: 1, name }).waitFor();
       await page.waitForTimeout(500);
       const v = await vitals(page);
-      const kb = await scriptKB(page);
+      const kb = await scriptKB(page, url);
       rows.push(`${name}: LCP ${Math.round(v.LCP)} ms, CLS ${v.CLS.toFixed(3)}, TBT ${Math.round(v.TBT)} ms, JS ${kb} KB`);
       worst.lcp = Math.max(worst.lcp, v.LCP); worst.cls = Math.max(worst.cls, v.CLS); worst.tbt = Math.max(worst.tbt, v.TBT); worst.scriptKB = Math.max(worst.scriptKB, kb);
     }

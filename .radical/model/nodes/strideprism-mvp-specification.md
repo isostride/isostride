@@ -352,3 +352,21 @@ Q: (użytkownik) jest lepiej ale ciagle nie top class
 A: (model) Geist Sans and Geist Mono bundled with the app (no font fetched from the network), smooth lines with the ticks inside the plot and one cursor card for all lanes, a logo mark, numbers right-aligned in tables, the changes in Analysis as figures with a verdict chip, the route on a dotted grid with a halo.
 Q: (użytkownik) nie mam opcji usuwania blokow
 A: (model) The block's sheet gets "Delete block": after a confirmation the definition and its detected instances are removed; a block that came from a suggestion is suggested again.
+Q: (użytkownik) ok ... chce opcji tworzenia wlasnych blokow .... poprzez kryteria i real time filtrowanie ....... np. wybieram tytlu coros test np. pisze dystans od 3 do 5 km, tempo pomiedzy 3:55 a 4:05 np. pisze z tagiem XXX i kombinacje powyzszych
+Q: "Wybieram tytuł coros test" — pliki FIT z COROS nie niosą nazwy treningu (sprawdzałem przy blokach logicznych). Skąd ma pochodzić tytuł do filtrowania?
+A: Nowe pole „tytuł” biegu: Dowolny tekst nadawany biegowi na ekranie Runs; kryterium = fragment tytułu (zawiera „coros test”).
+Q: Co jest instancją takiego bloku z kryteriów — do czego odnoszą się dystans 3–5 km i tempo 3:55–4:05?
+A: Do wyboru w bloku: Przełącznik w definicji: cały bieg albo lap; kryteria te same.
+Q: Jakie kryteria mają być dostępne (łączone razem jako „i”)?
+A: Tagi i sprzęt (typ treningu, wskazówka techniczna, buty, czujnik HR), Dystans, tempo, czas (zakresy od–do), Daty i zegarek (zakres dat, urządzenie), Tętno i laps (średnie HR od–do, liczba lapów od–do).
+Q: (użytkownik) ok kilka zmian - chce rozsszerzyc aplikacje, nie tylko do modulow i porownan - chce miec mozliwosc doglebnej analizy danych ktore sa, - np. chce miec mozliwosc zadania pytanie - pokaz mi jak sie zmieniala efektywnosc od lutego - pokaz mi najszybszy bieg 10 min od marca itp
+Q: Jak aplikacja ma rozumieć pytanie typu „pokaż mi jak zmieniała się efektywność od lutego”?
+A: Tekst + lokalny parser: Wpisujesz pytanie po polsku lub angielsku; aplikacja rozpoznaje metrykę, okres, filtr i rodzaj odpowiedzi własną gramatyką (bez sieci, bez AI) i pokazuje interpretację jako chipy, które możesz poprawić. Ograniczony zestaw wzorców, ale dane nie opuszczają komputera.
+Q: „Najszybszy bieg 10 min od marca” — co to ma znaczyć?
+A: Najszybszy fragment 10 min: W każdym biegu od marca szukany jest najszybszy ciągły odcinek 10 minut; odpowiedź to najlepszy z nich (bieg, minuta startu, tempo), plus ranking kolejnych.
+Q: W jakiej formie ma przychodzić odpowiedź?
+A: Wykres + tabela + zdanie: Wykres w czasie (gdy pytanie o zmianę), tabela wyników z linkami do biegów, i jedno zdanie werdyktu (np. „+6% od lutego, powyżej szumu”).
+Q: (użytkownik) ok. nie chce wpisywac tekstu chce bardzije strukturalne wyszukiwanie .
+A: (model) The Ask screen becomes a form: the kind of answer, the metric, the length of the stretch, the period (presets and dates), the tag, shoes, title and the length of the ranking as controls; the answer recomputes as a control changes; the grammar for free text is dropped. The question lives in the link.
+Q: (użytkownik) chce miec mozliwosc wyboru sposobu agregowania danych ... i rodzaju metryki , avg, min, max , mediana ...
+A: (model) On the Ask screen a Statistic control beside the metric: average, median, minimum or maximum of the run; the average over the moving samples as before, the median and the extremes over the run's 10 s windows with movement, so one odd sample is no extreme. It applies to a change over time and to a ranking; the fastest stretch has its own measure.

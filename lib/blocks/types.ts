@@ -1,6 +1,35 @@
 /** Block definitions and instances (spec sections 2, 3 and 5). */
 
-export type BlockType = 'route' | 'structure' | 'steady' | 'effort' | 'tag' | 'pattern';
+export type BlockType = 'route' | 'structure' | 'steady' | 'effort' | 'tag' | 'pattern' | 'criteria';
+
+/** Whether criteria pick whole runs or laps within them (the author's choice of 19 Nov 2026). */
+export type CriteriaScope = 'run' | 'lap';
+
+/**
+ * The runner's own criteria for a block, combined with "and"; a null or empty criterion is not
+ * checked. Distance in m, pace in s/km, duration in s, dates as YYYY-MM-DD (local).
+ */
+export interface Criteria {
+  /** the run's title contains this text (case-insensitive) */
+  title: string;
+  distanceMin: number | null;
+  distanceMax: number | null;
+  paceMin: number | null;
+  paceMax: number | null;
+  durationMin: number | null;
+  durationMax: number | null;
+  workoutTypes: string[];
+  techniqueCues: string[];
+  shoes: string[];
+  heartRateSources: string[];
+  dateFrom: string | null;
+  dateTo: string | null;
+  devices: string[];
+  heartRateMin: number | null;
+  heartRateMax: number | null;
+  lapsMin: number | null;
+  lapsMax: number | null;
+}
 
 export interface RefPoint {
   lat: number;
@@ -17,7 +46,9 @@ export type BlockParams =
   /** the main effort of every run tagged with a workout type */
   | { type: 'tag'; workoutType: string }
   /** runs whose laps follow one layout; its effort laps are the instances */
-  | { type: 'pattern'; laps: PatternLap[]; tolerance: number };
+  | { type: 'pattern'; laps: PatternLap[]; tolerance: number }
+  /** the runs (or the laps) that meet the runner's own criteria */
+  | { type: 'criteria'; criteria: Criteria; scope: CriteriaScope };
 
 /** One lap of a lap pattern: set by time or distance, or free (a warm-up to a point, the last lap); effort laps are compared. */
 export interface PatternLap {
@@ -66,6 +97,12 @@ export const DEFAULT_TOLERANCES: Tolerances = {
   hrSkip: null,
   start: 'any',
 };
+
+/**
+ * Tolerances of a criteria block: the criteria decide, so the general conditions are off
+ * (model's choice: grade up to 100 %, CV up to 1, no check of the effort before, any pace).
+ */
+export const CRITERIA_TOLERANCES: Tolerances = { ...DEFAULT_TOLERANCES, paceMin: null, paceMax: null, gradeMax: 1, cvMax: 1, effortBeforeMax: null };
 
 /** Minimum block length: shorter fragments are rejected for every metric (one decision per run). */
 export const MIN_SECONDS = { block: 60 } as const;

@@ -1,7 +1,8 @@
 import type { BlockStart } from '@/lib/blocks';
 import type { IndexedRun, Lap, RunFile } from '@/lib/kernel';
+import { fastestFragment } from '@/lib/blocks';
 import { startKind, stopTimes } from './instance';
-export { effortName, followsPattern, patternKey, patternName, patternOf, tagName } from '@/lib/blocks';
+export { effortName, fastestFragment, followsPattern, patternKey, patternName, patternOf, tagName } from '@/lib/blocks';
 
 /**
  * Logical blocks, independent of the route (the author's choice of 19 Nov 2026): an effort
@@ -17,40 +18,6 @@ export const EFFORT_GAIN = 0.15;
 /** Below this much running outside the fragment there is no "rest of the run" to compare with. */
 const MIN_REST_SECONDS = 120;
 const STOPPED_SPEED = 0.5;
-
-/** The fragment from sample i covering `target` m (distance) or lasting `target` s (time): its end index, or -1. */
-function endFrom(ts: number[], ds: number[], i: number, kind: 'time' | 'distance', target: number): number {
-  let lo = i;
-  let hi = ts.length - 1;
-  const reached = (j: number) => (kind === 'distance' ? ds[j] - ds[i] >= target : ts[j] - ts[i] >= target - 2);
-  if (!reached(hi)) return -1;
-  while (lo < hi) { const mid = (lo + hi) >> 1; if (reached(mid)) hi = mid; else lo = mid + 1; }
-  return lo;
-}
-
-/**
- * The fastest fragment [from, to) s of a run covering `target` metres (distance) or lasting
- * `target` s (time), among those whose start `allow` accepts (every start by default).
- */
-export function fastestFragment(run: RunFile, kind: 'time' | 'distance', target: number, allow?: (t: number) => boolean): { from: number; to: number; distance: number } | null {
-  const { t, distance } = run.samples;
-  const ts: number[] = [];
-  const ds: number[] = [];
-  for (let i = 0; i < t.length; i++) {
-    const d = distance[i];
-    if (d !== null) { ts.push(t[i]); ds.push(d); }
-  }
-  let best: { from: number; to: number; distance: number } | null = null;
-  for (let i = 0; i < ts.length; i++) {
-    if (allow && !allow(ts[i])) continue;
-    const j = endFrom(ts, ds, i, kind, target);
-    if (j < 0) break;
-    const cand = { from: ts[i], to: ts[j], distance: ds[j] - ds[i] };
-    const better = !best || (kind === 'distance' ? cand.to - cand.from < best.to - best.from : cand.distance > best.distance);
-    if (better) best = cand;
-  }
-  return best;
-}
 
 /** How much faster a fragment is than the moving rest of its run (0.1 = 10 %); null when the run has no rest to speak of. */
 export function effortGain(run: RunFile, from: number, to: number, fragmentDistance: number): number | null {

@@ -65,3 +65,34 @@ test.describe('Block attributes', () => {
     await expect(page.locator('.block-card:not(.suggested)', { hasText: name }).getByText('standing start')).toBeVisible({ timeout: 30_000 });
   });
 });
+
+test.describe('Blocks from criteria', () => {
+  test('Block from criteria with a live count', async ({ page }) => {
+    await openWithFolder(page, await fitFiles(12, '2026-05-01'));
+    await importAll(page);
+    // The runner titles the newest run, so a block can find it by its title.
+    const first = page.locator('tr.row').first();
+    await first.getByRole('button', { name: 'Edit' }).click();
+    await page.getByLabel('Title').fill('COROS test');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(first.getByText('COROS test')).toBeVisible();
+
+    await nav(page, 'Blocks');
+    await page.getByRole('button', { name: '+ New block from criteria' }).click();
+    const sheet = page.getByRole('dialog', { name: 'New block from criteria' });
+    const count = sheet.locator('.preview-count');
+    await expect(count).toContainText('12 runs meet the criteria');
+    // Narrowed as the runner types: a distance range, then the title.
+    await sheet.getByLabel('Distance from').fill('0.5');
+    await sheet.getByLabel('Distance to').fill('100');
+    await expect(count).toContainText(/^\d+ runs? meets? the criteria$/);
+    await sheet.getByLabel('Title contains').fill('coros');
+    await expect(count).toContainText('1 run meets the criteria');
+    await expect(sheet.getByLabel('Name')).toHaveValue('“coros” · 0.5–100 km');
+    await sheet.getByRole('button', { name: 'Create block' }).click();
+    // The block is the runner's own, with the titled run as its instance.
+    const card = page.locator('.block-card:not(.suggested)', { hasText: '“coros” · 0.5–100 km' });
+    await expect(card).toHaveCount(1, { timeout: 30_000 });
+    await expect(card.getByText('1 accepted')).toBeVisible({ timeout: 30_000 });
+  });
+});
