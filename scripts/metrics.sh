@@ -16,4 +16,12 @@ sense --metric acceptance.recommendations.promenade_segment=/promenadeRecommende
 sense --metric compare.trend.duration.max=/trendMaxSeconds@s
 sense --metric compare.ab.duration.max=/abMaxSeconds@s
 sense --label trials=10 --metric ab.random_split.no_change_trials=/abRandomSplitNoChangeTrials
+# End-to-end measurements (reports/measures-e2e.json, from npm run e2e).
+E=reports/measures-e2e.json
+if [ -f "$E" ]; then
+  sensee() { sh radical.sh sense json "$E" --folder .radical/model "$@" >/dev/null; }
+  sensee --label origin=external --metric app.network.requests=/externalRequests
+  sensee --label browser=webkit --metric e2e.unsupported_browser.started=/unsupportedStarted_webkit
+  sensee --label browser=chromium --metric e2e.supported_browser.started=/supportedStartedChromium
+fi
 echo "metrics recorded"

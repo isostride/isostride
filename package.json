@@ -9,8 +9,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:report": "vitest run --reporter=default --reporter=json --outputFile=reports/vitest.json",
-    "check": "npm run -s test:report; npm run -s metrics; sh radical.sh check .radical/model --report reports/vitest.json",
-    "metrics": "sh scripts/metrics.sh"
+    "check": "npm run -s test:report; npm run -s e2e; npm run -s metrics; sh radical.sh check .radical/model --report reports/vitest.json --report reports/playwright.json",
+    "metrics": "sh scripts/metrics.sh",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@garmin/fitsdk": "^21.222.0",
@@ -19,6 +20,7 @@
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@types/node": "^20.19.43",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

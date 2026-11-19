@@ -56,6 +56,25 @@ describe('Recommend route segment', () => {
     expect(promenade[0].basis).toMatch(/route passed \d+ times/);
   });
 
+  it('Pace band fits the passes', async () => {
+    // The band is measured the way an instance's pace condition is (mean sample speed),
+    // so a wait at a crossing does not push the band away from the passes it came from.
+    const folder = await makeDataFolder(SINCE_AUG);
+    await importFolder(folder);
+    const routes = (await recs(folder)).filter((r) => r.params.type === 'route');
+    await writeDefinitions(folder, routes.map((r) => fromRecommendation(r, 'active')));
+    await runBlocks(folder);
+    const found = await instances(folder);
+    for (const d of await readDefinitions(folder)) {
+      const paces = found.filter((i) => i.definitionId === d.id).map((i) => 1000 / i.metrics.speed!).sort((a, b) => a - b);
+      const median = paces[Math.floor(paces.length / 2)];
+      const centre = (d.tolerances.paceMin! + d.tolerances.paceMax!) / 2;
+      // Centre snapped to 15 s, so within 7.5 s of the median, plus a little for passes
+      // the recommendation and the detection cut slightly differently.
+      expect(Math.abs(centre - median), d.name).toBeLessThanOrEqual(10);
+    }
+  }, 120_000);
+
   it('Four passes not enough', async () => {
     const folder = await makeDataFolder(SINCE_AUG.slice(-4));
     await importFolder(folder);

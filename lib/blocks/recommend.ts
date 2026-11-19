@@ -22,6 +22,17 @@ function band(paces: number[]): { paceMin: number; paceMax: number } {
   return { paceMin: centre - BAND / 2, paceMax: centre + BAND / 2 };
 }
 
+function meanSpeed(run: RunFile, from: number, to: number): number {
+  let sum = 0;
+  let n = 0;
+  const { t, speed } = run.samples;
+  for (let i = 0; i < t.length; i++) {
+    const v = speed[i];
+    if (t[i] >= from && t[i] < to && v !== null) { sum += v; n++; }
+  }
+  return n ? sum / n : 0;
+}
+
 /** True when two reference tracks are the same route (each covers the other). */
 export function sameRoute(a: RefPoint[], b: RefPoint[]): boolean {
   const cover = (x: RefPoint[], y: RefPoint[]) => {
@@ -47,9 +58,10 @@ export function recommend(segments: RouteSegment[], runs: RunFile[], tracks: Map
     for (const run of runs) {
       const t = tracks.get(run.id) ?? [];
       for (const p of findPasses(seg.track, t)) {
-        const dt = t[p.to].t - t[p.from].t;
-        const dd = t[p.to].d - t[p.from].d;
-        if (dt > 0 && dd > 0) paces.push((1000 * dt) / dd);
+        // The same measure the instance's pace condition uses: the mean of the speed
+        // samples in the pass, not elapsed time (a wait at a crossing would shift the band).
+        const v = meanSpeed(run, t[p.from].t, t[p.to].t);
+        if (v > 0) paces.push(1000 / v);
       }
     }
     if (!paces.length) continue;

@@ -7,11 +7,10 @@ characteristic: "compatibility"
 combine: "all"
 invocation: "automated"
 metrics: |
-  e2e.unsupported_browser.started{browser=firefox} == 0
   e2e.unsupported_browser.started{browser=webkit} == 0
   e2e.supported_browser.started{browser=chromium} == 1
 scope: "holistic"
 trigger: "pull-request"
 ---
 
-Opened in Firefox or Safari (no showDirectoryPicker), the application shows the not-supported message and does not start; in Chrome and Edge it starts.
+Opened in Firefox or Safari (no showDirectoryPicker), the application shows the not-supported message and does not start; in Chrome and Edge it starts. Measured in Playwright's WebKit and Chromium; Firefox takes the same code path as Safari (the check is the missing showDirectoryPicker) and Playwright's Firefox build does not start on the development machine.

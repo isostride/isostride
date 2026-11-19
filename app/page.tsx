@@ -8,7 +8,7 @@ import { isOutdated, readManifest, type Manifest } from '@/lib/fs/manifest';
 import type { RunsIndex } from '@/lib/ingest/importFolder';
 import { date, duration, km, pace, time } from '@/lib/format';
 import { ALGORITHM_VERSION } from '@/lib/version';
-import { runInWorker } from '@/lib/client/worker';
+import { runInWorker, watchJob } from '@/lib/client/worker';
 import { readGear, type Gear } from '@/lib/context/gear';
 import { readRunTags, writeRunTags, type RunTag, type RunTagsFile } from '@/lib/context/tags';
 
@@ -47,6 +47,22 @@ function RunsPage() {
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  // A job started before this screen opened (or from another screen) keeps showing its progress,
+  // and the list reloads when it ends.
+  useEffect(() => {
+    let was = false;
+    return watchJob((j) => {
+      if (j && (j.job === 'import' || j.job === 'recompute')) {
+        was = true;
+        setProgress({ done: j.done, total: j.total });
+      } else if (was) {
+        was = false;
+        setProgress(null);
+        load();
+      }
+    });
   }, [load]);
 
   // ⌘K → "Import folder" lands here with ?action=import.

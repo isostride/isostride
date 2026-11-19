@@ -8,3 +8,6 @@ next-env.d.ts
 test_data/
 .next-build/
 .next-dev/
+.next-build-out/
+test-results/
+playwright-report/

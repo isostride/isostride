@@ -16,7 +16,8 @@
   ],
   "verifies": [
     { "element": "2a0542b2-ead0-42d2-ad1c-24694dc2d613", "name": "Import new FIT files", "tests": [
-      "tests/ingest.test.ts › Import FIT files › Import new FIT files"
+      "tests/ingest.test.ts › Import FIT files › Import new FIT files",
+      "e2e/folder.spec.ts › Import FIT files › Import new FIT files"
     ] },
     { "element": "65964775-681d-4a0b-baf7-19ff96159e17", "name": "Only new files imported", "tests": [
       "tests/ingest.test.ts › Import FIT files › Only new files imported"
@@ -115,7 +116,8 @@
       "tests/architecture.test.ts › Non-blocking processing › Processing modules load only in the worker"
     ] },
     { "element": "a7041664-0172-4632-9168-8f1465772fe8", "name": "Promenade recommended", "tests": [
-      "tests/blocks.test.ts › Recommend route segment › Promenade recommended"
+      "tests/blocks.test.ts › Recommend route segment › Promenade recommended",
+      "tests/blocks.test.ts › Recommend route segment › Pace band fits the passes"
     ] },
     { "element": "8d46ce69-d3a5-4813-80eb-a356f27100be", "name": "Four passes not enough", "tests": [
       "tests/blocks.test.ts › Recommend route segment › Four passes not enough"
@@ -248,6 +250,34 @@
     ] },
     { "element": "a6ee7a7e-4d53-485f-b476-13000f2f2227", "name": "Definition from chart selection", "tests": [
       "tests/selection.test.ts › Definition from selection › Definition from chart selection"
+    ] },
+    { "element": "26649d2f-ac65-4841-bce8-8b156e16b6fe", "name": "First launch picks folder", "tests": [
+      "e2e/folder.spec.ts › Pick data folder › First launch picks folder"
+    ] },
+    { "element": "69d17b09-2da3-460a-a147-f4e4abf8ccc6", "name": "Later launch reopens folder", "tests": [
+      "e2e/folder.spec.ts › Reopen same folder › Later launch reopens folder"
+    ] },
+    { "element": "89803715-9b20-4f3a-a7c6-d2520d107d48", "name": "Edge starts normally", "tests": [
+      "e2e/folder.spec.ts › Unsupported browser message › Edge starts normally"
+    ] },
+    { "element": "eac14764-4083-489d-82f3-63493d94a4c2", "name": "Firefox gets message", "tests": [
+      "e2e/unsupported.spec.ts › Unsupported browser message › Firefox gets message"
+    ] },
+    { "element": "3e50c847-c0a6-4c80-8354-9e28dafeb247", "name": "UI responsive during import", "tests": [
+      "e2e/folder.spec.ts › Non-blocking processing › UI responsive during import"
+    ] },
+    { "element": "05240177-b3c1-4608-8c25-f98e141ec0cb", "name": "Theme follows the system", "tests": [
+      "e2e/journeys.spec.ts › Light and dark theme › Theme follows the system"
+    ] },
+    { "element": "dc45eb83-afe1-437f-abdb-68b169199144", "name": "No data sent out", "tests": [
+      "e2e/journeys.spec.ts › Journeys › Import, recompute, block definition, trend, export and A/B without the network"
+    ] },
+    { "element": "d7d1886c-0eda-4086-931c-fe3a0b2be1d9", "name": "No data leaves computer", "tests": [
+      "e2e/journeys.spec.ts › Journeys › Import, recompute, block definition, trend, export and A/B without the network"
+    ] },
+    { "element": "6f9ae10d-bb61-43c7-b0d8-c0b4996e419f", "name": "Unsupported browser stopped", "tests": [
+      "e2e/unsupported.spec.ts › Unsupported browser message › Firefox gets message",
+      "e2e/folder.spec.ts › Unsupported browser message › Edge starts normally"
     ] }
   ]
 }
