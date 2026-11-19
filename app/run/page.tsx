@@ -1,16 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useState } from 'react';
-import { LineChart, RouteMap } from '@/components/charts';
-import { useOpenFolder } from '@/lib/client/folderContext';
-import { PATHS, readJson } from '@/lib/fs/folder';
-import type { RunFile } from '@/lib/ingest/importFolder';
-import { definitionFromSelection, readDefinitions, selectionOptions, writeDefinitions } from '@/lib/blocks/definitions';
-import { runInWorker } from '@/lib/client/worker';
-import { useRouter } from 'next/navigation';
-import type { BlockInstance, BlockType } from '@/lib/blocks/types';
+import { LineChart, RouteMap } from '@/components';
+import { useOpenFolder, runInWorker } from '@/lib/client';
+import { PATHS, readJson } from '@/lib/fs';
+import type { RunFile } from '@/lib/kernel';
+import { definitionFromSelection, readDefinitions, selectionOptions, writeDefinitions, type BlockInstance, type BlockType } from '@/lib/blocks';
 import { date, duration, km, pace, time } from '@/lib/format';
 
 export default function RunPageWrapper() {

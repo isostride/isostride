@@ -1,4 +1,4 @@
-import { BLOCK_METRICS, type BlockInstance, type BlockMetric } from '@/lib/blocks/types';
+import { BLOCK_METRICS, type BlockInstance, type BlockMetric } from '@/lib/blocks';
 
 let n = 0;
 type Over = Partial<Omit<BlockInstance, 'metrics' | 'context'>> & {

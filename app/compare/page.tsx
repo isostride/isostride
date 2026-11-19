@@ -2,15 +2,11 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useState } from 'react';
-import { InstancePanel } from '@/components/InstancePanel';
-import { ProfileChart } from '@/components/TrendChart';
-import { useOpenFolder } from '@/lib/client/folderContext';
-import { readDefinitions } from '@/lib/blocks/definitions';
-import type { BlockDefinition, BlockInstance, BlockInstancesFile, BlockMetric } from '@/lib/blocks/types';
-import { MIN_AB_INSTANCES, abCsv, byField, computeAb, meanProfile, type AbResult } from '@/lib/compare/ab';
-import { instancesCsv } from '@/lib/compare/csv';
-import { CONTEXT_FIELDS, METRIC_LABEL, valueOf, type ContextField } from '@/lib/compare/select';
-import { PATHS, readJson } from '@/lib/fs/folder';
+import { InstancePanel, ProfileChart } from '@/components';
+import { useOpenFolder } from '@/lib/client';
+import { readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric } from '@/lib/blocks';
+import { MIN_AB_INSTANCES, abCsv, byField, computeAb, meanProfile, type AbResult, instancesCsv, CONTEXT_FIELDS, METRIC_LABEL, valueOf, type ContextField } from '@/lib/compare';
+import { PATHS, readJson } from '@/lib/fs';
 
 const METRICS: { key: BlockMetric; short: string; fmt: (v: number) => string; unit: string; invert?: boolean }[] = [
   { key: 'groundContactTime', short: 'GCT', fmt: (v) => `${v.toFixed(1)} ms`, unit: 'ms' },
@@ -89,7 +85,7 @@ function ComparePage() {
     <div className="page">
       <div className="page-head">
         <h1>A/B comparison</h1>
-        <select className="select" value={defId} onChange={(e) => router.replace(`/compare?def=${e.target.value}`)}>
+        <select className="select" aria-label="Block definition" value={defId} onChange={(e) => router.replace(`/compare?def=${e.target.value}`)}>
           {defs.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
         <span className="spacer" />
@@ -106,12 +102,12 @@ function ComparePage() {
         {fields.length > 0 && (
           <>
             <span className="muted small">Split by</span>
-            <select className="select small" value={activeField} onChange={(e) => { setField(e.target.value as ContextField); setPair(null); }}>
+            <select className="select small" aria-label="Split by" value={activeField} onChange={(e) => { setField(e.target.value as ContextField); setPair(null); }}>
               {fields.map((f) => <option key={f} value={f}>{CONTEXT_FIELDS[f].label}</option>)}
             </select>
-            <select className="select small" value={va} onChange={(e) => setPair([e.target.value, vb])}>{values[activeField].map((v) => <option key={v}>{v}</option>)}</select>
+            <select className="select small" aria-label="Group A" value={va} onChange={(e) => setPair([e.target.value, vb])}>{values[activeField].map((v) => <option key={v}>{v}</option>)}</select>
             <span className="muted small">vs</span>
-            <select className="select small" value={vb} onChange={(e) => setPair([va, e.target.value])}>{values[activeField].map((v) => <option key={v}>{v}</option>)}</select>
+            <select className="select small" aria-label="Group B" value={vb} onChange={(e) => setPair([va, e.target.value])}>{values[activeField].map((v) => <option key={v}>{v}</option>)}</select>
           </>
         )}
       </div>
@@ -153,7 +149,7 @@ function ComparePage() {
           {panel && (
             <>
               <div className="sheet-backdrop" onClick={() => setPanel(false)} style={{ background: 'transparent' }} />
-              <InstancePanel included={included} rejected={result.rejected} value={(i) => { const v = valueOf(i, metric); return v === null ? '–' : m.fmt(v); }} focus={focus} onFocus={setFocus} onClose={() => setPanel(false)} />
+              <InstancePanel included={included} rejected={result.rejected} group={byField(activeField!, va, vb)} groupLabel={{ A: va, B: vb }} value={(i) => { const v = valueOf(i, metric); return v === null ? '–' : m.fmt(v); }} focus={focus} onFocus={setFocus} onClose={() => setPanel(false)} />
             </>
           )}
         </>

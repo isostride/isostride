@@ -1,4 +1,4 @@
-import type { Lap } from '@/lib/ingest/parseFit';
+import type { Lap } from '@/lib/kernel';
 
 /** A lap read as a workout structure element: a set duration or a set distance. */
 export interface LapKey {

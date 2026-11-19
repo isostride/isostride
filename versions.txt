@@ -1,0 +1,5 @@
+# endoflife.date product and cycle of each framework and build tool in use (ADR "Built with React").
+# Change together with package.json (and the Node.js version that builds the app).
+nextjs 15
+react 19
+nodejs 20

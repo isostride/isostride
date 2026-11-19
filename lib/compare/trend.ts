@@ -1,5 +1,5 @@
-import { bootstrap, linearFit } from '@/lib/stats/stats';
-import type { BlockInstance, BlockMetric } from '@/lib/blocks/types';
+import { bootstrap, linearFit } from '@/lib/stats';
+import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 import { correctForPace, noiseThreshold, selectInstances, sourceOf, type ContextFilter, type Rejected } from './select';
 
 /** A trend needs this many instances in a series before it gets a verdict (spec section 5). */

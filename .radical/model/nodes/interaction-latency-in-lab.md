@@ -14,23 +14,8 @@ scope: "holistic"
 trigger: "pull-request"
 ---
 
-The Playwright end-to-end journeys (import, block-definition, trend, ab-comparison) run against the static export with the sample data folder in Chromium. The page loads the web-vitals library in test builds only and reports INP and CLS through a function the test exposes (page.exposeFunction), never over the network. After each journey the test asserts the values.
+The Playwright run measures INP during the journeys' interactions (the trend's metric and correction, the A/B metric) and CLS on every screen, against the static export with the sample data folder in Chromium (e2e/vitals.spec.ts). The web-vitals library is injected by the test only and reports through the page, never over the network.
 
 Threshold: per journey, INP within 200 ms and CLS at most 0.1; 0 measurements sent over the network
 
-Tool: Playwright with web-vitals (test build only)
-
-```ts
-// e2e/vitals.ts
-import { test, expect } from '@playwright/test'
-test('trend filter change stays responsive', async ({ page }) => {
-  const vitals: Record<string, number> = {}
-  await page.exposeFunction('reportVital', (name: string, value: number) => { vitals[name] = value })
-  await page.goto('/blocks/promenade/trend')
-  await page.getByRole('button', { name: 'Pace' }).click()
-  await page.getByRole('button', { name: 'Shoes A' }).click()
-  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))   // flushes INP
-  expect(vitals.INP).toBeLessThanOrEqual(200)
-  expect(vitals.CLS ?? 0).toBeLessThanOrEqual(0.1)
-})
-```
+Tool: Playwright with web-vitals (injected by the test only)

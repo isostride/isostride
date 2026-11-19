@@ -2,11 +2,9 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useOpenFolder } from '@/lib/client/folderContext';
-import { runInWorker } from '@/lib/client/worker';
-import { RECOMMENDATIONS_PATH, fromRecommendation, readDefinitions, writeDefinitions } from '@/lib/blocks/definitions';
-import type { BlockDefinition, BlockInstancesFile, BlockParams, Recommendation, RefPoint, Tolerances } from '@/lib/blocks/types';
-import { PATHS, readJson } from '@/lib/fs/folder';
+import { useOpenFolder, runInWorker } from '@/lib/client';
+import { RECOMMENDATIONS_PATH, fromRecommendation, readDefinitions, writeDefinitions, type BlockDefinition, type BlockInstancesFile, type BlockParams, type Recommendation, type RefPoint, type Tolerances } from '@/lib/blocks';
+import { PATHS, readJson } from '@/lib/fs';
 import { date } from '@/lib/format';
 
 const fmtPace = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;

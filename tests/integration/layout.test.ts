@@ -1,0 +1,62 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { RECOMMENDATIONS_PATH, fromRecommendation, writeDefinitions, type Recommendation } from '@/lib/blocks';
+import { runBlocks } from '@/lib/detection';
+import { writeGear } from '@/lib/gear';
+import { joinContext } from '@/lib/context';
+import { PATHS, readJson, readManifest } from '@/lib/fs';
+import { importFolder } from '@/lib/pipeline';
+import { type RunFile, type RunsIndex, SCHEMA_VERSION, ALGORITHM_VERSION } from '@/lib/kernel';
+import { TEST_DATA, makeDataFolder, recordMeasure } from '../support/fixtures';
+
+const SINCE_AUG = (await fs.readdir(TEST_DATA)).filter((f) => f.endsWith('.fit') && f >= '2026-08-03').sort();
+
+describe('Data folder layout', () => {
+  it('Folder layout written', { timeout: 120_000 }, async () => {
+    // An empty data folder with FIT files in fit/ (makeDataFolder puts them there).
+    const files = SINCE_AUG;
+    const folder = await makeDataFolder(files);
+    expect((await fs.readdir(path.join(folder.root, 'fit'))).length).toBe(files.length);
+
+    const imported = await importFolder(folder);
+    await writeGear(folder, [{ id: 'g1', name: 'Shoes A', type: 'shoes', from: '2026-08-01', to: null }]);
+    await joinContext(folder);
+    const rec = (await readJson<{ recommendations: Recommendation[] }>(folder, RECOMMENDATIONS_PATH))!.recommendations[0];
+    await writeDefinitions(folder, [fromRecommendation(rec, 'active')]);
+    await runBlocks(folder);
+
+    const exists = async (p: string) => fs.stat(path.join(folder.root, p)).then(() => true, () => false);
+    for (const p of [PATHS.manifest, PATHS.gear, PATHS.blockDefinitions, PATHS.runsIndex, PATHS.segments, PATHS.blockInstances, PATHS.dayState])
+      expect(await exists(p), p).toBe(true);
+    const index = (await readJson<RunsIndex>(folder, PATHS.runsIndex))!;
+    // One run per activity: a second copy of an exported file is a duplicate.
+    expect(index.runs).toHaveLength(files.length - imported.duplicates);
+    for (const r of index.runs) expect(await exists(PATHS.runFile(r.id)), r.id).toBe(true);
+    expect(index.runs.every((r) => r.shoes === 'Shoes A')).toBe(true);
+
+    // manifest.json lists the imported files with the schema and algorithm versions.
+    const manifest = (await readManifest(folder))!;
+    expect(manifest).toMatchObject({ schemaVersion: SCHEMA_VERSION, algorithmVersion: ALGORITHM_VERSION });
+    expect(Object.keys(manifest.files).map((f) => path.basename(f)).sort()).toEqual([...files].sort());
+  });
+});
+
+describe('Historical import', () => {
+  it('All runs since 3 Aug import clean', async () => {
+    const folder = await makeDataFolder(SINCE_AUG);
+    const report = await importFolder(folder);
+    const index = (await readJson<RunsIndex>(folder, PATHS.runsIndex))!;
+    let missingDeveloperFields = 0;
+    for (const r of index.runs) {
+      const run = (await readJson<RunFile>(folder, PATHS.runFile(r.id)))!;
+      const has = (s: (number | null)[]) => s.some((v) => v !== null);
+      if (!has(run.samples.effortPace) || !has(run.samples.legSpringStiffness)) missingDeveloperFields++;
+    }
+    await recordMeasure('historicalImportErrors', report.errors);
+    await recordMeasure('historicalRunsMissingDeveloperFields', missingDeveloperFields);
+    expect(report.errors).toBe(0);
+    expect(index.runs).toHaveLength(SINCE_AUG.length - report.duplicates);
+    expect(missingDeveloperFields).toBe(0);
+  }, 120_000);
+});

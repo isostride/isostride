@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { BrowserFolder } from '@/lib/fs/browserFolder';
+import { BrowserFolder } from '@/lib/fs';
 import { getValue, setValue } from './handleStore';
 
 /** The Data Folder lifecycle as the screens see it (model: Data Folder lifecycle). */

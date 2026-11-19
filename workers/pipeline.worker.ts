@@ -1,9 +1,6 @@
 /// <reference lib="webworker" />
-import { runBlocks } from '@/lib/blocks/pipeline';
-import { joinContext } from '@/lib/context/joinContext';
-import { BrowserFolder } from '@/lib/fs/browserFolder';
-import { importFolder } from '@/lib/ingest/importFolder';
-import { recomputeEverything } from '@/lib/ingest/recompute';
+import { BrowserFolder } from '@/lib/fs';
+import { importFolder, recomputeEverything, refreshBlocks, refreshContext } from '@/lib/pipeline';
 
 /** Messages between the Web App and the Processing Worker. */
 /** context: gear or tags changed; blocks: block definitions changed. */
@@ -21,8 +18,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
   const onProgress = (p: { done: number; total: number; file: string }) => post({ type: 'progress', ...p });
   try {
     if (e.data.type === 'context' || e.data.type === 'blocks') {
-      if (e.data.type === 'context') await joinContext(folder);
-      await runBlocks(folder);
+      await (e.data.type === 'context' ? refreshContext : refreshBlocks)(folder);
       post({ type: 'done', imported: 0, duplicates: 0, errors: 0 });
       return;
     }

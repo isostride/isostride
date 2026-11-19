@@ -1,56 +1,11 @@
 import { Decoder, Stream } from '@garmin/fitsdk';
+import { SAMPLE_FIELDS, type Lap, type Samples } from '@/lib/kernel';
 
-/** One metric series of a run, one value per sample; null where the watch recorded nothing. */
-export type Series = (number | null)[];
 
-/** The 1 s samples of a run, columnar: one array per field, all of the same length. */
-export interface Samples {
-  /** Seconds since the start of the run (elapsed time, pauses included). */
-  t: number[];
-  /** m/s */
-  speed: Series;
-  /** bpm */
-  heartRate: Series;
-  /** steps per minute (both feet) */
-  cadence: Series;
-  /** ground contact time, ms */
-  groundContactTime: Series;
-  /** vertical oscillation, mm */
-  verticalOscillation: Series;
-  /** step length, mm */
-  stepLength: Series;
-  /** W */
-  power: Series;
-  /** m */
-  altitude: Series;
-  /** degrees */
-  lat: Series;
-  /** degrees */
-  lon: Series;
-  /** °C */
-  temperature: Series;
-  /** COROS developer field "Effort Pace", m/s */
-  effortPace: Series;
-  /** COROS developer field "Leg Spring Stiffness", kN/m */
-  legSpringStiffness: Series;
-  /** m, cumulative */
-  distance: Series;
-}
 
-export const SAMPLE_FIELDS = [
-  't', 'speed', 'heartRate', 'cadence', 'groundContactTime', 'verticalOscillation', 'stepLength',
-  'power', 'altitude', 'lat', 'lon', 'temperature', 'effortPace', 'legSpringStiffness', 'distance',
-] as const satisfies readonly (keyof Samples)[];
 
-export interface Lap {
-  /** seconds since the start of the run */
-  start: number;
-  end: number;
-  /** timer time, s */
-  duration: number;
-  /** m */
-  distance: number;
-}
+
+
 
 export interface ParsedRun {
   /** ISO start time, the run's key. */

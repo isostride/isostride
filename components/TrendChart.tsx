@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useRef, useState, type MouseEvent } from 'react';
-import type { BlockInstance } from '@/lib/blocks/types';
-import type { TrendResult } from '@/lib/compare/trend';
+import type { BlockInstance } from '@/lib/blocks';
+import type { TrendResult } from '@/lib/compare';
 
 const W = 900;
 const H = 300;
@@ -89,7 +89,7 @@ export function TrendChart({ trend, format, invert, markers, selected, onSelect 
           <text key={m} x={x(m)} y={H - 6} fontSize="11" fill="var(--muted)" textAnchor="middle">{new Date(m).toLocaleDateString(undefined, { month: 'short' })}</text>
         ))}
         {markers.filter((m) => Date.parse(m.date) > t0 && Date.parse(m.date) < t1).map((m) => (
-          <g key={m.date + m.label}>
+          <g key={m.date + m.label} className="gear-change">
             <line x1={x(Date.parse(m.date))} x2={x(Date.parse(m.date))} y1={PAD.t} y2={H - PAD.b} stroke="var(--muted)" strokeDasharray="4 4" />
             <text x={x(Date.parse(m.date)) + 4} y={PAD.t + 10} fontSize="11" fill="var(--muted)">{m.label}</text>
           </g>
@@ -104,6 +104,7 @@ export function TrendChart({ trend, format, invert, markers, selected, onSelect 
               {s.fit && (
                 <>
                   <polygon
+                    className="noise-band"
                     points={`${x(first)},${y(at(first) + s.noise)} ${x(last)},${y(at(last) + s.noise)} ${x(last)},${y(at(last) - s.noise)} ${x(first)},${y(at(first) - s.noise)}`}
                     fill={color} opacity="0.12"
                   />

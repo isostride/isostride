@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { fitFiles, importAll, openWithFolder, recordMeasure } from './support';
+import { fitFiles, importAll, nav, openWithFolder, recordMeasure } from './support';
 
-const nav = (page: import('@playwright/test').Page, name: string) => page.locator('.sidebar').getByRole('link', { name: new RegExp(`${name.replace('/', '\\/')}$`) }).click();
+
 const bg = (page: import('@playwright/test').Page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
 test.describe('Light and dark theme', () => {

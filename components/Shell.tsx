@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { useFolder } from '@/lib/client/folderContext';
+import { useFolder } from '@/lib/client';
 import { Welcome } from './Welcome';
 import { CommandPalette } from './CommandPalette';
 

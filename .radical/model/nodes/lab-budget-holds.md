@@ -4,38 +4,20 @@ type: "fitness-fn"
 label: "Lab budget holds"
 cadence: "triggered"
 characteristic: "performance-efficiency"
+combine: "all"
 invocation: "automated"
+metrics: |
+  js.route.transfer.max <= 200 KB
+  e2e.lcp.max <= 2500 ms
+  e2e.cls.max <= 0.1
+  e2e.tbt.max <= 200 ms
+  a11y.violations{impact=serious-or-critical} == 0
 scope: "atomic"
 trigger: "pull-request"
 ---
 
-Lighthouse CI serves the static export (out/) and runs three times per screen on its desktop profile and asserts the budget; the median run counts. The script size is the transfer size of every script the page loads. The test build opens the sample data folder from tests/fixtures (a puppeteerScript picks it before the runs), so the screens show real runs. INP needs real interactions, so it is checked in the Playwright journeys (see Interaction latency in lab). Reports stay on the CI filesystem; nothing is uploaded.
+Playwright opens every screen of the static export with the sample data folder in Chromium and measures LCP and CLS with the web-vitals library and Total Blocking Time (the lab stand-in for INP) from long tasks (e2e/vitals.spec.ts); the library is injected by the test only and reports through the page, never over the network. scripts/js-budget.mjs sums the gzip size of every script each screen's page loads from the export. axe-core checks every screen (e2e/accessibility.spec.ts). Lighthouse CI was the pack's tool; the local Playwright run measures the same budget (the author's decision of 19 Nov 2026: local only).
 
-Threshold: On every pull request, for each screen: script transfer size at most 200 KB, LCP within 2500 ms, CLS at most 0.1, Total Blocking Time within 200 ms (the lab stand-in for INP), accessibility score at least 0.95
+Threshold: for each screen: script transfer size at most 200 KB, LCP within 2500 ms, CLS at most 0.1, Total Blocking Time within 200 ms, 0 serious or critical accessibility violations
 
-Tool: Lighthouse CI
-
-```js
-// lighthouserc.cjs
-module.exports = {
-  ci: {
-    collect: {
-      staticDistDir: './out',
-      url: ['/runs', '/runs/sample', '/blocks', '/blocks/sample/trend', '/blocks/sample/compare', '/gear'],
-      numberOfRuns: 3,
-      settings: { preset: 'desktop' },
-      puppeteerScript: './tests/lighthouse-open-fixtures.cjs',   // opens the sample data folder
-    },
-    assert: {
-      assertions: {
-        'resource-summary:script:size': ['error', { maxNumericValue: 200 * 1024, aggregationMethod: 'median' }],
-        'largest-contentful-paint': ['error', { maxNumericValue: 2500, aggregationMethod: 'median' }],
-        'cumulative-layout-shift': ['error', { maxNumericValue: 0.1, aggregationMethod: 'median' }],
-        'total-blocking-time': ['error', { maxNumericValue: 200, aggregationMethod: 'median' }],
-        'categories:accessibility': ['error', { minScore: 0.95 }],
-      },
-    },
-    upload: { target: 'filesystem', outputDir: './.lighthouseci' },
-  },
-}
-```
+Tool: Playwright with web-vitals, scripts/js-budget.mjs, @axe-core/playwright

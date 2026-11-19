@@ -1,9 +1,8 @@
-import { meanHeading, resample } from '@/lib/geo/geo';
-import type { RunFile } from '@/lib/ingest/importFolder';
-import { DEFAULT_TOLERANCES, type BlockType } from './types';
+import { meanHeading, resample } from '@/lib/geo';
+import type { RunFile } from '@/lib/kernel';
+import { DEFAULT_TOLERANCES, type BlockType, type BlockDefinition, type BlockDefinitionsFile, type Recommendation } from './types';
 import { lapKey, structureName } from './structure';
-import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs/folder';
-import type { BlockDefinition, BlockDefinitionsFile, Recommendation } from './types';
+import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
 
 /** user/block-definitions.json: the runner's definitions and the recommendations they rejected. */
 export async function readDefinitions(folder: DataFolder): Promise<BlockDefinition[]> {

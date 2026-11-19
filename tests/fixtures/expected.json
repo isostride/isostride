@@ -1,0 +1,16 @@
+{
+  "$comment": "Hand-checked expected values of the synthetic FIT fixtures (scripts/make-fixtures.mjs builds them from round numbers). Change only together with the fixtures, in a reviewed change.",
+  "steady-5k.fit": {
+    "startTime": "2026-06-01T07:00:00.000Z", "runId": "20260601-070000", "device": "Fixture Watch",
+    "distance": 5000, "duration": 1500, "samples": 1500, "laps": [{ "start": 0, "duration": 1500, "distance": 5000 }],
+    "pace": "5:00", "heartRate": 145, "cadence": 170, "groundContactTime": 250, "effortPace": 3.333, "legSpringStiffness": 10
+  },
+  "tempo-25min.fit": {
+    "startTime": "2026-06-03T07:00:00.000Z", "runId": "20260603-070000", "device": "Fixture Watch",
+    "distance": 8830, "duration": 2400, "samples": 2400,
+    "laps": [{ "start": 0, "duration": 600, "distance": 1740 }, { "start": 600, "duration": 1500, "distance": 6250 }, { "start": 2100, "duration": 300, "distance": 840 }],
+    "pace": "4:00", "heartRate": 165, "cadence": 170, "groundContactTime": 250, "effortPace": 4.167, "legSpringStiffness": 10
+  },
+  "hike.fit": { "error": "not a run (sport: hiking)" },
+  "damaged.fit": { "error": "damaged FIT file (integrity check failed)" }
+}

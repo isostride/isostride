@@ -1,12 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useOpenFolder } from '@/lib/client/folderContext';
-import { newGearId, readGear, writeGear, type Gear, type GearType } from '@/lib/context/gear';
-import { runInWorker } from '@/lib/client/worker';
-import { readRunTags, writeRunTags, type RunTagsFile } from '@/lib/context/tags';
-import { PATHS, readJson } from '@/lib/fs/folder';
-import type { RunsIndex } from '@/lib/ingest/importFolder';
+import { useOpenFolder, runInWorker } from '@/lib/client';
+import { newGearId, readGear, writeGear, type Gear, type GearType, readRunTags, writeRunTags, type RunTagsFile } from '@/lib/gear';
+import { PATHS, readJson } from '@/lib/fs';
+import type { RunsIndex } from '@/lib/kernel';
 
 const TYPE_LABEL: Record<GearType, string> = { shoes: 'Shoes', hrSensor: 'Heart rate sensor' };
 
@@ -97,8 +95,8 @@ export default function GearPage() {
           </div>
         ))}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-          <input placeholder="Name, e.g. Shoes A" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} style={{ padding: 6, minWidth: 180 }} />
-          <select value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as GearType })} style={{ padding: 6 }}>
+          <input aria-label="Gear name" placeholder="Name, e.g. Shoes A" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} style={{ padding: 6, minWidth: 180 }} />
+          <select aria-label="Gear type" value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as GearType })} style={{ padding: 6 }}>
             {(Object.keys(TYPE_LABEL) as GearType[]).map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
           </select>
           <label className="muted">from <input type="date" value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} /></label>
@@ -131,7 +129,7 @@ function TagList({ label, values, counts, onChange }: { label: string; values: s
           <button style={{ border: 0, background: 'none', padding: 0, color: 'var(--muted)' }} onClick={() => onChange(values.filter((x) => x !== v))} aria-label={`Remove ${v}`}>×</button>
         </span>
       ))}
-      <input placeholder="+ add" value={text} onChange={(e) => setText(e.target.value)} style={{ padding: 4, width: 120 }}
+      <input aria-label={`Add to ${label}`} placeholder="+ add" value={text} onChange={(e) => setText(e.target.value)} style={{ padding: 4, width: 120 }}
         onKeyDown={(e) => { if (e.key === 'Enter' && text.trim() && !values.includes(text.trim())) { onChange([...values, text.trim()]); setText(''); } }} />
     </div>
   );

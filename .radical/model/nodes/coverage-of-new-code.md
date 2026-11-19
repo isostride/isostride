@@ -5,26 +5,13 @@ label: "Coverage of new code"
 cadence: "triggered"
 characteristic: "maintainability"
 invocation: "automated"
+metrics: "coverage.new_code >= 80 %"
 scope: "atomic"
 trigger: "pull-request"
 ---
 
-The pipeline sends the coverage report to SonarQube and waits for the quality gate, whose condition "Coverage on New Code is less than 80%" is created once through the Web API, not in the properties file.
+Vitest measures coverage of the processing code (lib/ and workers/, the main-thread lib/client excepted) with @vitest/coverage-v8, branches included; scripts/coverage-new.mjs takes the lines changed since the last commit (or, with a clean tree, in the last commit) and computes the share of their statements and branches the tests run, listing each uncovered line. Local only for now (the author's decision of 19 Nov 2026): npm run check runs it with the tests and exits non-zero on a failure.
 
-Threshold: Coverage on new code at least 80%; the quality gate fails the pull request below it
+Threshold: at least 80% of new and changed statements and branches covered
 
-Tool: SonarQube quality gate (sonar-scanner with sonar.qualitygate.wait, the condition through api/qualitygates/create_condition; SonarQube Cloud takes gateId and organization instead of gateName); for the JVM: the same with the JaCoCo report path
-
-```bash
-# sonar-project.properties, in the repository:
-#   sonar.projectKey=shop-order-api
-#   sonar.sources=src
-#   sonar.tests=test
-#   sonar.javascript.lcov.reportPaths=coverage/lcov.info
-#   sonar.newCode.referenceBranch=main
-#   sonar.qualitygate.wait=true
-# the gate's condition, created once (SonarQube Server; needs the Administer Quality Gates permission):
-curl -fsS -u "$SONAR_TOKEN:" -X POST "$SONAR_HOST_URL/api/qualitygates/create_condition" \
-  --data-urlencode "gateName=Shop" --data-urlencode "metric=new_coverage" \
-  --data-urlencode "op=LT" --data-urlencode "error=80"
-```
+Tool: Vitest with @vitest/coverage-v8 and scripts/coverage-new.mjs (git diff against HEAD)

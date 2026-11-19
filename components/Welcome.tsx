@@ -1,6 +1,6 @@
 'use client';
 
-import { useFolder } from '@/lib/client/folderContext';
+import { useFolder } from '@/lib/client';
 
 /** Welcome: pick the data folder, confirm access to the remembered one, or say the browser is not supported. */
 export function Welcome() {

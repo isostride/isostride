@@ -5,23 +5,13 @@ label: "Every journey has a test"
 cadence: "triggered"
 characteristic: "maintainability"
 invocation: "automated"
+metrics: "e2e.journeys.covered == 100 %"
 scope: "atomic"
 trigger: "pull-request"
 ---
 
-A test lists the journeys the decision names and expects a spec file e2e/<journey>.spec.ts for each (spaces in a journey's name become dashes); a journey without a spec fails the test, so the list and the suite cannot drift apart.
+A unit test (tests/unit/journeys.test.ts) lists the journeys the decision names and expects a spec file e2e/<journey>.spec.ts for each, with no test.only or test.skip left in any spec; a journey without a spec fails the test, so the list and the suite cannot drift apart.
 
 Threshold: 100% of the journeys import, block-definition, trend, ab-comparison have a Playwright spec under e2e
 
-Tool: Vitest over the e2e directory; for the JVM: the same test with JUnit 5 over src/e2e
-
-```ts
-import { existsSync } from 'node:fs'
-import { expect, it } from 'vitest'
-
-const JOURNEYS = 'import, block-definition, trend, ab-comparison'.split(/,\s*/).map((j) => j.trim().toLowerCase().replace(/\s+/g, '-'))
-
-it.each(JOURNEYS)('journey %s has an end-to-end spec', (journey) => {
-  expect(existsSync(`e2e/${journey}.spec.ts`), `e2e/${journey}.spec.ts is missing`).toBe(true)
-})
-```
+Tool: Vitest over the e2e directory

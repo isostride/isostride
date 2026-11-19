@@ -1,5 +1,4 @@
-import type { BlockInstance } from '@/lib/blocks/types';
-import { BLOCK_METRICS } from '@/lib/blocks/types';
+import { type BlockInstance, BLOCK_METRICS } from '@/lib/blocks';
 
 /** One row per block instance, with its context fields and metric means (spec F15). */
 export function instancesCsv(instances: BlockInstance[], names: Map<string, string> = new Map()): string {

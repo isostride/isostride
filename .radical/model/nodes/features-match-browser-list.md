@@ -5,22 +5,13 @@ label: "Features match browser list"
 cadence: "triggered"
 characteristic: "compatibility"
 invocation: "automated"
+metrics: "compat.violations == 0"
 scope: "atomic"
 trigger: "pull-request"
 ---
 
-The browser list lives in package.json and drives the build's transpilation; eslint-plugin-compat fails on a web API one of the listed browsers lacks. Playwright runs the journeys in Chromium (Chrome, Edge and Opera share its engine).
+The browser list lives in package.json ("browserslist": the last 2 versions of Chrome, Edge and Opera); eslint-plugin-compat (eslint.config.mjs) fails on a web API one of the listed browsers lacks, unless the build polyfills it (settings.polyfills). tests/integration/compat.test.ts lints the code and counts the violations; npm run check also runs ESLint. Playwright runs the journeys in Chromium (Chrome, Edge and Opera share its engine).
 
 Threshold: 0 uses of web features missing from a browser on the list without a configured polyfill
 
 Tool: browserslist with eslint-plugin-compat
-
-```js
-// package.json: "browserslist": ["last 2 Chrome versions", "last 2 Edge versions", "last 2 Opera versions"]
-// eslint.config.mjs
-import compat from 'eslint-plugin-compat'
-export default [
-  compat.configs['flat/recommended'],
-  { settings: { polyfills: [] } },   // what the build polyfills
-]
-```

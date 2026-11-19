@@ -1,4 +1,4 @@
-import type { Samples, Series } from '@/lib/ingest/parseFit';
+import { type Samples, type Series, WINDOW_METRICS, type WindowMetric, type Windows } from '@/lib/kernel';
 
 export const WINDOW_SECONDS = 10;
 /** Windows that start before this many seconds into the run are flagged (spec F3). */
@@ -10,30 +10,12 @@ export const GRADE_TOLERANCE = 0.04;
 /** A metric missing in more than this share of a window's samples flags missing signal. */
 export const MISSING_SHARE = 0.5;
 
-/** Metrics averaged per window. */
-export const WINDOW_METRICS = [
-  'speed', 'heartRate', 'cadence', 'groundContactTime', 'verticalOscillation', 'stepLength',
-  'power', 'altitude', 'effortPace', 'legSpringStiffness',
-] as const;
-export type WindowMetric = (typeof WINDOW_METRICS)[number];
+
 
 /** Metrics whose absence flags a window (the ones blocks and comparisons rest on). */
 const SIGNAL_METRICS: WindowMetric[] = ['speed', 'heartRate'];
 
-/** 10 s windows of a run, columnar. */
-export type Windows = {
-  /** window start, s since the start of the run */
-  start: number[];
-  /** number of samples in the window */
-  n: number[];
-  flags: {
-    stopped: boolean[];
-    first150: boolean[];
-    grade: boolean[];
-    /** the signal metrics missing in the window, or null */
-    missingSignal: (string[] | null)[];
-  };
-} & Record<WindowMetric, Series>;
+
 
 /** Builds the 10 s windows of a run's samples: metric means and quality flags (spec F3). */
 export function buildWindows(samples: Samples): Windows {

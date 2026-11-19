@@ -5,27 +5,13 @@ label: "Violations fail the pull request"
 cadence: "triggered"
 characteristic: "maintainability"
 invocation: "automated"
+metrics: "deps.violations_total == 0"
 scope: "atomic"
 trigger: "pull-request"
 ---
 
-A workflow runs npm run check:deps on every pull request; dependency-cruiser's default err reporter exits non-zero on an error-severity violation and prints the rule with the from and to files. The job is listed among the checks the main branch requires, in the ruleset the Code review and branching pack keeps.
+npm run check runs the dependency check (scripts/boundaries.mjs), which exits non-zero on any violation and prints the rule with both parts and the file; the unit suite runs the same check (tests/unit/architecture.test.ts). Local only for now (the author's decision of 19 Nov 2026): a change is committed after npm run check passes.
 
-Threshold: The dependency check runs on every pull request and its job fails on any violation, naming the rule and both files
+Threshold: the dependency check runs on every change and fails on any violation, naming the rule and both parts
 
-Tool: dependency-cruiser in GitHub Actions; for the JVM: the ArchUnit tests in the build's test job
-
-```yaml
-# .github/workflows/boundaries.yml
-name: module boundaries
-on: [pull_request]
-jobs:
-  check-deps:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4.2.2   # pin by commit SHA in your repository
-      - uses: actions/setup-node@v4.1.0   # pin by commit SHA in your repository
-        with: { node-version-file: .nvmrc, cache: npm }
-      - run: npm ci
-      - run: npm run check:deps   # depcruise src --config .dependency-cruiser.cjs; exits non-zero on a violation
-```
+Tool: scripts/boundaries.mjs in npm run check

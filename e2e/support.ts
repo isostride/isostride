@@ -51,6 +51,41 @@ export async function recordMeasure(name: string, value: number): Promise<void> 
   all[name] = value;
   await fs.writeFile(file, JSON.stringify(all, null, 2));
 }
+/** Writes a text file into the fake data folder (path relative to it, e.g. strideprism/user/gear.json). */
+export async function putText(page: Page, file: string, text: string): Promise<void> {
+  await page.evaluate(async ({ file, text }) => {
+    let dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('data', { create: true });
+    const parts = file.split('/');
+    for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p, { create: true });
+    const w = await (await dir.getFileHandle(parts[parts.length - 1], { create: true })).createWritable();
+    await w.write(text);
+    await w.close();
+  }, { file, text });
+}
+
+/** Reads a text file of the fake data folder. */
+export async function readText(page: Page, file: string): Promise<string> {
+  return page.evaluate(async (file) => {
+    let dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('data');
+    const parts = file.split('/');
+    for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p);
+    return (await (await dir.getFileHandle(parts[parts.length - 1])).getFile()).text();
+  }, file);
+}
+
+/** Logs the name of every file the page (not the worker) opens, in window.__opened. */
+export async function logOpenedFiles(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const w = window as any;
+    w.__opened = [] as string[];
+    const proto = (globalThis as any).FileSystemDirectoryHandle.prototype;
+    const get = proto.getFileHandle;
+    proto.getFileHandle = function (name: string, opts?: unknown) {
+      w.__opened.push(name);
+      return get.call(this, name, opts);
+    };
+  });
+}
 
 /** Opens the app with the fake picker, picks the folder and returns once the Runs screen shows. */
 export async function openWithFolder(page: Page, files: string[]): Promise<void> {
@@ -64,4 +99,46 @@ export async function openWithFolder(page: Page, files: string[]): Promise<void>
 export async function importAll(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Import folder' }).click();
   await page.getByText(/^Imported \d+ runs?/).waitFor({ timeout: 60_000 });
+}
+
+/** Clicks a screen in the sidebar (its link's name starts with an icon). */
+export async function nav(page: Page, name: string): Promise<void> {
+  await page.locator('.sidebar').getByRole('link', { name: new RegExp(`${name.replace('/', '\\/')}$`) }).click();
+}
+
+/** May 2026 in one pair of shoes, June in another: the A/B screen can split by shoes. */
+export const GEAR_MAY_JUNE = {
+  gear: [
+    { id: 'g1', name: 'Shoes May', type: 'shoes', from: '2026-05-01', to: '2026-05-31' },
+    { id: 'g2', name: 'Shoes June', type: 'shoes', from: '2026-06-01', to: null },
+  ],
+};
+
+/** Since 3 Aug 2026: one watch and a change of shoes on 1 Oct. */
+export const GEAR_AUTUMN = {
+  gear: [
+    { id: 'g1', name: 'Shoes Summer', type: 'shoes', from: '2026-08-01', to: '2026-09-30' },
+    { id: 'g2', name: 'Shoes Autumn', type: 'shoes', from: '2026-10-01', to: null },
+  ],
+};
+
+/**
+ * A data folder with FIT files and a gear register, imported, with one suggested block
+ * accepted; file opens by the page are logged (window.__opened).
+ */
+export async function setUpWithBlock(page: Page, { files = fitFiles(30, '2026-05-01'), gear = GEAR_MAY_JUNE, block = /^1\.6 km northeast/ as RegExp } = {}): Promise<void> {
+  await fakeFolderPicker(page);
+  await logOpenedFiles(page);
+  await page.goto('/');
+  await putFitFiles(page, await files);
+  await putText(page, 'strideprism/user/gear.json', JSON.stringify(gear));
+  await page.getByRole('button', { name: 'Choose data folder' }).click();
+  await page.getByRole('heading', { name: 'Runs' }).waitFor();
+  await importAll(page);
+  await nav(page, 'Blocks');
+  await page.locator('.block-card.suggested').first().waitFor();
+  const all = page.getByRole('button', { name: /^Show all \d+$/ });
+  if (await all.isVisible()) await all.click();
+  await page.locator('.block-card.suggested', { hasText: block }).getByRole('button', { name: 'Accept' }).click();
+  await page.locator('.block-card:not(.suggested)').first().waitFor({ timeout: 30_000 });
 }

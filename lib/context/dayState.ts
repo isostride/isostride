@@ -1,4 +1,4 @@
-import { dayOf } from './gear';
+import { dayOf } from '@/lib/gear';
 
 /**
  * The state of one day, from the runner's own runs only (spec F6, without the

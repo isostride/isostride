@@ -44,16 +44,13 @@ export async function checksums(dir: string): Promise<Record<string, string>> {
   return out;
 }
 
-/** Measurements the tests record for the model's metric conditions (read by `radical sense json`). */
-const MEASURES = path.resolve(__dirname, '../../reports/measures.json');
+/**
+ * Measurements the tests record for the model's metric conditions: one file per measure
+ * (reports/measures.d/<name>.json), so test files running side by side never overwrite
+ * each other; scripts/metrics.sh merges them into reports/measures.json.
+ */
+const MEASURES = path.resolve(__dirname, '../../reports/measures.d');
 export async function recordMeasure(name: string, value: number): Promise<void> {
-  await fs.mkdir(path.dirname(MEASURES), { recursive: true });
-  let all: Record<string, number> = {};
-  try {
-    all = JSON.parse(await fs.readFile(MEASURES, 'utf8'));
-  } catch {
-    /* first measure */
-  }
-  all[name] = value;
-  await fs.writeFile(MEASURES, JSON.stringify(all, null, 2));
+  await fs.mkdir(MEASURES, { recursive: true });
+  await fs.writeFile(path.join(MEASURES, `${name}.json`), JSON.stringify(value));
 }

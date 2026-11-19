@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { DataFolder, FolderEntry } from '@/lib/fs/folder';
+import type { DataFolder, FolderEntry } from '@/lib/fs';
 
 /** DataFolder over a directory on disk, for tests. */
 export class NodeFolder implements DataFolder {

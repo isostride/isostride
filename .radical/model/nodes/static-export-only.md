@@ -13,6 +13,6 @@ scope: "atomic"
 trigger: "release"
 ---
 
-The release build runs `next build` with `output: 'export'` and checks the out/ folder: every route of the six screens is a pre-built HTML file, and the build produced no server functions, API routes or middleware. The out/ folder is then opened from a plain static file server in the end-to-end run.
+The release build runs `next build` with `output: 'export'` and checks the export folder (.next-build/, the build's own distDir so that it never collides with the dev server's): every route of the six screens is a pre-built HTML file, and the build produced no server functions, API routes or middleware. The export folder is then opened from a plain static file server (scripts/static-server.mjs) in the end-to-end run.
 
 Threshold: 0 server-side routes or functions in the build; every screen route present as a static file

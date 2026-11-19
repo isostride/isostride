@@ -4,27 +4,17 @@ type: "fitness-fn"
 label: "Shared kernel stays small"
 cadence: "triggered"
 characteristic: "maintainability"
+combine: "all"
 invocation: "automated"
+metrics: |
+  kernel.forbidden_imports == 0
+  kernel.share <= 5 %
 scope: "atomic"
 trigger: "pull-request"
 ---
 
-A dependency rule keeps the kernel free of the parts and of every package in node_modules except the pure ones on its allowlist (so a database driver, HTTP client or framework cannot slip in); a second step in the same job compares the kernel's line count with the whole and fails above the limit.
+The dependency check (scripts/boundaries.mjs) keeps the kernel (lib/kernel: the run contracts and versions, module.json "kernel": true) free of the parts and of every package outside its allowlist (empty), and compares its non-blank lines with those of all parts.
 
-Threshold: The shared kernel imports no part and no third-party package outside its allowlist, and holds at most 5% of the source lines
+Threshold: the shared kernel imports no part and no third-party package outside its allowlist, and holds at most 5% of the source lines
 
-Tool: dependency-cruiser and cloc with jq in a shell step; for the JVM: an ArchUnit rule over the kernel package and JaCoCo's line counts
-
-```js
-// .dependency-cruiser.cjs: add the rule to forbidden
-module.exports = { forbidden: [{
-  name: 'kernel-depends-on-nothing',
-  comment: 'ADR A small shared kernel: types and contracts only',
-  severity: 'error',
-  from: { path: '^src/shared-kernel/' },
-  to: { path: ['^src/modules/', '^node_modules/'], pathNot: '^node_modules/(zod|uuid|decimal\\.js)/' },   // the pure libraries the kernel may use
-}] }
-// CI, in the same job: fail when the kernel passes the limit
-//   kernel=$(cloc --json src/shared-kernel | jq '.SUM.code'); all=$(cloc --json src | jq '.SUM.code')
-//   [ $((kernel * 100 / all)) -le 5 ]
-```
+Tool: scripts/boundaries.mjs

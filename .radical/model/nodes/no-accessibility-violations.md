@@ -5,27 +5,13 @@ label: "No accessibility violations"
 cadence: "triggered"
 characteristic: "interaction-capability"
 invocation: "automated"
+metrics: "a11y.violations{impact=serious-or-critical} == 0"
 scope: "atomic"
 trigger: "pull-request"
 ---
 
-A Playwright test opens each page of the main journeys, including open dialogs and error states, and runs axe-core with the WCAG A and AA tags; any serious or critical violation fails it.
+A Playwright test (e2e/accessibility.spec.ts) opens each screen of the main journeys with real data, in the light and the dark theme, and runs axe-core with the WCAG 2.0, 2.1 and 2.2 A and AA tags; any serious or critical violation fails it.
 
-Threshold: 0 serious or critical axe violations against the WCAG 2.0 and 2.1 A and AA rules and the 2.2 AA rules on every page of the main journeys
+Threshold: 0 serious or critical axe violations against the WCAG 2.0 and 2.1 A and AA rules and the 2.2 AA rules on every screen
 
 Tool: axe-core with Playwright (@axe-core/playwright)
-
-```ts
-import AxeBuilder from '@axe-core/playwright'
-import { expect, test } from '@playwright/test'
-
-for (const path of ['/', '/search', '/checkout']) {
-  test(`${path} meets WCAG 2.2 AA`, async ({ page }) => {
-    await page.goto(path)
-    const { violations } = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-      .analyze()
-    expect(violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')).toEqual([])
-  })
-}
-```

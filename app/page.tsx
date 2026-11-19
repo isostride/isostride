@@ -2,15 +2,11 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Fragment, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { useOpenFolder } from '@/lib/client/folderContext';
-import { PATHS, readJson } from '@/lib/fs/folder';
-import { isOutdated, readManifest, type Manifest } from '@/lib/fs/manifest';
-import type { RunsIndex } from '@/lib/ingest/importFolder';
+import { useOpenFolder, runInWorker, watchJob } from '@/lib/client';
+import { PATHS, readJson, isOutdated, readManifest, type Manifest } from '@/lib/fs';
+import { type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { date, duration, km, pace, time } from '@/lib/format';
-import { ALGORITHM_VERSION } from '@/lib/version';
-import { runInWorker, watchJob } from '@/lib/client/worker';
-import { readGear, type Gear } from '@/lib/context/gear';
-import { readRunTags, writeRunTags, type RunTag, type RunTagsFile } from '@/lib/context/tags';
+import { readGear, type Gear, readRunTags, writeRunTags, type RunTag, type RunTagsFile } from '@/lib/gear';
 
 /** Runs: the imported runs, the import with its progress, and the files that could not be imported. */
 export default function RunsPageWrapper() {

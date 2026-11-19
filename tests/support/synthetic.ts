@@ -1,7 +1,6 @@
-import type { IndexedRun, RunFile } from '@/lib/ingest/importFolder';
-import type { Samples, Series } from '@/lib/ingest/parseFit';
-import { buildWindows } from '@/lib/prepare/windows';
-import { DEFAULT_TOLERANCES, type BlockDefinition, type Tolerances } from '@/lib/blocks/types';
+import type { IndexedRun, RunFile, Samples, Series } from '@/lib/kernel';
+import { buildWindows } from '@/lib/prepare';
+import { DEFAULT_TOLERANCES, type BlockDefinition, type Tolerances } from '@/lib/blocks';
 
 type Sample = Partial<Record<Exclude<keyof Samples, 't'>, number | null>>;
 

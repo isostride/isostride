@@ -1,5 +1,5 @@
-import { mean, sd, linearFit } from '@/lib/stats/stats';
-import type { BlockInstance, BlockMetric } from '@/lib/blocks/types';
+import { mean, sd, linearFit } from '@/lib/stats';
+import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 
 export const METRIC_LABEL: Record<BlockMetric, string> = {
   speed: 'Pace',

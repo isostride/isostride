@@ -8,10 +8,15 @@
     "build": "NEXT_DIST_DIR=.next-build next build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:report": "vitest run --reporter=default --reporter=json --outputFile=reports/vitest.json",
-    "check": "npm run -s test:report; npm run -s e2e; npm run -s metrics; sh radical.sh check .radical/model --report reports/vitest.json --report reports/playwright.json",
+    "test:report": "vitest run --coverage --reporter=default --reporter=json --outputFile=reports/vitest.json",
+    "check": "sh scripts/check.sh",
     "metrics": "sh scripts/metrics.sh",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "nightly": "sh scripts/nightly.sh",
+    "check:deps": "node scripts/boundaries.mjs",
+    "lint": "eslint lib app components workers"
   },
   "dependencies": {
     "@garmin/fitsdk": "^21.222.0",
@@ -20,12 +25,23 @@
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.65.1",
     "@types/node": "^20.19.43",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@vitest/coverage-v8": "^3.2.7",
+    "eslint": "^10.15.0",
+    "eslint-plugin-compat": "^7.0.1",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.7"
-  }
+    "typescript-eslint": "^8.73.0",
+    "vitest": "^3.2.7",
+    "web-vitals": "^6.2.3"
+  },
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Edge versions",
+    "last 2 Opera versions"
+  ]
 }

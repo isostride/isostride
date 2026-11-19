@@ -5,23 +5,13 @@ label: "No library internals styled"
 cadence: "triggered"
 characteristic: "maintainability"
 invocation: "automated"
+metrics: "styles.untokenized_colours == 0"
 scope: "atomic"
 trigger: "pull-request"
 ---
 
-Stylelint refuses selectors with the library's internal class prefixes, so styling goes through the theme. Adjust the patterns to the library used (MUI: .Mui, Angular Material: .mat-mdc / .mdc-, PrimeNG: .p-, Bootstrap with htmx: its component classes stay, only its internal state classes are listed).
+The application has no component library: its components are styled through its own theme, the CSS custom properties (tokens) of app/globals.css for the light and dark theme. A unit test (tests/unit/styles.test.ts) refuses a colour set anywhere but in a token: a colour literal in a CSS declaration that is not a custom property, or in a component.
 
-Threshold: 0 selectors targeting the component library's internal class names
+Threshold: 0 colours set outside the theme's tokens
 
-Tool: Stylelint (selector-disallowed-list)
-
-```json
-{
-  "rules": {
-    "selector-disallowed-list": [
-      ["/\\.Mui[A-Z]/", "/\\.mat-mdc-/", "/\\.mdc-/", "/::ng-deep/"],
-      { "message": "Style the component library through its theme (ADR Frontend stack)" }
-    ]
-  }
-}
-```
+Tool: Vitest over app/globals.css and the components

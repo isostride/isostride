@@ -1,5 +1,5 @@
-import { bootstrapDiff, mean, sd } from '@/lib/stats/stats';
-import type { BlockInstance, BlockMetric } from '@/lib/blocks/types';
+import { bootstrapDiff, mean, sd } from '@/lib/stats';
+import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 import { CONTEXT_FIELDS, correctForPace, selectInstances, sourceOf, type ContextField, type ContextFilter, type Rejected } from './select';
 import { hash, type Verdict } from './trend';
 

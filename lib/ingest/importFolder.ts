@@ -1,54 +1,12 @@
-import { ALGORITHM_VERSION, SCHEMA_VERSION } from '@/lib/version';
-import { PATHS, fitDirectory, joinPath, readJson, writeJson, type DataFolder } from '@/lib/fs/folder';
-import { emptyManifest, readManifest, writeManifest, type Manifest } from '@/lib/fs/manifest';
-import { buildWindows, type Windows } from '@/lib/prepare/windows';
-import { joinContext, type RunContext } from '@/lib/context/joinContext';
-import { runBlocks } from '@/lib/blocks/pipeline';
-import { FitImportError, parseFit, runId, type Lap, type Samples } from './parseFit';
+import { ALGORITHM_VERSION, SCHEMA_VERSION, type Windows, type Lap, type Samples, type RunFile, type RunIndexRow, type RunsIndex } from '@/lib/kernel';
+import { PATHS, fitDirectory, joinPath, readJson, writeJson, type DataFolder, emptyManifest, readManifest, writeManifest, type Manifest } from '@/lib/fs';
+import { buildWindows } from '@/lib/prepare';
+import { FitImportError, parseFit, runId } from './parseFit';
 
-/** One row of runs-index.json: everything the list and analysis screens need without opening the run file. */
-export interface RunIndexRow {
-  id: string;
-  startTime: string;
-  file: string;
-  device: string;
-  distance: number;
-  duration: number;
-  /** m/s over timer time */
-  avgSpeed: number;
-  avgHeartRate: number | null;
-  temperature: number | null;
-  hasGps: boolean;
-  laps: number;
-  algorithmVersion: number;
-}
 
-/** A row of runs-index.json after the context join: the run and day layers ride along. */
-export type IndexedRun = RunIndexRow & Partial<RunContext>;
 
-export interface RunsIndex {
-  schemaVersion: number;
-  algorithmVersion: number;
-  runs: IndexedRun[];
-}
 
-/** derived/runs/<id>.json */
-export interface RunFile {
-  schemaVersion: number;
-  algorithmVersion: number;
-  id: string;
-  startTime: string;
-  file: string;
-  device: string;
-  distance: number;
-  duration: number;
-  elapsed: number;
-  temperature: number | null;
-  sources: Record<string, string>;
-  laps: Lap[];
-  samples: Samples;
-  windows: Windows;
-}
+
 
 export interface FileOutcome {
   file: string;
@@ -80,7 +38,7 @@ export interface ImportOptions {
  * runs-index.json and manifest.json. A file that cannot be read is skipped with
  * its reason and tried again on the next import.
  */
-export async function importFolder(folder: DataFolder, opts: ImportOptions = {}): Promise<ImportReport> {
+export async function importRuns(folder: DataFolder, opts: ImportOptions = {}): Promise<ImportReport> {
   const now = opts.now ?? (() => performance.now());
   const manifest: Manifest = (await readManifest(folder)) ?? emptyManifest();
   const index: RunsIndex = (await readJson<RunsIndex>(folder, PATHS.runsIndex)) ?? {
@@ -154,8 +112,6 @@ export async function importFolder(folder: DataFolder, opts: ImportOptions = {})
   manifest.schemaVersion = SCHEMA_VERSION;
   await writeJson(folder, PATHS.runsIndex, index);
   await writeManifest(folder, manifest);
-  await joinContext(folder);
-  await runBlocks(folder);
   opts.onProgress?.({ done, total: todo.length, file: '' });
   return report;
 }

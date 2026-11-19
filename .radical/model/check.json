@@ -1,0 +1,22 @@
+{
+  "rules": {
+    "scenario-not-verified-here": "error",
+    "scenario-without-metrics": "error",
+    "fitness-fn-without-metrics": "error",
+    "metric-not-measured": "error"
+  },
+  "goals": {
+    "fitness-fns-passing": {
+      "min": 90
+    },
+    "fitness-fns-with-metrics": {
+      "min": 90
+    },
+    "adrs-verified": {
+      "min": 90
+    },
+    "requirements-verified": {
+      "min": 90
+    }
+  }
+}

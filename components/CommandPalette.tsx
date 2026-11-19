@@ -2,10 +2,10 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useFolder } from '@/lib/client/folderContext';
-import { readDefinitions } from '@/lib/blocks/definitions';
-import { PATHS, readJson } from '@/lib/fs/folder';
-import type { RunsIndex } from '@/lib/ingest/importFolder';
+import { useFolder } from '@/lib/client';
+import { readDefinitions } from '@/lib/blocks';
+import { PATHS, readJson } from '@/lib/fs';
+import type { RunsIndex } from '@/lib/kernel';
 
 interface Item {
   group: 'Screens' | 'Blocks' | 'Runs' | 'Actions';

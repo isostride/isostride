@@ -1,6 +1,6 @@
 'use client';
 
-import type { WorkerEvent, WorkerJob } from '@/workers/pipeline.worker';
+import type { WorkerEvent, WorkerJob } from '@/workers';
 
 export type DoneEvent = Extract<WorkerEvent, { type: 'done' }>;
 export interface JobState {

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Shell } from '@/components/Shell';
-import { FolderProvider } from '@/lib/client/folderContext';
+import { Shell } from '@/components';
+import { FolderProvider } from '@/lib/client';
 import './globals.css';
 
 export const metadata: Metadata = {

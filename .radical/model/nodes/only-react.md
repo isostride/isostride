@@ -5,21 +5,13 @@ label: "Only React"
 cadence: "triggered"
 characteristic: "maintainability"
 invocation: "automated"
+metrics: "ui.other_frameworks == 0"
 scope: "atomic"
 trigger: "pull-request"
 ---
 
-A job in every build reads the dependencies and devDependencies of every package.json in the repository and fails when one names another UI framework's package; a second framework then arrives only with the decision record that allows it and a change to this check. Runs on Linux (git, jq, GNU xargs and grep).
+scripts/frameworks.mjs (npm run check) and a unit test read the dependencies and devDependencies of every package.json in the repository and fail when one names another UI framework's package (@angular/core, vue, nuxt, svelte, @sveltejs/kit, solid-js, preact, lit, ember-source, @builder.io/qwik), unless an accepted decision record names that package.
 
-Threshold: 0 package.json files in the repository declare @angular/core, vue, nuxt, svelte, @sveltejs/kit
+Threshold: 0 package.json files in the repository declare another UI framework without an accepted decision record
 
-Tool: git with jq and grep (CI job)
-
-```bash
-#!/usr/bin/env bash
-# fails when a package.json anywhere in the repository declares another UI framework
-set -euo pipefail
-other=$(git ls-files -- '*package.json' | xargs -r jq -r '((.dependencies // {}) + (.devDependencies // {})) | keys[]' \
-  | grep -xE '@angular\/core|vue|nuxt|svelte|@sveltejs\/kit' || true)
-[ -z "$other" ] || { echo "::error::another UI framework is declared: $(tr '\n' ' ' <<<"$other")(ADR Built with React)"; exit 1; }
-```
+Tool: scripts/frameworks.mjs

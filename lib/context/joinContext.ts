@@ -1,25 +1,8 @@
-import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs/folder';
-import type { RunIndexRow, RunsIndex } from '@/lib/ingest/importFolder';
-import { ALGORITHM_VERSION } from '@/lib/version';
+import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
+import { type RunIndexRow, type RunsIndex, ALGORITHM_VERSION, type RunContext } from '@/lib/kernel';
 import { computeDayStates, type DayState } from './dayState';
-import { dayOf, gearOn, readGear, type Gear } from './gear';
-import { readRunTags, type RunTagsFile } from './tags';
+import { dayOf, gearOn, readGear, type Gear, readRunTags, type RunTagsFile } from '@/lib/gear';
 
-/** The run layer and day layer of the context, as runs-index.json carries them (denormalized). */
-export interface RunContext {
-  shoesId: string | null;
-  shoes: string | null;
-  /** true when the shoes come from the run's override, not from the date */
-  shoesOverridden: boolean;
-  hrSensorId: string | null;
-  /** the device behind the heart rate: the registered sensor worn, or the watch's wrist sensor */
-  heartRateSource: string;
-  workoutType: string | null;
-  techniqueCue: string | null;
-  note: string | null;
-  load3: number;
-  load7: number;
-}
 
 export function contextFor(row: RunIndexRow, gear: Gear[], tags: RunTagsFile, days: Record<string, DayState>): RunContext {
   const day = dayOf(row.startTime);

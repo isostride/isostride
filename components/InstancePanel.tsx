@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import type { BlockInstance } from '@/lib/blocks/types';
-import type { Rejected } from '@/lib/compare/select';
+import type { BlockInstance } from '@/lib/blocks';
+import type { Rejected } from '@/lib/compare';
 
 const fmtPace = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 const day = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
@@ -15,10 +15,17 @@ interface Props {
   focus: BlockInstance | null;
   onFocus: (i: BlockInstance) => void;
   onClose: () => void;
+  /** In an A/B comparison: the group of an instance ('A' or 'B') and the label of each group. */
+  group?: (i: BlockInstance) => 'A' | 'B' | null;
+  groupLabel?: Record<'A' | 'B', string>;
 }
 
 /** Side panel over a result: the accepted and rejected instances with reasons, and one instance's four context layers (spec F14). */
-export function InstancePanel({ included, rejected, value, focus, onFocus, onClose }: Props) {
+export function InstancePanel({ included, rejected, value, focus, onFocus, onClose, group, groupLabel }: Props) {
+  const tag = (i: BlockInstance) => {
+    const g = group?.(i);
+    return g ? <span className={`group-tag g${g}`} title={groupLabel?.[g]}>{g}</span> : null;
+  };
   const [tab, setTab] = useState<'accepted' | 'rejected'>('accepted');
   return (
     <aside className="sheet" style={{ zIndex: 21 }}>
@@ -35,12 +42,12 @@ export function InstancePanel({ included, rejected, value, focus, onFocus, onClo
         {tab === 'accepted'
           ? [...included].reverse().map((i) => (
               <div key={i.id} className={`list-row ${focus?.id === i.id ? 'on' : ''}`} onClick={() => onFocus(i)}>
-                <span>{day(i.runStart)}</span><span className="muted">{fmtPace(i.context.block.pace)} /km</span><b>{value(i)}</b>
+                <span>{tag(i)}{day(i.runStart)}</span><span className="muted">{fmtPace(i.context.block.pace)} /km</span><b>{value(i)}</b>
               </div>
             ))
           : [...rejected].reverse().map((r) => (
               <div key={r.instance.id} className={`list-row ${focus?.id === r.instance.id ? 'on' : ''}`} onClick={() => onFocus(r.instance)} style={{ display: 'block' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{day(r.instance.runStart)}</span><span className="muted">{fmtPace(r.instance.context.block.pace)} /km</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{tag(r.instance)}{day(r.instance.runStart)}</span><span className="muted">{fmtPace(r.instance.context.block.pace)} /km</span></div>
                 <div className="muted small">✗ {r.reasons.join(' · ')}</div>
               </div>
             ))}

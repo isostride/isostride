@@ -2,16 +2,12 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useState } from 'react';
-import { InstancePanel } from '@/components/InstancePanel';
-import { ProfileChart, TrendChart, type Marker } from '@/components/TrendChart';
-import { useOpenFolder } from '@/lib/client/folderContext';
-import { readDefinitions } from '@/lib/blocks/definitions';
-import type { BlockDefinition, BlockInstance, BlockInstancesFile, BlockMetric } from '@/lib/blocks/types';
-import { readGear, type Gear } from '@/lib/context/gear';
-import { instancesCsv } from '@/lib/compare/csv';
-import { CONTEXT_FIELDS, METRIC_LABEL, valueOf, type ContextField, type ContextFilter } from '@/lib/compare/select';
-import { MIN_TREND_INSTANCES, computeTrend, profiles } from '@/lib/compare/trend';
-import { PATHS, readJson } from '@/lib/fs/folder';
+import { InstancePanel, ProfileChart, TrendChart, type Marker } from '@/components';
+import { useOpenFolder } from '@/lib/client';
+import { readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric } from '@/lib/blocks';
+import { readGear, type Gear } from '@/lib/gear';
+import { instancesCsv, CONTEXT_FIELDS, METRIC_LABEL, valueOf, type ContextField, type ContextFilter, MIN_TREND_INSTANCES, computeTrend, profiles } from '@/lib/compare';
+import { PATHS, readJson } from '@/lib/fs';
 
 const METRICS: { key: BlockMetric; short: string; fmt: (v: number) => string; invert?: boolean }[] = [
   { key: 'heartRate', short: 'HR', fmt: (v) => `${v.toFixed(0)} bpm` },
@@ -94,7 +90,7 @@ function TrendPage() {
     <div className="page">
       <div className="page-head">
         <h1>Trend</h1>
-        <select value={defId} onChange={(e) => { setSelected([]); router.replace(`/trend?def=${e.target.value}`); }} className="select">
+        <select aria-label="Block definition" value={defId} onChange={(e) => { setSelected([]); router.replace(`/trend?def=${e.target.value}`); }} className="select">
           {defs.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
         <span className="spacer" />
@@ -111,7 +107,7 @@ function TrendPage() {
           <button className={corrected ? 'on' : ''} onClick={() => setCorrected(true)}>Corrected</button>
         </div>
         {(Object.keys(CONTEXT_FIELDS) as ContextField[]).filter((f) => options[f].length > 1).map((f) => (
-          <select key={f} className="select small" value={filter[f] ?? ''} onChange={(e) => setFilter({ ...filter, [f]: e.target.value || undefined })}>
+          <select key={f} className="select small" aria-label={`Filter: ${CONTEXT_FIELDS[f].label}`} value={filter[f] ?? ''} onChange={(e) => setFilter({ ...filter, [f]: e.target.value || undefined })}>
             <option value="">{CONTEXT_FIELDS[f].label}: any</option>
             {options[f].map((v) => <option key={v} value={v}>{v}</option>)}
           </select>

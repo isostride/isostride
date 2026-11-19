@@ -1,4 +1,4 @@
-import { ALGORITHM_VERSION, SCHEMA_VERSION } from '@/lib/version';
+import { ALGORITHM_VERSION, SCHEMA_VERSION } from '@/lib/kernel';
 import { PATHS, readJson, writeJson, type DataFolder } from './folder';
 
 export type ImportStatus =

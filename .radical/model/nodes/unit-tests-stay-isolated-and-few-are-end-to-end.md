@@ -4,28 +4,19 @@ type: "fitness-fn"
 label: "Unit tests stay isolated and few are end-to-end"
 cadence: "triggered"
 characteristic: "maintainability"
+combine: "all"
 invocation: "automated"
+metrics: |
+  tests.unit.share >= 40 %
+  tests.e2e.share <= 15 %
+  tests.unit.over_100ms == 0
+  tests.unit.network_calls == 0
 scope: "atomic"
 trigger: "pull-request"
 ---
 
-The unit-test project disables network connections in its setup, so a unit test that reaches a server fails; a step in CI reads the JUnit reports, counts tests per suite and fails when the shares are off or a unit test took more than 100 ms.
+The unit project (tests/unit) blocks the network in its setup (tests/support/noNetwork.ts), so a unit test that opens a connection or fetches fails; scripts/test-metrics.mjs reads the Vitest and Playwright reports, counts the tests of each kind and the unit tests over 100 ms. Integration tests (tests/integration) run on the author's FIT files and the versioned fixtures and are counted on their own (the author's decision of 19 Nov 2026: the real-data tests are the core of the verification here, so the pack's 70% unit and 10% end-to-end became 40% and 15%).
 
-Threshold: 0 unit tests reach the network or run over 100 ms; unit tests at least 70% and end-to-end tests at most 10% of all tests
+Threshold: 0 unit tests reach the network or run over 100 ms; unit tests at least 40% and end-to-end tests at most 15% of all tests
 
-Tool: Vitest with nock 14 or later (which intercepts native fetch too) and xmllint over the JUnit reports; for the JVM: JUnit 5 with a SecurityManager-free network block through a test ArchUnit rule and the same report arithmetic
-
-```ts
-// test/unit/setup.ts (vitest.config.ts: test.setupFiles of the unit project)
-import nock from 'nock'
-import { afterAll, beforeAll } from 'vitest'
-
-beforeAll(() => nock.disableNetConnect())   // any real HTTP call throws
-afterAll(() => nock.enableNetConnect())
-
-// CI, from the JUnit reports reports/unit.xml, reports/integration.xml, reports/e2e.xml:
-//   count() { xmllint --xpath 'string(sum(//testsuite/@tests))' "$1"; }
-//   unit=$(count reports/unit.xml); e2e=$(count reports/e2e.xml); all=$((unit + $(count reports/integration.xml) + e2e))
-//   [ $((unit * 100 / all)) -ge 70 ] && [ $((e2e * 100 / all)) -le 10 ]
-//   [ "$(xmllint --xpath 'count(//testcase[@time > 0.1])' reports/unit.xml)" = 0 ]   # no unit test over 100 ms
-```
+Tool: Vitest projects (unit, integration) and scripts/test-metrics.mjs

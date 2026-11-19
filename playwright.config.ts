@@ -11,6 +11,9 @@ export default defineConfig({
   timeout: 90_000,
   fullyParallel: false,
   workers: 1,
+  // The journeys gate the change: no retries and no test.only left behind.
+  retries: 0,
+  forbidOnly: true,
   reporter: [['list'], ['json', { outputFile: 'reports/playwright.json' }]],
   use: { baseURL: 'http://localhost:4173', trace: 'retain-on-failure' },
   webServer: {
