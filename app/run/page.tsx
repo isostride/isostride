@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, type Domain, type MapCamera, type RunLine, type RunMark, type RunView } from '@/components';
+import { Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget } from '@/components';
 import { useOpenFolder, runInWorker } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { canDefineFromLaps, definitionFromLaps, efficiencyOf, definitionFromSelection, rangeStats, readDefinitions, selectionOptions, zoneShares, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockType } from '@/lib/blocks';
 import { date, duration, km, pace, time } from '@/lib/format';
-import { readSettings, zoneOf, zoneShade } from '@/lib/settings';
+import { LOAD_MODELS, readSettings, zoneOf, zoneShade } from '@/lib/settings';
 
 type WindowKey = 'speed' | 'efficiency' | 'effortPace' | 'heartRate' | 'cadence' | 'groundContactTime' | 'verticalOscillation' | 'stepLength' | 'power' | 'altitude' | 'legSpringStiffness';
 const round0 = (unit: string) => (v: number) => `${Math.round(v)} ${unit}`;
@@ -110,6 +110,10 @@ function RunPage() {
   const id = params.get('id') ?? '';
   const { folder, handle } = useOpenFolder();
   const router = useRouter();
+  // The back link: the screen the run was opened from, as it was left (requirement "Back to the previous screen").
+  const [back, setBack] = useState<{ href: string; label: string; viaHistory: boolean }>({ href: '/', label: 'Runs', viaHistory: false });
+  useEffect(() => { setBack(backTarget(window.sessionStorage)); }, []);
+  const goBack = (e: MouseEvent) => { if (back.viaHistory && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); router.back(); } };
   const [creating, setCreating] = useState(false);
   const [run, setRun] = useState<RunFile | null | undefined>(undefined);
   const [title, setTitle] = useState<string | null>(null);
@@ -117,6 +121,8 @@ function RunPage() {
   const [blocks, setBlocks] = useState<(BlockInstance & { name: string })[]>([]);
   /** the zones of the metrics, from the settings */
   const [zones, setZones] = useState<Record<string, number[]>>({});
+  // The run's load by the model of Settings, and the form that morning (requirement "Load model chosen in Settings").
+  const [effort, setEffort] = useState<{ load: number; estimated: boolean; unit: string; model: string; form: number } | null>(null);
   // The view the page opens with ("chce aby wszystko bylo endkodowane w url"): the link's, then the
   // run's memory, then the last choices made on any run.
   const [start] = useState<RunView>(() => {
@@ -195,8 +201,13 @@ function RunPage() {
 
   useEffect(() => {
     readJson<RunFile>(folder, PATHS.runFile(id)).then(setRun).catch(() => setRun(null));
-    readSettings(folder).then((s) => setZones(s.zones)).catch(() => setZones({}));
-    readJson<RunsIndex>(folder, PATHS.runsIndex).then((idx) => setTitle(idx?.runs.find((r) => r.id === id)?.title ?? null));
+    Promise.all([readSettings(folder), readJson<RunsIndex>(folder, PATHS.runsIndex)]).then(([s, idx]) => {
+      setZones(s.zones);
+      const row = idx?.runs.find((r) => r.id === id);
+      setTitle(row?.title ?? null);
+      const model = LOAD_MODELS.find((m) => m.key === s.performance.load)!;
+      setEffort(row && row.load !== null && row.load !== undefined ? { load: row.load, estimated: !!row.loadEstimated, unit: model.unit, model: model.name, form: row.form ?? 0 } : null);
+    }).catch(() => setZones({}));
     (async () => {
       const names = new Map((await readDefinitions(folder)).map((d) => [d.id, d.name]));
       const all = (await readJson<{ instances: BlockInstance[] }>(folder, PATHS.blockInstances))?.instances ?? [];
@@ -318,7 +329,7 @@ function RunPage() {
     <div ref={pageRef} className="page run-page">
       <div className="page-head run-head">
         <div>
-          <div className="eyebrow"><Link href="/">← Runs</Link>{title && <span> · {date(run.startTime)} · {time(run.startTime)}</span>}</div>
+          <div className="eyebrow"><Link href={back.href} onClick={goBack}>← {back.label}</Link>{title && <span> · {date(run.startTime)} · {time(run.startTime)}</span>}</div>
           <h1>{title ?? <>{date(run.startTime)} <span className="muted">· {time(run.startTime)}</span></>}</h1>
         </div>
         <dl className="run-figures">
@@ -327,6 +338,8 @@ function RunPage() {
           <div><dt>average pace</dt><dd>{pace(run.distance / run.duration)} /km</dd></div>
           <div><dt>average heart rate</dt><dd>{view.avgHr ?? '–'}{view.avgHr ? ' bpm' : ''}</dd></div>
           <div><dt>elevation gain</dt><dd>{view.gain ?? '–'}{view.gain !== null ? ' m' : ''}</dd></div>
+          {effort && <div className="run-load" title={`${effort.model}${effort.estimated ? ', estimated from the duration: the run lacks what the model needs' : ''}; form that morning ${effort.form > 0 ? '+' : ''}${effort.form}`}><dt>load</dt><dd>{Math.round(effort.load)}{effort.estimated ? '*' : ''} {effort.unit}</dd></div>}
+          {effort && <div><dt>form that morning</dt><dd>{effort.form > 0 ? '+' : ''}{effort.form}</dd></div>}
         </dl>
         <span className="spacer" />
         <span className="chip">{run.device}</span>

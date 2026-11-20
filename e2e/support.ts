@@ -122,6 +122,12 @@ export const GEAR_AUTUMN = {
   ],
 };
 
+/** On the Analysis screen, which opens with All runs: removes it, to start from no item. */
+export async function clearAnalysis(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Remove All runs' }).click();
+  await page.locator('.item-chip').first().waitFor({ state: 'detached' });
+}
+
 /** Opens the picker of the Analysis screen on its list of blocks and runs. */
 export async function openPicker(page: Page) {
   await page.getByRole('button', { name: '+ Add block or run' }).click();
@@ -150,6 +156,7 @@ export async function setUpWithBlock(page: Page, { files = fitFiles(30, '2026-05
   await page.getByRole('heading', { name: 'Runs' }).waitFor();
   await importAll(page);
   await nav(page, 'Analysis');
+  await clearAnalysis(page);
   await addFromPicker(page, block);
   await page.locator('.item-chip').first().waitFor({ timeout: 30_000 });
 }

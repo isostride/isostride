@@ -1,4 +1,5 @@
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
+import { DEFAULT_PERFORMANCE, parsePerformance, type PerformanceSettings } from './performance';
 
 /**
  * The zones of the runner's metrics ("w settingsach chce podawac zakresy"): the boundaries between
@@ -35,6 +36,8 @@ export interface SettingsFile {
   schemaVersion: 1;
   /** by metric key: the boundaries between its zones, from Z1 up */
   zones: Record<string, number[]>;
+  /** the performance model: how a run's load is computed and how fitness and fatigue follow it */
+  performance: PerformanceSettings;
   /** true when no settings were saved and the default zones apply (not written) */
   defaults?: boolean;
 }
@@ -101,18 +104,18 @@ export function formatBoundaries(metric: string, boundaries: number[]): string {
 
 export async function readSettings(folder: DataFolder): Promise<SettingsFile> {
   const file = await readJson<Partial<SettingsFile>>(folder, PATHS.settings);
-  if (file === null) return { schemaVersion: 1, zones: structuredClone(DEFAULT_ZONES), defaults: true };
+  if (file === null) return { schemaVersion: 1, zones: structuredClone(DEFAULT_ZONES), performance: { ...DEFAULT_PERFORMANCE }, defaults: true };
   const zones: Record<string, number[]> = {};
   for (const [k, v] of Object.entries(file?.zones ?? {})) {
     if (!Array.isArray(v)) continue;
     const b = sortBoundaries(k, v.map(Number));
     if (b.length) zones[k] = b;
   }
-  return { schemaVersion: 1, zones };
+  return { schemaVersion: 1, zones, performance: parsePerformance(file.performance) };
 }
 
-export async function writeSettings(folder: DataFolder, file: SettingsFile): Promise<void> {
+export async function writeSettings(folder: DataFolder, file: Omit<SettingsFile, 'performance'> & { performance?: PerformanceSettings }): Promise<void> {
   // Metrics with no zones are dropped, so the file holds only what the runner entered.
   const zones = Object.fromEntries(Object.entries(file.zones).map(([k, v]) => [k, sortBoundaries(k, v)] as const).filter(([, v]) => v.length));
-  await writeJson(folder, PATHS.settings, { schemaVersion: 1, zones });
+  await writeJson(folder, PATHS.settings, { schemaVersion: 1, zones, performance: parsePerformance(file.performance) });
 }

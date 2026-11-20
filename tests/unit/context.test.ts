@@ -52,8 +52,8 @@ describe('Compute day state', () => {
     }));
     const days = computeDayStates(runs, ['2026-11-14']);
     // Previous 3 days: 11, 12, 13 Nov = 70 + 80 + 90; previous 7 days: all = 420.
-    expect(days['2026-11-14']).toEqual({ date: '2026-11-14', load3: 240, load7: 420 });
+    expect(days['2026-11-14']).toEqual({ date: '2026-11-14', load3: 240, load7: 420, form: 0 });
     // 7 Nov has no earlier runs.
-    expect(days['2026-11-07']).toEqual({ date: '2026-11-07', load3: 0, load7: 0 });
+    expect(days['2026-11-07']).toEqual({ date: '2026-11-07', load3: 0, load7: 0, form: 0 });
   });
 });

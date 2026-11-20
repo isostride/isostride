@@ -354,13 +354,14 @@ test.describe('Run chart', () => {
     await expect(page.getByRole('textbox', { name: /^Heart rate/ })).toHaveValue('114, 133, 152, 171');
     await expect(page.getByLabel('Heart rate zones').locator('.zone-chip')).toHaveText(['Z1 < 114', 'Z2 114–133', 'Z3 133–152', 'Z4 152–171', 'Z5 ≥ 171']);
     await page.getByRole('textbox', { name: /^Pace/ }).fill('5:30, fast');
-    await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
     await page.getByRole('textbox', { name: /^Pace/ }).fill('');
     await page.getByRole('textbox', { name: /^Cadence/ }).fill('');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText(/^These are the default zones/)).toHaveCount(0);
     await expect(page.getByRole('status')).toHaveText('Saved');
-    expect(JSON.parse(await readText(page, 'strideprism/user/settings.json'))).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] } });
+    // Only the zones entered are kept (the file also holds the performance model).
+    expect(JSON.parse(await readText(page, 'strideprism/user/settings.json')).zones).toEqual({ heartRate: [114, 133, 152, 171] });
     await page.goBack();
     await chart.waitFor();
     await expect(chart.locator('.zone-stripe[data-metric="heartRate"]').first()).toBeVisible();

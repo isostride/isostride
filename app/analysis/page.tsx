@@ -1,25 +1,37 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ItemKey, METRIC_VIEW, OverTimeChart, PaceCurveChart, SLOT_COLORS, SLOT_SHAPES, type CurveLine, type Marker, type OverTimeGroup } from '@/components';
-import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule } from '@/lib/blocks';
+import { ItemKey, METRIC_VIEW, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup } from '@/components';
+import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule, ruleOf } from '@/lib/blocks';
 import { curvesInWorker, instancesInWorker, runInWorker, useOpenFolder } from '@/lib/client';
 import { MAX_ITEMS, addItem, changesByMetric, computeTrend, describeDelta, describeTrend, formatAmount, percentChange, firstUsableMetric, formatItems, instancesCsv, parseItems, reasonSummary, runMean, selectInstances, valueOf, type AnalysisItem } from '@/lib/compare';
-import { CURVE_DURATIONS, MIN_FIT_POINTS, MIN_FIT_SECONDS, estimateCurve, estimatedPace, type CurveEstimate, type CurvePoint, type CurveSource } from '@/lib/curve';
+import type { CurveMetric, CurvePoint, CurveSource } from '@/lib/curve';
 import { PATHS, isOutdated, readJson, readManifest } from '@/lib/fs';
-import { date, duration as fmtDuration, pace as fmtPace } from '@/lib/format';
+import { date } from '@/lib/format';
 import { readGear, readRunTags, type Gear } from '@/lib/gear';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { AddDialog, TYPE_LABEL, runName } from './AddDialog';
 import { BlockSheet } from './BlockSheet';
+import { mmss, runHref } from './links';
 import type { BuilderOptions } from './RuleBuilder';
+
+// The curve tab's chart, figures and table load when the tab is first opened (ADR "Built with React": 200 KB of script per route).
+const FormTab = dynamic(() => import('./FormTab').then((m) => m.FormTab), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>Loading the form…</div> });
+const CurveTab = dynamic(() => import('./CurveTab').then((m) => m.CurveTab), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>Loading the curve…</div> });
 
 const DAY = 86_400_000;
 const METRICS = METRIC_VIEW;
-const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
+/** The item Analysis opens with: every run, whole (a rule with nothing set). */
+const ALL_RUNS = encodeRule(ruleOf({ type: 'run' }));
+
 const view = (mt: BlockMetric) => METRICS.find((x) => x.key === mt)!;
+
+/** The sections of the screen, one at a time (requirement "Analysis sections as tabs"). */
+type Tab = 'trends' | 'segments' | 'curve' | 'form';
+const TABS: [Tab, string][] = [['trends', 'Trends'], ['segments', 'Segments'], ['curve', 'Pace / power curve'], ['form', 'Form']];
 /** What sets a block apart, shown under its name: its kind, how its segments start, where its heart rate is read from. */
 function attributes(d: BlockDefinition | null): string[] {
   if (!d) return [];
@@ -31,7 +43,6 @@ function attributes(d: BlockDefinition | null): string[] {
   ];
 }
 /** The run screen of a run, with a stretch of it selected when one is given. */
-const runHref = (id: string, from?: number, to?: number) => `/run?id=${id}${from !== undefined && to !== undefined ? `&from=${Math.round(from)}&to=${Math.round(to)}` : ''}`;
 /** The id the instances of a rule that lives in the link carry. */
 const ruleId = (code: string) => `q:${code}`;
 
@@ -60,7 +71,8 @@ function AnalysisPage() {
   const [options, setOptions] = useState<BuilderOptions>({ workoutTypes: [], techniqueCues: [], shoes: [], heartRateSources: [], devices: [] });
   const [files, setFiles] = useState<Map<string, RunFile>>(new Map());
   const [adhoc, setAdhoc] = useState<Map<string, BlockInstance[]>>(new Map());
-  const [curves, setCurves] = useState<Map<string, CurvePoint[]>>(new Map());
+  // The curves computed, with the metric they were computed for (a curve of the other metric is not shown).
+  const [curves, setCurves] = useState<{ metric: CurveMetric; by: Map<string, CurvePoint[]> }>({ metric: 'speed', by: new Map() });
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [joinPoints, setJoin] = useState(true);
@@ -95,12 +107,13 @@ function AnalysisPage() {
   }, [folder]);
   useEffect(() => { load(); }, [load]);
 
-  // The items live in the URL; with none given, the first kept block opens.
+  // The items live in the URL; with none given, all runs ("domyslnie powinien brac wszystkie treningi"),
+  // or the block a link names (def=…).
   const items: AnalysisItem[] = useMemo(() => {
     const given = parseItems(params.get('items'));
     if (given.length || params.has('items')) return given.filter((i) => (i.kind === 'block' ? defs.some((d) => d.id === i.id) : i.kind === 'run' ? runs.some((r) => r.id === i.id) : decodeRule(i.id) !== null));
-    const def = params.get('def') ?? defs[0]?.id;
-    return def && defs.some((d) => d.id === def) ? [{ kind: 'block' as const, id: def, slot: 0 }] : [];
+    const def = params.get('def');
+    return def && defs.some((d) => d.id === def) ? [{ kind: 'block' as const, id: def, slot: 0 }] : [{ kind: 'rule' as const, id: ALL_RUNS, slot: 0 }];
   }, [params, defs, runs]);
   // The latest items, ahead of the link: a change after a save must build on what is shown.
   const latest = useRef(items);
@@ -165,11 +178,21 @@ function AnalysisPage() {
     q.set('m', next.join(','));
     router.replace(`/analysis?${q.toString()}`);
   };
-  // The pace curve, switched on in the URL (curve=1).
-  const curve = params.get('curve') === '1';
-  const setCurve = (on: boolean) => {
+  // The tab, in the URL (tab=segments, tab=curve; Trends when left out; an older link with curve= opens the curve tab).
+  const tabParam = params.get('tab');
+  const tab: Tab = TABS.some(([t]) => t === tabParam) ? (tabParam as Tab) : params.has('curve') ? 'curve' : 'trends';
+  const setTab = (t: Tab) => {
     const q = new URLSearchParams(params.toString());
-    if (on) q.set('curve', '1'); else q.delete('curve');
+    if (t === 'trends') q.delete('tab'); else q.set('tab', t);
+    router.replace(`/analysis?${q.toString()}`);
+  };
+  // The curve, Speed or Power (curve=power; Speed when left out), read from the runs only while its tab is open.
+  const curveMetric: CurveMetric = params.get('curve') === 'power' ? 'power' : 'speed';
+  const curve: CurveMetric | null = tab === 'curve' ? curveMetric : null;
+  const setCurve = (m: CurveMetric) => {
+    const q = new URLSearchParams(params.toString());
+    q.set('tab', 'curve');
+    if (m === 'power') q.set('curve', 'power'); else q.delete('curve');
     router.replace(`/analysis?${q.toString()}`);
   };
 
@@ -211,15 +234,15 @@ function AnalysisPage() {
   const domain: [number, number] | undefined = allT.length ? [Math.min(...allT) - 4 * DAY, Math.max(...allT) + 4 * DAY] : undefined;
   const markers: Marker[] = useMemo(() => gear.map((g) => ({ date: `${g.from}T00:00:00`, label: `${g.type === 'shoes' ? '👟' : '♥'} ${g.name}` })), [gear]);
 
-  // The pace curve of each item, from the stretches it holds: a block's segments, a run whole.
+  // The curve of each item, from the stretches it holds: a block's segments, a run whole.
   const sourcesKey = useMemo(() => {
     if (!curve) return '[]';
     const sources: CurveSource[] = items.map((i) => {
-      if (i.kind === 'run') return { key: i.id, ranges: { [i.id]: [[0, 1e9] as [number, number]] } };
+      if (i.kind === 'run') return { key: i.id, metric: curve, ranges: { [i.id]: [[0, 1e9] as [number, number]] } };
       const id = i.kind === 'rule' ? ruleId(i.id) : i.id;
       const ranges: Record<string, [number, number][]> = {};
       for (const x of all) if (x.definitionId === id && x.status === 'accepted') (ranges[x.runId] ??= []).push([x.start, x.end]);
-      return { key: i.id, ranges };
+      return { key: i.id, metric: curve, ranges };
     });
     return JSON.stringify(sources);
   }, [curve, items, all]);
@@ -230,24 +253,14 @@ function AnalysisPage() {
     let live = true;
     setProgress({ done: 0, total: 0 });
     curvesInWorker(list, handle, (p) => live && setProgress({ done: p.done, total: p.total }), controller.signal)
-      .then((got) => live && setCurves(new Map(Object.entries(got))))
+      .then((got) => live && setCurves({ metric: list[0].metric ?? 'speed', by: new Map(Object.entries(got)) }))
       .catch(() => undefined)
       .finally(() => live && setProgress(null));
     return () => { live = false; controller.abort(); };
   }, [sourcesKey, handle]);
 
-  const curveLines: (CurveLine & { estimated: CurveEstimate | null })[] = curve ? items.flatMap((i) => {
-    const pts = curves.get(i.id);
-    if (!pts) return [];
-    const points = pts.map((p) => ({ duration: p.duration, pace: p.pace, note: `${date(p.date)}${p.title ? ` · ${p.title}` : ''} · ${mmss(p.from)}–${mmss(p.to)}`, href: runHref(p.runId, p.from, p.to) }));
-    const estimated = estimateCurve(points);
-    // The estimate drawn from 3 minutes to the end of the axis, 24 steps on the logarithmic scale.
-    const d0 = Math.log(MIN_FIT_SECONDS);
-    const d1 = Math.log(CURVE_DURATIONS[CURVE_DURATIONS.length - 1]);
-    const estimate = estimated ? Array.from({ length: 25 }, (_, k) => { const d = Math.exp(d0 + ((d1 - d0) * k) / 24); return { duration: d, pace: estimatedPace(estimated, d) }; }) : undefined;
-    return [{ key: i.id, label: label(i), color: color(i), shape: shape(i), points, estimate, estimated, estimateAt: estimated ? (d: number) => estimatedPace(estimated, d) : undefined }];
-  }) : [];
-  const raceName = (m: number) => (m === 42195 ? 'marathon' : m === 21097.5 ? 'half' : `${m / 1000} km`);
+  // The items drawn on the curve, once their bests are read for the metric shown.
+  const curveItems = curve && curves.metric === curve ? items.filter((i) => curves.by.has(i.id)).map((i) => ({ key: i.id, label: label(i), color: color(i), shape: shape(i) })) : [];
 
   const exportCsv = () => {
     const names = new Map(blocks.map((i) => [defId(i), label(i)]));
@@ -303,10 +316,10 @@ function AnalysisPage() {
     await keep(`Deleting ${d.name}`, (ds) => ds.filter((x) => x.id !== d.id));
   };
 
-  if (!loaded) return <div className="page"><div className="page-head"><h1>Analysis</h1></div></div>;
+  if (!loaded) return <div className="page wide-page"><div className="page-head"><h1>Analysis</h1></div></div>;
 
   const tableFor = blocks.find((i) => i.id === tableItem) ?? blocks[0];
-  const tableKey = tableMetric && metrics.includes(tableMetric) ? tableMetric : metrics[0];
+  const tableKey = tableMetric ?? metrics[0];
   const tableView = view(tableKey);
   const selection = tableFor ? selectInstances(all, defId(tableFor), tableKey) : null;
   const lowerBetter = tableView.invert === true || ['heartRate', 'groundContactTime', 'verticalOscillation'].includes(tableKey);
@@ -317,7 +330,7 @@ function AnalysisPage() {
   const editingDef = editing ? defOf(editing) : null;
 
   return (
-    <div className="page">
+    <div className="page wide-page">
       <div className="page-head">
         <h1>Analysis</h1>
         <span className="spacer" />
@@ -345,153 +358,163 @@ function AnalysisPage() {
         {items.length >= MAX_ITEMS && <span className="muted small">Up to {MAX_ITEMS} at once.</span>}
       </div>
 
-      <div className="toolbar">
-        <div className="metric-picker" role="group" aria-label="Metrics">
-          {METRICS.map((x) => <button key={x.key} className={`pill ${metrics.includes(x.key) ? 'on' : ''}`} aria-pressed={metrics.includes(x.key)} title={x.name} onClick={() => toggleMetric(x.key)}>{x.short}</button>)}
-        </div>
-        <div className="segmented" role="group" aria-label="Block values" title="Corrected: residual pace difference removed by regression">
-          <button className={!corrected ? 'on' : ''} onClick={() => setCorrected(false)}>Raw</button>
-          <button className={corrected ? 'on' : ''} onClick={() => setCorrected(true)}>Corrected</button>
-        </div>
-        <label className="setting inline"><input type="checkbox" checked={joinPoints} onChange={(e) => setJoin(e.target.checked)} /> Join points</label>
-        <label className="setting inline"><input type="checkbox" checked={trendLine} onChange={(e) => setTrend(e.target.checked)} /> Trend line</label>
-        <label className="setting inline" title="For each length of time, the fastest stretch of that length inside the item's segments"><input type="checkbox" checked={curve} onChange={(e) => setCurve(e.target.checked)} /> Pace curve</label>
-      </div>
-
       {progress && <div className="card" style={{ padding: '10px 14px', marginBottom: 12 }}><span className="muted">Reading the runs… {progress.done} / {progress.total || '…'}</span><div className="progress"><div style={{ width: progress.total ? `${(100 * progress.done) / progress.total}%` : '3%' }} /></div></div>}
 
-      {!items.length ? (
-        <div className="card empty">
-          Choose the data to analyse: press <b>+ Add block or run</b> and build a block from a rule (the fastest 5 minutes with the heart rate above 160, the laps of 3 to 5 km, the runs since March…), take one found in your runs, or add a single run.
-        </div>
-      ) : (
-        <>
-          <div className="card chart">
-            <h3 className="chart-title">Over time <span className="muted">· each block&apos;s segments with its trend line, each run&apos;s average</span></h3>
-            {groupsByMetric.map(({ mt, groups }, k) => (
-              <div key={mt} className="stacked">
-                <div className="metric-head" style={{ paddingLeft: 52 }}><span className="metric-title">{view(mt).short}<span className="muted"> · {view(mt).name.replace(/^.*\((.*)\)$/, '$1')}</span></span></div>
-                <OverTimeChart title={view(mt).name} groups={groups} format={view(mt).fmt} tick={view(mt).tick} minSpan={view(mt).minSpan} invert={view(mt).invert} markers={markers}
-                  domain={domain} join={joinPoints} fit={trendLine} labels={k === 0} height={metrics.length > 1 ? 210 : 300} />
-              </div>
-            ))}
-            <div className="chart-note">Thin line: the points in date order. Thick line: the fitted trend, its band the noise between a block&apos;s segments (±1 standard deviation). Click a point to open its run.</div>
-          </div>
-
-          {curve && (
-            <div className="card chart" style={{ marginTop: 12 }}>
-              <h3 className="chart-title">Pace curve <span className="muted">· for each length of time, the fastest stretch of that length inside the item&apos;s segments</span></h3>
-              <PaceCurveChart lines={curveLines} durations={CURVE_DURATIONS} format={(v) => `${fmtPace(1000 / v)} /km`} tick={view('speed').tick} minSpan={view('speed').minSpan} />
-              {curveLines.map((l) => (
-                <div key={l.key} className="chart-note curve-note">
-                  <ItemKey shape={l.shape} color={l.color} /> {l.label}: {l.estimated ? (
-                    <>
-                      <b>Estimate</b> (Riegel power law through your strongest best, exponent {(1 + l.estimated.k).toFixed(2)} from {l.estimated.n} bests of {MIN_FIT_SECONDS / 60} min and more): {l.estimated.predictions.map((p) => `${raceName(p.distance)} ${fmtDuration(Math.round(p.seconds))}`).join(' · ')}
-                      {l.estimated.cs ? <> · <b>Critical speed</b> {fmtPace(l.estimated.cs.cs)} /km, D′ {Math.round(l.estimated.cs.dPrime)} m (Monod–Scherrer, {l.estimated.cs.n} bests of 2–20 min)</> : ' · critical speed needs 3 bests of 2–20 min'}
-                    </>
-                  ) : `no estimate: it needs ${MIN_FIT_POINTS} bests of ${MIN_FIT_SECONDS / 60} min and more, so segments at least that long`}
-                </div>
-              ))}
-              <div className="chart-note">Solid: the fastest stretch of each length inside the item&apos;s segments (a block of whole runs covers every length its runs do). Dashed: the estimate, a power law of time (Riegel 1981) with its slope fitted to those bests and its level raised to the strongest of them, so no best lies above it; the dotted strokes are each best&apos;s gap to it; move the pointer along the chart to read the estimate at any length. Critical speed and D′ from the critical speed model (Monod &amp; Scherrer 1965; Jones &amp; Vanhatalo 2017), fitted to the bests of 2–20 min.</div>
-            </div>
-          )}
-
-          {blocks.length > 0 && (
-            <div className="card" style={{ marginTop: 12, overflowX: 'auto' }}>
-              <table className="data changes" aria-label="Changes">
-                <thead>
-                  <tr><th>Block</th>{metrics.map((mt) => <th key={mt}>{view(mt).short}</th>)}</tr>
-                </thead>
-                <tbody>
-                  {blocks.map((i) => (
-                    <tr key={i.id}>
-                      <td>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ItemKey shape={shape(i)} color={color(i)} />{label(i)}</span>
-                        <div className="attrs">
-                          {attributes(defOf(i)).map((a) => <span key={a} className="chip">{a}</span>)}
-                          {i.kind === 'block' && <Link className="muted small" href={`/compare?def=${i.id}`}>Compare A/B →</Link>}
-                        </div>
-                      </td>
-                      {i.kind === 'rule' && !adhoc.has(i.id)
-                        ? metrics.map((mt) => <td key={mt}><span className="muted small">…</span></td>)
-                        : changesByMetric(all, defId(i), metrics, corrected).map((c) => (
-                          <td key={c.metric}>
-                            {c.change === null ? (
-                              <span className="muted small">{c.n ? `${c.n} segments, too few` : 'no segments'}</span>
-                            ) : (
-                              <div className="kpi">
-                                <div className={`kpi-v ${c.verdict === 'change' ? 'change-yes' : ''}`}>{describeDelta(c.metric, c.change)}{c.start ? <span className="kpi-pct">{percentChange(c.change, c.start)}</span> : null}</div>
-                                <div className="kpi-sub muted small"><span className={`verdict-chip ${c.verdict === 'change' ? 'yes' : 'no'}`}>{c.verdict === 'change' ? 'change' : 'no detectable change'}</span> · noise ±{formatAmount(c.metric, c.noise!)} · {c.n} segments</div>
-                              </div>
-                            )}
-                          </td>
-                        ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="chart-note" style={{ padding: '0 12px 10px' }}>Each cell: the fitted change from the first to the last segment, whether it is beyond the noise, and the segments it rests on.</div>
-            </div>
-          )}
-
-          {blocks.map((i) => (
-            <details key={i.id} className="card result" style={{ marginTop: 12 }}>
-              <summary><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ItemKey shape={shape(i)} color={color(i)} />{label(i)}: the verdicts in words</span></summary>
-              {metrics.flatMap((mt) => (trendsBy.get(mt)?.get(i.id)?.series ?? []).map((s) => {
-                const d = describeTrend(s, mt, view(mt).fmt);
-                return (
-                  <div key={mt + s.source} className="result-row">
-                    <div className="muted small">{view(mt).name}{(trendsBy.get(mt)?.get(i.id)?.series.length ?? 0) > 1 ? ` · ${s.source}` : ''}</div>
-                    <div className={`verdict ${d.change ? 'is-change' : ''}`}>{d.headline}</div>
-                    <div className="explain">{d.sentence}</div>
-                  </div>
-                );
-              }))}
-            </details>
+      <>
+        <div className="tabs analysis-tabs" role="tablist" aria-label="Analysis sections">
+          {TABS.map(([t, name]) => (
+            <button key={t} type="button" role="tab" id={`tab-${t}`} aria-controls={tab === t ? `panel-${t}` : undefined} aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{name}</button>
           ))}
-
-          {tableFor && selection && (
-            <div className="card" style={{ marginTop: 12, overflowX: 'auto' }}>
-              <div className="toolbar" style={{ padding: '12px 18px 0' }}>
-                <span className="chart-title" style={{ margin: 0 }}>Segments</span>
-                {blocks.length > 1 && (
-                  <select className="select small" aria-label="Block" value={tableFor.id} onChange={(e) => setTableItem(e.target.value)}>
-                    {blocks.map((i) => <option key={i.id} value={i.id}>{label(i)}</option>)}
-                  </select>
-                )}
-                <select className="select small" aria-label="Table metric" value={tableKey} onChange={(e) => setTableMetric(e.target.value as BlockMetric)}>
-                  {metrics.map((mt) => <option key={mt} value={mt}>{view(mt).short}</option>)}
-                </select>
-                <div className="segmented" role="radiogroup" aria-label="Order">
-                  {([['date', 'By date'], ['best', 'Best first'], ['worst', 'Worst first']] as const).map(([k, l]) => <button key={k} type="button" role="radio" aria-checked={sort === k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>{l}</button>)}
-                </div>
-                {sort !== 'date' && (
-                  <select className="select small" aria-label="Top" value={top} onChange={(e) => setTop(Number(e.target.value))}>
-                    {[5, 10, 20, 50].map((n) => <option key={n} value={n}>top {n}</option>)}
-                  </select>
-                )}
-                <span className="muted small">{segments.length} in · {selection.rejected.length} left out{selection.rejected.length ? `: ${reasonSummary(selection.rejected).join(', ')}` : ''}</span>
-              </div>
-              <table className="data" aria-label="Segments">
-                <thead><tr>{sort !== 'date' && <th>#</th>}<th>Date</th><th>Title</th><th className="num">{tableView.name}</th><th>Stretch</th><th /></tr></thead>
-                <tbody>
-                  {tableRows.map(({ i, v }, k) => (
-                    <tr key={i.id}>
-                      {sort !== 'date' && <td className="muted">{k + 1}</td>}
-                      <td className="strong">{date(i.runStart)}</td>
-                      <td>{titleOf(i.runId) ?? <span className="muted">–</span>}</td>
-                      <td className="num">{tableView.fmt(v)}</td>
-                      <td className="muted">{mmss(i.start)}–{mmss(i.end)} · {(i.distance / 1000).toFixed(2)} km</td>
-                      <td className="num"><Link className="muted" href={`/run?id=${i.runId}&from=${i.start}&to=${i.end}`}>Open run →</Link></td>
-                    </tr>
-                  ))}
-                  {!tableRows.length && <tr><td colSpan={6} className="muted small">{computing ? 'Reading the runs…' : 'No segment has a value for this metric.'}</td></tr>}
-                </tbody>
-              </table>
+        </div>
+        <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="analysis-panel">
+          {/* The runner's form needs no items: the other tabs analyse the items chosen. */}
+          {tab === 'form' && <FormTab runs={runs} />}
+          {tab !== 'form' && !items.length && (
+            <div className="card empty">
+              Choose the data to analyse: press <b>+ Add block or run</b> and build a block from a rule (the fastest 5 minutes with the heart rate above 160, the laps of 3 to 5 km, the runs since March…), take one found in your runs, or add a single run.
             </div>
           )}
-        </>
-      )}
+          {items.length > 0 && tab === 'trends' && (
+            <>
+              <div className="toolbar">
+                <div className="metric-picker" role="group" aria-label="Metrics">
+                  {METRICS.map((x) => <button key={x.key} className={`pill ${metrics.includes(x.key) ? 'on' : ''}`} aria-pressed={metrics.includes(x.key)} title={x.name} onClick={() => toggleMetric(x.key)}>{x.short}</button>)}
+                </div>
+                <div className="segmented" role="group" aria-label="Block values" title="Corrected: residual pace difference removed by regression">
+                  <button className={!corrected ? 'on' : ''} onClick={() => setCorrected(false)}>Raw</button>
+                  <button className={corrected ? 'on' : ''} onClick={() => setCorrected(true)}>Corrected</button>
+                </div>
+                <label className="setting inline"><input type="checkbox" checked={joinPoints} onChange={(e) => setJoin(e.target.checked)} /> Join points</label>
+                <label className="setting inline"><input type="checkbox" checked={trendLine} onChange={(e) => setTrend(e.target.checked)} /> Trend line</label>
+              </div>
+              <div className="card chart">
+                <h3 className="chart-title">Over time <span className="muted">· each block&apos;s segments with its trend line, each run&apos;s average</span></h3>
+                {groupsByMetric.map(({ mt, groups }, k) => (
+                  <div key={mt} className="stacked">
+                    <div className="metric-head" style={{ paddingLeft: 52 }}><span className="metric-title">{view(mt).short}<span className="muted"> · {view(mt).name.replace(/^.*\((.*)\)$/, '$1')}</span></span></div>
+                    <OverTimeChart title={view(mt).name} groups={groups} format={view(mt).fmt} tick={view(mt).tick} minSpan={view(mt).minSpan} invert={view(mt).invert} markers={markers}
+                      domain={domain} join={joinPoints} fit={trendLine} labels={k === 0} height={metrics.length > 1 ? 210 : 300} />
+                  </div>
+                ))}
+                <div className="chart-note">Thin line: the points in date order. Thick line: the fitted trend, its band the noise between a block&apos;s segments (±1 standard deviation). Click a point to open its run.</div>
+              </div>
+
+              {blocks.length > 0 && (
+                <div className="card" style={{ marginTop: 12, overflowX: 'auto' }}>
+                  <table className="data changes" aria-label="Changes">
+                    <thead>
+                      <tr><th>Block</th>{metrics.map((mt) => <th key={mt}>{view(mt).short}</th>)}</tr>
+                    </thead>
+                    <tbody>
+                      {blocks.map((i) => (
+                        <tr key={i.id}>
+                          <td>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ItemKey shape={shape(i)} color={color(i)} />{label(i)}</span>
+                            <div className="attrs">
+                              {attributes(defOf(i)).map((a) => <span key={a} className="chip">{a}</span>)}
+                              {i.kind === 'block' && <Link className="muted small" href={`/compare?def=${i.id}`}>Compare A/B →</Link>}
+                            </div>
+                          </td>
+                          {i.kind === 'rule' && !adhoc.has(i.id)
+                            ? metrics.map((mt) => <td key={mt}><span className="muted small">…</span></td>)
+                            : changesByMetric(all, defId(i), metrics, corrected).map((c) => (
+                              <td key={c.metric}>
+                                {c.change === null ? (
+                                  <span className="muted small">{c.n ? `${c.n} segments, too few` : 'no segments'}</span>
+                                ) : (
+                                  <div className="kpi">
+                                    <div className={`kpi-v ${c.verdict === 'change' ? 'change-yes' : ''}`}>{describeDelta(c.metric, c.change)}{c.start ? <span className="kpi-pct">{percentChange(c.change, c.start)}</span> : null}</div>
+                                    <div className="kpi-sub muted small"><span className={`verdict-chip ${c.verdict === 'change' ? 'yes' : 'no'}`}>{c.verdict === 'change' ? 'change' : 'no detectable change'}</span> · noise ±{formatAmount(c.metric, c.noise!)} · {c.n} segments</div>
+                                  </div>
+                                )}
+                              </td>
+                            ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="chart-note" style={{ padding: '0 12px 10px' }}>Each cell: the fitted change from the first to the last segment, whether it is beyond the noise, and the segments it rests on.</div>
+                </div>
+              )}
+
+              {blocks.map((i) => (
+                <details key={i.id} className="card result" style={{ marginTop: 12 }}>
+                  <summary><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ItemKey shape={shape(i)} color={color(i)} />{label(i)}: the verdicts in words</span></summary>
+                  {metrics.flatMap((mt) => (trendsBy.get(mt)?.get(i.id)?.series ?? []).map((s) => {
+                    const d = describeTrend(s, mt, view(mt).fmt);
+                    return (
+                      <div key={mt + s.source} className="result-row">
+                        <div className="muted small">{view(mt).name}{(trendsBy.get(mt)?.get(i.id)?.series.length ?? 0) > 1 ? ` · ${s.source}` : ''}</div>
+                        <div className={`verdict ${d.change ? 'is-change' : ''}`}>{d.headline}</div>
+                        <div className="explain">{d.sentence}</div>
+                      </div>
+                    );
+                  }))}
+                </details>
+              ))}
+
+            </>
+          )}
+          {items.length > 0 && tab === 'segments' && (
+            <>
+              {tableFor && selection && (
+                <div className="card" style={{ overflowX: 'auto' }}>
+                  <div className="toolbar" style={{ padding: '12px 18px 0' }}>
+                    <span className="chart-title" style={{ margin: 0 }}>Segments</span>
+                    {blocks.length > 1 && (
+                      <select className="select small" aria-label="Block" value={tableFor.id} onChange={(e) => setTableItem(e.target.value)}>
+                        {blocks.map((i) => <option key={i.id} value={i.id}>{label(i)}</option>)}
+                      </select>
+                    )}
+                    <select className="select small" aria-label="Table metric" value={tableKey} onChange={(e) => setTableMetric(e.target.value as BlockMetric)}>
+                      {METRICS.map((x) => <option key={x.key} value={x.key}>{x.short}</option>)}
+                    </select>
+                    <div className="segmented" role="radiogroup" aria-label="Order">
+                      {([['date', 'By date'], ['best', 'Best first'], ['worst', 'Worst first']] as const).map(([k, l]) => <button key={k} type="button" role="radio" aria-checked={sort === k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>{l}</button>)}
+                    </div>
+                    {sort !== 'date' && (
+                      <select className="select small" aria-label="Top" value={top} onChange={(e) => setTop(Number(e.target.value))}>
+                        {[5, 10, 20, 50].map((n) => <option key={n} value={n}>top {n}</option>)}
+                      </select>
+                    )}
+                    <span className="muted small">{segments.length} in · {selection.rejected.length} left out{selection.rejected.length ? `: ${reasonSummary(selection.rejected).join(', ')}` : ''}</span>
+                  </div>
+                  <table className="data" aria-label="Segments">
+                    <thead><tr>{sort !== 'date' && <th>#</th>}<th>Date</th><th>Title</th><th className="num">{tableView.name}</th><th>Stretch</th><th /></tr></thead>
+                    <tbody>
+                      {tableRows.map(({ i, v }, k) => (
+                        <tr key={i.id}>
+                          {sort !== 'date' && <td className="muted">{k + 1}</td>}
+                          <td className="strong">{date(i.runStart)}</td>
+                          <td>{titleOf(i.runId) ?? <span className="muted">–</span>}</td>
+                          <td className="num">{tableView.fmt(v)}</td>
+                          <td className="muted">{mmss(i.start)}–{mmss(i.end)} · {(i.distance / 1000).toFixed(2)} km</td>
+                          <td className="num"><Link className="muted" href={`/run?id=${i.runId}&from=${i.start}&to=${i.end}`}>Open run →</Link></td>
+                        </tr>
+                      ))}
+                      {!tableRows.length && <tr><td colSpan={6} className="muted small">{computing ? 'Reading the runs…' : 'No segment has a value for this metric.'}</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+          {items.length > 0 && tab === 'curve' && (
+            <>
+              <div className="toolbar">
+                <div className="segmented" role="group" aria-label="Curve" title="For each length of time, the best stretch of that length inside the item's segments: the fastest, or the highest average power">
+                  {([['speed', 'Speed'], ['power', 'Power']] as const).map(([m, name]) => (
+                    <button key={m} className={curveMetric === m ? 'on' : ''} aria-pressed={curveMetric === m} onClick={() => setCurve(m)}>{name}</button>
+                  ))}
+                </div>
+                <span className="muted small">{curveMetric === 'speed' ? 'The fastest stretch of each length of time, as a pace.' : 'The highest average power of each length of time.'}</span>
+              </div>
+              {curve && <CurveTab metric={curve} items={curveItems} bests={curves.by} missingPower={curve === 'power' && curves.metric === 'power' && items.some((i) => (curves.by.get(i.id)?.length ?? 0) === 0)} />}
+
+            </>
+          )}
+        </div>
+      </>
 
       {adding && <AddDialog defs={defs} recs={recs} runs={runs} items={items} options={options} handle={handle}
         onAdd={(kind, id) => { setItems(addItem(items, kind, id)); setAdding(false); }} onAccept={acceptSuggestion} onDismiss={dismissSuggestion} onRule={addRule} onClose={() => setAdding(false)} />}

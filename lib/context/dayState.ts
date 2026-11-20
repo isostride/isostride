@@ -4,8 +4,8 @@ import { dayOf } from '@/lib/gear';
  * The state of one day, from the runner's own runs only (spec F6, without the
  * dropped "days since the last hard session").
  *
- * Load is the moving time of the runs, in minutes: a simple, transparent stand-in
- * the spec leaves undefined (model's choice; replace `runLoad` to change it).
+ * Load is the run's load by the model chosen in Settings (requirement "Load of the model in the
+ * context"); the moving time of the runs, in minutes, for a run with none.
  */
 export interface DayState {
   date: string;
@@ -13,16 +13,20 @@ export interface DayState {
   load3: number;
   /** load from the 7 days before this date */
   load7: number;
+  /** fitness − fatigue in the morning of this date */
+  form: number;
 }
 
 export interface LoadInput {
   startTime: string;
   /** timer time, s */
   duration: number;
+  /** the run's load by the model of Settings, when computed */
+  load?: number | null;
 }
 
 export function runLoad(run: LoadInput): number {
-  return run.duration / 60;
+  return run.load ?? run.duration / 60;
 }
 
 function addDays(day: string, n: number): string {
@@ -32,7 +36,7 @@ function addDays(day: string, n: number): string {
 }
 
 /** Day states for every day that has a run, plus any extra days asked for. */
-export function computeDayStates(runs: LoadInput[], extraDays: string[] = []): Record<string, DayState> {
+export function computeDayStates(runs: LoadInput[], extraDays: string[] = [], forms?: Record<string, number>): Record<string, DayState> {
   const perDay = new Map<string, number>();
   for (const r of runs) {
     const d = dayOf(r.startTime);
@@ -48,7 +52,7 @@ export function computeDayStates(runs: LoadInput[], extraDays: string[] = []): R
       load7 += v;
       if (k <= 3) load3 += v;
     }
-    out[day] = { date: day, load3: Math.round(load3), load7: Math.round(load7) };
+    out[day] = { date: day, load3: Math.round(load3), load7: Math.round(load7), form: forms?.[day] ?? 0 };
   }
   return out;
 }

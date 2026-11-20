@@ -92,8 +92,15 @@ export interface RunContext {
   workoutType: string | null;
   techniqueCue: string | null;
   note: string | null;
+  /** the load of the days before the run, by the model of Settings: 3 and 7 days */
   load3: number;
   load7: number;
+  /** the run's own load by the model of Settings; null until computed */
+  load: number | null;
+  /** the run lacked what the model needs: its load is estimated from its duration */
+  loadEstimated?: boolean;
+  /** the form (fitness − fatigue) in the morning of the run's day */
+  form: number;
 }
 
 /** One row of runs-index.json: everything the list and analysis screens need without opening the run file. */

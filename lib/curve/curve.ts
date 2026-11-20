@@ -3,20 +3,33 @@ import { PATHS, readJson, type DataFolder } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
 
 /**
- * The pace curve (the author's request of 19 Nov 2026: "os x czas, os y - tempo ... ze wszystkich
- * prob"): for each length of time, the fastest stretch of that length inside the segments of an
- * Analysis item, whichever run it comes from.
+ * The curves of Analysis: for each length of time, the best stretch of that length inside the
+ * segments of an Analysis item, whichever run it comes from. Speed (the author's request of 19 Nov
+ * 2026: "os x czas, os y - tempo ... ze wszystkich prob"): the fastest stretch, as a pace. Power
+ * (the author's request of 20 Nov 2026: "krzywe z wyborem predkosci i mocy"): the highest average
+ * power.
  */
+
+/** What a curve measures: speed (its value a pace, s/km, the lower the better) or power (W, the higher the better). */
+export type CurveMetric = 'speed' | 'power';
+
+/** Whether value a beats value b on the metric's curve. */
+export function better(metric: CurveMetric, a: number, b: number): boolean {
+  return metric === 'power' ? a > b : a < b;
+}
+
+/** A sample's power is held until the next one, but no longer than this, s: a pause counts as no power (model's choice). */
+const POWER_HOLD = 5;
 
 /** The lengths of the curve, s: 30 s to 2 h on a logarithmic axis (model's choice). */
 export const CURVE_DURATIONS = [30, 60, 120, 180, 300, 600, 900, 1200, 1800, 2700, 3600, 5400, 7200];
 
-/** One point of the curve: the fastest stretch of a length, and the run it comes from. */
+/** One point of the curve: the best stretch of a length, and the run it comes from. */
 export interface CurvePoint {
   /** s */
   duration: number;
-  /** s/km */
-  pace: number;
+  /** speed: the pace, s/km; power: the average power, W */
+  value: number;
   runId: string;
   date: string;
   title: string | null;
@@ -24,38 +37,77 @@ export interface CurvePoint {
   to: number;
 }
 
-/** What a curve is drawn from: the stretches [from, to) s of each run, by run id. */
+/** What a curve is drawn from: the stretches [from, to) s of each run, by run id, and the metric (speed when left out). */
 export interface CurveSource {
   key: string;
   ranges: Record<string, [number, number][]>;
+  metric?: CurveMetric;
 }
 
-/** The fastest stretch of each length inside the given stretches of one run; lengths none of them covers are left out. */
-export function bestsWithin(run: RunFile, ranges: [number, number][]): { duration: number; pace: number; from: number; to: number }[] {
-  const out: { duration: number; pace: number; from: number; to: number }[] = [];
-  for (const duration of CURVE_DURATIONS) {
-    let best: { pace: number; from: number; to: number } | null = null;
+type Best = { duration: number; value: number; from: number; to: number };
+
+/**
+ * The highest average power of a stretch lasting `duration` s inside [from, to): each sample's
+ * power held until the next sample (at most POWER_HOLD s), a sample without power counting as none.
+ */
+export function strongestFragment(run: RunFile, duration: number, range: [number, number]): { from: number; to: number; power: number } | null {
+  const { t, power } = run.samples;
+  const ts: number[] = [];
+  const ps: number[] = [];
+  for (let i = 0; i < t.length; i++) if (t[i] >= range[0] && t[i] < range[1]) { ts.push(t[i]); ps.push(power[i] ?? 0); }
+  // energy[i]: the work, J, from the first sample to sample i.
+  const energy = [0];
+  for (let i = 1; i < ts.length; i++) energy.push(energy[i - 1] + ps[i - 1] * Math.min(ts[i] - ts[i - 1], POWER_HOLD));
+  let best: { from: number; to: number; power: number } | null = null;
+  let j = 0;
+  for (let i = 0; i < ts.length; i++) {
+    if (j < i) j = i;
+    // A stretch may fall 2 s short of its length, as the fastest one may (the last sample ends a run).
+    while (j < ts.length && ts[j] - ts[i] < duration - 2) j++;
+    if (j >= ts.length) break;
+    const p = (energy[j] - energy[i]) / (ts[j] - ts[i]);
+    if (!best || p > best.power) best = { from: ts[i], to: ts[j], power: p };
+  }
+  return best && best.power > 0 ? best : null;
+}
+
+/**
+ * The best stretch of each length inside the given stretches of one run (the fastest, or the one of
+ * the highest average power); lengths none of them covers, or with no power, are left out.
+ */
+export function bestsWithin(run: RunFile, ranges: [number, number][], metric: CurveMetric = 'speed', durations: number[] = CURVE_DURATIONS): Best[] {
+  const out: Best[] = [];
+  for (const duration of durations) {
+    let best: Omit<Best, 'duration'> | null = null;
     for (const range of ranges) {
       if (range[1] - range[0] < duration - 2) continue;
-      const f = fastestFragment(run, 'time', duration, undefined, range);
-      if (!f || f.distance <= 0) continue;
-      const pace = (f.to - f.from) / (f.distance / 1000);
-      if (!best || pace < best.pace) best = { pace, from: f.from, to: f.to };
+      // A segment [from, to] runs from one sample to another: its last sample belongs to it, so a
+      // 10-minute segment holds a 10-minute best (the fragment searches take [from, to) ranges).
+      const within: [number, number] = [range[0], range[1] + 1];
+      let cand: Omit<Best, 'duration'> | null = null;
+      if (metric === 'power') {
+        const f = strongestFragment(run, duration, within);
+        if (f) cand = { value: f.power, from: f.from, to: f.to };
+      } else {
+        const f = fastestFragment(run, 'time', duration, undefined, within);
+        if (f && f.distance > 0) cand = { value: (f.to - f.from) / (f.distance / 1000), from: f.from, to: f.to };
+      }
+      if (cand && (!best || better(metric, cand.value, best.value))) best = cand;
     }
     if (best) out.push({ duration, ...best });
   }
   return out;
 }
 
-/** Keeps, for each length, the faster of two points. */
-export function mergeBests(curve: CurvePoint[], more: CurvePoint[]): CurvePoint[] {
+/** Keeps, for each length, the better of two points (the faster, or the more powerful). */
+export function mergeBests(curve: CurvePoint[], more: CurvePoint[], metric: CurveMetric = 'speed'): CurvePoint[] {
   const by = new Map(curve.map((p) => [p.duration, p]));
-  for (const p of more) { const have = by.get(p.duration); if (!have || p.pace < have.pace) by.set(p.duration, p); }
+  for (const p of more) { const have = by.get(p.duration); if (!have || better(metric, p.value, have.value)) by.set(p.duration, p); }
   return [...by.values()].sort((a, b) => a.duration - b.duration);
 }
 
 /**
- * The pace curves of several sources in one pass over the run files they name: each run is read
+ * The curves of several sources in one pass over the run files they name: each run is read
  * once, with progress.
  */
 export async function curvesOf(folder: DataFolder, sources: CurveSource[], onProgress?: (p: { done: number; total: number; file: string }) => void): Promise<Record<string, CurvePoint[]>> {
@@ -71,7 +123,8 @@ export async function curvesOf(folder: DataFolder, sources: CurveSource[], onPro
     for (const s of sources) {
       const ranges = s.ranges[id];
       if (!ranges?.length) continue;
-      out[s.key] = mergeBests(out[s.key], bestsWithin(run, ranges).map((b) => ({ ...b, runId: id, date: run.startTime, title: row.title ?? null })));
+      const metric = s.metric ?? 'speed';
+      out[s.key] = mergeBests(out[s.key], bestsWithin(run, ranges, metric).map((b) => ({ ...b, runId: id, date: run.startTime, title: row.title ?? null })), metric);
     }
   }
   return out;

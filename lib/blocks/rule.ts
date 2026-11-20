@@ -130,6 +130,8 @@ export function ruleName(r: Rule): string {
     r.shape.type === 'fastest' && r.pick === 'all' ? 'every one' : null,
     r.stat !== 'avg' ? STAT_LABEL[r.stat] : null,
   ].filter((p): p is string => p !== null);
+  // Whole runs with nothing else set: every run.
+  if (parts.length === 1 && r.shape.type === 'run') return 'All runs';
   return parts.join(' · ');
 }
 

@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useFolder, useMapTiles } from '@/lib/client';
 import { Logo } from './Logo';
 import { Welcome } from './Welcome';
 import { CommandPalette } from './CommandPalette';
+import { recordAddress } from './screenTrail';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -38,6 +39,20 @@ const NAV = [
   { href: '/settings', label: 'Settings', ico: ICONS.settings },
 ];
 
+/** Records each address shown in the tab's trail of screens, for the Run screen's back link. */
+function ScreenTrail() {
+  const path = usePathname();
+  const search = useSearchParams().toString();
+  const last = useRef<string | null>(null);
+  useEffect(() => {
+    const url = `${path}${search ? `?${search}` : ''}`;
+    if (url === last.current) return;
+    recordAddress(window.sessionStorage, url, last.current);
+    last.current = url;
+  }, [path, search]);
+  return null;
+}
+
 /** App Shell: the sidebar (folder, search, screens, theme) and the page; the Welcome screen until the data folder is open. */
 export function Shell({ children }: { children: ReactNode }) {
   const { state } = useFolder();
@@ -63,6 +78,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const active = (href: string) => (href === '/' ? path === '/' || path.startsWith('/run') : path.startsWith(href));
   return (
     <div className={`shell ${collapsed ? 'collapsed' : ''}`}>
+      <Suspense fallback={null}><ScreenTrail /></Suspense>
       <aside className="sidebar">
         <button className="brand" onClick={() => setCollapsed((c) => !c)} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           <Logo />

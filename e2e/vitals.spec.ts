@@ -57,7 +57,7 @@ test.describe('Core Web Vitals met', () => {
     await importAll(page);
     await page.goto('/analysis');
     await addFromPicker(page, /km/);
-    await page.locator('.item-chip').first().waitFor({ timeout: 30_000 });
+    await page.locator('.item-chip', { hasNotText: 'All runs' }).first().waitFor({ timeout: 30_000 }); // beside All runs
 
     const worst = { lcp: 0, cls: 0, tbt: 0, inp: 0, scriptKB: 0 };
     const rows: string[] = [];

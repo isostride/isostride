@@ -9,7 +9,9 @@ import { PATHS, readJson, isOutdated, readManifest, type Manifest } from '@/lib/
 import { type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { date, duration, km, pace, time } from '@/lib/format';
 import { readGear, type Gear, readRunTags, writeRunTags, type RunTag, type RunTagsFile } from '@/lib/gear';
-import { isoWeek, monthsOf, weeksOf, type LogWeek } from '@/lib/log';
+import { NO_SEARCH, isSearching, isoWeek, matchesSearch, monthsOf, searchFromParams, searchToParams, weeksOf, type LogWeek, type RunSearch } from '@/lib/log';
+import type { IndexedRun } from '@/lib/kernel';
+import { LOAD_MODELS, readSettings } from '@/lib/settings';
 
 /** The view of the Runs screen, remembered in the browser. */
 const VIEW_KEY = 'strideprism.runsView';
@@ -37,17 +39,31 @@ function RunsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [gear, setGear] = useState<Gear[]>([]);
   const [tags, setTags] = useState<RunTagsFile | null>(null);
+  // The unit of the load model chosen in Settings (requirement "Load model chosen in Settings").
+  const [loadUnit, setLoadUnit] = useState('');
   const [editing, setEditing] = useState<string | null>(null);
   /** the calendar of weeks (the default) or the table of runs */
   const [view, setView] = useState<'calendar' | 'list'>('calendar');
   useEffect(() => { try { if (localStorage.getItem(VIEW_KEY) === 'list') setView('list'); } catch { /* the default */ } }, []);
   const choose = (v: 'calendar' | 'list') => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* not kept */ } };
+  // The search of the runs, kept in the link ("wyszukiwaniem treningow").
+  const [search, setSearch] = useState<RunSearch>(() => searchFromParams(new URLSearchParams(params.toString())));
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const next = searchToParams(search, new URLSearchParams(location.search)).toString();
+      if (location.search.replace(/^\?/, '') !== next) window.history.replaceState(null, '', `${location.pathname}${next ? `?${next}` : ''}`);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [search]);
+  const match = (r: IndexedRun) => matchesSearch(r, search);
 
   const load = useCallback(async () => {
     setIndex(await readJson<RunsIndex>(folder, PATHS.runsIndex));
     setManifest(await readManifest(folder));
     setGear(await readGear(folder));
     setTags(await readRunTags(folder));
+    const s = await readSettings(folder);
+    setLoadUnit(LOAD_MODELS.find((m) => m.key === s.performance.load)?.unit ?? '');
   }, [folder]);
 
   const saveTag = async (runId: string, tag: RunTag) => {
@@ -149,7 +165,11 @@ function RunsPage() {
         </div>
       )}
 
-      {runs.length > 0 && view === 'calendar' ? <Calendar weeks={weeks} /> : (
+      {runs.length > 0 && (
+        <RunsToolbar search={search} onSearch={setSearch} found={runs.filter(match).length} total={runs.length}
+          types={[...new Set(runs.map((r) => r.workoutType).filter((t): t is string => !!t))].sort()} months={view === 'calendar' ? monthsOf(weeks).map((m) => m.month) : []} />
+      )}
+      {runs.length > 0 && view === 'calendar' ? <Calendar weeks={weeks} match={match} searching={isSearching(search)} loadUnit={loadUnit} /> : (
       <div className="card">
         {runs.length === 0 ? (
           <div className="empty">{index ? 'No runs yet.' : 'Nothing imported yet.'} Put your COROS FIT files in this folder (or its fit/ subfolder) and press <b>Import folder</b>.</div>
@@ -157,11 +177,11 @@ function RunsPage() {
           <table className="data">
             <thead>
               <tr>
-                <th>Date</th><th>Start</th><th>Title</th><th className="num">Distance km</th><th className="num">Time</th><th className="num">Pace /km</th><th className="num">Avg HR</th><th>HR from</th><th>Shoes</th><th>Tags</th><th className="num">Load 7 d</th><th />
+                <th>Date</th><th>Start</th><th>Title</th><th className="num">Distance km</th><th className="num">Time</th><th className="num">Pace /km</th><th className="num">Avg HR</th><th>HR from</th><th>Shoes</th><th>Tags</th><th className="num">Load{loadUnit ? ` ${loadUnit}` : ''}</th><th />
               </tr>
             </thead>
             <tbody>
-              {runs.map((r) => (
+              {runs.filter(match).map((r) => (
                 <Fragment key={r.id}>
                   <tr className="row" onClick={() => router.push(`/run?id=${r.id}`)}>
                     <td className="strong">{date(r.startTime)}</td>
@@ -177,7 +197,7 @@ function RunsPage() {
                       {[r.workoutType, r.techniqueCue].filter(Boolean).map((t) => <span key={t} className="chip" style={{ marginRight: 4 }}>{t}</span>)}
                       {r.note && <span className="muted" title={r.note}>✉</span>}
                     </td>
-                    <td className="num muted">{r.load7 ? `${r.load7} min` : '–'}</td>
+                    <td className="num muted" title={r.loadEstimated ? 'estimated from the duration: the run lacks what the load model needs' : undefined}>{r.load === null || r.load === undefined ? '–' : `${Math.round(r.load)}${r.loadEstimated ? '*' : ''}`}</td>
                     <td>
                       <button className="btn sm" onClick={(e) => { e.stopPropagation(); setEditing(editing === r.id ? null : r.id); }}>Edit</button>
                     </td>
@@ -259,7 +279,7 @@ function WeeksAtAGlance({ weeks, runs, totalKm, since }: { weeks: LogWeek[]; run
  * The calendar of runs ("moze kalendarz ?"): a row per week, newest first, Monday to Sunday, each
  * run a tile in its day opening the run, the month named where it begins, the week's totals at the end.
  */
-function Calendar({ weeks }: { weeks: LogWeek[] }) {
+function Calendar({ weeks, match, searching, loadUnit }: { weeks: LogWeek[]; match: (r: IndexedRun) => boolean; searching: boolean; loadUnit: string }) {
   const today = new Date();
   const todayDay = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   // The weeks grouped by month ("miesiac pokazuj lepiej ... pogrupowac wiersze").
@@ -278,6 +298,10 @@ function Calendar({ weeks }: { weeks: LogWeek[] }) {
             {m.count > 0 ? (
               <span className="muted tnum">{kmOf(m.distance)} km · {duration(m.duration)} · {m.count} run{m.count === 1 ? '' : 's'}</span>
             ) : <span className="muted">no runs</span>}
+            {searching && (() => {
+              const n = m.weeks.flatMap((w) => w.days).filter((d) => d.date.slice(0, 7) === m.month).flatMap((d) => d.runs).filter(match).length;
+              return <span className={`cal-found ${n ? 'some' : ''}`}>{n} found</span>;
+            })()}
           </div>
           {m.weeks.map((w) => (
             <div key={w.start} className={`cal-row cal-week ${w.current ? 'current' : ''}`} data-week={w.start}>
@@ -285,13 +309,16 @@ function Calendar({ weeks }: { weeks: LogWeek[] }) {
               {w.days.map((d) => (
                 <div key={d.date} className={`cal-day ${d.date === todayDay ? 'today' : ''} ${d.date.slice(0, 7) !== m.month ? 'other' : ''}`}>
                   <span className="cal-date">{dayNumber(d.date)}</span>
-                  {d.runs.map((r) => (
+                  {d.runs.map((r) => (!match(r) ? (
+                    // A run the search did not find: a thin bar, still a way to it.
+                    <Link key={r.id} href={`/run?id=${r.id}`} className="run-tile dim" aria-label={`${kmOf(r.distance)} km, not found by the search`} title={`${kmOf(r.distance)} km`} />
+                  ) : (
                     <Link key={r.id} href={`/run?id=${r.id}`} className="run-tile" title={[r.title, r.workoutType, r.note].filter(Boolean).join(' · ') || undefined}>
                       <b className="tnum">{kmOf(r.distance)} km</b>
                       <span className="tnum">{duration(r.duration)} · {pace(r.avgSpeed)}</span>
                       {(r.title || r.workoutType) && <span className="run-tile-tag">{r.title ?? r.workoutType}</span>}
                     </Link>
-                  ))}
+                  )))}
                 </div>
               ))}
               <div className="cal-total">
@@ -300,6 +327,11 @@ function Calendar({ weeks }: { weeks: LogWeek[] }) {
                     <b className="tnum">{kmOf(w.distance)} km</b>
                     <span className="muted tnum">{duration(w.duration)} · {w.count} run{w.count === 1 ? '' : 's'}</span>
                     <span className="muted tnum">{pace(w.distance / w.duration)} /km{w.heartRate ? ` · ${Math.round(w.heartRate)} bpm` : ''}</span>
+                    {(() => {
+                      // The week's load by the model of Settings.
+                      const load = w.days.flatMap((d) => d.runs).reduce((sum, r) => sum + (r.load ?? 0), 0);
+                      return load > 0 ? <span className="muted tnum cal-load">{Math.round(load)} {loadUnit}</span> : null;
+                    })()}
                   </>
                 ) : <span className="muted small">rest</span>}
               </div>
@@ -345,6 +377,55 @@ function TagEditor({ tag, gear, dictionary, onSave, onCancel }: {
       <span style={{ flex: 1 }} />
       <button className="btn" onClick={onCancel}>Cancel</button>
       <button className="btn primary" onClick={() => onSave(t)}>Save</button>
+    </div>
+  );
+}
+
+/**
+ * The search and the browsing of the runs ("doloz podstawowe sprawy dotyczace z przesukiwaniem
+ * kalendarza i wyszuiwaniem treningow"): words, a workout type, a distance range, the count found,
+ * and on the calendar a month to go to and today.
+ */
+function RunsToolbar({ search, onSearch, found, total, types, months }: { search: RunSearch; onSearch: (s: RunSearch) => void; found: number; total: number; types: string[]; months: string[] }) {
+  const set = (patch: Partial<RunSearch>) => onSearch({ ...search, ...patch });
+  // The bar stays at the top while the calendar scrolls ("filtr powinien zostac przy przesuwaniu
+  // kalendarza"); its height tells the calendar's sticky heads where to stay, under it.
+  const bar = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = bar.current;
+    const page = el?.parentElement;
+    if (!el || !page) return;
+    const ro = new ResizeObserver(() => page.style.setProperty('--runs-bar', `${Math.round(el.getBoundingClientRect().height)}px`));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const km = (v: string) => (v.trim() === '' || !Number.isFinite(Number(v)) ? null : Math.max(0, Number(v)));
+  const goTo = (month: string) => document.querySelector(`.cal-month[data-month="${month}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const today = () => document.querySelector('.cal-week.current')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  return (
+    <div ref={bar} className="runs-toolbar card" role="search" aria-label="Search runs">
+      <input className="runs-q" type="search" aria-label="Search words" placeholder="Search title, note, type, shoes, date…" value={search.text} onChange={(e) => set({ text: e.target.value })} />
+      <select aria-label="Workout type" value={search.type ?? ''} onChange={(e) => set({ type: e.target.value || null })}>
+        <option value="">All types</option>
+        {types.map((t) => <option key={t} value={t}>{t}</option>)}
+      </select>
+      <span className="runs-km">
+        <input type="number" min={0} step={0.5} aria-label="From km" placeholder="from" value={search.minKm ?? ''} onChange={(e) => set({ minKm: km(e.target.value) })} />
+        <span className="muted">–</span>
+        <input type="number" min={0} step={0.5} aria-label="To km" placeholder="to" value={search.maxKm ?? ''} onChange={(e) => set({ maxKm: km(e.target.value) })} />
+        <span className="muted small">km</span>
+      </span>
+      <span className="runs-found tnum" aria-live="polite">{isSearching(search) ? `${found} of ${total} runs` : `${total} runs`}</span>
+      {isSearching(search) && <button type="button" className="btn sm" onClick={() => onSearch(NO_SEARCH)}>Clear</button>}
+      {months.length > 0 && (
+        <span className="runs-nav">
+          <select aria-label="Go to month" value="" onChange={(e) => e.target.value && goTo(e.target.value)}>
+            <option value="">Go to month…</option>
+            {months.map((m) => <option key={m} value={m}>{monthName(`${m}-01`)}</option>)}
+          </select>
+          <button type="button" className="btn sm" onClick={today}>Today</button>
+        </span>
+      )}
     </div>
   );
 }

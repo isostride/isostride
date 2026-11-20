@@ -184,7 +184,8 @@ export interface InstanceContext {
   block: { pace: number; grade: number; duration: number; heading: number | null; cv: number; stopped: number; start: 'standing' | 'flying' };
   before: { minuteOfRun: number; kmOfRun: number; effortBefore: number | null; lap: number | null };
   run: { device: string; shoes: string | null; heartRateSource: string; workoutType: string | null; techniqueCue: string | null };
-  day: { load3: number; load7: number; temperature: number | null };
+  /** load3/load7: the load of the 3 and 7 days before, by the model of Settings; form: fitness − fatigue that morning */
+  day: { load3: number; load7: number; form?: number; temperature: number | null };
 }
 
 export interface BlockInstance {

@@ -137,7 +137,7 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
       block: { pace: Math.round(pace), grade: round(grade, 3), duration: Math.round(duration), heading: extra.heading ?? null, cv: round(cv, 3), stopped, start: begins },
       before: { minuteOfRun: Math.floor(start / 60), kmOfRun: round(dist0 / 1000, 2), effortBefore: effortBefore === null ? null : round(effortBefore, 3), lap: lapNumber > 0 ? lapNumber : null },
       run: { device: run.device, shoes: row.shoes ?? null, heartRateSource: row.heartRateSource ?? `wrist (${run.device})`, workoutType: row.workoutType ?? null, techniqueCue: row.techniqueCue ?? null },
-      day: { load3: row.load3 ?? 0, load7: row.load7 ?? 0, temperature: run.temperature },
+      day: { load3: row.load3 ?? 0, load7: row.load7 ?? 0, form: row.form ?? 0, temperature: run.temperature },
     },
     status: reasons.length ? 'rejected' : 'accepted',
     reasons,

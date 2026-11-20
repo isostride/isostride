@@ -3,7 +3,9 @@
   "uses": [
     "lib/fs",
     "lib/gear",
-    "lib/kernel"
+    "lib/kernel",
+    "lib/load",
+    "lib/settings"
   ],
   "runs": "worker"
 }

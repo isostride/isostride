@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { addFromPicker, fitFiles, importAll, nav, openPicker, openRun, openWithFolder, showList } from './support';
+import { addFromPicker, fitFiles, importAll, nav, openPicker, openRun, openWithFolder, showList, clearAnalysis } from './support';
 
 test.describe('Accept or reject recommendation', () => {
   test('Accept recommendation', async ({ page }) => {
     await openWithFolder(page, await fitFiles(30, '2026-05-01'));
     await importAll(page);
     await nav(page, 'Analysis');
+    await clearAnalysis(page);
     // The blocks found in the runs are offered in the picker; taking one keeps it and shows it.
     let dialog = await openPicker(page);
     const row = dialog.locator('.palette-row', { has: page.getByRole('button', { name: /^Dismiss / }) }).first();
@@ -83,6 +84,7 @@ test.describe('Block attributes', () => {
     await openWithFolder(page, await fitFiles(200, '2026-08-03'));
     await importAll(page);
     await nav(page, 'Analysis');
+    await clearAnalysis(page);
     await addFromPicker(page, /effort/);
     const chip = page.locator('.item-chip', { hasText: /effort/ });
     await expect(chip).toHaveCount(1, { timeout: 30_000 });
@@ -110,6 +112,7 @@ test.describe('Blocks defined in Analysis', () => {
     await expect(first.getByText('COROS test')).toBeVisible();
 
     await nav(page, 'Analysis');
+    await clearAnalysis(page);
     await page.getByRole('button', { name: '+ Add block or run' }).click();
     const dialog = page.getByRole('dialog', { name: 'Add block or run' });
     await dialog.getByRole('tab', { name: 'New block' }).click();
@@ -127,6 +130,9 @@ test.describe('Blocks defined in Analysis', () => {
     const kept = page.locator('.item-chip', { hasText: 'Runs · 0.5–100 km · “coros”' });
     await expect(kept).toHaveCount(1, { timeout: 30_000 });
     await expect(kept.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    // The sections are tabs: Segments lists the block's segments.
+    const tabs = page.getByRole('tablist', { name: 'Analysis sections' });
+    await tabs.getByRole('tab', { name: 'Segments' }).click();
     const segments = page.getByRole('table', { name: 'Segments' });
     await expect(segments.getByRole('row')).toHaveCount(2);
     await expect(segments.getByRole('row').nth(1)).toContainText('COROS test');
@@ -140,15 +146,18 @@ test.describe('Blocks defined in Analysis', () => {
     await dialog.getByRole('button', { name: 'Use in analysis' }).click();
     const adhoc = page.locator('.item-chip', { hasText: 'Fastest 5 min · HR never below 100' });
     await expect(adhoc).toHaveCount(1);
-    await expect(page).toHaveURL(/items=[^&]*q%3A/);
+    await expect(page).toHaveURL(/(?:items=|%2C)q%3A/);
+    await tabs.getByRole('tab', { name: 'Trends' }).click();
     const changes = page.getByRole('table', { name: 'Changes' });
     await expect(changes.getByRole('row').nth(2)).toContainText(/\d+ segments/, { timeout: 30_000 });
     // Its segments, each a stretch of a run; the first opens the run with the stretch selected.
+    await tabs.getByRole('tab', { name: 'Segments' }).click();
     await page.getByLabel('Block', { exact: true }).selectOption({ label: 'Fastest 5 min · HR never below 100' });
     await expect(segments.getByRole('row').nth(1)).toContainText(/\d+:\d\d–\d+:\d\d · \d\.\d\d km/);
     // Kept from its chip: it becomes the runner's own.
     await adhoc.getByRole('button', { name: 'Save' }).click();
     await expect(adhoc.getByRole('button', { name: 'Save' })).toHaveCount(0, { timeout: 30_000 });
-    await expect(page).not.toHaveURL(/q%3A/, { timeout: 30_000 }); // the link changes once the block is recomputed
+    // No item of the link is a rule any more (an item "q:…"; a block id may itself end in "q").
+    await expect(page).not.toHaveURL(/(?:items=|%2C)q%3A/, { timeout: 30_000 });
   });
 });

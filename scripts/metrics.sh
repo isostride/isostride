@@ -26,6 +26,7 @@ sense --metric compare.trend.duration.max=/trendMaxSeconds@s
 sense --metric compare.ab.duration.max=/abMaxSeconds@s
 sense --label trials=10 --metric ab.random_split.no_change_trials=/abRandomSplitNoChangeTrials
 sense --metric derived.files_without_algorithm_version=/derivedFilesWithoutVersion
+sense --metric load.model_change.run_files_read=/loadModelChangeRunFilesRead
 sense --metric import.repeat.records_added=/repeatRecordsAdded
 sense --label dataset=author --metric import.errors=/historicalImportErrors --metric import.runs_missing_developer_fields=/historicalRunsMissingDeveloperFields
 # Acceptance criterion 3: a value the run could not compute (no pass in the period) is left unmeasured.

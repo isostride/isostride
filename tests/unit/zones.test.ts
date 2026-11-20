@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { PATHS, readJson, writeJson } from '@/lib/fs';
-import { DEFAULT_ZONES, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneOf, zoneRanges, zonesFromMaxHr } from '@/lib/settings';
+import { DEFAULT_ZONES, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneOf, zoneRanges, zonesFromMaxHr, DEFAULT_PERFORMANCE } from '@/lib/settings';
 import { NodeFolder } from '../support/nodeFolder';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zones-'));
@@ -37,13 +37,13 @@ describe('Metric zones in settings', () => {
 
     // With no settings saved, the default zones apply: heart rate, pace (6:00 … 4:15) and cadence.
     const folder = new NodeFolder(path.join(dir, 'f'));
-    expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: DEFAULT_ZONES, defaults: true });
+    expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: DEFAULT_ZONES, performance: DEFAULT_PERFORMANCE, defaults: true });
     expect(formatBoundaries('speed', DEFAULT_ZONES.speed)).toBe('6:00, 5:15, 4:45, 4:15');
     expect(DEFAULT_ZONES.heartRate).toEqual(zonesFromMaxHr(190));
     // Kept in user/settings.json; metrics with no zones are left out; saved, only what was entered applies.
     await writeSettings(folder, { schemaVersion: 1, zones: { heartRate: [171, 114, 152, 133], cadence: [] }, defaults: true });
-    expect(await readJson(folder, PATHS.settings)).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] } });
-    expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] } });
+    expect(await readJson(folder, PATHS.settings)).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] }, performance: DEFAULT_PERFORMANCE });
+    expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] }, performance: DEFAULT_PERFORMANCE });
     await writeJson(folder, PATHS.settings, { zones: { speed: [270, 'x', 330], power: 'none' } });
     expect((await readSettings(folder)).zones).toEqual({ speed: [330, 270] });
   });

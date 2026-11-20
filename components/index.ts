@@ -12,3 +12,4 @@ export * from './RunChart';
 export * from './metrics';
 export * from './mapCamera';
 export * from './runView';
+export * from './screenTrail';

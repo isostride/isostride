@@ -51,6 +51,7 @@ export const PATHS = {
   segments: 'strideprism/derived/segments.json',
   blockInstances: 'strideprism/derived/block-instances.json',
   dayState: 'strideprism/derived/day-state.json',
+  loadSummaries: 'strideprism/derived/load-summaries.json',
 } as const;
 
 /**

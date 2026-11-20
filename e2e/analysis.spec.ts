@@ -49,6 +49,14 @@ test.describe('Analysis workspace', () => {
     };
     await clickPoint(hr);
 
+    // The sections are tabs, kept in the link: Trends first, then Segments, the curve and the form; one at a time.
+    const tabs = page.getByRole('tablist', { name: 'Analysis sections' });
+    await expect(tabs.getByRole('tab')).toHaveText(['Trends', 'Segments', 'Pace / power curve', 'Form']);
+    await expect(tabs.getByRole('tab', { name: 'Trends' })).toHaveAttribute('aria-selected', 'true');
+    await tabs.getByRole('tab', { name: 'Segments' }).click();
+    await expect(page).toHaveURL(/tab=segments/);
+    await expect(changes).toHaveCount(0);
+    await expect(page.getByRole('group', { name: 'Metrics' })).toHaveCount(0);
     // The segments of the fastest-10-minutes block, ranked; the first opens the run with the stretch selected.
     const segments = page.getByRole('table', { name: 'Segments' });
     await page.getByLabel('Block', { exact: true }).selectOption({ label: 'Fastest 10 min · since 2026-03-01' });
@@ -58,25 +66,75 @@ test.describe('Analysis workspace', () => {
     await expect(segments.getByRole('row').nth(1)).toContainText(/\d:\d\d \/km/);
     await segments.getByRole('row').nth(1).getByRole('link', { name: 'Open run →' }).click();
     await expect(page.locator('.range-stats h3')).toHaveText('Selection');
-    await page.goBack();
+    // The run's back link names the screen it was opened from and returns to it as it was left.
+    await page.getByRole('link', { name: '← Analysis' }).click();
+    await expect(page).toHaveURL(/\/analysis\?.*tab=segments/);
     await expect(page.locator('.item-chip')).toHaveCount(2);
 
-    // The pace curve: one line per block, from its segments; time against pace, kept in the link.
-    await page.getByRole('checkbox', { name: 'Pace curve' }).click(); // the state follows the link, a moment later
-    await expect(page).toHaveURL(/curve=1/);
-    await expect(page.getByRole('checkbox', { name: 'Pace curve' })).toBeChecked();
+    // Back on Segments after the run (the tab is in the link).
+    await expect(tabs.getByRole('tab', { name: 'Segments' })).toHaveAttribute('aria-selected', 'true');
+    // The curve tab, Speed first: one line per block, from its segments; time against pace, kept in the link.
+    await tabs.getByRole('tab', { name: 'Pace / power curve' }).click(); // the state follows the link, a moment later
+    await expect(page).toHaveURL(/tab=curve/);
+    await expect(segments).toHaveCount(0);
+    const curves = page.getByRole('group', { name: 'Curve' });
+    await expect(curves.getByRole('button', { name: 'Speed' })).toHaveAttribute('aria-pressed', 'true');
     const curve = page.getByRole('img', { name: 'Pace curve' });
     await expect(curve.locator('.curve-line')).toHaveCount(2, { timeout: 60_000 });
     await expect(curve).toContainText('1 min');
-    // The estimate: a dashed line and the predicted times, from the research models; each best's gap to it; read under the pointer.
-    await expect(curve.locator('.curve-estimate').first()).toBeAttached();
-    await expect(page.locator('.curve-note', { hasText: 'Runs · since 2026-03-01' })).toContainText(/Estimate \(Riegel power law through your strongest best, exponent 1\.\d\d from \d+ bests of 3 min and more\): 5 km (\d+:)?\d+:\d\d · 10 km (\d+:)?\d+:\d\d · half (\d+:)?\d+:\d\d · marathon \d+:\d\d:\d\d/);
+    // The estimate: a dashed line per block, and its parameters from the research models (the exponent, critical speed and D′, the predicted times).
+    await expect(curve.locator('.curve-estimate')).toHaveCount(2);
+    const runsEstimate = page.getByRole('region', { name: 'Estimate · Runs · since 2026-03-01 · maximum' });
+    await expect(runsEstimate).toContainText(/Exponent1\.\d{3}Riegel · \d+ bests ≥ 3 min/);
+    await expect(runsEstimate).toContainText(/Critical speed\d:\d\d \/km/);
+    await expect(runsEstimate).toContainText(/D′\d+ m/);
+    await expect(runsEstimate).toContainText(/5 km(\d+:)?\d+:\d\dpredicted10 km(\d+:)?\d+:\d\dpredictedhalf(\d+:)?\d+:\d\dpredictedmarathon\d+:\d\d:\d\dpredicted/);
+    // The fastest 10 minutes reach their 10-minute best (the segment's last sample counts), enough for an estimate.
+    await expect(page.getByRole('region', { name: 'Estimate · Fastest 10 min · since 2026-03-01' })).toContainText(/Exponent1\.\d{3}/);
     expect(await curve.locator('.curve-gap').count()).toBeGreaterThan(0);
     await curve.scrollIntoViewIfNeeded();
     const box = (await curve.boundingBox())!;
     await page.mouse.move(box.x + box.width * 0.6, box.y + box.height / 2);
     await page.mouse.move(box.x + box.width * 0.62, box.y + box.height / 2);
     await expect(page.locator('.tooltip')).toContainText(/estimate \d:\d\d \/km/);
+    await page.mouse.move(box.x + box.width / 2, box.y - 40);
+    // The bests: a row per block and length, with its estimate and gap; the pointer over a row rings its point; Open run shows the stretch in its run.
+    const bests = page.getByRole('table', { name: 'Curve bests' });
+    expect(await bests.locator('tbody tr').count()).toBeGreaterThan(5);
+    const tenMin = bests.locator('tbody tr', { hasText: 'Fastest 10 min' }).filter({ has: page.locator('td.strong', { hasText: /^10 min$/ }) });
+    await expect(tenMin).toHaveCount(1);
+    await expect(tenMin).toContainText(/10 min\d:\d\d \/km\d:\d\d \/km(\d+ s\/km (slower|faster)|on the estimate)/);
+    await tenMin.hover();
+    await expect(curve.locator('.curve-highlight')).toHaveCount(1);
+    await tenMin.getByRole('link', { name: 'Open run →' }).click();
+    await expect(page).toHaveURL(/\/run\?id=\d{8}-\d{6}&from=\d+&to=\d+/);
+    await expect(page.locator('.range-stats h3')).toHaveText('Selection');
+    await page.goBack();
+    await expect(curve.locator('.curve-line')).toHaveCount(2, { timeout: 60_000 });
+
+    // Power: the highest average power of each length, in watts, its estimate with critical power and W′, kept in the link.
+    await curves.getByRole('button', { name: 'Power' }).click();
+    await expect(page).toHaveURL(/curve=power/);
+    const power = page.getByRole('img', { name: 'Power curve' });
+    await expect(power.locator('.curve-line')).toHaveCount(2, { timeout: 60_000 });
+    await expect(power).toContainText('1 min');
+    await expect(page.getByRole('img', { name: 'Pace curve' })).toHaveCount(0);
+    const powerEstimate = page.getByRole('region', { name: 'Estimate · Runs · since 2026-03-01 · maximum' });
+    await expect(powerEstimate).toContainText(/Exponent1\.\d{3}power law/);
+    await expect(powerEstimate).toContainText(/Critical power\d+ W/);
+    await expect(powerEstimate).toContainText(/W′-?\d+\.\d kJ/);
+    await expect(powerEstimate).toContainText(/20 min\d+ Westimated/);
+    await expect(powerEstimate).not.toContainText('marathon');
+    await expect(page.getByRole('table', { name: 'Curve bests' }).locator('tbody tr').first()).toContainText(/\d+ W/);
+    await power.scrollIntoViewIfNeeded();
+    const pbox = (await power.boundingBox())!;
+    await page.mouse.move(pbox.x + pbox.width * 0.6, pbox.y + pbox.height / 2);
+    await page.mouse.move(pbox.x + pbox.width * 0.62, pbox.y + pbox.height / 2);
+    await expect(page.locator('.tooltip')).toContainText(/estimate \d+ W/);
+    await page.mouse.move(pbox.x + pbox.width / 2, pbox.y - 40);
+    // Back to Speed for the click through to a run.
+    await curves.getByRole('button', { name: 'Speed' }).click();
+    await expect(curve.locator('.curve-line')).toHaveCount(2, { timeout: 60_000 });
     // A best of the curve opens the run it comes from, the stretch selected.
     await clickPoint(curve);
   });

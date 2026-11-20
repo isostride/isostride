@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useOpenFolder } from '@/lib/client';
+import { runInWorker, useOpenFolder } from '@/lib/client';
+import { PerformanceCard } from './PerformanceCard';
 import { DEFAULT_ZONES, ZONE_METRICS, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneRanges, zoneShade, zonesFromMaxHr, type ZoneMetric } from '@/lib/settings';
 
 /** A value of a metric as the runner reads it: pace as m:ss, others as they are. */
@@ -29,7 +30,7 @@ function ZoneChips({ m, boundaries }: { m: ZoneMetric; boundaries: number[] }) {
 
 /** Settings: the zones of the metrics, kept in user/settings.json, coloured on the run chart. */
 export default function SettingsPage() {
-  const { folder } = useOpenFolder();
+  const { folder, handle } = useOpenFolder();
   const [texts, setTexts] = useState<Record<string, string>>({});
   const [maxHr, setMaxHr] = useState('');
   const [status, setStatus] = useState<string | null>(null);
@@ -46,9 +47,12 @@ export default function SettingsPage() {
   const edit = (key: string, text: string) => { setTexts((t) => ({ ...t, [key]: text })); setStatus(null); };
   const save = async () => {
     if (invalid.length) return;
-    await writeSettings(folder, { schemaVersion: 1, zones: Object.fromEntries(ZONE_METRICS.map((m) => [m.key, parsed[m.key] ?? []])) });
-    setStatus('Saved');
+    const before = await readSettings(folder);
+    await writeSettings(folder, { schemaVersion: 1, zones: Object.fromEntries(ZONE_METRICS.map((m) => [m.key, parsed[m.key] ?? []])), performance: before.performance });
     setDefaults(false);
+    // Edwards' TRIMP counts the heart rate zones: the loads follow them.
+    if (before.performance.load === 'trimpEdwards') { setStatus('Recomputing the loads…'); await runInWorker('context', handle); }
+    setStatus('Saved');
   };
   const max = Number(maxHr);
 
@@ -60,7 +64,8 @@ export default function SettingsPage() {
           <h1>Settings</h1>
         </div>
       </div>
-      <section className="card settings-zones">
+      <PerformanceCard />
+      <section className="card settings-zones" style={{ marginTop: 16 }}>
         <div className="settings-head">
           <div>
             <h2>Zones</h2>
