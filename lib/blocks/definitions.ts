@@ -1,31 +1,48 @@
 import { meanHeading, resample } from '@/lib/geo';
 import type { RunFile } from '@/lib/kernel';
-import { CRITERIA_TOLERANCES, DEFAULT_TOLERANCES, LOGICAL_HR_SKIP, type BlockType, type BlockDefinition, type BlockDefinitionsFile, type Criteria, type CriteriaScope, type Recommendation, type Tolerances } from './types';
-import { criteriaName } from './criteria';
+import { DEFAULT_TOLERANCES, LOGICAL_HR_SKIP, RULE_TOLERANCES, type BlockType, type BlockDefinition, type BlockDefinitionsFile, type BlockParams, type Recommendation, type Rule, type Tolerances } from './types';
+import { EMPTY_CONDITIONS, EMPTY_FILTER, ruleName } from './rule';
 import { effortName, patternName, patternOf } from './logical';
 import { lapKey, structureName } from './structure';
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
 
 /** user/block-definitions.json: the runner's definitions and the recommendations they rejected. */
-/** The definitions, with a default for each tolerance an older file lacks (and none it no longer has). */
+/** The definitions, with a default for each tolerance an older file lacks (and none it no longer has); a criteria block of an older file reads as the rule it was. */
 export async function readDefinitions(folder: DataFolder): Promise<BlockDefinition[]> {
   const defs = (await readJson<BlockDefinitionsFile>(folder, PATHS.blockDefinitions))?.definitions ?? [];
-  return defs.map((d) => ({ ...d, tolerances: withDefaults(d.tolerances, d.params.type) }));
+  return defs.map((d) => { const params = fromLegacy(d.params); return { ...d, params, tolerances: withDefaults(d.tolerances, params.type) }; });
+}
+
+/** A block "from criteria" as files of 19 Nov 2026 keep it: whole runs or laps that meet the criteria. */
+interface LegacyCriteria {
+  type: 'criteria';
+  scope: 'run' | 'lap';
+  criteria: { title: string; distanceMin: number | null; distanceMax: number | null; paceMin: number | null; paceMax: number | null; durationMin: number | null; durationMax: number | null; workoutTypes: string[]; techniqueCues: string[]; shoes: string[]; heartRateSources: string[]; dateFrom: string | null; dateTo: string | null; devices: string[]; heartRateMin: number | null; heartRateMax: number | null; lapsMin: number | null; lapsMax: number | null };
+}
+
+function fromLegacy(params: BlockParams | LegacyCriteria): BlockParams {
+  if (params.type !== 'criteria') return params;
+  const c = params.criteria;
+  return {
+    type: 'rule', shape: { type: params.scope }, pick: 'all', stat: 'avg',
+    runs: { ...EMPTY_FILTER, title: c.title, workoutTypes: c.workoutTypes, techniqueCues: c.techniqueCues, shoes: c.shoes, heartRateSources: c.heartRateSources, devices: c.devices, dateFrom: c.dateFrom, dateTo: c.dateTo, lapsMin: c.lapsMin, lapsMax: c.lapsMax },
+    conditions: { ...EMPTY_CONDITIONS, distanceMin: c.distanceMin, distanceMax: c.distanceMax, paceMin: c.paceMin, paceMax: c.paceMax, durationMin: c.durationMin, durationMax: c.durationMax, hrMin: c.heartRateMin, hrMax: c.heartRateMax },
+  };
 }
 
 /** Tolerances for a block of a type: effort and workout-type blocks measure heart rate from minute 5 of the block. */
 export function defaultTolerances(type: BlockType): Tolerances {
-  if (type === 'criteria') return { ...CRITERIA_TOLERANCES };
+  if (type === 'rule') return { ...RULE_TOLERANCES };
   return { ...DEFAULT_TOLERANCES, hrSkip: type === 'effort' || type === 'tag' ? LOGICAL_HR_SKIP : null };
 }
 
-/** A block from the runner's criteria: the criteria decide, the general conditions are off. */
-export function definitionFromCriteria(name: string, criteria: Criteria, scope: CriteriaScope, now = new Date()): BlockDefinition {
+/** A block from a rule: the rule's conditions decide, the general conditions are off. */
+export function definitionFromRule(name: string, rule: Rule, now = new Date()): BlockDefinition {
   return {
     id: newDefinitionId(), origin: 'manual', status: 'active', createdAt: now.toISOString(),
-    name: name.trim() || criteriaName(criteria, scope),
-    params: { type: 'criteria', criteria, scope },
-    tolerances: { ...CRITERIA_TOLERANCES },
+    name: name.trim() || ruleName(rule),
+    params: { type: 'rule', ...rule },
+    tolerances: { ...RULE_TOLERANCES },
   };
 }
 

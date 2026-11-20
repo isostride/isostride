@@ -49,7 +49,6 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
       const go = (href: string) => () => { setOpen(false); router.push(href); };
       const list: Item[] = [
         { group: 'Screens', label: 'Runs', run: go('/') },
-        { group: 'Screens', label: 'Blocks', run: go('/blocks') },
         { group: 'Screens', label: 'Analysis', run: go('/analysis') },
         { group: 'Screens', label: 'A/B comparison', run: go('/compare') },
         { group: 'Screens', label: 'Gear and tags', run: go('/gear') },

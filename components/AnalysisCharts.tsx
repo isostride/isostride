@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useMemo, useState, type MouseEvent } from 'react';
 import type { BlockInstance } from '@/lib/blocks';
 import { ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useWidth } from './chartKit';
@@ -36,7 +37,8 @@ export interface OverTimeGroup {
   label: string;
   color: string;
   shape: Shape;
-  points: { t: number; v: number; instance?: BlockInstance; note?: string }[];
+  /** href: the run a point comes from, opened by a click */
+  points: { t: number; v: number; instance?: BlockInstance; note?: string; href?: string }[];
   /** fitted lines (one per device series), with the noise band */
   fits: { t0: number; t1: number; v0: number; v1: number; noise: number }[];
 }
@@ -66,6 +68,7 @@ export function OverTimeChart({ groups, format, tick, invert, markers, minSpan =
   height?: number;
 }) {
   const [box, width] = useWidth();
+  const router = useRouter();
   const [hover, setHover] = useState<{ x: number; y: number; g: OverTimeGroup; p: OverTimeGroup['points'][number] } | null>(null);
   const H = height;
   // Only drawable points: a value that is not a number has no place on the axis.
@@ -102,7 +105,7 @@ export function OverTimeChart({ groups, format, tick, invert, markers, minSpan =
   };
   return (
     <div ref={box} style={{ position: 'relative' }}>
-      <svg width={width} height={H} role="img" aria-label={title === 'Over time' ? title : `Over time · ${title}`} onMouseMove={move} onMouseLeave={() => setHover(null)} onClick={() => hover?.p.instance && onPick?.(hover.p.instance)} style={{ display: 'block', cursor: hover?.p.instance && onPick ? 'pointer' : 'default' }}>
+      <svg width={width} height={H} role="img" aria-label={title === 'Over time' ? title : `Over time · ${title}`} onMouseMove={move} onMouseLeave={() => setHover(null)} onClick={() => { if (!hover) return; if (hover.p.instance && onPick) onPick(hover.p.instance); else if (hover.p.href) router.push(hover.p.href); }} style={{ display: 'block', cursor: hover && ((hover.p.instance && onPick) || hover.p.href) ? 'pointer' : 'default' }}>
         {ticks.map((v) => (
           <g key={v}>
             <line x1={M.l} x2={width - M.r} y1={y(v)} y2={y(v)} stroke="var(--grid)" />
@@ -139,6 +142,7 @@ export function OverTimeChart({ groups, format, tick, invert, markers, minSpan =
           <div className="tip-value"><ItemKey shape={hover.g.shape} color={hover.g.color} /> {format(hover.p.v)}</div>
           <div>{hover.g.label}</div>
           <div className="muted">{new Date(hover.p.t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}{hover.p.note ? ` · ${hover.p.note}` : ''}</div>
+          {hover.p.href && !onPick && <div className="muted tip-hint">Click to open the run</div>}
         </div>
       )}
     </div>
@@ -150,8 +154,8 @@ export interface CurveLine {
   label: string;
   color: string;
   shape: Shape;
-  /** by duration, s; pace in s/km; the note names the run */
-  points: { duration: number; pace: number; note: string }[];
+  /** by duration, s; pace in s/km; the note names the run, the href opens it with the stretch selected */
+  points: { duration: number; pace: number; note: string; href?: string }[];
   /** the estimated curve, drawn dashed */
   estimate?: { duration: number; pace: number }[];
   /** the estimate at any length of time, read under the pointer */
@@ -168,6 +172,7 @@ export function PaceCurveChart({ lines, durations, format, tick, minSpan = 0, he
   lines: CurveLine[]; durations: number[]; format: (v: number) => string; tick: (v: number, decimals?: number) => string; minSpan?: number; height?: number;
 }) {
   const [box, width] = useWidth();
+  const router = useRouter();
   const [hover, setHover] = useState<{ mx: number; duration: number; near: { l: CurveLine; p: CurveLine['points'][number] } | null } | null>(null);
   const H = height;
   const T = 10;
@@ -202,7 +207,7 @@ export function PaceCurveChart({ lines, durations, format, tick, minSpan = 0, he
   const gap = (measured: number, estimate: number) => { const d = Math.round(measured - estimate); return d === 0 ? 'on the estimate' : `${Math.abs(d)} s/km ${d > 0 ? 'slower' : 'faster'} than the estimate`; };
   return (
     <div ref={box} style={{ position: 'relative' }}>
-      <svg width={width} height={H} role="img" aria-label="Pace curve" onMouseMove={move} onMouseLeave={() => setHover(null)} style={{ display: 'block' }}>
+      <svg width={width} height={H} role="img" aria-label="Pace curve" onMouseMove={move} onMouseLeave={() => setHover(null)} onClick={() => hover?.near?.p.href && router.push(hover.near.p.href)} style={{ display: 'block', cursor: hover?.near?.p.href ? 'pointer' : 'default' }}>
         {ticks.map((v) => (
           <g key={v}>
             <line x1={M.l} x2={width - M.r} y1={y(v)} y2={y(v)} stroke="var(--grid)" />
@@ -234,6 +239,7 @@ export function PaceCurveChart({ lines, durations, format, tick, minSpan = 0, he
             <div style={{ marginTop: 4 }}>
               <div><ItemKey shape={hover.near.l.shape} color={hover.near.l.color} /> {durationLabel(hover.near.p.duration)} · measured {format(hover.near.p.pace)}{hover.near.l.estimateAt ? ` · ${gap(hover.near.p.pace, hover.near.l.estimateAt(hover.near.p.duration))}` : ''}</div>
               <div className="muted">{hover.near.p.note}</div>
+              {hover.near.p.href && <div className="muted tip-hint">Click to open the run</div>}
             </div>
           )}
         </div>

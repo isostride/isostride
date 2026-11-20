@@ -2,7 +2,7 @@ import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
 import { resample, type TrackPoint } from '@/lib/geo';
 import { type RunFile, type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { detectRouteSegments } from './segments';
-import { RECOMMENDATIONS_PATH, fromRecommendation, readDefinitions, type BlockInstance, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
+import { RECOMMENDATIONS_PATH, fromRecommendation, matchesRunFilter, readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
 import { detectInstances } from './detect';
 import { MIN_ROUTE_INSTANCES, MIN_STRUCTURE_WORKOUTS, recommend } from './recommend';
 
@@ -53,4 +53,25 @@ export async function runBlocks(folder: DataFolder): Promise<BlocksReport> {
   await writeJson(folder, RECOMMENDATIONS_PATH, { algorithmVersion: ALGORITHM_VERSION, recommendations });
 
   return { segments: segments.length, instances: instances.length, recommendations: recommendations.length };
+}
+
+/**
+ * The instances of definitions that are not kept (a block being built in Analysis, or one that
+ * lives in its link), computed now from the run files: each run is read once, and not at all
+ * when no rule draws from it. Nothing is written.
+ */
+export async function instancesOf(folder: DataFolder, defs: BlockDefinition[], onProgress?: (p: { done: number; total: number; file: string }) => void): Promise<Record<string, BlockInstance[]>> {
+  const index = await readJson<RunsIndex>(folder, PATHS.runsIndex);
+  const out: Record<string, BlockInstance[]> = Object.fromEntries(defs.map((d) => [d.id, []]));
+  const rows = (index?.runs ?? []).filter((row) => defs.some((d) => d.params.type !== 'rule' || matchesRunFilter(d.params.runs, row)));
+  const needTrack = defs.some((d) => d.params.type === 'route');
+  let done = 0;
+  for (const row of rows) {
+    const run = await readJson<RunFile>(folder, PATHS.runFile(row.id));
+    onProgress?.({ done: ++done, total: rows.length, file: row.file });
+    if (!run) continue;
+    const track = needTrack ? resample(run.samples.lat, run.samples.lon, run.samples.t, 10) : [];
+    for (const def of defs) out[def.id].push(...detectInstances(def, run, row, track));
+  }
+  return out;
 }

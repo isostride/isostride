@@ -1,49 +1,20 @@
 'use client';
 
-import { useId, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { MIN_SPAN, wheelFactor } from './chartZoom';
+import { fitCamera, panCamera, project, visibleRange, zoomCamera, type Camera, type RoutePoint } from './mapCamera';
 import { useMapTiles } from '@/lib/client';
-import { clock, ensureSpan, niceTicks, robustExtent, tickDecimals, timeTicks, useWidth } from './chartKit';
 
 type Band = { from: number; to: number };
 
 /** The margins of a lane: the plot starts near the left edge, the tick labels sit inside it. */
 export const LANE = { l: 10, r: 12 };
 
-interface LineChartProps {
-  title: string;
-  /** the unit, shown muted after the title */
-  unit?: string;
-  x: number[];
-  /** null where nothing is drawn: no signal, or stopped (the line breaks there) */
-  y: (number | null)[];
-  format: (v: number) => string;
-  /** an axis tick, without the unit (the title carries it), with the decimals its step needs; default: format */
-  tick?: (v: number, decimals?: number) => string;
-  /** the least range of the y axis */
-  minSpan?: number;
-  color?: string;
-  /** smaller is better drawn on top, e.g. pace */
-  invert?: boolean;
-  laps?: Band[];
-  blocks?: (Band & { ok: boolean; name?: string })[];
-  cursor: number | null;
-  onCursor: (x: number | null) => void;
-  /** the selected fragment, s */
-  selection?: Band | null;
-  /** drag across the chart to select a fragment */
-  onSelect?: (b: Band) => void;
-  /** the time axis under the chart (the last of a stack) */
-  axis?: boolean;
-  /** lap numbers and block names over the chart (the first of a stack) */
-  labels?: boolean;
-  height?: number;
-}
-
 /**
  * A smooth path through points (monotone cubic: no overshoot past the data), one 'M' per
  * unbroken stretch, and the wash under each stretch down to `base`.
  */
-function smoothPaths(pts: ([number, number] | null)[], base: number): { line: string; area: string } {
+export function smoothPaths(pts: ([number, number] | null)[], base: number): { line: string; area: string } {
   let line = '';
   let area = '';
   const runs: [number, number][][] = [];
@@ -79,99 +50,6 @@ function smoothPaths(pts: ([number, number] | null)[], base: number): { line: st
   return { line, area };
 }
 
-/**
- * One metric of a run over time, in a stack of charts that share the time axis and the cursor:
- * laps as alternating bands, block instances as washed bands, a smooth 2px line that breaks
- * where the runner stopped with a wash fading away under it, round ticks labelled inside the
- * plot on a scale that ignores spikes, and the value under the cursor as a dot on the line.
- */
-export function LineChart({ title, unit, x, y, format, tick = format, minSpan = 0, color = 'var(--series-1)', invert, laps = [], blocks = [], cursor, onCursor, selection = null, onSelect, axis, labels, height = 96 }: LineChartProps) {
-  const [box, width] = useWidth();
-  const svg = useRef<SVGSVGElement>(null);
-  const gradient = useId();
-  const [drag, setDrag] = useState<number | null>(null);
-  const top = labels ? 18 : 6;
-  const H = top + height + (axis ? 22 : 6);
-  const xMax = x[x.length - 1] || 1;
-  const px = (t: number) => LANE.l + (t / xMax) * (width - LANE.l - LANE.r);
-  const { line, area, ticks, py } = useMemo(() => {
-    const [lo, hi] = ensureSpan(...robustExtent(y.filter((v): v is number => v !== null)), minSpan);
-    const py = (v: number) => {
-      const f = (Math.min(Math.max(v, lo), hi) - lo) / (hi - lo);
-      return top + (invert ? f : 1 - f) * height;
-    };
-    const pts = x.map((t, i): [number, number] | null => (y[i] === null ? null : [px(t), py(y[i]!)]));
-    return { ...smoothPaths(pts, top + height), ticks: niceTicks(lo, hi, 3).filter((t) => t >= lo && t <= hi), py };
-    // px follows width, which is among the dependencies.
-  }, [x, y, invert, height, width, top, minSpan]);
-
-  const value = useMemo(() => {
-    if (cursor === null) return null;
-    let best = -1;
-    for (let i = 0; i < x.length; i++) if (x[i] <= cursor) best = i;
-    return best >= 0 ? y[best] : null;
-  }, [cursor, x, y]);
-  // With no cursor, the head shows the mean of the lane.
-  const mean = useMemo(() => { const v = y.filter((a): a is number => a !== null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; }, [y]);
-
-  const at = (e: MouseEvent<SVGSVGElement>) => {
-    const r = svg.current!.getBoundingClientRect();
-    return Math.min(xMax, Math.max(0, ((e.clientX - r.left - LANE.l) / (r.width - LANE.l - LANE.r)) * xMax));
-  };
-  const up = (e: MouseEvent<SVGSVGElement>) => {
-    if (drag === null) return;
-    const t = at(e);
-    setDrag(null);
-    if (Math.abs(t - drag) >= 20) onSelect?.({ from: Math.min(t, drag), to: Math.max(t, drag) });
-  };
-  const live = drag !== null && cursor !== null ? { from: Math.min(drag, cursor), to: Math.max(drag, cursor) } : selection;
-  const band = (b: Band) => ({ x: px(b.from), width: Math.max(1, px(b.to) - px(b.from)) });
-
-  return (
-    <div ref={box} className="metric-chart">
-      <div className="metric-head">
-        <span className="metric-title">{title}{unit && <span className="muted"> · {unit}</span>}</span>
-        <span className="metric-value">{value !== null && value !== undefined ? format(value) : mean !== null ? <span className="muted">avg {format(mean)}</span> : ''}</span>
-      </div>
-      <svg ref={svg} width={width} height={H} onMouseMove={(e) => onCursor(at(e))} onMouseLeave={() => { onCursor(null); setDrag(null); }}
-        onMouseDown={(e) => onSelect && setDrag(at(e))} onMouseUp={up} style={{ cursor: onSelect ? 'crosshair' : undefined, userSelect: 'none', display: 'block' }} role="img" aria-label={unit ? `${title} · ${unit}` : title}>
-        <defs>
-          <linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.24" />
-            <stop offset="100%" stopColor={color} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {laps.map((l, i) => i % 2 === 1 && <rect key={i} {...band(l)} y={top} height={height} fill="var(--surface-2)" />)}
-        {blocks.map((b, i) => (
-          <g key={`b${i}`}>
-            <rect {...band(b)} y={top} height={height} fill="var(--band)" />
-            {b.ok && <rect {...band(b)} y={top} height={2} fill="var(--series-1)" />}
-          </g>
-        ))}
-        {ticks.map((t) => (
-          <g key={t}>
-            <line x1={LANE.l} x2={width - LANE.r} y1={py(t)} y2={py(t)} stroke="var(--grid)" strokeWidth="1" />
-            <text x={LANE.l + 4} y={py(t) - 3} fontSize="10" fill="var(--muted)" className="tnum">{tick(t, tickDecimals(ticks))}</text>
-          </g>
-        ))}
-        {labels && laps.length > 1 && laps.map((l, i) => <text key={`l${i}`} x={px(l.from) + 4} y={11} fontSize="10" fill="var(--muted)">L{i + 1}</text>)}
-        {labels && blocks.filter((b) => b.name).map((b, i) => <text key={`n${i}`} x={px(b.to) - 4} y={11} fontSize="10" textAnchor="end" fill="var(--text)">{b.name}</text>)}
-        {live && <rect {...band(live)} y={top} height={height} fill="var(--accent)" opacity="0.16" />}
-        <path d={area} fill={`url(#${gradient})`} className="area" />
-        <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-        {cursor !== null && <line x1={px(cursor)} x2={px(cursor)} y1={top} y2={top + height} stroke="var(--axis)" strokeWidth="1" />}
-        {cursor !== null && value !== null && value !== undefined && <circle cx={px(cursor)} cy={py(value)} r="4" fill={color} stroke="var(--surface)" strokeWidth="2" />}
-        {axis && (
-          <g>
-            <line x1={LANE.l} x2={width - LANE.r} y1={top + height} y2={top + height} stroke="var(--axis)" strokeWidth="1" />
-            {timeTicks(xMax).map((t) => <text key={t} x={px(t)} y={top + height + 15} fontSize="10" textAnchor={t === 0 ? 'start' : 'middle'} fill="var(--muted)" className="tnum">{clock(t)}</text>)}
-          </g>
-        )}
-      </svg>
-    </div>
-  );
-}
-
 interface RouteMapProps {
   lat: (number | null)[];
   lon: (number | null)[];
@@ -180,83 +58,141 @@ interface RouteMapProps {
   selection?: Band | null;
   /** click two points on the route to select the stretch between them */
   onSelect?: (b: Band) => void;
+  /** the range of time the chart shows, s: the stretch of the route run in it is drawn strong, and the map fits it when following */
+  view?: Band | null;
+  /** fit the map to `view` when it changes (false while the runner moves the map by hand) */
+  follow?: boolean;
+  /** the map zoomed or panned by hand: the range of time of the route in view, or null for the whole run */
+  onView?: (b: Band | null) => void;
+  /** the "Fit route" button over a map moved by hand: the map follows the chart again */
+  onFit?: () => void;
+  /** the camera of a map moved by hand, as the link gave it */
+  camera?: Camera | null;
+  /** the camera moved by hand, or null when the map follows the chart again (for the link) */
+  onCamera?: (c: Camera | null) => void;
 }
 
-/** Web Mercator: world pixels at a zoom level, as the OpenStreetMap tiles are cut. */
-function mercator(lat: number, lon: number, z: number): [number, number] {
-  const n = 256 * 2 ** z;
-  const s = Math.sin((lat * Math.PI) / 180);
-  return [((lon + 180) / 360) * n, (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n];
-}
+const MAP = 320;
+const MAP_PAD = 20;
+const pathOf = (cam: Camera, pts: RoutePoint[]) => pts.map((p, i) => { const [x, y] = project(cam, MAP, p[0], p[1]); return `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`; }).join('');
 
 /**
  * The route from the GPS points, on a dotted grid or (switched on) OpenStreetMap tiles: a soft
- * halo under the line, the start as a ring, the end as a dot, the cursor as a marker.
+ * halo under the line, the start as a ring, the end as a dot, the cursor as a marker. The wheel
+ * zooms around the pointer and a drag pans; the range of time in view goes to the chart.
  */
-export function RouteMap({ lat, lon, t, cursor, selection = null, onSelect }: RouteMapProps) {
-  const size = 320;
-  const pad = 20;
+export function RouteMap({ lat, lon, t, cursor, selection = null, onSelect, view = null, follow = true, onView, onFit, camera = null, onCamera }: RouteMapProps) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const grid = useId();
   const [first, setFirst] = useState<number | null>(null);
   const [tiles] = useMapTiles();
-  const geo = useMemo(() => {
-    const pts: [number, number, number][] = [];
-    for (let i = 0; i < lat.length; i++) if (lat[i] !== null && lon[i] !== null) pts.push([lat[i]!, lon[i]!, t[i]]);
-    if (!pts.length) return null;
-    const lats = pts.map((p) => p[0]);
-    const lons = pts.map((p) => p[1]);
-    // The highest zoom (up to 17) at which the route fits the map, one map unit per tile pixel.
-    let z = 17;
-    for (; z > 1; z--) {
-      const [x0, y0] = mercator(Math.max(...lats), Math.min(...lons), z);
-      const [x1, y1] = mercator(Math.min(...lats), Math.max(...lons), z);
-      if (x1 - x0 <= size - 2 * pad && y1 - y0 <= size - 2 * pad) break;
-    }
-    const [x0, y0] = mercator(Math.max(...lats), Math.min(...lons), z);
-    const [x1, y1] = mercator(Math.min(...lats), Math.max(...lons), z);
-    const ox = (x0 + x1) / 2 - size / 2;
-    const oy = (y0 + y1) / 2 - size / 2;
-    const proj = (la: number, lo: number): [number, number] => { const [x, y] = mercator(la, lo, z); return [x - ox, y - oy]; };
-    const d = pts.map((p, i) => { const [x, y] = proj(p[0], p[1]); return `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`; }).join('');
-    // The tiles covering the map.
-    const cover: { href: string; x: number; y: number }[] = [];
-    const max = 2 ** z;
-    for (let tx = Math.floor(ox / 256); tx <= Math.floor((ox + size) / 256); tx++)
-      for (let ty = Math.floor(oy / 256); ty <= Math.floor((oy + size) / 256); ty++)
-        if (ty >= 0 && ty < max) cover.push({ href: `https://tile.openstreetmap.org/${z}/${((tx % max) + max) % max}/${ty}.png`, x: tx * 256 - ox, y: ty * 256 - oy });
-    return { d, pts, proj, cover };
+  const pts = useMemo(() => {
+    const out: RoutePoint[] = [];
+    for (let i = 0; i < lat.length; i++) if (lat[i] !== null && lon[i] !== null) out.push([lat[i]!, lon[i]!, t[i]]);
+    return out;
   }, [lat, lon, t]);
+  // The points the map fits: those run in the range shown, or the whole route.
+  const inView = useMemo(() => (view ? pts.filter((p) => p[2] >= view.from && p[2] <= view.to) : []), [pts, view?.from, view?.to]);
+  // Following the chart, the camera fits the range shown, at once; moved by hand, it is the runner's.
+  const fitted = useMemo(() => (pts.length ? fitCamera(inView.length >= 2 ? inView : pts, MAP, MAP_PAD) : null), [pts, inView]);
+  const [manual, setManual] = useState<Camera | null>(camera);
+  const cam = follow || !manual ? fitted : manual;
 
-  if (!geo) return <div className="card empty">No GPS in this run.</div>;
+  // The live values the wheel and drag handlers read.
+  const live = useRef({ cam, pts, onView, onCamera });
+  live.current = { cam, pts, onView, onCamera };
+  const move = (next: Camera, anchor?: [number, number]) => {
+    // The next event (a burst of wheel events comes faster than the map draws) goes on from this camera.
+    live.current.cam = next;
+    setManual(next);
+    live.current.onCamera?.(next);
+    live.current.onView?.(visibleRange(live.current.pts, next, MAP, anchor));
+  };
+  const toMap = (e: { clientX: number; clientY: number }) => {
+    const r = svgRef.current!.getBoundingClientRect();
+    return [((e.clientX - r.left) / r.width) * MAP, ((e.clientY - r.top) / r.height) * MAP, MAP / r.width] as const;
+  };
+  useEffect(() => {
+    // The wheel over the whole frame of the map, its overlays (the hint, Fit route) included.
+    const el = wrapRef.current;
+    if (!el) return;
+    const wheel = (e: WheelEvent) => {
+      const c = live.current.cam;
+      if (!c || !e.deltaY) return;
+      e.preventDefault();
+      const [mx, my] = toMap(e);
+      const factor = wheelFactor(e.deltaY, e.deltaMode);
+      const next = zoomCamera(c, factor, mx, my, MAP);
+      // The map zooms in no further than the chart can follow: the stretch in view stays a minute or longer.
+      const r = visibleRange(live.current.pts, next, MAP, [mx, my]);
+      if (factor < 1 && r && r.to - r.from < MIN_SPAN) return;
+      // The stretch under the pointer fills the chart.
+      move(next, [mx, my]);
+    };
+    el.addEventListener('wheel', wheel, { passive: false });
+    return () => el.removeEventListener('wheel', wheel);
+  }, [pts.length]);
+
+  if (!pts.length || !cam) return <div className="card empty">No GPS in this run.</div>;
+  const proj = (la: number, lo: number) => project(cam, MAP, la, lo);
+  const d = pathOf(cam, pts);
+  const dView = inView.length >= 2 && inView.length < pts.length ? pathOf(cam, inView) : '';
+  // The tiles covering the map, at the nearest level, scaled to the camera's zoom.
+  const tz = Math.min(19, Math.max(0, Math.round(cam.z)));
+  const ts = 256 * 2 ** (cam.z - tz);
+  const ox = cam.cx - MAP / 2;
+  const oy = cam.cy - MAP / 2;
+  const cover: { href: string; x: number; y: number }[] = [];
+  const max = 2 ** tz;
+  for (let tx = Math.floor(ox / ts); tx <= Math.floor((ox + MAP) / ts); tx++)
+    for (let ty = Math.floor(oy / ts); ty <= Math.floor((oy + MAP) / ts); ty++)
+      if (ty >= 0 && ty < max) cover.push({ href: `https://tile.openstreetmap.org/${tz}/${((tx % max) + max) % max}/${ty}.png`, x: tx * ts - ox, y: ty * ts - oy });
+
   let marker: [number, number] | null = null;
   if (cursor !== null) {
-    const p = geo.pts.reduce((best, q) => (q[2] <= cursor ? q : best), geo.pts[0]);
-    marker = geo.proj(p[0], p[1]);
+    const p = pts.reduce((best, q) => (q[2] <= cursor ? q : best), pts[0]);
+    marker = proj(p[0], p[1]);
   }
-  const start = geo.proj(geo.pts[0][0], geo.pts[0][1]);
-  const endPt = geo.pts[geo.pts.length - 1];
-  const end = geo.proj(endPt[0], endPt[1]);
-  const sel = selection ? geo.pts.filter((p) => p[2] >= selection.from && p[2] < selection.to) : [];
-  const selD = sel.map((p, i) => { const [x, y] = geo.proj(p[0], p[1]); return `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`; }).join('');
-  /** The time of the route point nearest a click. */
-  const pick = (e: MouseEvent<SVGSVGElement>) => {
+  const start = proj(pts[0][0], pts[0][1]);
+  const endPt = pts[pts.length - 1];
+  const end = proj(endPt[0], endPt[1]);
+  const sel = selection ? pts.filter((p) => p[2] >= selection.from && p[2] < selection.to) : [];
+  const selD = pathOf(cam, sel);
+  /** The time of the route point nearest a click, as the start or the end of a stretch. */
+  const pick = (mx: number, my: number) => {
     if (!onSelect) return;
-    const r = svgRef.current!.getBoundingClientRect();
-    const mx = ((e.clientX - r.left) / r.width) * size;
-    const my = ((e.clientY - r.top) / r.height) * size;
-    let best = geo.pts[0];
+    let best = pts[0];
     let bd = Infinity;
-    for (const p of geo.pts) { const [x, y] = geo.proj(p[0], p[1]); const d = (x - mx) ** 2 + (y - my) ** 2; if (d < bd) { bd = d; best = p; } }
+    for (const p of pts) { const [x, y] = proj(p[0], p[1]); const dd = (x - mx) ** 2 + (y - my) ** 2; if (dd < bd) { bd = dd; best = p; } }
     if (bd > 15 ** 2) return;
     if (first === null) setFirst(best[2]);
     else { onSelect({ from: Math.min(first, best[2]), to: Math.max(first, best[2]) }); setFirst(null); }
   };
-  const firstPt = first !== null ? geo.pts.find((p) => p[2] >= first) : null;
+  // A drag pans the map; a press and release in place is a click on the route.
+  const down = (e: MouseEvent<SVGSVGElement>) => {
+    const [mx0, my0, k] = toMap(e);
+    const c0 = cam;
+    let moved = false;
+    const mv = (m: globalThis.MouseEvent) => {
+      const [mx, my] = toMap(m);
+      if (!moved && Math.hypot(mx - mx0, my - my0) < 4 * k) return;
+      moved = true;
+      move(panCamera(c0, mx - mx0, my - my0));
+    };
+    const up = () => {
+      removeEventListener('mousemove', mv);
+      removeEventListener('mouseup', up);
+      if (!moved) pick(mx0, my0);
+    };
+    addEventListener('mousemove', mv);
+    addEventListener('mouseup', up);
+  };
+  const firstPt = first !== null ? pts.find((p) => p[2] >= first) : null;
   const route = tiles ? 'var(--accent)' : 'var(--series-1)';
   return (
-    <div className="card map">
-      <svg ref={svgRef} viewBox={`0 0 ${size} ${size}`} width="100%" role="img" aria-label="Route" onClick={pick} style={{ cursor: onSelect ? 'crosshair' : undefined, display: 'block' }}>
+    <div ref={wrapRef} className="card map">
+      <svg ref={svgRef} viewBox={`0 0 ${MAP} ${MAP}`} width="100%" role="img" aria-label="Route" data-zoom={cam.z.toFixed(2)} onMouseDown={down} style={{ cursor: onSelect ? 'crosshair' : 'grab', display: 'block', userSelect: 'none' }}>
         <defs>
           <pattern id={grid} width="16" height="16" patternUnits="userSpaceOnUse">
             <circle cx="1" cy="1" r="1" fill="var(--axis)" />
@@ -264,23 +200,23 @@ export function RouteMap({ lat, lon, t, cursor, selection = null, onSelect }: Ro
         </defs>
         {tiles ? (
           <g className="map-tiles" aria-hidden="true">
-            {geo.cover.map((c) => <image key={c.href} href={c.href} x={c.x} y={c.y} width={256} height={256} />)}
+            {cover.map((c) => <image key={c.href} href={c.href} x={c.x} y={c.y} width={ts} height={ts} />)}
           </g>
         ) : (
-          <rect width={size} height={size} fill={`url(#${grid})`} />
+          <rect width={MAP} height={MAP} fill={`url(#${grid})`} />
         )}
-        <path d={geo.d} fill="none" stroke={route} strokeWidth="9" strokeLinejoin="round" strokeLinecap="round" opacity="0.12" />
-        <path d={geo.d} fill="none" stroke={route} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" opacity={selection ? 0.35 : 1} />
+        <path d={d} fill="none" stroke={route} strokeWidth="9" strokeLinejoin="round" strokeLinecap="round" opacity="0.12" />
+        <path d={d} fill="none" stroke={route} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" opacity={selection || dView ? 0.35 : 1} />
+        {dView && <path d={dView} className="route-range" fill="none" stroke={route} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" opacity={selection ? 0.6 : 1} />}
         {selD && <path d={selD} fill="none" stroke="var(--accent)" strokeWidth="5" strokeLinecap="round" />}
-        {firstPt && <circle cx={geo.proj(firstPt[0], firstPt[1])[0]} cy={geo.proj(firstPt[0], firstPt[1])[1]} r="6" fill="var(--accent)" />}
-        <circle cx={end[0]} cy={end[1]} r="4" fill="var(--text)" stroke="var(--surface)" strokeWidth="2" />
-        <circle cx={start[0]} cy={start[1]} r="5" fill="var(--surface)" stroke="var(--ok)" strokeWidth="2.5" />
+        {firstPt && <circle cx={proj(firstPt[0], firstPt[1])[0]} cy={proj(firstPt[0], firstPt[1])[1]} r="6" fill="var(--accent)" />}
+        <circle className="route-end" cx={end[0]} cy={end[1]} r="4" fill="var(--text)" stroke="var(--surface)" strokeWidth="2" />
+        <circle className="route-start" cx={start[0]} cy={start[1]} r="5" fill="var(--surface)" stroke="var(--ok)" strokeWidth="2.5" />
         {marker && <circle cx={marker[0]} cy={marker[1]} r="6" fill="var(--surface)" stroke="var(--text)" strokeWidth="2" />}
       </svg>
-      <div className="muted small map-foot">
-        <span style={{ flex: 1 }}>{onSelect ? (first === null ? 'Click two points on the route to select the stretch between them.' : 'Now click the end of the stretch.') : ''}</span>
-        {tiles && <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>}
-      </div>
+      <span className="map-hint" aria-live="polite">{onSelect && first !== null ? 'Now click the end of the stretch' : 'Scroll to zoom · drag to move · click two points to select'}</span>
+      {!follow && manual && onFit && <button type="button" className="map-fit btn sm" onClick={() => { setManual(null); onCamera?.(null); onFit(); }} title="Fit the map to the range the chart shows">Fit route</button>}
+      {tiles && <a className="map-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>}
     </div>
   );
 }

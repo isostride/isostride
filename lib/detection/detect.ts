@@ -3,7 +3,8 @@ import type { IndexedRun, RunFile } from '@/lib/kernel';
 import { buildInstance } from './instance';
 import { effortIn, followsPattern, mainEffort } from './logical';
 import { findPasses } from './routeMatch';
-import { lapKey, lapSubject, matchesCriteria, runSubject, type BlockDefinition, type BlockInstance } from '@/lib/blocks';
+import { SAMPLE_METRICS, lapKey, windowStat, type BlockDefinition, type BlockInstance, type Stat } from '@/lib/blocks';
+import { ruleSegments } from './rule';
 
 /** Detects the instances of one block definition in one run (spec F10). */
 export function detectInstances(def: BlockDefinition, run: RunFile, row: IndexedRun, track: TrackPoint[]): BlockInstance[] {
@@ -36,15 +37,26 @@ export function detectInstances(def: BlockDefinition, run: RunFile, row: Indexed
     if (!followsPattern(run.laps, p.laps, p.tolerance)) return [];
     return p.laps.flatMap((lap, i) => (lap.effort ? [buildInstance(def, run, row, run.laps[i].start, run.laps[i].end, { lap: i + 1 })] : []));
   }
-  if (p.type === 'criteria') {
-    // The runner's own criteria: the whole run that meets them, or each of its laps that does.
-    if (p.scope === 'run') {
-      const end = run.samples.t[run.samples.t.length - 1] ?? 0;
-      return matchesCriteria(p.criteria, runSubject(row)) ? [buildInstance(def, run, row, 0, end + 1)] : [];
-    }
-    return run.laps.flatMap((lap, i) => (matchesCriteria(p.criteria, lapSubject(run, row, i)) ? [buildInstance(def, run, row, lap.start, lap.end, { lap: i + 1 })] : []));
+  if (p.type === 'rule') {
+    // A rule of the Analysis screen: its segments, each read by the rule's statistic.
+    return ruleSegments(p, run, row).map((s) => withStat(buildInstance(def, run, row, s.from, s.to, { lap: s.lap }), run, p.stat));
   }
   return steadyFragments(def, run).map(([from, to]) => buildInstance(def, run, row, from, to));
+}
+
+/**
+ * An instance read by a statistic other than the average: each metric from the 10 s windows with
+ * movement inside it (the median, the minimum or the maximum); pace statistics are of the pace,
+ * so the minimum is the fastest window.
+ */
+function withStat(i: BlockInstance, run: RunFile, stat: Stat): BlockInstance {
+  if (stat === 'avg') return i;
+  const metrics = { ...i.metrics };
+  for (const m of [...SAMPLE_METRICS, 'efficiency'] as const) {
+    const v = windowStat(run, m, stat, i.start, i.end);
+    metrics[m] = v === null ? null : m === 'speed' || m === 'effortPace' ? Math.round((1000 / v) * 1000) / 1000 : Math.round(v * 10000) / 10000;
+  }
+  return { ...i, metrics };
 }
 
 /** Maximal stretches of unflagged 10 s windows whose pace stays in the band, at least minDuration long. */

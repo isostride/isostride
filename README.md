@@ -1,8 +1,8 @@
 # Strideprism
 
-Strideprism analyses your running metrics: pace, heart rate, cadence, ground contact time, vertical oscillation, step length, power and leg spring stiffness. It compares like with like. You define a **block**, meaning a stretch of route, a lap of a workout or a steady fragment. The app finds every instance of it in your history and checks two things:
+Strideprism analyses your running metrics: pace, heart rate, cadence, ground contact time, vertical oscillation, step length, power and leg spring stiffness. It compares like with like. You choose a **block**: a rule such as "the fastest 5 minutes with the heart rate above 160", "laps of 3 to 5 km" or "the runs since March", or a stretch of route or a workout lap the app found in your runs. The app selects every segment the block describes in your history and checks two things:
 
-- **Trend:** whether a metric changes over time within that block.
+- **Analysis:** whether a metric changes over time within that block.
 - **A/B comparison:** whether two groups of instances differ, for example two pairs of shoes, two watches or a technique cue. The answer comes with a 95% interval and the noise level of your own data.
 
 It is an analysis tool, not a training planner.
@@ -31,6 +31,7 @@ The app writes its own data next to your FIT files:
       gear.json                  shoes and heart-rate sensors with dates
       run-tags.json              workout type and technique cue per run
       block-definitions.json     your blocks and their tolerances
+      settings.json              the zones of your metrics
     derived/                     everything computed, rebuildable at any time
       runs/<id>.json             samples per run (columnar JSON)
       runs-index.json            one row per run with its context
@@ -44,12 +45,12 @@ The app writes its own data next to your FIT files:
 
 ## Screens
 
-- **Runs:** import, the list of runs, and tags (workout type, technique cue).
-- **Run:** charts and a map for one run. Select a stretch on the map or a range on a chart to define a block.
-- **Blocks:** suggested blocks (a route segment you ran at least 5 times, or a lap structure found in at least 3 workouts), plus your own blocks and their tolerances.
-- **Trend:** one metric across the instances of a block, raw or corrected for pace, with a noise threshold and a verdict, plus per-minute profiles inside the block.
+- **Runs:** import, and your runs as a calendar of weeks (Monday to Sunday, each run a tile opening it, the week's distance, time, runs and pace at the end of the row) under the weeks at a glance (this week against the 4 weeks before, the distance of the last 12 weeks as bars). *List* shows the table of runs, where you tag them (title, workout type, technique cue, shoes, note).
+- **Run:** everything on one screen: one chart with up to four metrics laid over each other, each line on its own scale, the map and the laps on its right, and under them the min, avg and max of the metrics shown. Zoom with the mouse wheel at the pointer, on the chart or the map; drag the map or the overview strip to move along the run, and the chart follows. What the chart shows is the selection: drag on the chart, scroll, move the map or click a lap, and the statistics below are those of the range shown; the ✕ goes back to the whole run. Make a block of it from the Chart menu. The zones you set in Settings colour each metric's band. The whole view (range, metrics, lines, axis, smoothing, map) is kept in the link and remembered for each run, so a reload or coming back shows it as you left it.
+- **Analysis:** choose the data and analyse it in one place. *+ Add block or run* opens a picker: build a block from a rule (whole runs, laps, the fastest stretch of a length, or a steady stretch; in which runs; what the segment must meet on average and at every moment), with the segments it selects counted as you type; or take one of your kept blocks, a block found in your runs (a route segment you ran at least 5 times, a lap set up in at least 3 workouts), or a single run. Up to four items are compared for several metrics over time, raw or corrected for pace, each block with its trend line, noise threshold and verdict, its segments listed and ranked, and a pace curve with an estimate. A block built from a rule lives in the link; *Save* keeps it in the folder.
 - **A/B comparison:** two groups by shoes, heart-rate source, watch, workout type or technique cue, with the difference, its interval and warnings (too few instances, groups not interleaved in time, mixed watches).
 - **Gear and tags:** shoes and heart-rate sensors with the dates you used them.
+- **Settings:** the zones of each metric (pace as m:ss per km; heart rate zones from your maximum heart rate), kept in `user/settings.json`. The run chart colours them. Until you save your own, default zones for heart rate, pace and cadence apply.
 
 Search with ⌘K or Ctrl+K. The theme is light, dark or follows the system.
 
@@ -78,12 +79,14 @@ Code layout:
 | Path | What |
 |---|---|
 | `app/`, `components/` | pages and UI (main thread) |
-| `workers/pipeline.worker.ts` | the Processing Worker: import, recompute, context, blocks |
+| `workers/pipeline.worker.ts` | the Processing Worker: import, recompute, context, blocks, rules computed on demand, pace curves |
 | `lib/fs` | folder access and the manifest |
 | `lib/ingest` | FIT parsing and import |
 | `lib/prepare` | 10 s windows, route segments |
 | `lib/context` | gear, tags, day state |
-| `lib/blocks` | block definitions, detection, recommendations |
+| `lib/blocks` | block definitions and rules (types and pure helpers) |
+| `lib/detection` | segments of a block in a run, recommendations |
 | `lib/compare`, `lib/stats` | trend, A/B, regression and bootstrap |
+| `lib/curve` | pace curve and its estimate |
 
 All heavy processing runs in the worker. An architecture test fails if main-thread code imports the processing modules.

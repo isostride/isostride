@@ -14,7 +14,7 @@ scope: "holistic"
 trigger: "pull-request"
 ---
 
-The Playwright run measures INP during the journeys' interactions (the trend's metric and correction, the A/B metric) and CLS on every screen, against the static export with the sample data folder in Chromium (e2e/vitals.spec.ts). The web-vitals library is injected by the test only and reports through the page, never over the network.
+The Playwright run measures INP during the journeys' interactions (the trend's metric and correction, the A/B metric, and on the run chart a metric turned off and on, the scale of another, a lap selected and zoomed to, the selection closed) and CLS on every screen, against the static export with the sample data folder in Chromium (e2e/vitals.spec.ts). The web-vitals library is injected by the test only and reports through the page, never over the network.
 
 Threshold: per journey, INP within 200 ms and CLS at most 0.1; 0 measurements sent over the network
 

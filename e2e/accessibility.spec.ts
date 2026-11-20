@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { nav, recordMeasure, setUpWithBlock } from './support';
+import { nav, openPicker, openRun, recordMeasure, setUpWithBlock } from './support';
 
 /** WCAG 2.2 AA rules axe checks automatically (ADR "Built with React"). */
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -19,15 +19,23 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       await page.emulateMedia({ colorScheme: scheme });
       if (scheme === 'light') await setUpWithBlock(page);
       else await page.reload();
-      for (const screen of ['Runs', 'Blocks', 'Analysis', 'A/B comparison', 'Gear and tags']) {
+      for (const screen of ['Runs', 'Analysis', 'A/B comparison', 'Gear and tags', 'Settings']) {
         await nav(page, screen);
         await page.getByRole('heading', { level: 1, name: screen }).waitFor();
         await page.waitForTimeout(200);
         found.push(...(await serious(page, `${screen} (${scheme})`)));
       }
+      // The picker of the Analysis screen: its list, and the block builder with the segments counted.
+      await nav(page, 'Analysis');
+      const dialog = await openPicker(page);
+      found.push(...(await serious(page, `Picker list (${scheme})`)));
+      await dialog.getByRole('tab', { name: 'New block' }).click();
+      await dialog.locator('.preview-count', { hasText: /segments? in/ }).waitFor({ timeout: 30_000 });
+      found.push(...(await serious(page, `Block builder (${scheme})`)));
+      await page.keyboard.press('Escape');
       await nav(page, 'Runs');
-      await page.locator('tr.row').first().click();
-      await page.getByRole('img', { name: 'Pace · min/km', exact: true }).waitFor();
+      await openRun(page);
+      await page.getByRole('img', { name: /^Run metrics · / }).waitFor();
       found.push(...(await serious(page, `Run (${scheme})`)));
     }
     await recordMeasure('a11ySeriousViolations', found.length);

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { GEAR_AUTUMN, fitFiles, nav, readText, setUpWithBlock } from './support';
+import { GEAR_AUTUMN, fitFiles, nav, openPicker, readText, setUpWithBlock } from './support';
 
 const opened = (page: Page) => page.evaluate(() => (window as any).__opened as string[]);
 const RUN_FILE = /^\d{8}-\d{6}\.json$/;
@@ -17,6 +17,8 @@ test.describe('Denormalized index files', () => {
     expect(new Set(instances.map((i: any) => i.context.run.shoes))).toEqual(new Set(['Shoes May', 'Shoes June']));
 
     // Analysis of a block and an A/B comparison split by shoes read the index files, no run file.
+    await nav(page, 'Runs');
+    await page.getByRole('heading', { level: 1, name: 'Runs' }).waitFor();
     await page.evaluate(() => { (window as any).__opened.length = 0; });
     await nav(page, 'Analysis');
     await page.getByRole('button', { name: 'Pace', exact: true }).click();
@@ -49,12 +51,10 @@ test.describe('Show trend', () => {
 test.describe('Analysis workspace', () => {
   test('Blocks and a run compared, several metrics', async ({ page }) => {
     await setUpWithBlock(page, { files: fitFiles(200, '2026-08-03'), gear: GEAR_AUTUMN, block: /^1\.0 km northeast/ });
-    // A second block: the first suggestion left.
-    const second = page.locator('.block-card.suggested').first();
-    const secondName = (await second.locator('.title').textContent())!;
-    await second.getByRole('button', { name: 'Accept' }).click();
-    await expect(page.locator('.block-card:not(.suggested)')).toHaveCount(2, { timeout: 30_000 });
-    await nav(page, 'Analysis');
+    // A second block for later: the first suggestion left.
+    const picker = await openPicker(page);
+    const secondName = (await picker.locator('.palette-row', { has: page.getByRole('button', { name: /^Dismiss / }) }).first().locator('.palette-item span').first().textContent())!;
+    await page.keyboard.press('Escape');
     const chips = page.locator('.item-chip');
     await expect(chips).toHaveCount(1);
 
@@ -76,7 +76,7 @@ test.describe('Analysis workspace', () => {
     // The table of changes: one row per block, one column per metric, each with its verdict.
     const table = page.getByRole('table', { name: 'Changes' });
     await expect(table.getByRole('row')).toHaveCount(2);
-    await expect(table.getByRole('columnheader')).toHaveText(['Item', 'Pace', 'Heart rate']);
+    await expect(table.getByRole('columnheader')).toHaveText(['Block', 'Pace', 'Heart rate']);
     await expect(table.getByText(/no detectable change|^change ·/).first()).toBeVisible();
     // Switching off the joined points and the trend line hides them on every chart.
     await page.getByRole('checkbox', { name: 'Join points' }).uncheck();
@@ -90,14 +90,14 @@ test.describe('Analysis workspace', () => {
 
     // Add a run and a second block through the picker.
     const add = async (search: string) => {
-      await page.getByRole('button', { name: '+ Add block or run' }).click();
-      const dialog = page.getByRole('dialog', { name: 'Add block or run' });
+      const dialog = await openPicker(page);
       await dialog.getByRole('textbox').fill(search);
-      await dialog.getByRole('option').first().click();
+      await dialog.locator('.palette-item').first().click();
     };
     await add('Nov 9');
+    await expect(chips).toHaveCount(2);
     await add(secondName);
-    await expect(chips).toHaveCount(3);
+    await expect(chips).toHaveCount(3, { timeout: 30_000 });
     const runChip = chips.filter({ hasText: /^Run / });
     const runColour = await runChip.locator('svg :is(circle, rect, polygon)').getAttribute('fill');
 

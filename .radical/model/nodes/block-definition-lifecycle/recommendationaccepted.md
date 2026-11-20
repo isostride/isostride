@@ -5,4 +5,4 @@ label: "RecommendationAccepted"
 source: "external"
 ---
 
-The user accepts a recommended definition on the Blocks screen.
+The user takes a recommended definition in the picker of the Analysis screen.

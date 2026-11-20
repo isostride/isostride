@@ -1,12 +1,25 @@
 'use client';
 
+import Link from 'next/link';
+import { useWidth } from '@/components';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Fragment, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useOpenFolder, runInWorker, watchJob } from '@/lib/client';
 import { PATHS, readJson, isOutdated, readManifest, type Manifest } from '@/lib/fs';
 import { type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { date, duration, km, pace, time } from '@/lib/format';
 import { readGear, type Gear, readRunTags, writeRunTags, type RunTag, type RunTagsFile } from '@/lib/gear';
+import { isoWeek, monthsOf, weeksOf, type LogWeek } from '@/lib/log';
+
+/** The view of the Runs screen, remembered in the browser. */
+const VIEW_KEY = 'strideprism.runsView';
+const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const dayNumber = (d: string) => Number(d.slice(8));
+const shortDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+const monthName = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+/** A week's dates: "21–27 Sept", or "28 Sept – 4 Oct" across two months. */
+const weekDates = (a: string, b: string) => (a.slice(0, 7) === b.slice(0, 7) ? `${dayNumber(a)}–${shortDate(b)}` : `${shortDate(a)} – ${shortDate(b)}`);
+const kmOf = (m: number) => (m / 1000).toFixed(m >= 100000 ? 0 : 1);
 
 /** Runs: the imported runs, the import with its progress, and the files that could not be imported. */
 export default function RunsPageWrapper() {
@@ -25,6 +38,10 @@ function RunsPage() {
   const [gear, setGear] = useState<Gear[]>([]);
   const [tags, setTags] = useState<RunTagsFile | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
+  /** the calendar of weeks (the default) or the table of runs */
+  const [view, setView] = useState<'calendar' | 'list'>('calendar');
+  useEffect(() => { try { if (localStorage.getItem(VIEW_KEY) === 'list') setView('list'); } catch { /* the default */ } }, []);
+  const choose = (v: 'calendar' | 'list') => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* not kept */ } };
 
   const load = useCallback(async () => {
     setIndex(await readJson<RunsIndex>(folder, PATHS.runsIndex));
@@ -86,13 +103,20 @@ function RunsPage() {
   const runs = [...(index?.runs ?? [])].reverse();
   const failed = Object.entries(manifest?.files ?? {}).filter(([, s]) => s.status === 'error') as [string, { status: 'error'; reason: string }][];
   const totalKm = runs.reduce((a, r) => a + r.distance, 0) / 1000;
-  const devices = [...new Set(runs.map((r) => r.device))];
+  const weeks = useMemo(() => weeksOf(index?.runs ?? []), [index]);
 
   return (
-    <div className="page">
+    <div className="page wide-page">
       <div className="page-head">
         <h1>Runs</h1>
         <span className="spacer" />
+        {runs.length > 0 && (
+          <div className="segmented" role="radiogroup" aria-label="View">
+            {([['calendar', 'Calendar'], ['list', 'List']] as const).map(([k, l]) => (
+              <button key={k} type="button" role="radio" aria-checked={view === k} className={view === k ? 'on' : ''} onClick={() => choose(k)}>{l}</button>
+            ))}
+          </div>
+        )}
         <button className="btn" onClick={() => confirm('Rebuild all derived data from the FIT files? Your gear, tags and block definitions stay as they are.') && start('recompute')} disabled={!!progress}>
           Recompute everything
         </button>
@@ -116,14 +140,7 @@ function RunsPage() {
       )}
       {message && <div className="banner">{message}</div>}
 
-      {runs.length > 0 && (
-        <div className="stats card">
-          <div className="stat"><div className="v">{runs.length}</div><div className="l">runs</div></div>
-          <div className="stat"><div className="v">{totalKm.toFixed(0)} km</div><div className="l">total distance</div></div>
-          <div className="stat"><div className="v">{date(runs[runs.length - 1].startTime)}</div><div className="l">first run</div></div>
-          <div className="stat"><div className="v">{devices.length}</div><div className="l">{devices.join(', ')}</div></div>
-        </div>
-      )}
+      {runs.length > 0 && <WeeksAtAGlance weeks={weeks} runs={runs.length} totalKm={totalKm} since={runs[runs.length - 1].startTime} />}
 
       {failed.length > 0 && (
         <div className="banner err">
@@ -132,6 +149,7 @@ function RunsPage() {
         </div>
       )}
 
+      {runs.length > 0 && view === 'calendar' ? <Calendar weeks={weeks} /> : (
       <div className="card">
         {runs.length === 0 ? (
           <div className="empty">{index ? 'No runs yet.' : 'Nothing imported yet.'} Put your COROS FIT files in this folder (or its fit/ subfolder) and press <b>Import folder</b>.</div>
@@ -177,7 +195,119 @@ function RunsPage() {
           </table>
         )}
       </div>
+      )}
     </div>
+  );
+}
+
+/**
+ * The weeks at a glance ("statystyki na tydzien ?"): this week against the average of the 4 weeks
+ * before, all the runs, and the distance of the last 12 weeks as bars, the current one marked.
+ */
+function WeeksAtAGlance({ weeks, runs, totalKm, since }: { weeks: LogWeek[]; runs: number; totalKm: number; since: string }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const [box, width] = useWidth();
+  const now = weeks[0];
+  const before = weeks.slice(1, 5);
+  const avg = before.length ? before.reduce((a, w) => a + w.distance, 0) / before.length : 0;
+  const bars = weeks.slice(0, 12).reverse();
+  const max = Math.max(1, ...bars.map((w) => w.distance));
+  const W = width;
+  const H = 96;
+  const bw = W / 12;
+  const change = avg ? Math.round(((now.distance - avg) / avg) * 100) : null;
+  return (
+    <section className="card glance" aria-label="Weeks at a glance">
+      <div className="glance-figures">
+        <div className="glance-now">
+          <span className="muted small">{now.current ? 'This week' : `Week of ${shortDate(now.start)}`}</span>
+          <b className="tnum">{kmOf(now.distance)} km</b>
+          <span className="muted small tnum">{duration(now.duration)} · {now.count} run{now.count === 1 ? '' : 's'}{change !== null && ` · ${change >= 0 ? '+' : '−'}${Math.abs(change)} % vs 4-week avg`}</span>
+        </div>
+        <dl className="glance-dl">
+          <div><dt>4-week average</dt><dd className="tnum">{kmOf(avg)} km / week</dd></div>
+          <div><dt>All runs</dt><dd className="tnum">{runs} runs · {totalKm.toFixed(0)} km</dd></div>
+          <div><dt>Since</dt><dd>{date(since)}</dd></div>
+        </dl>
+      </div>
+      <div ref={box} className="glance-chart">
+        <svg width={W} height={H + 18} role="img" aria-label={`Distance of the last ${bars.length} weeks: ${bars.map((w) => `${shortDate(w.start)} ${kmOf(w.distance)} km`).join(', ')}`} onMouseLeave={() => setHover(null)}>
+          <line x1={0} x2={W} y1={H} y2={H} stroke="var(--axis)" strokeWidth="1" />
+          {bars.map((w, i) => {
+            const h = (w.distance / max) * (H - 14);
+            return (
+              <g key={w.start} className="glance-bar" onMouseEnter={() => setHover(i)}>
+                <rect x={i * bw} y={0} width={bw} height={H} fill="transparent" />
+                {w.distance > 0 && <rect x={i * bw + Math.max(4, bw * 0.18)} y={H - h} width={bw - 2 * Math.max(4, bw * 0.18)} height={h} rx="3" fill={w.current ? 'var(--accent)' : 'var(--series-1)'} opacity={hover === null || hover === i ? 1 : 0.55} />}
+                {(W > 640 || i % 3 === 2 || w.current) && <text x={i === bars.length - 1 ? W - 2 : i * bw + bw / 2} y={H + 13} fontSize="9.5" textAnchor={i === bars.length - 1 ? 'end' : 'middle'} fill="var(--muted)">{shortDate(w.start)}</text>}
+              </g>
+            );
+          })}
+          {hover !== null && (() => {
+            const w = bars[hover];
+            const x = Math.min(W - 70, Math.max(70, hover * bw + bw / 2));
+            return <text x={x} y={11} fontSize="11" fontWeight="600" textAnchor="middle" fill="var(--text)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke">{shortDate(w.start)} · {kmOf(w.distance)} km · {w.count} run{w.count === 1 ? '' : 's'}</text>;
+          })()}
+        </svg>
+        <span className="muted small">Distance per week, the last {bars.length} weeks</span>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * The calendar of runs ("moze kalendarz ?"): a row per week, newest first, Monday to Sunday, each
+ * run a tile in its day opening the run, the month named where it begins, the week's totals at the end.
+ */
+function Calendar({ weeks }: { weeks: LogWeek[] }) {
+  const today = new Date();
+  const todayDay = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  // The weeks grouped by month ("miesiac pokazuj lepiej ... pogrupowac wiersze").
+  const months = monthsOf(weeks);
+  return (
+    <section className="card calendar" aria-label="Calendar of runs">
+      <div className="cal-row cal-head" aria-hidden="true">
+        <span>Week</span>
+        {DAY_NAMES.map((d) => <span key={d}>{d}</span>)}
+        <span>Total</span>
+      </div>
+      {months.map((m) => (
+        <div key={m.month} className="cal-month" data-month={m.month}>
+          <div className="cal-month-band">
+            <h3>{monthName(`${m.month}-01`)}</h3>
+            {m.count > 0 ? (
+              <span className="muted tnum">{kmOf(m.distance)} km · {duration(m.duration)} · {m.count} run{m.count === 1 ? '' : 's'}</span>
+            ) : <span className="muted">no runs</span>}
+          </div>
+          {m.weeks.map((w) => (
+            <div key={w.start} className={`cal-row cal-week ${w.current ? 'current' : ''}`} data-week={w.start}>
+              <span className="cal-week-name"><b>W{isoWeek(w.start)}</b><span className="muted">{weekDates(w.start, w.days[6].date)}</span></span>
+              {w.days.map((d) => (
+                <div key={d.date} className={`cal-day ${d.date === todayDay ? 'today' : ''} ${d.date.slice(0, 7) !== m.month ? 'other' : ''}`}>
+                  <span className="cal-date">{dayNumber(d.date)}</span>
+                  {d.runs.map((r) => (
+                    <Link key={r.id} href={`/run?id=${r.id}`} className="run-tile" title={[r.title, r.workoutType, r.note].filter(Boolean).join(' · ') || undefined}>
+                      <b className="tnum">{kmOf(r.distance)} km</b>
+                      <span className="tnum">{duration(r.duration)} · {pace(r.avgSpeed)}</span>
+                      {(r.title || r.workoutType) && <span className="run-tile-tag">{r.title ?? r.workoutType}</span>}
+                    </Link>
+                  ))}
+                </div>
+              ))}
+              <div className="cal-total">
+                {w.count ? (
+                  <>
+                    <b className="tnum">{kmOf(w.distance)} km</b>
+                    <span className="muted tnum">{duration(w.duration)} · {w.count} run{w.count === 1 ? '' : 's'}</span>
+                    <span className="muted tnum">{pace(w.distance / w.duration)} /km{w.heartRate ? ` · ${Math.round(w.heartRate)} bpm` : ''}</span>
+                  </>
+                ) : <span className="muted small">rest</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </section>
   );
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
-import type { MetricKey, RunSet, Series } from '@/lib/ask';
+import type { BlockDefinition, BlockInstance } from '@/lib/blocks';
+import type { CurvePoint, CurveSource } from '@/lib/curve';
 import type { WorkerEvent, WorkerJob, WorkerRequest } from '@/workers';
 
 export type DoneEvent = Extract<WorkerEvent, { type: 'done' }>;
@@ -66,15 +67,22 @@ function start(request: WorkerRequest, onProgress?: Progress, signal?: AbortSign
 }
 
 /** Runs one job in a fresh Processing Worker; resolves when it is done. */
-export async function runInWorker(job: Exclude<WorkerJob, 'series'>, handle: FileSystemDirectoryHandle, onProgress?: Progress): Promise<DoneEvent> {
+export async function runInWorker(job: Exclude<WorkerJob, 'instances' | 'curve'>, handle: FileSystemDirectoryHandle, onProgress?: Progress): Promise<DoneEvent> {
   const m = await start({ type: job, handle }, onProgress);
   if (m.type !== 'done') throw new Error(`unexpected ${m.type}`);
   return m;
 }
 
-/** The series of a run set for the metrics given, computed in the Processing Worker (it reads every run of the set once). */
-export async function seriesInWorker(set: RunSet, keys: MetricKey[], handle: FileSystemDirectoryHandle, onProgress?: Progress, signal?: AbortSignal): Promise<Record<string, Series>> {
-  const m = await start({ type: 'series', handle, set, keys }, onProgress, signal);
-  if (m.type !== 'series') throw new Error(`unexpected ${m.type}`);
-  return m.series;
+/** The instances of blocks that are not kept (being built, or living in a link), computed now in the Processing Worker. */
+export async function instancesInWorker(defs: BlockDefinition[], handle: FileSystemDirectoryHandle, onProgress?: Progress, signal?: AbortSignal): Promise<Record<string, BlockInstance[]>> {
+  const m = await start({ type: 'instances', handle, defs }, onProgress, signal);
+  if (m.type !== 'instances') throw new Error(`unexpected ${m.type}`);
+  return m.instances;
+}
+
+/** The pace curves of the stretches given, computed in the Processing Worker (it reads each run named once). */
+export async function curvesInWorker(sources: CurveSource[], handle: FileSystemDirectoryHandle, onProgress?: Progress, signal?: AbortSignal): Promise<Record<string, CurvePoint[]>> {
+  const m = await start({ type: 'curve', handle, sources }, onProgress, signal);
+  if (m.type !== 'curves') throw new Error(`unexpected ${m.type}`);
+  return m.curves;
 }

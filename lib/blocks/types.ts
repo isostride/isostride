@@ -1,34 +1,76 @@
 /** Block definitions and instances (spec sections 2, 3 and 5). */
 
-export type BlockType = 'route' | 'structure' | 'steady' | 'effort' | 'tag' | 'pattern' | 'criteria';
-
-/** Whether criteria pick whole runs or laps within them (the author's choice of 19 Nov 2026). */
-export type CriteriaScope = 'run' | 'lap';
+export type BlockType = 'route' | 'structure' | 'steady' | 'effort' | 'tag' | 'pattern' | 'rule';
 
 /**
- * The runner's own criteria for a block, combined with "and"; a null or empty criterion is not
- * checked. Distance in m, pace in s/km, duration in s, dates as YYYY-MM-DD (local).
+ * A block defined in Analysis by a rule (the author's remodelling of 19 Nov 2026: "wybieram dane
+ * - czyli tworze np bloki - najszybsze 5 min przy tetnie powyzej 160 ... system wybiera mi
+ * wszystkie segmenty i je uzywa"): which runs, the shape of a segment within them, the conditions
+ * a segment must meet, how many per run, and the statistic its metrics are read by.
  */
-export interface Criteria {
+
+/** Which runs a rule draws from; an empty criterion is not checked. Dates as YYYY-MM-DD (local). */
+export interface RunFilter {
+  dateFrom: string | null;
+  dateTo: string | null;
   /** the run's title contains this text (case-insensitive) */
   title: string;
-  distanceMin: number | null;
-  distanceMax: number | null;
-  paceMin: number | null;
-  paceMax: number | null;
-  durationMin: number | null;
-  durationMax: number | null;
   workoutTypes: string[];
   techniqueCues: string[];
   shoes: string[];
   heartRateSources: string[];
-  dateFrom: string | null;
-  dateTo: string | null;
   devices: string[];
-  heartRateMin: number | null;
-  heartRateMax: number | null;
+  /** laps recorded in the run */
   lapsMin: number | null;
   lapsMax: number | null;
+}
+
+/** The shape of a segment: the whole run, each lap, the fastest stretch of a length, or a stretch that keeps the conditions for a time. */
+export type RuleShape =
+  | { type: 'run' }
+  | { type: 'lap' }
+  | { type: 'fastest'; kind: 'time' | 'distance'; /** s or m */ target: number }
+  | { type: 'steady'; /** s */ minDuration: number };
+
+/**
+ * What a segment must meet to be an instance; null = not checked. Pace in s/km, distance in m,
+ * duration in s. "On average" over the segment; "always" in each of its 10 s windows.
+ */
+export interface Conditions {
+  paceMin: number | null;
+  paceMax: number | null;
+  hrMin: number | null;
+  hrMax: number | null;
+  distanceMin: number | null;
+  distanceMax: number | null;
+  durationMin: number | null;
+  durationMax: number | null;
+  alwaysHrMin: number | null;
+  alwaysHrMax: number | null;
+  alwaysPaceMin: number | null;
+  alwaysPaceMax: number | null;
+  /** how the segment starts: right after a stop, on the move, or either */
+  start: BlockStart;
+}
+
+/** The fastest qualifying segment of each run, or every one. */
+export type Pick = 'best' | 'all';
+
+/**
+ * The statistic a segment's metrics are read by ("avg, min, max, mediana"): the average over its
+ * moving samples, or the median, minimum or maximum over its 10 s windows with movement, so one
+ * odd sample is no extreme.
+ */
+export type Stat = 'avg' | 'median' | 'min' | 'max';
+export const STATS: Stat[] = ['avg', 'median', 'min', 'max'];
+export const STAT_LABEL: Record<Stat, string> = { avg: 'average', median: 'median', min: 'minimum', max: 'maximum' };
+
+export interface Rule {
+  runs: RunFilter;
+  shape: RuleShape;
+  conditions: Conditions;
+  pick: Pick;
+  stat: Stat;
 }
 
 export interface RefPoint {
@@ -47,8 +89,8 @@ export type BlockParams =
   | { type: 'tag'; workoutType: string }
   /** runs whose laps follow one layout; its effort laps are the instances */
   | { type: 'pattern'; laps: PatternLap[]; tolerance: number }
-  /** the runs (or the laps) that meet the runner's own criteria */
-  | { type: 'criteria'; criteria: Criteria; scope: CriteriaScope };
+  /** the segments a rule selects */
+  | ({ type: 'rule' } & Rule);
 
 /** One lap of a lap pattern: set by time or distance, or free (a warm-up to a point, the last lap); effort laps are compared. */
 export interface PatternLap {
@@ -99,10 +141,10 @@ export const DEFAULT_TOLERANCES: Tolerances = {
 };
 
 /**
- * Tolerances of a criteria block: the criteria decide, so the general conditions are off
+ * Tolerances of a rule block: the rule's conditions decide, so the general conditions are off
  * (model's choice: grade up to 100 %, CV up to 1, no check of the effort before, any pace).
  */
-export const CRITERIA_TOLERANCES: Tolerances = { ...DEFAULT_TOLERANCES, paceMin: null, paceMax: null, gradeMax: 1, cvMax: 1, effortBeforeMax: null };
+export const RULE_TOLERANCES: Tolerances = { ...DEFAULT_TOLERANCES, paceMin: null, paceMax: null, gradeMax: 1, cvMax: 1, effortBeforeMax: null };
 
 /** Minimum block length: shorter fragments are rejected for every metric (one decision per run). */
 export const MIN_SECONDS = { block: 60 } as const;

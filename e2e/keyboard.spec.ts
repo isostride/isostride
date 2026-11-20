@@ -35,15 +35,16 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
     await tabTo(page, 'button', 'Import folder');
     await page.keyboard.press('Enter');
     await expect(page.getByText(/^Imported \d+ runs?/)).toBeVisible({ timeout: 60_000 });
-    // Block definition: accept the first suggestion.
-    await tabTo(page, 'link', /Blocks$/);
-    await page.keyboard.press('Enter');
-    await tabTo(page, 'button', 'Accept');
-    await page.keyboard.press('Space');
-    await expect(page.locator('.block-card:not(.suggested)')).toHaveCount(1, { timeout: 30_000 });
-    // Analysis for pace.
+    // Block definition: on the Analysis screen, the picker opens with the search focused; Enter takes the first block found in the runs.
     await tabTo(page, 'link', /Analysis$/);
     await page.keyboard.press('Enter');
+    await tabTo(page, 'button', '+ Add block or run');
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('textbox', { name: 'Search blocks and runs' })).toBeFocused();
+    await page.keyboard.type('km');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.item-chip')).toHaveCount(1, { timeout: 30_000 });
+    // Analysis for pace.
     await tabTo(page, 'button', 'Pace');
     await page.keyboard.press('Enter');
     await expect(page.getByRole('heading', { level: 1, name: 'Analysis' })).toBeVisible();

@@ -2,32 +2,35 @@
 
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Suspense, useEffect, useMemo, useState } from 'react';
-import { LANE, LineChart, RouteMap, clock, useWidth } from '@/components';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, type Domain, type MapCamera, type RunLine, type RunMark, type RunView } from '@/components';
 import { useOpenFolder, runInWorker } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
-import { canDefineFromLaps, definitionFromLaps, efficiencyOf, definitionFromSelection, readDefinitions, selectionOptions, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockType } from '@/lib/blocks';
+import { canDefineFromLaps, definitionFromLaps, efficiencyOf, definitionFromSelection, rangeStats, readDefinitions, selectionOptions, zoneShares, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockType } from '@/lib/blocks';
 import { date, duration, km, pace, time } from '@/lib/format';
+import { readSettings, zoneOf, zoneShade } from '@/lib/settings';
 
 type WindowKey = 'speed' | 'efficiency' | 'effortPace' | 'heartRate' | 'cadence' | 'groundContactTime' | 'verticalOscillation' | 'stepLength' | 'power' | 'altitude' | 'legSpringStiffness';
 const round0 = (unit: string) => (v: number) => `${Math.round(v)} ${unit}`;
-/** The metrics a run can show, in the order of the stack; the first four show by default. */
+/** The metrics a run can show, in the order of the picker; the first four show by default. */
 const int = (v: number, d = 0) => v.toFixed(d);
 /** Pace in s/km as m:ss. */
+/** Round steps of a pace axis, s/km: 0:05 up to 5:00. */
+const PACE_STEPS = [5, 10, 15, 30, 60, 120, 300];
 const mmss = (v: number) => { const r = Math.round(v); return `${Math.floor(r / 60)}:${String(r % 60).padStart(2, '0')}`; };
-const METRICS: { key: WindowKey; title: string; unit: string; format: (v: number) => string; tick: (v: number, d?: number) => string; minSpan: number; invert?: boolean }[] = [
-  { key: 'speed', title: 'Pace', unit: 'min/km', format: (v) => `${mmss(v)} /km`, tick: mmss, minSpan: 20, invert: true },
-  { key: 'heartRate', title: 'Heart rate', unit: 'bpm', format: round0('bpm'), tick: int, minSpan: 10 },
-  { key: 'cadence', title: 'Cadence', unit: 'spm', format: round0('spm'), tick: int, minSpan: 6 },
-  { key: 'groundContactTime', title: 'Ground contact time', unit: 'ms', format: round0('ms'), tick: int, minSpan: 20 },
-  { key: 'efficiency', title: 'Efficiency', unit: 'm per heartbeat, 1 min means', format: (v) => `${v.toFixed(2)} m/beat`, tick: (v, d = 2) => v.toFixed(Math.max(2, d)), minSpan: 0.1 },
-  { key: 'effortPace', title: 'Effort pace', unit: 'min/km, grade-adjusted', format: (v) => `${mmss(v)} /km`, tick: mmss, minSpan: 20, invert: true },
-  { key: 'verticalOscillation', title: 'Vertical oscillation', unit: 'mm', format: round0('mm'), tick: int, minSpan: 10 },
-  { key: 'stepLength', title: 'Step length', unit: 'mm', format: round0('mm'), tick: int, minSpan: 60 },
-  { key: 'power', title: 'Power', unit: 'W', format: round0('W'), tick: int, minSpan: 20 },
-  { key: 'legSpringStiffness', title: 'Leg spring stiffness', unit: 'kN/m', format: (v) => `${v.toFixed(1)} kN/m`, tick: (v, d = 1) => v.toFixed(Math.max(1, d)), minSpan: 1 },
-  { key: 'altitude', title: 'Elevation', unit: 'm', format: round0('m'), tick: int, minSpan: 10 },
+const METRICS: { key: WindowKey; title: string; short: string; unit: string; format: (v: number) => string; tick: (v: number, d?: number) => string; minSpan: number; invert?: boolean; steps?: number[] }[] = [
+  { key: 'speed', title: 'Pace', short: 'Pace', unit: 'min/km', format: (v) => `${mmss(v)} /km`, tick: mmss, minSpan: 20, invert: true, steps: PACE_STEPS },
+  { key: 'heartRate', title: 'Heart rate', short: 'HR', unit: 'bpm', format: round0('bpm'), tick: int, minSpan: 10 },
+  { key: 'cadence', title: 'Cadence', short: 'Cadence', unit: 'spm', format: round0('spm'), tick: int, minSpan: 6 },
+  { key: 'groundContactTime', title: 'Ground contact time', short: 'GCT', unit: 'ms', format: round0('ms'), tick: int, minSpan: 20 },
+  { key: 'efficiency', title: 'Efficiency', short: 'Effic.', unit: 'm per heartbeat, 1 min means', format: (v) => `${v.toFixed(2)} m/beat`, tick: (v, d = 2) => v.toFixed(Math.max(2, d)), minSpan: 0.1 },
+  { key: 'effortPace', title: 'Effort pace', short: 'Effort', unit: 'min/km, grade-adjusted', format: (v) => `${mmss(v)} /km`, tick: mmss, minSpan: 20, invert: true, steps: PACE_STEPS },
+  { key: 'verticalOscillation', title: 'Vertical oscillation', short: 'Vert. osc.', unit: 'mm', format: round0('mm'), tick: int, minSpan: 10 },
+  { key: 'stepLength', title: 'Step length', short: 'Step', unit: 'mm', format: round0('mm'), tick: int, minSpan: 60 },
+  { key: 'power', title: 'Power', short: 'Power', unit: 'W', format: round0('W'), tick: int, minSpan: 20 },
+  { key: 'legSpringStiffness', title: 'Leg spring stiffness', short: 'LSS', unit: 'kN/m', format: (v) => `${v.toFixed(1)} kN/m`, tick: (v, d = 1) => v.toFixed(Math.max(1, d)), minSpan: 1 },
+  { key: 'altitude', title: 'Elevation', short: 'Elev.', unit: 'm', format: round0('m'), tick: int, minSpan: 10 },
 ];
 
 /**
@@ -57,21 +60,48 @@ function forDrawing(v: (number | null)[], stopped: boolean[]): (number | null)[]
     return n[Math.floor(n.length / 2)];
   });
 }
-/** The value of a series at a time: that of the last window begun by then. */
-function valueAt(x: number[], v: (number | null)[], at: number): number | null {
-  let best = -1;
-  for (let i = 0; i < x.length; i++) if (x[i] <= at) best = i;
-  return best >= 0 ? v[best] : null;
+/** The metrics shown, at most 4: a slot each, the slot giving the colour, so a metric keeps its colour while shown. */
+const SLOTS_KEY = 'strideprism.runChart';
+const SLOT_COUNT = 4;
+const LAYOUT_KEY = 'strideprism.runChartLayout';
+const BLOCKS_KEY = 'strideprism.runChartBlocks';
+const AXIS_KEY = 'strideprism.runChartAxis';
+const SMOOTH_KEY = 'strideprism.runChartSmooth';
+const DEFAULT_SLOTS: (WindowKey | null)[] = ['speed', 'heartRate', 'cadence', 'groundContactTime'];
+const KEYS = new Set<string>(METRICS.map((m) => m.key));
+/** The least and the most height of the chart's plot, px. */
+const MIN_CHART = 180;
+const MAX_CHART = 560;
+
+/** The key of a run's remembered view in the browser. */
+const viewKey = (id: string) => `strideprism.runView.${id}`;
+
+/** The last choices made on any run: the base of a run opened with nothing in its link nor memory. */
+function lastChoices(): RunView {
+  const v: RunView = { range: null, slots: DEFAULT_SLOTS, focus: null, layout: 'bands', axis: 'time', smooth: true, blocks: false, map: null };
+  try {
+    const saved = JSON.parse(localStorage.getItem(SLOTS_KEY) ?? 'null');
+    if (Array.isArray(saved) && saved.length === SLOT_COUNT && saved.every((k) => k === null || KEYS.has(k))) v.slots = saved;
+    if (localStorage.getItem(LAYOUT_KEY) === 'overlay') v.layout = 'overlay';
+    if (localStorage.getItem(BLOCKS_KEY) === 'on') v.blocks = true;
+    if (localStorage.getItem(AXIS_KEY) === 'distance') v.axis = 'distance';
+    if (localStorage.getItem(SMOOTH_KEY) === 'raw') v.smooth = false;
+  } catch { /* the defaults */ }
+  return v;
 }
-const SHOWN_KEY = 'strideprism.runMetrics';
-const DEFAULT_SHOWN: WindowKey[] = ['speed', 'heartRate', 'cadence', 'groundContactTime'];
 
 export default function RunPageWrapper() {
   return (
     <Suspense>
-      <RunPage />
+      <RunOf />
     </Suspense>
   );
+}
+
+/** One page per run: opening another run starts from its own view. */
+function RunOf() {
+  const id = useSearchParams().get('id') ?? '';
+  return <RunPage key={id} />;
 }
 
 /** Run: metrics over time on 10 s windows, the route, laps and quality-flagged windows. */
@@ -80,33 +110,92 @@ function RunPage() {
   const id = params.get('id') ?? '';
   const { folder, handle } = useOpenFolder();
   const router = useRouter();
-  // A stretch named in the link (an answer's fastest 10 min) opens selected.
-  const [selection, setSelection] = useState<{ from: number; to: number } | null>(() => {
-    const from = Number(params.get('from'));
-    const to = Number(params.get('to'));
-    return from >= 0 && to > from ? { from, to } : null;
-  });
   const [creating, setCreating] = useState(false);
   const [run, setRun] = useState<RunFile | null | undefined>(undefined);
   const [title, setTitle] = useState<string | null>(null);
   const [cursor, setCursor] = useState<number | null>(null);
   const [blocks, setBlocks] = useState<(BlockInstance & { name: string })[]>([]);
-  const [shown, setShown] = useState<WindowKey[]>(DEFAULT_SHOWN);
-  const [lanes, lanesWidth] = useWidth();
+  /** the zones of the metrics, from the settings */
+  const [zones, setZones] = useState<Record<string, number[]>>({});
+  // The view the page opens with ("chce aby wszystko bylo endkodowane w url"): the link's, then the
+  // run's memory, then the last choices made on any run.
+  const [start] = useState<RunView>(() => {
+    let memory: URLSearchParams | null = null;
+    try { const m = localStorage.getItem(viewKey(id)); if (m) memory = new URLSearchParams(m); } catch { /* none */ }
+    return viewFromParams(mergeParams(new URLSearchParams(params.toString()), memory), lastChoices(), KEYS);
+  });
+  const [slots, setSlots] = useState<(WindowKey | null)[]>(start.slots as (WindowKey | null)[]);
+  const [focus, setFocus] = useState<string | null>(start.focus);
+  /**
+   * The range of time drawn, which is also the selection ("tak zmerguj"): the statistics, the marks,
+   * the trend and the blocks work on it; null: the whole run. A stretch named in the link (a
+   * segment opened from Analysis) opens as it.
+   */
+  const [zoom, setZoom] = useState<Domain | null>(start.range);
+  const selection = zoom ? { from: zoom[0], to: zoom[1] } : null;
+  /** the range shown was set by moving the map by hand: the map is not fitted back to it */
+  const [mapLed, setMapLed] = useState(start.map !== null);
+  /** the camera of the map moved by hand, for the link */
+  const [mapCam, setMapCam] = useState<MapCamera | null>(start.map);
+  /** each line in its own band (the default) or all over the whole height */
+  const [layout, setLayout] = useState<'bands' | 'overlay'>(start.layout);
+  /** the kept blocks drawn on the chart: off by default ("jest to nieczytelne"), or the one pointed at in the list */
+  const [showBlocks, setShowBlocks] = useState(start.blocks);
+  /** the x axis: by time (the default) or by distance */
+  const [axis, setAxis] = useState<'time' | 'distance'>(start.axis);
+  /** the lines smoothed by a rolling mean that follows the zoom (the default), or the raw windows */
+  const [smooth, setSmooth] = useState(start.smooth);
+  /** a statistic pointed at in the table, lit on the chart */
+  const [hot, setHot] = useState<{ key: string; stat: 'min' | 'avg' | 'max' } | null>(null);
+  /** the chart menu from the right ("dodatkowe menu ktore bedzie sie rozwijalo z prawej") */
+  const [menu, setMenu] = useState(false);
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(SHOWN_KEY) ?? 'null');
-      if (Array.isArray(saved) && saved.length) setShown(saved);
-    } catch { /* the default */ }
-  }, []);
-  const toggle = (k: WindowKey) => {
-    const next = shown.includes(k) ? shown.filter((x) => x !== k) : METRICS.map((m) => m.key).filter((x) => x === k || shown.includes(x));
-    setShown(next);
-    try { localStorage.setItem(SHOWN_KEY, JSON.stringify(next)); } catch { /* not kept */ }
-  };
+    if (!menu) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(false); };
+    addEventListener('keydown', esc);
+    return () => removeEventListener('keydown', esc);
+  }, [menu]);
+  const [pointed, setPointed] = useState<string | null>(null);
+  // The chart takes the height the rest of the screen leaves it, so the screen needs no scrolling:
+  // the room left under the page (or missing) is given to (or taken from) the chart.
+  const [chartHeight, setChartHeight] = useState(240);
+  const pageRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = pageRef.current;
+    if (!el) return;
+    const fit = () => setChartHeight((h) => {
+      const slack = innerHeight - (el.getBoundingClientRect().bottom + scrollY);
+      const next = Math.max(MIN_CHART, Math.min(MAX_CHART, Math.round(h + slack)));
+      return Math.abs(next - h) < 2 ? h : next;
+    });
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    addEventListener('resize', fit);
+    return () => { ro.disconnect(); removeEventListener('resize', fit); };
+  }, [run]);
+  // Every change of the view goes into the link (replaced, no new history entry), the run's memory and
+  // the last choices; a quarter of a second after the last one, as a wheel makes many in a row.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const view: RunView = { range: zoom, slots, focus, layout, axis, smooth, blocks: showBlocks, map: mapLed ? mapCam : null };
+      const query = viewToParams(id, view).toString();
+      if (location.search !== `?${query}`) window.history.replaceState(null, '', `${location.pathname}?${query}`);
+      try {
+        localStorage.setItem(viewKey(id), query);
+        localStorage.setItem(SLOTS_KEY, JSON.stringify(slots));
+        localStorage.setItem(LAYOUT_KEY, layout);
+        localStorage.setItem(BLOCKS_KEY, showBlocks ? 'on' : 'off');
+        localStorage.setItem(AXIS_KEY, axis);
+        localStorage.setItem(SMOOTH_KEY, smooth ? 'smooth' : 'raw');
+      } catch { /* not kept */ }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [id, zoom, slots, focus, layout, axis, smooth, showBlocks, mapLed, mapCam]);
 
   useEffect(() => {
     readJson<RunFile>(folder, PATHS.runFile(id)).then(setRun).catch(() => setRun(null));
+    readSettings(folder).then((s) => setZones(s.zones)).catch(() => setZones({}));
     readJson<RunsIndex>(folder, PATHS.runsIndex).then((idx) => setTitle(idx?.runs.find((r) => r.id === id)?.title ?? null));
     (async () => {
       const names = new Map((await readDefinitions(folder)).map((d) => [d.id, d.name]));
@@ -124,7 +213,7 @@ function RunPage() {
     w.start.forEach((s, i) => {
       if (w.flags.stopped[i] || w.flags.grade[i] || w.flags.missingSignal[i]) flagged.push({ from: s, to: s + WINDOW_SECONDS });
     });
-    const laps = run.laps.map((l) => ({ from: l.start, to: l.end }));
+    const laps = run.laps.map((l, i) => ({ from: l.start, to: l.end, label: `Lap ${i + 1} · ${km(l.distance)} km · ${duration(l.duration)}`, short: `Lap ${i + 1} · ${km(l.distance)} km` }));
     // The line breaks where the runner stood: a stop is no value of pace, cadence or heart rate.
     // Pace is drawn in s/km (its ticks are round in pace, not in m/s).
     const asPace = (v: (number | null)[]) => v.map((s) => (s !== null && s > 0 ? 1000 / s : null));
@@ -138,120 +227,314 @@ function RunPage() {
     let gain = 0;
     const alt = w.altitude.filter((v): v is number => v !== null);
     for (let i = 1; i < alt.length; i++) if (alt[i] - alt[i - 1] > 0) gain += alt[i] - alt[i - 1];
-    return { w, x, flagged, laps, series, avgHr, gain: alt.length ? Math.round(gain) : null };
+    const total = w.start.length ? w.start[w.start.length - 1] + WINDOW_SECONDS : 1;
+    const dmap = distanceMap(run.samples.t, run.samples.distance);
+    return { w, x, total, dmap, flagged, laps, series, avgHr, gain: alt.length ? Math.round(gain) : null };
   }, [run]);
+
+  // The statistics of the selection, the range shown; with none, of the whole run.
+  const stats = useMemo(() => {
+    if (!run || !view) return null;
+    const [from, to] = zoom ?? [0, view.total];
+    return { ...rangeStats(run, from, to), what: zoom ? 'Selection' : 'Whole run' };
+  }, [run, view, zoom]);
 
   const save = async (def: BlockDefinition) => {
     setCreating(true);
     await writeDefinitions(folder, [...(await readDefinitions(folder)), def]);
     await runInWorker('blocks', handle);
-    router.push('/blocks');
+    // The new block opens where blocks are used: on the Analysis screen.
+    router.push(`/analysis?items=b:${def.id}:0`);
   };
   const create = (type: BlockType) => run && selection && save(definitionFromSelection(run, selection.from, selection.to, type));
 
   if (run === undefined) return <div className="page muted">Loading…</div>;
   if (!run || !view) return <div className="page">Run not found. <Link href="/" className="muted">← Runs</Link></div>;
-  const { x, laps, series } = view;
-  const common = { x, laps, selection, onSelect: setSelection, blocks: blocks.map((b) => ({ from: b.start, to: b.end, ok: b.status === 'accepted', name: b.name })), cursor, onCursor: setCursor };
-  const visible = METRICS.filter((m) => shown.includes(m.key) && series[m.key].some((v) => v !== null));
-  // Under the cursor: the time, the distance and the lap.
-  const at = cursor === null ? null : run.samples.t.findIndex((t) => t >= cursor);
-  const atKm = at !== null && at >= 0 ? run.samples.distance[at] : null;
-  const atLap = cursor === null ? -1 : run.laps.findIndex((l) => cursor >= l.start && cursor < l.end);
+  const { x, laps, series, total, dmap } = view;
+  // A stretch chosen anyhow becomes the range shown, exactly: the selection is the range.
+  const select = (b: { from: number; to: number }) => setDomain(clampDomain([b.from, b.to], total));
+  const clear = () => { setZoom(null); setMapLed(false); };
+  const has = (k: WindowKey) => series[k].some((v) => v !== null);
+  const domain: Domain = zoom ?? [0, total];
+  const setDomain = (d: Domain) => { setMapLed(false); setZoom(d[0] <= 0 && d[1] >= total ? null : d); };
+  // The map zoomed or panned by hand: the chart shows the range of time of the route in view.
+  const fromMap = (r: { from: number; to: number } | null) => {
+    setMapLed(true);
+    // A stretch shorter than the chart's least range sits in the middle of it.
+    const mid = r ? (r.from + r.to) / 2 : 0;
+    const d = r ? clampDomain(r.to - r.from < MIN_SPAN ? [mid - MIN_SPAN / 2, mid + MIN_SPAN / 2] : [r.from, r.to], total) : null;
+    setZoom(d && (d[0] > 0 || d[1] < total) ? d : null);
+  };
+  // A slot is free when empty or holding a metric this run has no data of.
+  const free = slots.findIndex((k) => k === null || !has(k));
+  const toggle = (k: WindowKey) => {
+    const i = slots.indexOf(k);
+    if (i < 0 && free < 0) return;
+    const next = slots.map((s, j) => (j === i ? null : j === free && i < 0 ? k : s));
+    setSlots(next);
+    if (i >= 0 && focus === k) setFocus(null);
+  };
+  // Smooth: each line the rolling mean of its windows over 1/30 of the range shown (10 s: none).
+  const span = smooth ? smoothSpan(domain[1] - domain[0]) : 10;
+  const lines: RunLine[] = slots.flatMap((k, i) => {
+    const m = METRICS.find((x) => x.key === k);
+    return m && has(m.key) ? [{ key: m.key, title: m.title, short: m.short, unit: m.unit, y: rollingMean(x, series[m.key], span), color: `var(--series-${i + 1})`, format: m.format, tick: m.tick, minSpan: m.minSpan, invert: m.invert, steps: m.steps, zones: zones[m.key] }] : [];
+  });
+  const colourOf = (k: WindowKey) => lines.find((l) => l.key === k)?.color;
+  // The tooltip's head: the time, the distance and the lap.
+  const head = (t: number) => {
+    const i = run.samples.t.findIndex((s) => s >= t);
+    const lap = run.laps.findIndex((l) => t >= l.start && t < l.end);
+    return `${clock(t)}${i >= 0 && run.samples.distance[i] !== null ? ` · ${km(run.samples.distance[i]!)} km` : ''}${lap >= 0 ? ` · lap ${lap + 1}` : ''}`;
+  };
+  const zoomed = zoom !== null;
+  // The lap the selection is, if it is one.
+  const lapIndex = selection ? run.laps.findIndex((l) => l.start === selection.from && l.end === selection.to) : -1;
+  // The pace bars of the laps: from the slowest lap (a short bar) to the fastest (a full one).
+  const lapSpeeds = run.laps.map((l) => (l.duration ? l.distance / l.duration : 0)).filter((v) => v > 0);
+  const [slowestLap, fastestLap] = [Math.min(...lapSpeeds), Math.max(...lapSpeeds)];
+  const lapBar = (v: number) => (v <= 0 ? 0 : fastestLap > slowestLap ? 25 + (75 * (v - slowestLap)) / (fastestLap - slowestLap) : 100);
+
+  const blockName = (t: BlockType) => (t === 'route' ? 'Route segment' : t === 'structure' ? 'Workout structure (lap)' : t === 'effort' ? 'Effort (time trial)' : 'Steady fragment');
+  const shownStats = stats ? lines.flatMap((l) => { const v = stats.metrics[l.key as WindowKey]; return v ? [{ line: l, v }] : []; }) : [];
+  // The key figures of the range ("popraw widget selection ... malo tam informacji").
+  const covered = stats ? run.laps.flatMap((l, i) => (Math.min(l.end, stats.to) - Math.max(l.start, stats.from) > 1 ? [i + 1] : [])) : [];
+  const figures: [string, string, string][] = stats ? [
+    ['time', 'time', duration(stats.seconds)],
+    ['moving', 'moving time', duration(stats.moving)],
+    ['distance', 'distance', stats.distance !== null ? `${km(stats.distance)} km` : '–'],
+    ['elevation', 'elevation', stats.ascent !== null ? `+${Math.round(stats.ascent)} / −${Math.round(stats.descent ?? 0)} m` : '–'],
+    ['laps', covered.length > 1 ? 'laps' : 'lap', covered.length === 0 ? '–' : covered.length === 1 ? `${covered[0]} of ${run.laps.length}` : `${covered[0]}–${covered[covered.length - 1]} of ${run.laps.length}`],
+    ['share', 'of the run', `${Math.round(((stats.to - stats.from) / total) * 100)} %`],
+  ] : [];
+  // The time in zones of each metric shown that has zones.
+  const zoneBars: { line: RunLine; shares: number[] }[] = stats ? lines.flatMap((l) => {
+    if (!l.zones?.length) return [];
+    const shares = zoneShares(run, l.key as WindowKey, l.zones.length + 1, (v) => zoneOf(l.key, l.zones!, v), stats.from, stats.to);
+    return shares ? [{ line: l, shares }] : [];
+  }) : [];
 
   return (
-    <div className="page">
-      <div className="page-head">
+    <div ref={pageRef} className="page run-page">
+      <div className="page-head run-head">
         <div>
           <div className="eyebrow"><Link href="/">← Runs</Link>{title && <span> · {date(run.startTime)} · {time(run.startTime)}</span>}</div>
           <h1>{title ?? <>{date(run.startTime)} <span className="muted">· {time(run.startTime)}</span></>}</h1>
         </div>
+        <dl className="run-figures">
+          <div><dt>distance</dt><dd>{km(run.distance)} km</dd></div>
+          <div><dt>moving time</dt><dd>{duration(run.duration)}</dd></div>
+          <div><dt>average pace</dt><dd>{pace(run.distance / run.duration)} /km</dd></div>
+          <div><dt>average heart rate</dt><dd>{view.avgHr ?? '–'}{view.avgHr ? ' bpm' : ''}</dd></div>
+          <div><dt>elevation gain</dt><dd>{view.gain ?? '–'}{view.gain !== null ? ' m' : ''}</dd></div>
+        </dl>
         <span className="spacer" />
         <span className="chip">{run.device}</span>
         <span className="chip">{run.laps.length} laps</span>
         {run.temperature !== null && <span className="chip">{run.temperature} °C</span>}
         <Link className="btn" href={`/analysis?items=r:${run.id}:0`}>Add to Analysis</Link>
       </div>
-      <div className="stats card">
-        <div className="stat"><div className="v">{km(run.distance)} km</div><div className="l">distance</div></div>
-        <div className="stat"><div className="v">{duration(run.duration)}</div><div className="l">moving time</div></div>
-        <div className="stat"><div className="v">{pace(run.distance / run.duration)} /km</div><div className="l">average pace</div></div>
-        <div className="stat"><div className="v">{view.avgHr ?? '–'}{view.avgHr ? ' bpm' : ''}</div><div className="l">average heart rate</div></div>
-        <div className="stat"><div className="v">{view.gain ?? '–'}{view.gain !== null ? ' m' : ''}</div><div className="l">elevation gain</div></div>
-      </div>
-      <div className="run-grid">
-        <div>
-          <RouteMap lat={run.samples.lat} lon={run.samples.lon} t={run.samples.t} cursor={cursor} selection={selection} onSelect={setSelection} />
-          <div className="card" style={{ marginTop: 12, padding: 12 }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: 13 }}>Detected blocks</h3>
-            {blocks.length === 0 && <div className="muted small">None. Accept block suggestions on the Blocks screen.</div>}
-            {blocks.map((b) => (
-              <div key={b.id} className="small" style={{ padding: '6px 0', borderTop: '1px solid var(--border)' }} onMouseEnter={() => setCursor(b.start)}>
-                <span className="dot" style={{ background: b.status === 'accepted' ? 'var(--ok)' : 'var(--muted)', marginRight: 6 }} />
-                <b>{b.name}</b> <span className="muted">min {Math.floor(b.start / 60)}–{Math.ceil(b.end / 60)} · {pace(b.metrics.speed)} /km{b.metrics.heartRate ? ` · ${Math.round(b.metrics.heartRate)} bpm` : ''}</span>
-                {b.reasons.length > 0 && <div className="muted" style={{ marginLeft: 14 }}>✗ {b.reasons.join(' · ')}</div>}
-              </div>
-            ))}
+      <div className="card run-board">
+        <div className="metrics-bar">
+          <div className="metric-picker" role="group" aria-label="Metrics shown">
+            {METRICS.filter((m) => has(m.key)).map((m) => {
+              const on = slots.includes(m.key);
+              return (
+                <button key={m.key} className={`pill ${on ? 'on' : ''}`} aria-pressed={on} disabled={!on && free < 0} title={!on && free < 0 ? `Up to ${SLOT_COUNT} metrics at once: turn one off first` : undefined} onClick={() => toggle(m.key)}>
+                  {on && <i className="key-line" style={{ background: colourOf(m.key) }} />}{m.title}
+                </button>
+              );
+            })}
           </div>
-          <div className="card" style={{ marginTop: 12 }}>
-            {canDefineFromLaps(run) && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderBottom: '1px solid var(--border)' }}>
-                <span className="muted small" style={{ flex: 1 }}>A test or a planned workout? Find the runs with the same laps, on any route.</span>
-                <button className="btn" disabled={creating} onClick={() => save(definitionFromLaps(run))}>Block from these laps</button>
+          <span className="chart-summary muted small">{layout === 'bands' ? 'Bands' : 'Overlaid'} · by {axis}{showBlocks && blocks.length ? ` · ${blocks.length} block${blocks.length > 1 ? 's' : ''}` : ''}</span>
+          <span className="readout sr-only" aria-live="polite">
+            {zoomed ? `${clock(domain[0])}–${clock(domain[1])} of ${clock(total)}` : `Whole run · ${clock(total)}`}
+          </span>
+          <button className={`btn sm chart-menu-btn ${menu ? 'on' : ''}`} aria-expanded={menu} aria-controls="chart-menu" onClick={() => setMenu(!menu)}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+            Chart
+          </button>
+        </div>
+        <div className="run-top">
+          <div className="run-chart-col">
+            <RunChart x={x} total={total} lines={lines} focus={focus} onFocus={setFocus} domain={domain} onDomain={setDomain} laps={laps}
+              blocks={blocks.filter((b) => showBlocks || b.id === pointed).map((b) => ({ from: b.start, to: b.end, ok: b.status === 'accepted', name: b.name }))}
+              cursor={cursor} onCursor={setCursor} selection={null} onSelect={select} head={head} height={chartHeight} layout={layout} axis={axis} dmap={dmap}
+              marks={Object.fromEntries(shownStats.map(({ line, v }) => [line.key, v]))} hot={hot} />
+            <div className="legend chart-foot">
+              <span><i style={{ background: 'var(--surface-2)' }} />alternate laps</span>
+              {(showBlocks || pointed) && <span><i style={{ background: 'var(--band)', borderTop: '2px solid var(--series-1)' }} />block segment (top line: accepted)</span>}
+              <span>each line on its own scale · drag to select · scroll to zoom at the pointer · what is shown is the selection</span>
+            </div>
+          </div>
+          <div className="run-side">
+            <RouteMap lat={run.samples.lat} lon={run.samples.lon} t={run.samples.t} cursor={cursor} selection={null} onSelect={select} view={zoom ? { from: zoom[0], to: zoom[1] } : null} follow={!mapLed} onView={fromMap} onFit={() => setMapLed(false)} camera={start.map} onCamera={setMapCam} />
+            <div className="laps-panel">
+              <div className="laps-head"><h3>Laps</h3><span className="muted tnum">{run.laps.length}</span><span className="muted small laps-hint">click one to show it</span></div>
+              <div className="run-list" role="region" aria-label="Laps of the run" tabIndex={0}>
+                <table className="data laps-table" aria-label="Laps">
+                  <thead><tr><th>Lap</th><th className="num">km</th><th className="num">Time</th><th>Pace</th></tr></thead>
+                  <tbody>
+                    {run.laps.map((l, i) => {
+                      const v = l.duration ? l.distance / l.duration : 0;
+                      return (
+                        <tr key={i} className={i === lapIndex ? 'on' : ''} aria-selected={i === lapIndex} onClick={() => select({ from: l.start, to: l.end })}>
+                          <td className="lap-no">{i + 1}</td>
+                          <td className="num">{km(l.distance)}</td>
+                          <td className="num">{duration(l.duration)}</td>
+                          <td className="lap-pace">
+                            <span className="lap-pace-bar" aria-hidden="true"><i style={{ width: `${lapBar(v)}%` }} /></span>
+                            <span className="tnum">{pace(v)}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {stats && (
+        <div className="card range-stats">
+          <div className="range-head">
+            <h3>{stats.what}</h3>
+            <span className="muted tnum range-span">{clock(stats.from)}–{clock(stats.to)}</span>
+            {selection && stats.decoupling !== null && (
+              <span className="chip tnum decoupling" title="Decoupling of pace from heart rate: the efficiency (speed per heartbeat) of the selection's first half against its second; above 5 % the heart rate drifted up against the pace">
+                Pa:HR {stats.decoupling >= 0 ? '+' : '−'}{Math.abs(stats.decoupling).toFixed(1)} %
+              </span>
             )}
-            <table className="data">
-              <thead><tr><th>Lap</th><th>km</th><th>Time</th><th>Pace</th></tr></thead>
+            <span className="spacer" />
+            {selection ? (
+              <button className="btn sm icon" aria-label="Show the whole run" title="Close the selection and show the whole run" onClick={clear}>✕</button>
+            ) : (
+              <span className="muted small">Select a stretch on the chart, the map or a lap to see its statistics.</span>
+            )}
+          </div>
+          <div className="range-body">
+          <div className="range-side">
+            <dl className="sel-figures">
+              {figures.map(([k, label, value]) => <div key={k} data-figure={k}><dt>{label}</dt><dd className="tnum">{value}</dd></div>)}
+            </dl>
+          </div>
+          {shownStats.length ? (
+            <table className="data stats-grid" aria-label="Statistics">
+              <thead>
+                <tr>
+                  <th scope="col">Metric</th>
+                  <th scope="col" className="num">Min</th><th scope="col" className="num">Avg</th><th scope="col" className="num">Max</th>
+                  {selection && <th scope="col" className="num" title="The least-squares change of the metric per 10 minutes over the selection">Trend /10 min</th>}
+                  {zoneBars.length > 0 && <th scope="col" title="The share of the moving time in each zone (Settings)">Zones</th>}
+                </tr>
+              </thead>
               <tbody>
-                {run.laps.map((l, i) => (
-                  <tr key={i}><td>{i + 1}</td><td>{km(l.distance)}</td><td>{duration(l.duration)}</td><td>{pace(l.duration ? l.distance / l.duration : 0)}</td></tr>
+                {shownStats.map(({ line, v }) => (
+                  <tr key={line.key}>
+                    <th scope="row"><i className="key-line" style={{ background: line.color }} /> {line.title}</th>
+                    {(['min', 'avg', 'max'] as const).map((k) => (
+                      <td key={k} className={`num stat-cell ${hot?.key === line.key && hot.stat === k ? 'hot' : ''}`} data-metric={line.key} data-stat={k}
+                        onMouseEnter={() => setHot({ key: line.key, stat: k })} onMouseLeave={() => setHot(null)}>
+                        {k === 'avg' ? <b>{line.format(v[k])}</b> : line.format(v[k])}
+                      </td>
+                    ))}
+                    {selection && <td className="num trend-cell">{v.trend === null ? '–' : `${v.trend >= 0 ? '+' : '−'}${line.format(Math.abs(v.trend))}`}</td>}
+                    {zoneBars.length > 0 && <td className="zones-cell">{(() => {
+                      const zb = zoneBars.find((z) => z.line.key === line.key);
+                      if (!zb) return <span className="muted">–</span>;
+                      return (
+                        <div className="zone-bar" role="img" aria-label={`${line.title} time in zones: ${zb.shares.map((p, i) => `Z${i + 1} ${Math.round(p * 100)} %`).join(', ')}`}>
+                          {zb.shares.map((p, i) => p > 0 && (
+                            <span key={i} className="zone-share" style={{ width: `${p * 100}%`, background: `color-mix(in srgb, ${line.color} ${Math.round(zoneShade(i, zb.shares.length) * 240)}%, var(--surface))` }} title={`Z${i + 1} · ${Math.round(p * 100)} %`}>
+                              {p >= 0.18 ? `Z${i + 1} ${Math.round(p * 100)}%` : ''}
+                            </span>
+                          ))}
+                        </div>
+                      );
+                    })()}</td>}
+                  </tr>
                 ))}
               </tbody>
             </table>
+          ) : (
+            <div className="muted small range-foot">Turn a metric on above the chart to see its statistics here.</div>
+          )}
           </div>
         </div>
-        <div className="card metrics">
-          <div className="metrics-bar">
-            <div className="metric-picker" role="group" aria-label="Metrics shown">
-              {METRICS.filter((m) => series[m.key].some((v) => v !== null)).map((m) => (
-                <button key={m.key} className={`pill ${shown.includes(m.key) ? 'on' : ''}`} aria-pressed={shown.includes(m.key)} onClick={() => toggle(m.key)}>{m.title}</button>
+      )}
+      {menu && (
+        <aside id="chart-menu" className="chart-menu" role="dialog" aria-modal="false" aria-label="Chart menu">
+          <div className="chart-menu-head">
+            <h2>Chart</h2>
+            <button className="btn sm icon" aria-label="Close the chart menu" onClick={() => setMenu(false)}>✕</button>
+          </div>
+          <section>
+            <h3>Lines</h3>
+            <div className="segmented" role="radiogroup" aria-label="Lines">
+              {([['bands', 'Bands'], ['overlay', 'Overlaid']] as const).map(([k, l]) => (
+                <button key={k} type="button" role="radio" aria-checked={layout === k} className={layout === k ? 'on' : ''} onClick={() => setLayout(k)}>{l}</button>
               ))}
             </div>
-            <span className="readout tnum" aria-live="polite">
-              {cursor === null ? 'Hover a chart · drag to select a fragment' : `${clock(cursor)}${atKm !== null ? ` · ${km(atKm)} km` : ''}`}
-            </span>
-          </div>
-          <div ref={lanes} className="lanes">
-            {visible.map((m, i) => (
-              <LineChart key={m.key} title={m.title} unit={m.unit} y={series[m.key]} format={m.format} tick={m.tick} minSpan={m.minSpan} invert={m.invert} labels={i === 0} axis={i === visible.length - 1} {...common} />
-            ))}
-            {cursor !== null && (() => {
-              const cx = LANE.l + (cursor / (x[x.length - 1] || 1)) * (lanesWidth - LANE.l - LANE.r);
-              const flip = cx > lanesWidth - 220;
-              return (
-                <div className="cursor-card" style={{ left: flip ? cx - 12 : cx + 12, transform: flip ? 'translateX(-100%)' : undefined }}>
-                  <div className="cursor-time">{clock(cursor)}{atKm !== null ? ` · ${km(atKm)} km` : ''}{atLap >= 0 ? ` · lap ${atLap + 1}` : ''}</div>
-                  {visible.map((m) => { const v = valueAt(x, series[m.key], cursor); return <div key={m.key} className="cursor-row"><span>{m.title}</span><b>{v === null ? '–' : m.format(v)}</b></div>; })}
+          </section>
+          <section>
+            <h3>Line</h3>
+            <div className="segmented" role="radiogroup" aria-label="Smoothing">
+              {([[true, 'Smooth'], [false, 'Raw']] as const).map(([k, l]) => (
+                <button key={l} type="button" role="radio" aria-checked={smooth === k} className={smooth === k ? 'on' : ''} onClick={() => setSmooth(k)}>{l}</button>
+              ))}
+            </div>
+            <p className="muted small">{smooth ? `The mean over ${Math.round(span)} s, following the zoom.` : 'The 10 s windows as they are.'}</p>
+          </section>
+          <section>
+            <h3>X axis</h3>
+            <div className="segmented" role="radiogroup" aria-label="X axis">
+              {([['time', 'Time'], ['distance', 'Distance']] as const).map(([k, l]) => (
+                <button key={k} type="button" role="radio" aria-checked={axis === k} className={axis === k ? 'on' : ''} disabled={k === 'distance' && dmap.max <= 0} onClick={() => setAxis(k)}>{l}</button>
+              ))}
+            </div>
+          </section>
+          <section>
+            <h3>Blocks in this run <span className="muted">· {blocks.length}</span></h3>
+            {blocks.length === 0 ? <p className="muted small">None of your kept blocks has a segment in this run.</p> : (
+              <>
+                <button type="button" className={`pill ${showBlocks ? 'on' : ''}`} aria-pressed={showBlocks} onClick={() => setShowBlocks(!showBlocks)}>Draw on the chart</button>
+                <div className="run-blocks">
+                  {blocks.map((b) => (
+                    <button key={b.id} type="button" className="run-block" onMouseEnter={() => setPointed(b.id)} onMouseLeave={() => setPointed(null)} onFocus={() => setPointed(b.id)} onBlur={() => setPointed(null)} onClick={() => select({ from: b.start, to: b.end })}>
+                      <span className="dot" style={{ background: b.status === 'accepted' ? 'var(--ok)' : 'var(--muted)' }} />
+                      <b>{b.name}</b> <span className="muted">min {Math.floor(b.start / 60)}–{Math.ceil(b.end / 60)} · {pace(b.metrics.speed)} /km{b.metrics.heartRate ? ` · ${Math.round(b.metrics.heartRate)} bpm` : ''}</span>
+                      {b.reasons.length > 0 && <span className="muted run-block-why">✗ {b.reasons.join(' · ')}</span>}
+                    </button>
+                  ))}
                 </div>
-              );
-            })()}
-          </div>
-          <div className="legend" style={{ margin: '8px 0 0' }}>
-            <span><i style={{ background: 'var(--surface-2)' }} />alternate laps</span>
-            <span><i style={{ background: 'var(--band)', borderTop: '2px solid var(--series-1)' }} />block instance (top line: accepted)</span>
-            <span>gaps: stopped · lines: 10 s windows, median of 3</span>
-          </div>
-        </div>
-      </div>
-      {selection && (
-        <div className="float-bar">
-          <span>Selected min {(selection.from / 60).toFixed(1)}–{(selection.to / 60).toFixed(1)} · {Math.round(selection.to - selection.from)} s</span>
-          <span className="muted">Create block definition as</span>
-          {selectionOptions(run, selection.from, selection.to).map((t) => (
-            <button key={t} className="btn primary" disabled={creating} onClick={() => create(t)}>{t === 'route' ? 'Route segment' : t === 'structure' ? 'Workout structure (lap)' : t === 'effort' ? 'Effort (time trial)' : 'Steady fragment'}</button>
-          ))}
-          <button className="btn icon" aria-label="Clear selection" onClick={() => setSelection(null)}>✕</button>
-        </div>
+              </>
+            )}
+          </section>
+          <section>
+            <h3>Make a block</h3>
+            {selection ? (
+              <>
+                <div className="menu-actions" role="group" aria-label="Make a block of the selection">
+                  {selectionOptions(run, selection.from, selection.to).map((t) => (
+                    <button key={t} className="btn sm primary" disabled={creating} onClick={() => create(t)}>{blockName(t)}</button>
+                  ))}
+                </div>
+              </>
+            ) : <p className="muted small">Select a stretch on the chart, the map or a lap to make a block of it.</p>}
+            {canDefineFromLaps(run) && (
+              <>
+                <p className="muted small">A test or a planned workout? Find the runs with the same laps.</p>
+                <button className="btn sm" disabled={creating} onClick={() => save(definitionFromLaps(run))}>Block from these laps</button>
+              </>
+            )}
+          </section>
+          <section>
+            <h3>Zones</h3>
+            <p className="muted small">{lines.filter((l) => l.zones?.length).map((l) => l.title).join(', ') || 'No metric shown has zones'}{lines.some((l) => l.zones?.length) ? ' coloured by their zones.' : '.'}</p>
+            <Link className="btn sm" href="/settings">Set the zones in Settings</Link>
+          </section>
+        </aside>
       )}
     </div>
   );

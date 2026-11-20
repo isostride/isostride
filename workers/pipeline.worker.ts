@@ -1,16 +1,22 @@
 /// <reference lib="webworker" />
 import { BrowserFolder } from '@/lib/fs';
-import { seriesOfRuns, type MetricKey, type RunSet, type Series } from '@/lib/ask';
+import type { BlockDefinition, BlockInstance } from '@/lib/blocks';
+import { curvesOf, type CurvePoint, type CurveSource } from '@/lib/curve';
+import { instancesOf } from '@/lib/detection';
 import { importFolder, recomputeEverything, refreshBlocks, refreshContext } from '@/lib/pipeline';
 
 /** Messages between the Web App and the Processing Worker. */
-/** context: gear or tags changed; blocks: block definitions changed; series: a run set's metrics for Analysis. */
-export type WorkerJob = 'import' | 'recompute' | 'context' | 'blocks' | 'series';
-export type WorkerRequest = { type: Exclude<WorkerJob, 'series'>; handle: FileSystemDirectoryHandle } | { type: 'series'; handle: FileSystemDirectoryHandle; set: RunSet; keys: MetricKey[] };
+/** context: gear or tags changed; blocks: block definitions changed; instances: blocks not kept, computed now; curve: pace curves of stretches. */
+export type WorkerJob = 'import' | 'recompute' | 'context' | 'blocks' | 'instances' | 'curve';
+export type WorkerRequest =
+  | { type: Exclude<WorkerJob, 'instances' | 'curve'>; handle: FileSystemDirectoryHandle }
+  | { type: 'instances'; handle: FileSystemDirectoryHandle; defs: BlockDefinition[] }
+  | { type: 'curve'; handle: FileSystemDirectoryHandle; sources: CurveSource[] };
 export type WorkerEvent =
   | { type: 'progress'; done: number; total: number; file: string }
   | { type: 'done'; imported: number; duplicates: number; errors: number }
-  | { type: 'series'; series: Record<string, Series> }
+  | { type: 'instances'; instances: Record<string, BlockInstance[]> }
+  | { type: 'curves'; curves: Record<string, CurvePoint[]> }
   | { type: 'error'; message: string };
 
 const post = (e: WorkerEvent) => (self as unknown as { postMessage(m: unknown): void }).postMessage(e);
@@ -19,8 +25,12 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
   const folder = new BrowserFolder(e.data.handle);
   const onProgress = (p: { done: number; total: number; file: string }) => post({ type: 'progress', ...p });
   try {
-    if (e.data.type === 'series') {
-      post({ type: 'series', series: await seriesOfRuns(folder, e.data.set, e.data.keys, onProgress) });
+    if (e.data.type === 'instances') {
+      post({ type: 'instances', instances: await instancesOf(folder, e.data.defs, onProgress) });
+      return;
+    }
+    if (e.data.type === 'curve') {
+      post({ type: 'curves', curves: await curvesOf(folder, e.data.sources, onProgress) });
       return;
     }
     if (e.data.type === 'context' || e.data.type === 'blocks') {

@@ -71,7 +71,7 @@ function ComparePage() {
     URL.revokeObjectURL(a.href);
   };
 
-  if (!defs.length) return <div className="page"><div className="page-head"><h1>A/B comparison</h1></div><div className="card empty">No block definitions yet. Accept a suggestion on the Blocks screen first.</div></div>;
+  if (!defs.length) return <div className="page"><div className="page-head"><h1>A/B comparison</h1></div><div className="card empty">No kept blocks yet. Build a block in Analysis and save it, or take one found in your runs there.</div></div>;
 
   const included = result ? [...result.a.points, ...result.b.points].map((p) => p.instance) : [];
   const base = (def?.name ?? 'block').replace(/[^\w-]+/g, '_');

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { fitFiles, importAll, openWithFolder, recordMeasure } from './support';
+import { fitFiles, importAll, openRun, openWithFolder, recordMeasure } from './support';
 
 /** A 1×1 transparent PNG: the tile server is stood in for, nothing leaves the test machine. */
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
@@ -11,7 +11,7 @@ test.describe('Map background', () => {
     await page.route('https://tile.openstreetmap.org/**', (route) => route.fulfill({ contentType: 'image/png', body: PNG }));
     await openWithFolder(page, await fitFiles(1, '2026-11-09'));
     await importAll(page);
-    await page.locator('tr.row').first().click();
+    await openRun(page);
     const map = page.getByRole('img', { name: 'Route' });
     await map.waitFor();
 

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { fitFiles, importAll, nav, openWithFolder, recordMeasure } from './support';
+import { addFromPicker, fitFiles, importAll, nav, openWithFolder, recordMeasure } from './support';
 
 
 const bg = (page: import('@playwright/test').Page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
@@ -8,14 +8,14 @@ test.describe('Light and dark theme', () => {
   test('Theme follows the system', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await openWithFolder(page, await fitFiles(1));
-    expect(await bg(page)).toBe('rgb(11, 13, 18)');
+    expect(await bg(page)).toBe('rgb(29, 31, 35)');
     await page.getByRole('radio', { name: 'Light' }).click();
     expect(await bg(page)).toBe('rgb(244, 245, 247)');
     await page.reload();
     await page.getByRole('heading', { name: 'Runs' }).waitFor();
     expect(await bg(page)).toBe('rgb(244, 245, 247)');
     await page.getByRole('radio', { name: 'System' }).click();
-    expect(await bg(page)).toBe('rgb(11, 13, 18)');
+    expect(await bg(page)).toBe('rgb(29, 31, 35)');
   });
 });
 
@@ -32,13 +32,12 @@ test.describe('Journeys', () => {
     await page.getByRole('button', { name: 'Recompute everything' }).click();
     await expect(page.getByText(/^Recomputed \d+ runs/)).toBeVisible({ timeout: 60_000 });
 
-    // Block definition: accept a suggested route segment (about 4.5 min, so pace, not HR).
-    await nav(page, 'Blocks');
-    await page.locator('.block-card.suggested', { hasText: /^1\.6 km/ }).getByRole('button', { name: 'Accept' }).click();
-    await expect(page.locator('.block-card:not(.suggested)')).toHaveCount(1, { timeout: 30_000 });
+    // Block definition: on the Analysis screen, take a suggested route segment (about 4.5 min, so pace, not HR).
+    await nav(page, 'Analysis');
+    await addFromPicker(page, /^1\.6 km/);
+    await expect(page.locator('.item-chip')).toHaveCount(1, { timeout: 30_000 });
 
     // Analysis: the block over time, its verdict in words.
-    await nav(page, 'Analysis');
     await page.getByRole('button', { name: 'Pace', exact: true }).click();
     await expect(page.getByRole('img', { name: 'Over time' })).toBeVisible();
     await expect(page.getByRole('table', { name: 'Changes' })).toBeVisible();

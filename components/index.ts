@@ -8,4 +8,7 @@ export * from './Welcome';
 export * from './AnalysisCharts';
 export * from './chartKit';
 export * from './charts';
+export * from './RunChart';
 export * from './metrics';
+export * from './mapCamera';
+export * from './runView';

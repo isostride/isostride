@@ -8,14 +8,16 @@
     { "element": "31df2b33-7d61-4128-bd2a-a8fd73481b33", "name": "Prepare", "paths": ["lib/prepare"] },
     { "element": "84b558e0-d87c-4134-8479-f01b164bcd47", "name": "Context", "paths": ["lib/context", "lib/gear"] },
     { "element": "0765fef0-4b2e-4087-a745-30d31c103732", "name": "Pages", "paths": ["app", "lib/format"] },
-    { "element": "cbb5fc4a-220e-4316-97b6-63afe40c8cc8", "name": "Charts and Map", "paths": ["components/charts.tsx", "components/TrendChart.tsx"] },
+    { "element": "cbb5fc4a-220e-4316-97b6-63afe40c8cc8", "name": "Charts and Map", "paths": ["components/charts.tsx", "components/RunChart.tsx", "components/chartZoom.ts", "components/mapCamera.ts", "components/TrendChart.tsx"] },
     { "element": "af580e00-9fde-4182-89d8-479d71707a14", "name": "Blocks", "paths": ["lib/blocks", "lib/detection", "lib/geo"] },
     { "element": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9", "name": "Compare", "paths": ["lib/compare"] },
     { "element": "ca29b4d4-2e21-4bd0-8a7d-dedef3dab8b4", "name": "Stats", "paths": ["lib/stats"] },
     { "element": "c8218f3c-c48b-4800-a633-b190e85d5833", "name": "CSV Export", "paths": ["lib/compare/csv.ts"] },
     { "element": "df4990c9-dd90-49cc-9eca-6507c3d5dd66", "name": "Pipeline", "paths": ["lib/pipeline"] },
     { "element": "dcc9c750-4930-43ec-b29a-96d8cc3419e7", "name": "File Store", "paths": ["lib/fs/folder.ts", "lib/fs/manifest.ts"] },
-    { "element": "ea596479-434c-47bf-955f-e01d8bb2dddc", "name": "Shared Kernel", "paths": ["lib/kernel"] }
+    { "element": "ea596479-434c-47bf-955f-e01d8bb2dddc", "name": "Shared Kernel", "paths": ["lib/kernel"] },
+    { "element": "49354ed3-2ed2-4462-b304-0688c5ddb16c", "name": "Settings", "paths": ["lib/settings"] },
+    { "element": "2632e603-65fd-4661-b830-d128d7f98975", "name": "Training log", "paths": ["lib/log"] }
   ],
   "verifies": [
     { "element": "2a0542b2-ead0-42d2-ad1c-24694dc2d613", "name": "Import new FIT files", "tests": [
@@ -461,41 +463,113 @@
     { "element": "9cab11ba-c018-4316-b3e0-70b1eb1fed90", "name": "Delete a block", "tests": [
       "e2e/block-definition.spec.ts › Accept or reject recommendation › Accept recommendation"
     ] },
-    { "element": "d72ff93a-47b3-4b30-937d-abc0d5f8fe77", "name": "Criteria block: whole run or lap", "tests": [
-      "tests/unit/criteria.test.ts › Blocks from criteria › Criteria block: whole run or lap"
+    { "element": "d72ff93a-47b3-4b30-937d-abc0d5f8fe77", "name": "Laps and steady stretches by a rule", "tests": [
+      "tests/unit/rule.test.ts › Blocks defined in Analysis › Laps and steady stretches by a rule"
     ] },
-    { "element": "6f1b8ec1-b966-4c32-989d-1d3c4b25e97b", "name": "Runs filtered by criteria", "tests": [
-      "tests/unit/criteria.test.ts › Blocks from criteria › Runs filtered by criteria"
+    { "element": "6f1b8ec1-b966-4c32-989d-1d3c4b25e97b", "name": "Runs chosen by a rule", "tests": [
+      "tests/unit/rule.test.ts › Blocks defined in Analysis › Runs chosen by a rule"
     ] },
-    { "element": "a23ad5ec-41a8-4148-9fcd-a762769f05a9", "name": "Block from criteria with a live count", "tests": [
-      "e2e/block-definition.spec.ts › Blocks from criteria › Block from criteria with a live count"
+    { "element": "a23ad5ec-41a8-4148-9fcd-a762769f05a9", "name": "Block built from a rule with a live count", "tests": [
+      "e2e/block-definition.spec.ts › Blocks defined in Analysis › Block built from a rule with a live count"
     ] },
-    { "element": "e1fb2839-eff8-4d39-a460-d51388a469d5", "name": "Run set kept in the link", "tests": [
-      "tests/unit/ask.test.ts › Run sets in Analysis › Run set kept in the link"
+    { "element": "e1fb2839-eff8-4d39-a460-d51388a469d5", "name": "Rule in words and in the link", "tests": [
+      "tests/unit/rule.test.ts › Blocks defined in Analysis › Rule in words and in the link"
     ] },
-    { "element": "52115b3a-c9d3-449a-afa7-39a4659d8531", "name": "Change of a metric over runs", "tests": [
-      "tests/unit/ask.test.ts › Run sets in Analysis › Change of a metric over runs"
+    { "element": "5fd6562d-deca-4509-86a8-a28b84e52f3e", "name": "Fastest stretch with the heart rate above a floor", "tests": [
+      "tests/unit/rule.test.ts › Blocks defined in Analysis › Fastest stretch with the heart rate above a floor"
     ] },
-    { "element": "5fd6562d-deca-4509-86a8-a28b84e52f3e", "name": "Fastest stretch across runs", "tests": [
-      "tests/unit/ask.test.ts › Run sets in Analysis › Fastest stretch across runs"
+    { "element": "7ec54c1a-41c2-45c6-b21c-d0d8e608512c", "name": "Rule blocks compared, ranked and curved", "tests": [
+      "e2e/analysis.spec.ts › Analysis workspace › Rule blocks compared, ranked and curved"
     ] },
-    { "element": "7ec54c1a-41c2-45c6-b21c-d0d8e608512c", "name": "Runs matching a period compared and ranked", "tests": [
-      "e2e/ask.spec.ts › Analysis workspace › Runs matching a period compared and ranked"
+    { "element": "b2ecee7e-c463-4adf-9bdc-167842a010a9", "name": "Rule computed from the data folder", "tests": [
+      "tests/unit/rule.test.ts › Blocks defined in Analysis › Rule computed from the data folder"
     ] },
-    { "element": "b2ecee7e-c463-4adf-9bdc-167842a010a9", "name": "Series of a run set from the data folder", "tests": [
-      "tests/unit/askFolder.test.ts › Run sets in Analysis › Series of a run set from the data folder"
+    { "element": "20280dd4-9d43-4d15-bb62-dd3ca3050e95", "name": "Statistic of a segment", "tests": [
+      "tests/unit/rule.test.ts › Blocks defined in Analysis › Statistic of a segment"
     ] },
-    { "element": "20280dd4-9d43-4d15-bb62-dd3ca3050e95", "name": "Statistic of a run", "tests": [
-      "tests/unit/ask.test.ts › Run sets in Analysis › Statistic of a run"
+    { "element": "37de8939-dd70-4e96-827e-5901e301a79b", "name": "Pace curve inside the segments", "tests": [
+      "tests/unit/curve.test.ts › Pace curve › Pace curve inside the segments"
     ] },
-    { "element": "37de8939-dd70-4e96-827e-5901e301a79b", "name": "Pace curve from the fastest stretches", "tests": [
-      "tests/unit/ask.test.ts › Run sets in Analysis › Pace curve from the fastest stretches"
+    { "element": "1d96c647-cd03-485d-9f23-63e8b54e8571", "name": "Pace curve drawn for blocks", "tests": [
+      "e2e/analysis.spec.ts › Analysis workspace › Rule blocks compared, ranked and curved"
     ] },
-    { "element": "1d96c647-cd03-485d-9f23-63e8b54e8571", "name": "Pace curve drawn for a run set", "tests": [
-      "e2e/ask.spec.ts › Analysis workspace › Runs matching a period compared and ranked"
+    { "element": "e52ebeb4-a468-47dd-8fb2-2983ba904533", "name": "Estimate fitted to the bests", "tests": [
+      "tests/unit/curve.test.ts › Pace curve › Estimate fitted to the bests"
     ] },
-    { "element": "e52ebeb4-a468-47dd-8fb2-2983ba904533", "name": "Estimated pace curve", "tests": [
-      "tests/unit/ask.test.ts › Run sets in Analysis › Estimated pace curve"
+    { "element": "3b2a5032-9b62-4e79-a7f6-b568f1399963", "name": "Curves from the data folder", "tests": [
+      "tests/unit/curve.test.ts › Pace curve › Curves from the data folder"
+    ] },
+    { "element": "9a3ab334-a085-4061-90a7-8bfc04c8fc8f", "name": "Run opened from a point of a chart", "tests": [
+      "e2e/analysis.spec.ts › Analysis workspace › Rule blocks compared, ranked and curved"
+    ] },
+    { "element": "e003051b-4ea5-47e0-9dc6-dac8e3e20615", "name": "Metrics laid over one chart", "tests": [
+      "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
+    ] },
+    { "element": "4f2b65d3-15c8-4d6c-8aaa-a4e875577a01", "name": "Run chart zoomed in and out", "tests": [
+      "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out",
+      "tests/unit/chartZoom.test.ts › Zoom of the run chart › Zoom steps kept inside the run",
+      "tests/unit/chartZoom.test.ts › Zoom of the run chart › Wheel zooms on every mouse"
+    ] },
+    { "element": "58952846-cbe3-44db-8221-aecbb4a98845", "name": "Statistics of a selected stretch", "tests": [
+      "tests/unit/range.test.ts › Statistics of a selection › Statistics of a selected stretch"
+    ] },
+    { "element": "d567bb40-4a94-4c51-b80c-5538736551bf", "name": "Run screen fits one screen", "tests": [
+      "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
+    ] },
+    { "element": "92ae13dd-8968-4b8e-b850-6a1090e83a49", "name": "Map zoomed with the chart", "tests": [
+      "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
+    ] },
+    { "element": "a5594f9e-b2dd-4555-9cfe-84de48874542", "name": "Zones set and coloured", "tests": [
+      "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
+    ] },
+    { "element": "55d0b210-956f-4684-8298-a275017afb06", "name": "Zone of a value", "tests": [
+      "tests/unit/zones.test.ts › Metric zones in settings › Zone of a value"
+    ] },
+    { "element": "96611c36-6ecc-48e7-8d69-eff2445961e1", "name": "Blocks shown on demand", "tests": [
+      "e2e/block-definition.spec.ts › Accept or reject recommendation › Accept recommendation"
+    ] },
+    { "element": "1af66a05-73bb-48db-98b3-52ea80bc807d", "name": "Lap chosen as the selection", "tests": [
+      "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
+    ] },
+    { "element": "5a5c3104-b2f1-40b6-b73b-34152c56f916", "name": "Chart by distance", "tests": [
+      "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
+    ] },
+    { "element": "e9317352-47f8-494e-a3c2-092628b5c40d", "name": "Time and distance mapped", "tests": [
+      "tests/unit/chartZoom.test.ts › Time or distance on the x axis › Time and distance mapped"
+    ] },
+    { "element": "c377cce8-1e53-471d-892c-62320e56d3a7", "name": "Chart set up in the side menu", "tests": [
+      "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
+    ] },
+    { "element": "b7dbaa34-7d0f-4b7f-ba30-8780a49aeb4e", "name": "Rolling mean of a line", "tests": [
+      "tests/unit/chartZoom.test.ts › Smoothing that follows the zoom › Rolling mean of a line"
+    ] },
+    { "element": "e4cddd01-214e-47af-9fbd-13cc29560a28", "name": "Trend and decoupling of a stretch", "tests": [
+      "tests/unit/range.test.ts › Trend of a selection › Trend and decoupling of a stretch"
+    ] },
+    { "element": "a3d655ff-98f9-4f76-a992-556ed91006c4", "name": "Chart smoothed, marked and trended", "tests": [
+      "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
+    ] },
+    { "element": "61510b95-6f18-42f5-aa34-236b993702f6", "name": "Chart follows the map", "tests": [
+      "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out",
+      "tests/unit/mapCamera.test.ts › Map zoomed and panned › Map camera follows the route"
+    ] },
+    { "element": "16f06ef5-ebe6-4665-b8d2-80ae4f642587", "name": "Figures and zones of a range", "tests": [
+      "tests/unit/range.test.ts › Selection at a glance › Figures and zones of a range"
+    ] },
+    { "element": "800c5854-3b34-4e64-a064-39249d5a5b36", "name": "Selection widget filled", "tests": [
+      "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
+    ] },
+    { "element": "cd3abfc1-7ffe-49f9-8fba-12ee3dc7f76e", "name": "View written and read from a link", "tests": [
+      "tests/unit/runView.test.ts › Run view kept in its link › View written and read from a link"
+    ] },
+    { "element": "135d0fbc-2a7b-4ebf-ad0d-d1cf0333cefb", "name": "Run view survives a reload", "tests": [
+      "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
+    ] },
+    { "element": "abaf99b7-b15f-4bde-87dc-cbcbd3a1d124", "name": "Runs grouped into weeks", "tests": [
+      "tests/unit/weeks.test.ts › Calendar of runs by week › Runs grouped into weeks"
+    ] },
+    { "element": "7bc5e495-26c7-48cc-9d47-1607dd64f8d1", "name": "Calendar shown and switched to a list", "tests": [
+      "e2e/import.spec.ts › Import FIT files › Import new FIT files"
     ] }
   ]
 }

@@ -3,13 +3,13 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
-import { fakeFolderPicker, fitFiles, importAll, putFitFiles, recordMeasure } from './support';
+import { addFromPicker, fakeFolderPicker, fitFiles, importAll, openRun, putFitFiles, recordMeasure } from './support';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EXPORT = path.join(ROOT, '.next-build');
 /** web-vitals, loaded by the test only (never part of the app, nothing sent over the network). */
 const WEB_VITALS = path.join(ROOT, 'node_modules/web-vitals/dist/web-vitals.iife.js');
-const SCREENS = [['Runs', '/'], ['Blocks', '/blocks'], ['Analysis', '/analysis'], ['A/B comparison', '/compare'], ['Gear and tags', '/gear']] as const;
+const SCREENS = [['Runs', '/'], ['Analysis', '/analysis'], ['A/B comparison', '/compare'], ['Gear and tags', '/gear'], ['Settings', '/settings']] as const;
 const BUDGET = { lcp: 2500, cls: 0.1, tbt: 200, inp: 200, scriptKB: 200 };
 
 async function instrument(page: Page) {
@@ -55,9 +55,9 @@ test.describe('Core Web Vitals met', () => {
     await putFitFiles(page, await fitFiles(30, '2026-05-01'));
     await page.getByRole('button', { name: 'Choose data folder' }).click();
     await importAll(page);
-    await page.goto('/blocks');
-    await page.getByRole('button', { name: 'Accept' }).first().click();
-    await page.locator('.block-card:not(.suggested)').first().waitFor({ timeout: 30_000 });
+    await page.goto('/analysis');
+    await addFromPicker(page, /km/);
+    await page.locator('.item-chip').first().waitFor({ timeout: 30_000 });
 
     const worst = { lcp: 0, cls: 0, tbt: 0, inp: 0, scriptKB: 0 };
     const rows: string[] = [];
@@ -82,6 +82,17 @@ test.describe('Core Web Vitals met', () => {
     await page.goto('/compare');
     await page.getByRole('heading', { level: 1, name: 'A/B comparison' }).waitFor();
     for (const m of ['Pace', 'Heart rate', 'Ground contact']) await page.getByRole('button', { name: m, exact: true }).click();
+    worst.inp = Math.max(worst.inp, (await vitals(page)).INP);
+    // The run chart: a metric off and on, the scale of another, a lap selected and zoomed to, the selection closed.
+    await page.goto('/');
+    await openRun(page);
+    await page.getByRole('img', { name: /^Run metrics · / }).waitFor();
+    const picker = page.getByRole('group', { name: 'Metrics shown' });
+    for (const m of ['Cadence', 'Cadence']) await picker.getByRole('button', { name: m, exact: true }).click();
+    await page.getByRole('group', { name: 'Scale shown' }).getByRole('button', { name: /^Heart rate/ }).click();
+    const lapBars = page.getByRole('group', { name: 'Laps' }).getByRole('button');
+    await lapBars.nth(1).click();
+    await page.getByRole('button', { name: 'Show the whole run' }).click();
     worst.inp = Math.max(worst.inp, (await vitals(page)).INP);
     console.log(rows.join('\n'), `\nINP ${Math.round(worst.inp)} ms`);
 

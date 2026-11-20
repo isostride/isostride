@@ -5,4 +5,5 @@ export * from './logical';
 export * from './pipeline';
 export * from './recommend';
 export * from './routeMatch';
+export * from './rule';
 export * from './segments';

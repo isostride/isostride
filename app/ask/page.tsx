@@ -2,22 +2,25 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect } from 'react';
-import { bestWindow, datesPeriod, formatRunSet, type MetricKey, type Stat } from '@/lib/ask';
+import { STATS, encodeRule, ruleOf, type RuleShape, type Stat } from '@/lib/blocks';
 
 export default function AskRedirectWrapper() {
   return <Suspense><AskRedirect /></Suspense>;
 }
 
-/** The former Ask screen: its links open the same question as a run set on the Analysis screen. */
+/** The former Ask screen: its links open the same question as a block on the Analysis screen. */
 function AskRedirect() {
   const p = useSearchParams();
   const router = useRouter();
   useEffect(() => {
-    const stat = (['avg', 'median', 'min', 'max'].includes(p.get('stat') ?? '') ? p.get('stat') : 'avg') as Stat;
-    const set = { period: datesPeriod(p.get('from'), p.get('to')), filters: { workoutType: p.get('tag') || null, shoes: p.get('shoes') || null, title: p.get('title') || null }, stat };
     const window = (p.get('window') ?? '').match(/^(\d+)([sm])$/);
-    const metric: MetricKey = p.get('kind') === 'best' && window && bestWindow(`best:${window[1]}${window[2]}`) ? `best:${window[1]}${window[2]}` : ((p.get('metric') || 'speed') as MetricKey);
-    router.replace(`/analysis?${new URLSearchParams({ items: `s:${formatRunSet(set)}:0`, m: metric }).toString()}`);
+    const shape: RuleShape = p.get('kind') === 'best' && window ? { type: 'fastest', kind: window[2] === 's' ? 'time' : 'distance', target: Number(window[1]) } : { type: 'run' };
+    const rule = ruleOf(shape);
+    rule.runs = { ...rule.runs, dateFrom: p.get('from') || null, dateTo: p.get('to') || null, workoutTypes: p.get('tag') ? [p.get('tag')!] : [], shoes: p.get('shoes') ? [p.get('shoes')!] : [], title: p.get('title') ?? '' };
+    if (STATS.includes(p.get('stat') as Stat)) rule.stat = p.get('stat') as Stat;
+    const q = new URLSearchParams({ items: `q:${encodeRule(rule)}:0` });
+    if (shape.type === 'run' && p.get('metric')) q.set('m', p.get('metric')!);
+    router.replace(`/analysis?${q.toString()}`);
   }, [p, router]);
   return <div className="page muted">Opening in Analysis…</div>;
 }

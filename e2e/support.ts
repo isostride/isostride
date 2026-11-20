@@ -122,9 +122,23 @@ export const GEAR_AUTUMN = {
   ],
 };
 
+/** Opens the picker of the Analysis screen on its list of blocks and runs. */
+export async function openPicker(page: Page) {
+  await page.getByRole('button', { name: '+ Add block or run' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add block or run' });
+  await dialog.getByRole('tab', { name: 'Blocks and runs' }).click();
+  return dialog;
+}
+
+/** On the Analysis screen: takes from the picker the block (kept or suggested) or the run whose row starts with `name`. */
+export async function addFromPicker(page: Page, name: RegExp | string): Promise<void> {
+  const dialog = await openPicker(page);
+  await dialog.locator('.palette-item', { hasText: name }).first().click();
+}
+
 /**
- * A data folder with FIT files and a gear register, imported, with one suggested block
- * accepted; file opens by the page are logged (window.__opened).
+ * A data folder with FIT files and a gear register, imported, with one suggested block taken on
+ * the Analysis screen (kept, and shown there); file opens by the page are logged (window.__opened).
  */
 export async function setUpWithBlock(page: Page, { files = fitFiles(30, '2026-05-01'), gear = GEAR_MAY_JUNE, block = /^1\.6 km northeast/ as RegExp } = {}): Promise<void> {
   await fakeFolderPicker(page);
@@ -135,10 +149,19 @@ export async function setUpWithBlock(page: Page, { files = fitFiles(30, '2026-05
   await page.getByRole('button', { name: 'Choose data folder' }).click();
   await page.getByRole('heading', { name: 'Runs' }).waitFor();
   await importAll(page);
-  await nav(page, 'Blocks');
-  await page.locator('.block-card.suggested').first().waitFor();
-  const all = page.getByRole('button', { name: /^Show all \d+$/ });
-  if (await all.isVisible()) await all.click();
-  await page.locator('.block-card.suggested', { hasText: block }).getByRole('button', { name: 'Accept' }).click();
-  await page.locator('.block-card:not(.suggested)').first().waitFor({ timeout: 30_000 });
+  await nav(page, 'Analysis');
+  await addFromPicker(page, block);
+  await page.locator('.item-chip').first().waitFor({ timeout: 30_000 });
+}
+
+/** On the Runs screen: the table of runs instead of the calendar (the choice is remembered). */
+export async function showList(page: Page): Promise<void> {
+  const list = page.getByRole('radio', { name: 'List' });
+  if ((await list.getAttribute('aria-checked')) !== 'true') await list.click();
+}
+
+/** On the Runs screen: opens the n-th run of the table, the newest first. */
+export async function openRun(page: Page, n = 0): Promise<void> {
+  await showList(page);
+  await page.locator('tr.row').nth(n).click();
 }

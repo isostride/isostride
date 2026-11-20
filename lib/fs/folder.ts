@@ -43,6 +43,7 @@ export const PATHS = {
   gear: 'strideprism/user/gear.json',
   runTags: 'strideprism/user/run-tags.json',
   blockDefinitions: 'strideprism/user/block-definitions.json',
+  settings: 'strideprism/user/settings.json',
   derived: 'strideprism/derived',
   runs: 'strideprism/derived/runs',
   runFile: (id: string) => `strideprism/derived/runs/${id}.json`,

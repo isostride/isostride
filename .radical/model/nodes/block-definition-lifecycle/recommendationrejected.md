@@ -5,4 +5,4 @@ label: "RecommendationRejected"
 source: "external"
 ---
 
-The user rejects a recommended definition on the Blocks screen.
+The user dismisses a recommended definition in the picker of the Analysis screen.

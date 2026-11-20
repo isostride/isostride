@@ -12,3 +12,5 @@ test_data/
 test-results/
 playwright-report/
 .shots/
+# Vitest output written by a run with the JSON reporter
+.vitest/

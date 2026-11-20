@@ -5,7 +5,8 @@
     "lib/client",
     "lib/compare",
     "lib/fs",
-    "lib/kernel"
+    "lib/kernel",
+    "lib/settings"
   ],
   "runs": "main"
 }
