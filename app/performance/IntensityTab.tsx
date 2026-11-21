@@ -1,0 +1,56 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import type { RunsIndex } from '@/lib/kernel';
+import { intensityShares, zonesByWeek, type LoadSummary } from '@/lib/load';
+import { zoneRanges } from '@/lib/settings';
+import { TimeChart } from './TimeChart';
+
+const PERIODS: [string, number | null][] = [['12 weeks', 12], ['1 year', 52], ['All', null]];
+const time = (d: string) => new Date(`${d}T12:00:00`).getTime();
+const pct = (v: number) => `${Math.round(v * 100)} %`;
+/** A share as a CSS width. */
+const width = (v: number) => `${(v * 100).toFixed(2)}%`;
+
+/**
+ * The intensity distribution (requirement "Intensity distribution"): each week's time in the heart
+ * rate zones of Settings, and the shares of low, moderate and high intensity over the period shown.
+ */
+export function IntensityTab({ runs, summaries, hrZones }: { runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; hrZones: number[] }) {
+  const [period, setPeriod] = useState(PERIODS[0]);
+  const all = useMemo(() => zonesByWeek(runs, summaries, hrZones), [runs, summaries, hrZones]);
+  if (!hrZones.length) return <div className="card empty">Set the heart rate zones in Settings to see the time in each.</div>;
+  if (!all.length) return <div className="card empty">No run with a heart rate yet.</div>;
+  const weeks = period[1] === null ? all : all.slice(-period[1]);
+  const shares = intensityShares(weeks);
+  const ranges = zoneRanges('heartRate', hrZones);
+  const n = ranges.length;
+  const zoneName = (k: number) => { const r = ranges[k]; return `Z${k + 1} ${r.lo === null ? `< ${r.hi}` : r.hi === null ? `≥ ${r.lo}` : `${r.lo}–${r.hi}`}`; };
+  return (
+    <>
+      <div className="toolbar">
+        <div className="segmented" role="radiogroup" aria-label="Weeks shown">
+          {PERIODS.map((p) => <button key={p[0]} type="button" role="radio" aria-checked={period[0] === p[0]} className={period[0] === p[0] ? 'on' : ''} onClick={() => setPeriod(p)}>{p[0]}</button>)}
+        </div>
+      </div>
+      <div className="card chart">
+        <dl className="form-figures" aria-label="Intensity shares">
+          <div><dt>Low (Z1–Z2)</dt><dd className="tnum">{pct(shares.low)}</dd></div>
+          <div><dt>Moderate (Z3)</dt><dd className="tnum">{pct(shares.moderate)}</dd></div>
+          <div><dt>High (Z4+)</dt><dd className="tnum">{pct(shares.high)}</dd></div>
+          <div><dt>Time with heart rate</dt><dd className="tnum">{Math.round(shares.seconds / 3600)} <span className="unit">h</span></dd></div>
+        </dl>
+        <div className="intensity-bar" role="img" aria-label={`Low ${pct(shares.low)}, moderate ${pct(shares.moderate)}, high ${pct(shares.high)}; reference 80 % low`}>
+          <span style={{ width: width(shares.low), background: 'color-mix(in srgb, var(--series-1) 35%, var(--surface))' }} />
+          <span style={{ width: width(shares.moderate), background: 'color-mix(in srgb, var(--series-1) 65%, var(--surface))' }} />
+          <span style={{ width: width(shares.high), background: 'var(--series-1)' }} />
+          <i className="intensity-ref" style={{ left: '80%' }} title="80/20: about 80 % of the time at low intensity" />
+        </div>
+        <h3 className="chart-title" style={{ marginTop: 16 }}>Time in the heart rate zones</h3>
+        <TimeChart label="Time in the heart rate zones" times={weeks.map((w) => time(w.start))} height={240}
+          series={Array.from({ length: n }, (_, k) => ({ key: `z${k + 1}`, label: zoneName(k), stack: 'zones', kind: 'bar' as const, color: `color-mix(in srgb, var(--series-1) ${Math.round(25 + (75 * k) / Math.max(1, n - 1))}%, var(--surface))`, values: weeks.map((w) => (w.seconds[k] ?? 0) / 3600) }))}
+          format={(v) => `${v.toFixed(1)} h`} tick={(v) => `${v} h`} />
+      </div>
+    </>
+  );
+}

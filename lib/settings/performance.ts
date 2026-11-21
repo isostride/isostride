@@ -28,11 +28,13 @@ export interface PerformanceSettings {
   fitnessDays: number;
   /** time constant of fatigue (ATL), days */
   fatigueDays: number;
+  /** the runner saved the model: the resting heart rate and the rest are theirs, not the defaults */
+  confirmed: boolean;
 }
 
 /** Until the runner sets their own (model's choices: Banister TRIMP, resting HR 60, 42 and 7 days). */
 export const DEFAULT_PERFORMANCE: PerformanceSettings = {
-  load: 'trimpBanister', restHr: 60, maxHr: null, sex: 'male', thresholdPace: null, thresholdPower: null, fitnessDays: 42, fatigueDays: 7,
+  load: 'trimpBanister', restHr: 60, maxHr: null, sex: 'male', thresholdPace: null, thresholdPower: null, fitnessDays: 42, fatigueDays: 7, confirmed: false,
 };
 
 const num = (v: unknown, lo: number, hi: number): number | null => (typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? v : null);
@@ -50,5 +52,6 @@ export function parsePerformance(v: unknown): PerformanceSettings {
     thresholdPower: num(o.thresholdPower, 50, 800),
     fitnessDays: num(o.fitnessDays, 7, 120) ?? d.fitnessDays,
     fatigueDays: num(o.fatigueDays, 2, 30) ?? d.fatigueDays,
+    confirmed: o.confirmed === true,
   };
 }

@@ -104,7 +104,8 @@ export function formatBoundaries(metric: string, boundaries: number[]): string {
 
 export async function readSettings(folder: DataFolder): Promise<SettingsFile> {
   const file = await readJson<Partial<SettingsFile>>(folder, PATHS.settings);
-  if (file === null) return { schemaVersion: 1, zones: structuredClone(DEFAULT_ZONES), performance: { ...DEFAULT_PERFORMANCE }, defaults: true };
+  // No file, or one that holds only the performance model: the default zones apply.
+  if (file === null || file.zones === undefined) return { schemaVersion: 1, zones: structuredClone(DEFAULT_ZONES), performance: file ? parsePerformance(file.performance) : { ...DEFAULT_PERFORMANCE }, defaults: true };
   const zones: Record<string, number[]> = {};
   for (const [k, v] of Object.entries(file?.zones ?? {})) {
     if (!Array.isArray(v)) continue;
@@ -114,8 +115,9 @@ export async function readSettings(folder: DataFolder): Promise<SettingsFile> {
   return { schemaVersion: 1, zones, performance: parsePerformance(file.performance) };
 }
 
-export async function writeSettings(folder: DataFolder, file: Omit<SettingsFile, 'performance'> & { performance?: PerformanceSettings }): Promise<void> {
+/** Writes the settings; without `zones` the file holds no zones of the runner's, and the defaults go on applying. */
+export async function writeSettings(folder: DataFolder, file: Omit<SettingsFile, 'performance' | 'zones'> & { zones?: Record<string, number[]>; performance?: PerformanceSettings }): Promise<void> {
   // Metrics with no zones are dropped, so the file holds only what the runner entered.
-  const zones = Object.fromEntries(Object.entries(file.zones).map(([k, v]) => [k, sortBoundaries(k, v)] as const).filter(([, v]) => v.length));
-  await writeJson(folder, PATHS.settings, { schemaVersion: 1, zones, performance: parsePerformance(file.performance) });
+  const zones = file.zones && Object.fromEntries(Object.entries(file.zones).map(([k, v]) => [k, sortBoundaries(k, v)] as const).filter(([, v]) => v.length));
+  await writeJson(folder, PATHS.settings, { schemaVersion: 1, ...(zones ? { zones } : {}), performance: parsePerformance(file.performance) });
 }

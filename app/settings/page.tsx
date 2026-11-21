@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 import { runInWorker, useOpenFolder } from '@/lib/client';
-import { PerformanceCard } from './PerformanceCard';
+import { GearTags } from './GearTags';
 import { DEFAULT_ZONES, ZONE_METRICS, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneRanges, zoneShade, zonesFromMaxHr, type ZoneMetric } from '@/lib/settings';
 
 /** A value of a metric as the runner reads it: pace as m:ss, others as they are. */
@@ -28,8 +29,48 @@ function ZoneChips({ m, boundaries }: { m: ZoneMetric; boundaries: number[] }) {
   );
 }
 
-/** Settings: the zones of the metrics, kept in user/settings.json, coloured on the run chart. */
-export default function SettingsPage() {
+/** The Settings tabs (requirement "Settings in tabs"), kept in the link (tab=zones, gear, tags). */
+type Tab = 'zones' | 'gear' | 'tags';
+const TABS: [Tab, string][] = [['zones', 'Zones'], ['gear', 'Gear'], ['tags', 'Tags']];
+
+export default function SettingsPageWrapper() {
+  return <Suspense fallback={<div className="page"><div className="page-head"><h1>Settings</h1></div></div>}><SettingsPage /></Suspense>;
+}
+
+/** Settings: the zones of the metrics, the gear and the tags, one tab at a time. */
+function SettingsPage() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const tabParam = params.get('tab');
+  const tab: Tab = TABS.some(([t]) => t === tabParam) ? (tabParam as Tab) : 'zones';
+  const setTab = (t: Tab) => {
+    const q = new URLSearchParams(params.toString());
+    if (t === 'zones') q.delete('tab'); else q.set('tab', t);
+    router.replace(`/settings${q.toString() ? `?${q.toString()}` : ''}`);
+  };
+  return (
+    <div className="page">
+      <div className="page-head">
+        <div>
+          <div className="eyebrow">Your settings, kept in your data folder</div>
+          <h1>Settings</h1>
+        </div>
+      </div>
+      <div className="tabs page-tabs" role="tablist" aria-label="Settings sections">
+        {TABS.map(([t, name]) => (
+          <button key={t} type="button" role="tab" id={`tab-${t}`} aria-controls={tab === t ? `panel-${t}` : undefined} aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{name}</button>
+        ))}
+      </div>
+      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+        {tab === 'zones' && <ZonesCard />}
+        {(tab === 'gear' || tab === 'tags') && <GearTags part={tab} />}
+      </div>
+    </div>
+  );
+}
+
+/** The zones of the metrics, kept in user/settings.json, coloured on the run chart. */
+function ZonesCard() {
   const { folder, handle } = useOpenFolder();
   const [texts, setTexts] = useState<Record<string, string>>({});
   const [maxHr, setMaxHr] = useState('');
@@ -57,51 +98,42 @@ export default function SettingsPage() {
   const max = Number(maxHr);
 
   return (
-    <div className="page">
-      <div className="page-head">
+    <section className="card settings-zones" aria-label="Zones">
+      <div className="settings-head">
         <div>
-          <div className="eyebrow">Your settings, kept in your data folder</div>
-          <h1>Settings</h1>
+          <h2>Zones</h2>
+          <p className="muted small">The boundaries between the zones of a metric, separated by commas: Z1 is the easiest. Pace as m:ss per km. The <Link href="/">run chart</Link> colours the zones of the metrics it shows.</p>
         </div>
+        <span className="spacer" />
+        {status && <span className="muted small" role="status">{status}</span>}
+        <button className="btn" onClick={() => { fill(DEFAULT_ZONES); setStatus(null); }}>Default zones</button>
+        <button className="btn primary" disabled={invalid.length > 0} onClick={save}>Save</button>
       </div>
-      <PerformanceCard />
-      <section className="card settings-zones" style={{ marginTop: 16 }}>
-        <div className="settings-head">
-          <div>
-            <h2>Zones</h2>
-            <p className="muted small">The boundaries between the zones of a metric, separated by commas: Z1 is the easiest. Pace as m:ss per km. The <Link href="/">run chart</Link> colours the zones of the metrics it shows.</p>
-          </div>
-          <span className="spacer" />
-          {status && <span className="muted small" role="status">{status}</span>}
-          <button className="btn" onClick={() => { fill(DEFAULT_ZONES); setStatus(null); }}>Default zones</button>
-          <button className="btn primary" disabled={invalid.length > 0} onClick={save}>Save</button>
-        </div>
-        {defaults && <div className="zone-defaults small">These are the default zones, for trying the app: heart rate at 60–90 % of a maximum of 190 bpm, and common pace and cadence zones. Change them to yours and save.</div>}
-        <div className="zone-rows">
-          {ZONE_METRICS.map((m) => {
-            const b = parsed[m.key];
-            return (
-              <div key={m.key} className="zone-row">
-                <label className="zone-name" htmlFor={`z-${m.key}`}>{m.title} <span className="muted">· {m.unit}</span></label>
-                <div className="zone-edit">
-                  <input id={`z-${m.key}`} className="input" value={texts[m.key] ?? ''} placeholder={m.pace ? 'e.g. 6:00, 5:20, 4:50, 4:20' : m.key === 'heartRate' ? 'e.g. 120, 140, 155, 170' : 'no zones'}
-                    aria-invalid={b === null} onChange={(e) => edit(m.key, e.target.value)} />
-                  {m.key === 'heartRate' && (
-                    <span className="zone-max">
-                      <input className="input" inputMode="numeric" aria-label="Max heart rate" placeholder="max HR" value={maxHr} onChange={(e) => setMaxHr(e.target.value)} />
-                      <button className="btn sm" disabled={!(max > 100 && max < 250)} onClick={() => edit(m.key, formatBoundaries(m.key, zonesFromMaxHr(max)))}>Fill from max HR</button>
-                    </span>
-                  )}
-                </div>
-                <div className="zone-out">
-                  {b === null ? <span className="zone-err small">{m.pace ? 'Write each boundary as m:ss, e.g. 5:30.' : 'Write each boundary as a number.'}</span>
-                    : b.length ? <ZoneChips m={m} boundaries={b} /> : <span className="muted small">No zones</span>}
-                </div>
+      {defaults && <div className="zone-defaults small">These are the default zones, for trying the app: heart rate at 60–90 % of a maximum of 190 bpm, and common pace and cadence zones. Change them to yours and save.</div>}
+      <div className="zone-rows">
+        {ZONE_METRICS.map((m) => {
+          const b = parsed[m.key];
+          return (
+            <div key={m.key} className="zone-row">
+              <label className="zone-name" htmlFor={`z-${m.key}`}>{m.title} <span className="muted">· {m.unit}</span></label>
+              <div className="zone-edit">
+                <input id={`z-${m.key}`} className="input" value={texts[m.key] ?? ''} placeholder={m.pace ? 'e.g. 6:00, 5:20, 4:50, 4:20' : m.key === 'heartRate' ? 'e.g. 120, 140, 155, 170' : 'no zones'}
+                  aria-invalid={b === null} onChange={(e) => edit(m.key, e.target.value)} />
+                {m.key === 'heartRate' && (
+                  <span className="zone-max">
+                    <input className="input" inputMode="numeric" aria-label="Max heart rate" placeholder="max HR" value={maxHr} onChange={(e) => setMaxHr(e.target.value)} />
+                    <button className="btn sm" disabled={!(max > 100 && max < 250)} onClick={() => edit(m.key, formatBoundaries(m.key, zonesFromMaxHr(max)))}>Fill from max HR</button>
+                  </span>
+                )}
               </div>
-            );
-          })}
-        </div>
-      </section>
-    </div>
+              <div className="zone-out">
+                {b === null ? <span className="zone-err small">{m.pace ? 'Write each boundary as m:ss, e.g. 5:30.' : 'Write each boundary as a number.'}</span>
+                  : b.length ? <ZoneChips m={m} boundaries={b} /> : <span className="muted small">No zones</span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

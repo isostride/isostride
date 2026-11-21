@@ -23,7 +23,7 @@ test.describe('Denormalized index files', () => {
     await nav(page, 'Analysis');
     await page.getByRole('button', { name: 'Pace', exact: true }).click();
     await expect(page.getByRole('img', { name: 'Over time' })).toBeVisible();
-    await nav(page, 'A/B comparison');
+    await page.getByRole('tab', { name: 'A/B' }).click();
     await expect(page.getByRole('img', { name: 'Timeline of the two groups' })).toContainText('Shoes May');
     await expect(page.getByRole('img', { name: 'Difference and interval' })).toBeVisible();
     const names = await opened(page);

@@ -1,10 +1,12 @@
 {
   "$comment": "Parts this part may import, each through its index (ADR \"Declared dependencies only\"); runs: main thread, worker or both.",
   "uses": [
+    "lib/blocks",
     "lib/context",
     "lib/detection",
     "lib/fs",
-    "lib/ingest"
+    "lib/ingest",
+    "lib/kernel"
   ],
   "runs": "worker"
 }

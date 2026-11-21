@@ -33,7 +33,9 @@ describe('Recompute everything', () => {
     const before = await checksums(derived);
     await fs.rm(derived, { recursive: true });
     await recomputeEverything(folder);
-    const differing = diff(before, await checksums(derived));
+    // The data stamp and the cache are bookkeeping, not results: a new stamp is the point of a recompute.
+    const results = (c: Record<string, string>) => Object.fromEntries(Object.entries(c).filter(([f]) => f !== 'stamp.json' && !f.startsWith('cache')));
+    const differing = diff(results(before), results(await checksums(derived)));
     await recordMeasure('recomputeDerivedFilesDiffering', differing.length);
     expect(differing).toEqual([]);
   });

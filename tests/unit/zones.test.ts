@@ -44,6 +44,9 @@ describe('Metric zones in settings', () => {
     await writeSettings(folder, { schemaVersion: 1, zones: { heartRate: [171, 114, 152, 133], cadence: [] }, defaults: true });
     expect(await readJson(folder, PATHS.settings)).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] }, performance: DEFAULT_PERFORMANCE });
     expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] }, performance: DEFAULT_PERFORMANCE });
+    // The performance model saved alone (no zones of the runner's): the default zones go on applying.
+    await writeSettings(folder, { schemaVersion: 1, performance: { ...DEFAULT_PERFORMANCE, load: 'rtss', confirmed: true } });
+    expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: DEFAULT_ZONES, performance: { ...DEFAULT_PERFORMANCE, load: 'rtss', confirmed: true }, defaults: true });
     await writeJson(folder, PATHS.settings, { zones: { speed: [270, 'x', 330], power: 'none' } });
     expect((await readSettings(folder)).zones).toEqual({ speed: [330, 270] });
   });

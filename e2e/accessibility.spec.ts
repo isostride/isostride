@@ -19,11 +19,43 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       await page.emulateMedia({ colorScheme: scheme });
       if (scheme === 'light') await setUpWithBlock(page);
       else await page.reload();
-      for (const screen of ['Runs', 'Analysis', 'A/B comparison', 'Gear and tags', 'Settings']) {
+      for (const screen of ['Runs', 'Analysis', 'Performance', 'Settings']) {
         await nav(page, screen);
         await page.getByRole('heading', { level: 1, name: screen }).waitFor();
         await page.waitForTimeout(200);
         found.push(...(await serious(page, `${screen} (${scheme})`)));
+      }
+      // The A/B tab of Analysis, on the block taken.
+      await nav(page, 'Analysis');
+      await page.getByRole('tab', { name: 'A/B' }).click();
+      await page.getByRole('img', { name: 'Difference and interval' }).waitFor({ timeout: 30_000 });
+      found.push(...(await serious(page, `Analysis · A/B (${scheme})`)));
+      // Performance: its overview, every view of every group, and the settings.
+      await nav(page, 'Performance');
+      await page.locator('li[data-model]').first().waitFor({ timeout: 60_000 });
+      found.push(...(await serious(page, `Performance · Overview (${scheme})`)));
+      // With a model's "Why?" open: its assumptions, what it rests on, how to read it.
+      await page.locator('li[data-model="efforts"]').getByRole('button', { name: /^Why\?/ }).click();
+      await page.getByRole('region', { name: /^Why:/ }).waitFor();
+      found.push(...(await serious(page, `Performance · Why (${scheme})`)));
+      for (const [tab, views] of [['Load', ['Form', 'Weekly load', 'Intensity']], ['Capacity', ['Best efforts', 'Critical speed and power', 'Predictions and VDOT']], ['Aerobic', ['Efficiency', 'Decoupling', 'VO2max from heart rate']], ['Response', ['On VO2max from heart rate', 'On VDOT']]] as const) {
+        await page.getByRole('tab', { name: tab, exact: true }).click();
+        for (const view of views) {
+          await page.getByRole('radio', { name: view, exact: true }).click();
+          await page.getByRole('group', { name: 'How far to trust this' }).waitFor();
+          await page.waitForTimeout(200);
+          found.push(...(await serious(page, `Performance · ${tab} · ${view} (${scheme})`)));
+        }
+      }
+      await page.getByRole('tab', { name: 'Model', exact: true }).click();
+      await page.getByRole('region', { name: 'Performance model' }).waitFor();
+      found.push(...(await serious(page, `Performance · Model (${scheme})`)));
+      await nav(page, 'Settings');
+      // The tabs of Settings: zones, gear, tags.
+      for (const tab of ['Zones', 'Gear', 'Tags']) {
+        await page.getByRole('tab', { name: tab, exact: true }).click();
+        await page.getByRole('tabpanel').getByRole('region', { name: tab }).waitFor();
+        found.push(...(await serious(page, `Settings · ${tab} (${scheme})`)));
       }
       // The picker of the Analysis screen: its list, and the block builder with the segments counted.
       await nav(page, 'Analysis');

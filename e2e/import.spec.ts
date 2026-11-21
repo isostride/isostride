@@ -79,8 +79,8 @@ test.describe('Non-blocking processing', () => {
     await expect(page.getByText(/Working in the background/)).toBeVisible();
     // While the worker imports, another screen opens at once.
     const t0 = Date.now();
-    await page.locator('.sidebar').getByRole('link', { name: /Gear and tags$/ }).click();
-    await expect(page.getByRole('heading', { name: 'Gear and tags' })).toBeVisible();
+    await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
     expect(Date.now() - t0).toBeLessThan(2000);
     // The import finished in the background.
     await expect(async () => {

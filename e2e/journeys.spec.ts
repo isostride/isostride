@@ -48,8 +48,8 @@ test.describe('Journeys', () => {
     await page.getByRole('button', { name: 'Export CSV' }).click();
     expect((await download).suggestedFilename()).toMatch(/-instances\.csv$/);
 
-    // A/B: split by watch, a difference with its interval.
-    await nav(page, 'A/B comparison');
+    // A/B, a tab of Analysis: split by watch, a difference with its interval.
+    await page.getByRole('tab', { name: 'A/B' }).click();
     await expect(page.getByRole('img', { name: 'Difference and interval' })).toBeVisible();
     await expect(page.getByText(/95% interval/).first()).toBeVisible();
 

@@ -607,6 +607,63 @@
     ] },
     { "element": "383a63fc-85b0-4163-adb7-4b6cf57d64ea", "name": "Analysis opened on all runs", "tests": [
       "e2e/journeys.spec.ts › Journeys › Import, recompute, block definition, trend, export and A/B without the network"
+    ] },
+    { "element": "21156837-ae8d-48fe-820e-0e3d08822daa", "name": "Settings shown in tabs", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
+    ] },
+    { "element": "d04af837-ef55-4c28-bc68-7ae01bbbd478", "name": "A/B opened from a block", "tests": [
+      "e2e/ab-comparison.spec.ts › Result transparency › Open instances of A/B"
+    ] },
+    { "element": "a2716f1a-e943-4247-bfb5-234e234c4ad7", "name": "Performance screen opened", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
+    ] },
+    { "element": "fb4d09da-7dc0-4127-9813-c478e3638ca5", "name": "Results kept for the data as it is", "tests": [
+      "tests/integration/cache.test.ts › Computed once and cached › Results kept for the data as it is"
+    ] },
+    { "element": "d5cb6789-12aa-4032-83f6-ecffddc23c26", "name": "Context change without detection", "tests": [
+      "tests/integration/cache.test.ts › Computed once and cached › Context change without detection"
+    ] },
+    { "element": "81327506-c58c-4955-be4b-844f7499091b", "name": "Cached result reads no run file", "tests": [
+      "tests/integration/cache.test.ts › Computed once and cached › Results kept for the data as it is"
+    ] },
+    { "element": "cad3f241-093c-4f75-8cca-6cf44de04668", "name": "Context change reads no run file", "tests": [
+      "tests/integration/cache.test.ts › Computed once and cached › Context change without detection"
+    ] },
+    { "element": "43884c3e-c026-4889-84aa-bb73f65bacfe", "name": "Weekly load, monotony and strain", "tests": [
+      "tests/unit/insights.test.ts › Performance markers › Weekly load, monotony and strain"
+    ] },
+    { "element": "d180eb71-c70c-4c5a-8761-65426bcce3e6", "name": "Fitness markers of 90 days", "tests": [
+      "tests/unit/insights.test.ts › Performance markers › Fitness markers of 90 days"
+    ] },
+    { "element": "fede3065-9a52-4458-a053-aa46b3ca46a3", "name": "Intensity in the zones", "tests": [
+      "tests/unit/insights.test.ts › Performance markers › Intensity in the zones"
+    ] },
+    { "element": "c9b0a80c-9323-4a1f-8e7a-d521ca7be1a8", "name": "Efficiency and decoupling", "tests": [
+      "tests/unit/insights.test.ts › Performance markers › Efficiency and decoupling"
+    ] },
+    { "element": "b9907905-f70c-445d-a7f0-9e0d2355b3e4", "name": "Performance views opened", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
+    ] },
+    { "element": "1c403970-896a-4fa7-b787-3f5c1b09976d", "name": "Performance views read no run file", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
+    ] },
+    { "element": "b98c5125-d50e-49b3-97fe-d34015c955a7", "name": "VO2max three ways", "tests": [
+      "tests/unit/banister.test.ts › Fitted model and VO2max › VO2max three ways"
+    ] },
+    { "element": "81c1313d-2418-4a87-94a1-4df11223d308", "name": "Banister model fitted to performances", "tests": [
+      "tests/unit/banister.test.ts › Fitted model and VO2max › Banister model fitted to performances"
+    ] },
+    { "element": "7d2e2918-4834-4f0a-b59b-c68d630cf02d", "name": "Best efforts classed by their heart rate", "tests": [
+      "tests/unit/assumptions.test.ts › Model assumptions › Best efforts classed by their heart rate"
+    ] },
+    { "element": "3c90c78c-d981-46b4-88c7-1ad277d38123", "name": "Assumptions checked against the data", "tests": [
+      "tests/unit/assumptions.test.ts › Model assumptions › Assumptions checked against the data"
+    ] },
+    { "element": "385669e9-e7d8-422e-876a-a2b367a5aafa", "name": "Performance laid out by evidence", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
+    ] },
+    { "element": "e83a8650-6db2-470e-9ed2-71c5e265e08c", "name": "Why opened for a model", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
     ] }
   ]
 }

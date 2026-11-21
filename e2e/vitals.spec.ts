@@ -9,7 +9,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EXPORT = path.join(ROOT, '.next-build');
 /** web-vitals, loaded by the test only (never part of the app, nothing sent over the network). */
 const WEB_VITALS = path.join(ROOT, 'node_modules/web-vitals/dist/web-vitals.iife.js');
-const SCREENS = [['Runs', '/'], ['Analysis', '/analysis'], ['A/B comparison', '/compare'], ['Gear and tags', '/gear'], ['Settings', '/settings']] as const;
+const SCREENS = [['Runs', '/'], ['Analysis', '/analysis'], ['Performance', '/performance'], ['Settings', '/settings']] as const;
 const BUDGET = { lcp: 2500, cls: 0.1, tbt: 200, inp: 200, scriptKB: 200 };
 
 async function instrument(page: Page) {
@@ -79,9 +79,10 @@ test.describe('Core Web Vitals met', () => {
     }
     await page.getByRole('button', { name: 'Corrected' }).click();
     worst.inp = Math.max(worst.inp, (await vitals(page)).INP);
-    await page.goto('/compare');
-    await page.getByRole('heading', { level: 1, name: 'A/B comparison' }).waitFor();
-    for (const m of ['Pace', 'Heart rate', 'Ground contact']) await page.getByRole('button', { name: m, exact: true }).click();
+    await page.goto('/analysis?tab=ab');
+    const abMetrics = page.getByRole('group', { name: 'Metric' });
+    await abMetrics.waitFor();
+    for (const m of ['Pace', 'Heart rate', 'Ground contact']) await abMetrics.getByRole('button', { name: m, exact: true }).click();
     worst.inp = Math.max(worst.inp, (await vitals(page)).INP);
     // The run chart: a metric off and on, the scale of another, a lap selected and zoomed to, the selection closed.
     await page.goto('/');

@@ -14,7 +14,7 @@ interface Item {
   run: () => void;
 }
 
-/** ⌘K / Ctrl+K: jump to a screen, a block's trend or A/B comparison, a run, or run an action. */
+/** ⌘K / Ctrl+K: jump to a screen, a block's trend or A/B comparison (tabs of Analysis), a run, or run an action. */
 export function CommandPalette({ onTheme }: { onTheme: () => void }) {
   const { state } = useFolder();
   const router = useRouter();
@@ -50,12 +50,16 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
       const list: Item[] = [
         { group: 'Screens', label: 'Runs', run: go('/') },
         { group: 'Screens', label: 'Analysis', run: go('/analysis') },
-        { group: 'Screens', label: 'A/B comparison', run: go('/compare') },
-        { group: 'Screens', label: 'Gear and tags', run: go('/gear') },
+        { group: 'Screens', label: 'A/B · Analysis', run: go('/analysis?tab=ab') },
+        { group: 'Screens', label: 'Performance', run: go('/performance') },
+        { group: 'Screens', label: 'Load model · Performance', run: go('/performance?tab=model') },
+        { group: 'Screens', label: 'Settings', run: go('/settings') },
+        { group: 'Screens', label: 'Gear · Settings', run: go('/settings?tab=gear') },
+        { group: 'Screens', label: 'Tags · Settings', run: go('/settings?tab=tags') },
       ];
       for (const d of (await readDefinitions(state.folder)).filter((x) => x.status === 'active')) {
         list.push({ group: 'Blocks', label: `${d.name} · Analysis`, run: go(`/analysis?items=b:${d.id}:0`) });
-        list.push({ group: 'Blocks', label: `${d.name} · Compare A/B`, run: go(`/compare?def=${d.id}`) });
+        list.push({ group: 'Blocks', label: `${d.name} · Compare A/B`, run: go(`/analysis?items=b:${d.id}:0&tab=ab&ab=${d.id}`) });
       }
       const runs = (await readJson<RunsIndex>(state.folder, PATHS.runsIndex))?.runs ?? [];
       for (const r of [...runs].reverse()) {

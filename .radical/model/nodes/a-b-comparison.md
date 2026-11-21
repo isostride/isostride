@@ -5,5 +5,5 @@ label: "A/B comparison"
 action: "show the difference between the groups, its uncertainty interval (bootstrap) and a verdict against the noise threshold"
 ears_type: "event-driven"
 rationale: "F12; scenario 3 (shoes)."
-trigger: "the user chooses a block definition and the context field that splits its instances into two sets, groups A and B, that differ in that one context field"
+trigger: "the user chooses, in the A/B tab of Analysis, an item and the context field that splits its instances into two sets"
 ---

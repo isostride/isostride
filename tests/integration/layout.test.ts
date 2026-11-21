@@ -39,6 +39,15 @@ describe('Data folder layout', () => {
     const manifest = (await readManifest(folder))!;
     expect(manifest).toMatchObject({ schemaVersion: SCHEMA_VERSION, algorithmVersion: ALGORITHM_VERSION });
     expect(Object.keys(manifest.files).map((f) => path.basename(f)).sort()).toEqual([...files].sort());
+    // Everything computed from the FIT files is in derived/: the manifest too, none beside it.
+    expect(PATHS.manifest.startsWith(`${PATHS.derived}/`)).toBe(true);
+    expect((await fs.readdir(path.join(folder.root, PATHS.root))).sort()).toEqual(['derived', 'user']);
+
+    // A manifest left at strideprism/ by an earlier version is moved into derived/ on first reading.
+    await fs.rename(path.join(folder.root, PATHS.manifest), path.join(folder.root, PATHS.legacyManifest));
+    expect(await readManifest(folder)).toEqual(manifest);
+    expect(await exists(PATHS.manifest)).toBe(true);
+    expect(await exists(PATHS.legacyManifest)).toBe(false);
   });
 });
 

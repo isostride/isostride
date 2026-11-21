@@ -1,3 +1,4 @@
+import { decouplingOf } from '@/lib/blocks';
 import { CS_RANGE, CURVE_DURATIONS, bestsWithin } from '@/lib/curve';
 import type { RunFile, Series } from '@/lib/kernel';
 
@@ -17,9 +18,46 @@ export interface LoadSummary {
   normSpeed: number | null;
   /** normalised power, W, the same way */
   normPower: number | null;
-  /** the bests of 2–20 minutes, for the critical speed and power: speed m/s and power W */
-  bests: { duration: number; speed: number | null; power: number | null }[];
+  /** the bests of 2–20 minutes, for the critical speed and power */
+  bests: BestOfLength[];
+  /** time moving, s: the 10 s windows with movement */
+  moving: number;
+  /** mean heart rate while moving, bpm */
+  avgHr: number | null;
+  /** efficiency factor while moving: mean speed per mean heart rate, metres per heartbeat */
+  ef: number | null;
+  /** Pa:HR decoupling of the whole run, %: the efficiency of the first half against the second */
+  decoupling: number | null;
 }
+
+/**
+ * The best stretch of a length in a run: its speed (m/s) and its power (W), each with where it lies
+ * and the highest heart rate in it — the evidence of how hard it was (ADR "Models grouped by
+ * evidence, assumptions checked").
+ */
+export interface BestOfLength {
+  /** s */
+  duration: number;
+  speed: number | null;
+  power: number | null;
+  /**
+   * the fastest stretch, [from, to] s of the run; its mean heart rate after the first HR_LAG s (the
+   * heart rate lags the effort), and the highest of a 10 s window in it, bpm
+   */
+  speedAt?: [number, number];
+  speedHr?: number | null;
+  speedHrPeak?: number | null;
+  /** the stretch of the highest average power, with its heart rates */
+  powerAt?: [number, number];
+  powerHr?: number | null;
+  powerHrPeak?: number | null;
+}
+
+/** The heart rate takes about this long to follow an effort, s: left out of a stretch's mean heart rate. */
+export const HR_LAG = 90;
+
+/** Raised when the summary changes, so every run is summarised again (3: where each best lies and the heart rate in it). */
+export const LOAD_SUMMARY_VERSION = 3;
 
 /** A sample counts until the next one, but no longer than this, s: a pause counts as nothing. */
 const HOLD = 5;
@@ -69,12 +107,51 @@ export function summarizeLoad(run: RunFile): LoadSummary {
   const effort = effortPace.some((v) => v !== null && v > 0) ? effortPace : speed;
   const durations = CURVE_DURATIONS.filter((d) => d >= CS_RANGE[0] && d <= CS_RANGE[1]);
   const whole: [number, number][] = [[0, 1e9]];
-  const fast = new Map(bestsWithin(run, whole, 'speed', durations).map((b) => [b.duration, 1000 / b.value]));
-  const strong = new Map(bestsWithin(run, whole, 'power', durations).map((b) => [b.duration, b.value]));
+  const fast = new Map(bestsWithin(run, whole, 'speed', durations).map((b) => [b.duration, b]));
+  const strong = new Map(bestsWithin(run, whole, 'power', durations).map((b) => [b.duration, b]));
   const round = (v: number | null, k = 1000) => (v === null ? null : Math.round(v * k) / k);
+  // Efficiency while moving, from the 10 s windows (as the run chart's efficiency).
+  const w = run.windows;
+  /** The heart rate of the 10 s windows that start inside [from, to): the mean after the first HR_LAG s (of a longer stretch), and the peak. */
+  const heartIn = (from: number, to: number): { mean: number | null; peak: number | null } => {
+    const lag = to - from > 2 * HR_LAG ? HR_LAG : 0;
+    let peak: number | null = null;
+    let sum = 0;
+    let n = 0;
+    for (let i = 0; i < w.start.length; i++) {
+      const h = w.heartRate[i];
+      if (w.start[i] < from - 5 || w.start[i] >= to || h === null) continue;
+      if (peak === null || h > peak) peak = h;
+      if (w.start[i] >= from + lag - 5) { sum += h; n++; }
+    }
+    return { mean: n ? Math.round(sum / n) : null, peak: peak === null ? null : Math.round(peak) };
+  };
+  let sp = 0;
+  let hrSum = 0;
+  let both = 0;
+  let movingWindows = 0;
+  for (let i = 0; i < w.start.length; i++) {
+    if (w.flags.stopped[i]) continue;
+    movingWindows++;
+    const v = w.speed[i];
+    const h = w.heartRate[i];
+    if (v !== null && v > 0 && h !== null && h > 0) { sp += v; hrSum += h; both++; }
+  }
   return {
+    moving: movingWindows * 10,
+    avgHr: both ? Math.round(hrSum / both) : null,
+    ef: both ? round((sp / both) * 60 / (hrSum / both)) : null,
+    decoupling: round(decouplingOf(run, 0, (w.start[w.start.length - 1] ?? 0) + 10), 10),
     duration: run.duration, hrFrom, hr, hrPeak,
     normSpeed: round(normalised(t, effort)), normPower: round(normalised(t, power), 10),
-    bests: durations.map((duration) => ({ duration, speed: round(fast.get(duration) ?? null), power: round(strong.get(duration) ?? null, 10) })),
+    bests: durations.map((duration) => {
+      const f = fast.get(duration);
+      const p = strong.get(duration);
+      return {
+        duration, speed: f ? round(1000 / f.value) : null, power: p ? round(p.value, 10) : null,
+        ...(f ? (() => { const h = heartIn(f.from, f.to); return { speedAt: [Math.round(f.from), Math.round(f.to)] as [number, number], speedHr: h.mean, speedHrPeak: h.peak }; })() : {}),
+        ...(p ? (() => { const h = heartIn(p.from, p.to); return { powerAt: [Math.round(p.from), Math.round(p.to)] as [number, number], powerHr: h.mean, powerHrPeak: h.peak }; })() : {}),
+      };
+    }),
   };
 }

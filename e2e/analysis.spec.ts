@@ -49,9 +49,9 @@ test.describe('Analysis workspace', () => {
     };
     await clickPoint(hr);
 
-    // The sections are tabs, kept in the link: Trends first, then Segments, the curve and the form; one at a time.
+    // The sections are tabs, kept in the link: Trends first, then Segments, A/B and the curve; one at a time.
     const tabs = page.getByRole('tablist', { name: 'Analysis sections' });
-    await expect(tabs.getByRole('tab')).toHaveText(['Trends', 'Segments', 'Pace / power curve', 'Form']);
+    await expect(tabs.getByRole('tab')).toHaveText(['Trends', 'Segments', 'A/B', 'Pace / power curve']);
     await expect(tabs.getByRole('tab', { name: 'Trends' })).toHaveAttribute('aria-selected', 'true');
     await tabs.getByRole('tab', { name: 'Segments' }).click();
     await expect(page).toHaveURL(/tab=segments/);

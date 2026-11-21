@@ -6,7 +6,8 @@ import { syntheticRun } from '../support/synthetic';
 const HR_ZONES = [114, 133, 152, 171];
 /** A summary of `minutes` at one heart rate, speed and power. */
 const steady = (minutes: number, hr: number | null, extra: Partial<LoadSummary> = {}): LoadSummary => ({
-  duration: minutes * 60, hrFrom: hr ?? 0, hr: hr === null ? [] : [minutes * 60], hrPeak: hr, normSpeed: null, normPower: null, bests: [], ...extra,
+  duration: minutes * 60, hrFrom: hr ?? 0, hr: hr === null ? [] : [minutes * 60], hrPeak: hr, normSpeed: null, normPower: null, bests: [],
+  moving: minutes * 60, avgHr: hr, ef: null, decoupling: null, ...extra,
 });
 const perf = (p: Partial<PerformanceSettings>): PerformanceSettings => ({ ...DEFAULT_PERFORMANCE, ...p });
 

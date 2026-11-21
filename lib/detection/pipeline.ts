@@ -1,6 +1,6 @@
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
 import { resample, type TrackPoint } from '@/lib/geo';
-import { type RunFile, type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
+import { type IndexedRun, type RunFile, type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { detectRouteSegments } from './segments';
 import { RECOMMENDATIONS_PATH, fromRecommendation, matchesRunFilter, readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
 import { detectInstances } from './detect';
@@ -74,4 +74,60 @@ export async function instancesOf(folder: DataFolder, defs: BlockDefinition[], o
     for (const def of defs) out[def.id].push(...detectInstances(def, run, row, track));
   }
   return out;
+}
+
+/** The context fields of a run that detection reads: a rule's run filter, a tag block, the suggestions. */
+export type DetectionField = 'title' | 'workoutType' | 'techniqueCue' | 'shoes' | 'heartRateSource';
+export const DETECTION_FIELDS: DetectionField[] = ['title', 'workoutType', 'techniqueCue', 'shoes', 'heartRateSource'];
+
+/** The detection fields whose value changed in some run between two versions of the index. */
+export function changedFields(before: IndexedRun[], after: IndexedRun[]): Set<DetectionField> {
+  const old = new Map(before.map((r) => [r.id, r]));
+  const out = new Set<DetectionField>();
+  for (const r of after) {
+    const o = old.get(r.id);
+    for (const f of DETECTION_FIELDS) if (!o || (o[f] ?? null) !== (r[f] ?? null)) out.add(f);
+  }
+  if (before.some((r) => !after.some((a) => a.id === r.id))) DETECTION_FIELDS.forEach((f) => out.add(f));
+  return out;
+}
+
+/**
+ * Whether a change of these fields can change what detection finds: a workout type (tag blocks and
+ * the suggestions by workout type), or a field a kept rule filters its runs by.
+ */
+export function needsDetection(defs: BlockDefinition[], changed: Set<DetectionField>): boolean {
+  if (changed.has('workoutType')) return true;
+  return defs.some((d) => {
+    if (d.status !== 'active' || d.params.type !== 'rule') return false;
+    const f = d.params.runs;
+    return (changed.has('title') && f.title.trim() !== '') || (changed.has('techniqueCue') && f.techniqueCues.length > 0)
+      || (changed.has('shoes') && f.shoes.length > 0) || (changed.has('heartRateSource') && f.heartRateSources.length > 0);
+  });
+}
+
+/**
+ * The run and day context of every kept instance written again from the index (the context is
+ * denormalized into block-instances.json): what follows a change of gear, tags or the load model
+ * when detection itself would find the same segments. No run file is read.
+ */
+export async function rejoinInstances(folder: DataFolder): Promise<void> {
+  const index = await readJson<RunsIndex>(folder, PATHS.runsIndex);
+  const file = await readJson<BlockInstancesFile>(folder, PATHS.blockInstances);
+  if (!index || !file) return;
+  const rows = new Map(index.runs.map((r) => [r.id, r]));
+  const instances = file.instances.map((i) => {
+    const row = rows.get(i.runId);
+    if (!row) return i;
+    const { run, day } = i.context;
+    return {
+      ...i,
+      context: {
+        ...i.context,
+        run: { ...run, shoes: row.shoes ?? null, heartRateSource: row.heartRateSource ?? `wrist (${run.device})`, workoutType: row.workoutType ?? null, techniqueCue: row.techniqueCue ?? null },
+        day: { ...day, load3: row.load3 ?? 0, load7: row.load7 ?? 0, form: row.form ?? 0 },
+      },
+    };
+  });
+  await writeJson(folder, PATHS.blockInstances, { algorithmVersion: ALGORITHM_VERSION, instances } satisfies BlockInstancesFile);
 }

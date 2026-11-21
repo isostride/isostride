@@ -4,7 +4,7 @@ import { fakeFolderPicker, fitFiles, putFitFiles, recordMeasure } from './suppor
 let presses = 0;
 
 /** Tabs forward to the control with this accessible name; fails after 200 tabs. */
-async function tabTo(page: Page, role: 'button' | 'link' | 'radio' | 'combobox', name: string | RegExp): Promise<void> {
+async function tabTo(page: Page, role: 'button' | 'link' | 'radio' | 'combobox' | 'tab', name: string | RegExp): Promise<void> {
   const target = page.getByRole(role, { name }).first();
   await target.waitFor();
   for (let i = 0; i < 200; i++) {
@@ -48,10 +48,11 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
     await tabTo(page, 'button', 'Pace');
     await page.keyboard.press('Enter');
     await expect(page.getByRole('heading', { level: 1, name: 'Analysis' })).toBeVisible();
-    // A/B comparison.
-    await tabTo(page, 'link', /A\/B comparison$/);
+    // A/B comparison, a tab of Analysis.
+    await tabTo(page, 'tab', 'A/B');
     await page.keyboard.press('Enter');
-    await expect(page.getByRole('heading', { level: 1, name: 'A/B comparison' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'A/B' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('group', { name: 'Metric' })).toBeVisible();
     await recordMeasure('keyboardJourneyCompleted', 1);
     await recordMeasure('keyboardJourneyTabs', presses);
   });

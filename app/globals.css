@@ -422,8 +422,8 @@ svg text { font-family: var(--mono); }
 .tabs { display: flex; gap: 2px; padding: 8px 8px 0; border-bottom: 1px solid var(--line); }
 .tabs button { border: 0; background: none; padding: 8px 12px; font-weight: 550; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .tabs button.on { color: var(--text); border-bottom-color: var(--text); }
-.analysis-tabs { padding: 0; margin: 4px 0 16px; }
-.analysis-tabs button { font-size: 14px; padding: 10px 14px; }
+.analysis-tabs, .page-tabs { padding: 0; margin: 4px 0 16px; }
+.analysis-tabs button, .page-tabs button { font-size: 14px; padding: 10px 14px; }
 .palette.wide { width: min(760px, 94vw); }
 .palette-body { max-height: 78vh; overflow: auto; }
 .palette-row { display: flex; align-items: center; gap: 6px; }
@@ -676,7 +676,7 @@ table.stats-grid td { white-space: nowrap; }
 .curve-param-dl > div { display: flex; flex-direction: column; min-width: 84px; }
 .curve-param-dl dt { order: 2; color: var(--muted); font-size: 11.5px; }
 .curve-param-dl dd { order: 1; margin: 0; font-size: 16px; font-weight: 650; white-space: nowrap; }
-.curve-param-dl span { order: 3; font-size: 11px; }
+.curve-param-dl dd.sub { order: 3; font-size: 11px; font-weight: 400; }
 .curve-bests tr.focus td { background: var(--surface-2); }
 @media (max-width: 720px) { .curve-param-row { grid-template-columns: 1fr; gap: 8px; } }
 
@@ -698,5 +698,63 @@ table.stats-grid td { white-space: nowrap; }
 .form-figures > div { display: flex; flex-direction: column; min-width: 110px; }
 .form-figures dt { order: 2; color: var(--muted); font-size: 11.5px; }
 .form-figures dd { order: 1; margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -0.02em; }
-.form-figures span { order: 3; font-size: 11px; }
+.form-figures dd.sub { order: 3; font-size: 11px; font-weight: 400; letter-spacing: 0; }
 .form-keys { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 6px; font-size: 12px; }
+
+/* Analysis: the progress of a computation in the row of the tabs, and the room a chart keeps while it waits. */
+.tabs-progress { margin-left: auto; display: inline-flex; align-items: center; gap: 10px; align-self: center; }
+.tabs-progress .progress { display: block; width: 140px; margin: 0; }
+.tabs-progress .progress > span { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+.chart-loading { display: flex; align-items: center; justify-content: center; }
+
+/* Performance: the low / moderate / high share bar with its 80 % reference. */
+.intensity-bar { position: relative; display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--surface-2); margin: 4px 0 6px; }
+.intensity-bar > span { display: block; height: 100%; }
+.intensity-ref { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text); }
+
+/* Performance: a name, a number and a trust label; the rest behind "Why?". */
+.trust { display: inline-flex; align-items: center; gap: 6px; padding: 0 9px 0 7px; border-radius: 999px; background: var(--surface-2); color: var(--text); font-size: 11.5px; font-weight: 600; line-height: 20px; white-space: nowrap; }
+.trust-dot { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.trust-dot.ok, .trust-dot.met, .trust-dot.allout { background: var(--ok); }
+.trust-dot.rough, .trust-dot.doubt, .trust-dot.hard { background: var(--warn); }
+.trust-dot.no, .trust-dot.unmet, .trust-dot.easy { background: var(--err); }
+.trust-dot.unknown, .trust-dot.nodata { background: transparent; box-shadow: inset 0 0 0 1.5px var(--muted); }
+.why-btn { border: 0; background: none; padding: 2px 4px; border-radius: 6px; font-size: 12px; font-weight: 550; color: var(--accent); cursor: pointer; }
+.why-btn:hover { text-decoration: underline; }
+.why-btn.on { background: var(--surface-2); color: var(--text); }
+.why-wrap { margin-bottom: 12px; }
+.why-bar { display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: center; }
+.why-item { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+.why-name { font-weight: 550; }
+.why-card { margin-top: 10px; padding: 14px 18px 16px; }
+.why-panel .why-reason { margin: 0 0 4px; font-size: 13px; }
+.why-cols { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 4px 32px; }
+.why-text { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--text-2); }
+@media (max-width: 900px) { .why-cols { grid-template-columns: 1fr; } }
+.model-sub { margin: 12px 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.rests { display: flex; flex-wrap: wrap; gap: 4px; }
+.rests-model { text-decoration: none; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checks li { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 8px; font-size: 12.5px; line-height: 1.4; }
+.checks .trust-dot { margin-top: 5px; }
+.check-status { font-weight: 600; color: var(--text-2); }
+.check-detail { display: block; }
+.perf-views { margin-bottom: 12px; }
+.overview-group { margin-bottom: 14px; padding: 0 0 6px; }
+.overview-head { display: flex; align-items: baseline; gap: 10px; padding: 14px 18px 6px; }
+.overview-head h2 { margin: 0; font-size: 15px; }
+.overview-head h2 a { color: inherit; text-decoration: none; }
+.overview-list { list-style: none; margin: 0; padding: 0; }
+.overview-list > li { border-top: 1px solid var(--line); }
+.overview-row { display: grid; grid-template-columns: minmax(200px, 320px) minmax(0, 1fr) auto auto; gap: 14px; align-items: center; padding: 9px 18px; }
+.overview-row.depth-1 .overview-name { padding-left: 18px; }
+.overview-row.depth-2 .overview-name { padding-left: 36px; }
+.overview-name { font-weight: 550; color: var(--text); text-decoration: none; }
+.overview-name:hover { text-decoration: underline; }
+.overview-now { font-size: 13px; color: var(--text-2); }
+.overview-list .why-panel { padding: 4px 18px 16px; background: var(--surface-2); border-top: 1px solid var(--line); }
+.overview-list .why-panel .why-reason { padding-top: 10px; }
+@media (max-width: 760px) { .overview-row { grid-template-columns: 1fr auto auto; } .overview-now { grid-column: 1 / -1; order: 3; } }
+.form-figures .unit { font-size: 12px; font-weight: 500; letter-spacing: 0; color: var(--muted); }
+.efforts-table .trust { font-weight: 500; }
+.overview-list .why-panel .chip { background: var(--surface); }

@@ -1,6 +1,6 @@
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
 import { type RunFile, type RunIndexRow, type RunsIndex, ALGORITHM_VERSION, type RunContext } from '@/lib/kernel';
-import { formSeries, runLoads, summarizeLoad, type LoadSummary, type RunLoad } from '@/lib/load';
+import { LOAD_SUMMARY_VERSION, formSeries, runLoads, summarizeLoad, type LoadSummary, type RunLoad } from '@/lib/load';
 import { readSettings } from '@/lib/settings';
 import { computeDayStates, type DayState } from './dayState';
 import { dayOf, gearOn, readGear, type Gear, readRunTags, type RunTagsFile } from '@/lib/gear';
@@ -37,8 +37,6 @@ export interface LoadSummariesFile {
   version: number;
   runs: Record<string, LoadSummary>;
 }
-/** Raised when the summary changes, so every run is summarised again. */
-export const LOAD_SUMMARY_VERSION = 1;
 
 /**
  * The load summary of every run of the index: those kept, and those missing summarised from their

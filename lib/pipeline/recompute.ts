@@ -8,6 +8,7 @@ import { importFolder } from './importFolder';
  */
 export async function recomputeEverything(folder: DataFolder, opts: ImportOptions = {}): Promise<ImportReport> {
   await folder.remove(PATHS.derived);
+  await folder.remove(PATHS.legacyManifest);
   await writeManifest(folder, emptyManifest());
   return importFolder(folder, opts);
 }

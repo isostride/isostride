@@ -81,7 +81,7 @@ export function CurveTab({ metric, items, bests, missingPower }: {
                 <div className="curve-param-head"><ItemKey shape={l.shape} color={l.color} /> {l.label}</div>
                 {e ? (
                   <dl className="curve-param-dl">
-                    {tiles.map(([name, value, sub]) => <div key={name}><dt>{name}</dt><dd className="tnum">{value}</dd>{sub && <span className="muted">{sub}</span>}</div>)}
+                    {tiles.map(([name, value, sub]) => <div key={name}><dt>{name}</dt><dd className="tnum">{value}</dd>{sub && <dd className="muted sub">{sub}</dd>}</div>)}
                   </dl>
                 ) : <span className="muted small">No estimate: it needs {MIN_FIT_POINTS} bests of {MIN_FIT_SECONDS / 60} min and more, so segments at least that long.</span>}
               </section>

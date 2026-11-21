@@ -20,7 +20,7 @@ const parseNum = (t: string): number | null | undefined => (t.trim() === '' ? nu
  * and its parameters, saved into user/settings.json; saving recomputes every run's load and the
  * context in the Processing Worker.
  */
-export function PerformanceCard() {
+export function PerformanceCard({ onSaved }: { onSaved?: () => void } = {}) {
   const { folder, handle } = useOpenFolder();
   const [p, setP] = useState<PerformanceSettings>(DEFAULT_PERFORMANCE);
   const [texts, setTexts] = useState({ restHr: '', maxHr: '', thresholdPace: '', thresholdPower: '', fitnessDays: '', fatigueDays: '' });
@@ -50,17 +50,20 @@ export function PerformanceCard() {
     fitnessDays: parseNum(texts.fitnessDays), fatigueDays: parseNum(texts.fatigueDays),
   };
   const bad = (Object.entries(values) as [keyof typeof values, number | null | undefined][]).filter(([k, v]) => v === undefined || ((k === 'restHr' || k === 'fitnessDays' || k === 'fatigueDays') && v === null)).map(([k]) => k);
-  const next = parsePerformance({ ...p, ...Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined)) });
+  // Saved by the runner: the values are theirs from now on (the assumptions' checks read this).
+  const next = parsePerformance({ ...p, ...Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined)), confirmed: true });
   const edit = (k: keyof typeof texts, v: string) => { setTexts((t) => ({ ...t, [k]: v })); setStatus(null); };
   const choose = (load: LoadModel) => { setP((q) => ({ ...q, load })); setStatus(null); };
 
   const save = async () => {
     if (bad.length) return;
     const s = await readSettings(folder);
-    await writeSettings(folder, { schemaVersion: 1, zones: s.zones, performance: next });
+    // The zones stay as they are: the defaults are not saved as the runner's own.
+    await writeSettings(folder, { schemaVersion: 1, ...(s.defaults ? {} : { zones: s.zones }), performance: next });
     setStatus('Recomputing the loads…');
     await runInWorker('context', handle);
     setStatus('Saved · loads recomputed');
+    onSaved?.();
   };
 
   const field = (k: keyof typeof texts, label: string, unit: string, placeholder?: string) => (
@@ -75,7 +78,7 @@ export function PerformanceCard() {
       <div className="settings-head">
         <div>
           <h2>Performance model</h2>
-          <p className="muted small">How the load of a run is counted, and how fitness and fatigue follow it. The load shows on each run, each week of the calendar and in the context of the segments; the form chart is a tab of Analysis.</p>
+          <p className="muted small">How the load of a run is counted, and how fitness and fatigue follow it.</p>
         </div>
         <span className="spacer" />
         {status && <span className="muted small" role="status">{status}</span>}

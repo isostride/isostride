@@ -3,7 +3,7 @@ import { BrowserFolder } from '@/lib/fs';
 import type { BlockDefinition, BlockInstance } from '@/lib/blocks';
 import { curvesOf, type CurvePoint, type CurveSource } from '@/lib/curve';
 import { instancesOf } from '@/lib/detection';
-import { importFolder, recomputeEverything, refreshBlocks, refreshContext } from '@/lib/pipeline';
+import { cached, importFolder, recomputeEverything, refreshBlocks, refreshContext } from '@/lib/pipeline';
 
 /** Messages between the Web App and the Processing Worker. */
 /** context: gear or tags changed; blocks: block definitions changed; instances: blocks not kept, computed now; curve: pace curves of stretches. */
@@ -26,11 +26,14 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
   const onProgress = (p: { done: number; total: number; file: string }) => post({ type: 'progress', ...p });
   try {
     if (e.data.type === 'instances') {
-      post({ type: 'instances', instances: await instancesOf(folder, e.data.defs, onProgress) });
+      // Computed once for the data as it is, then read from derived/cache/.
+      const defs = e.data.defs;
+      post({ type: 'instances', instances: (await cached(folder, 'instances', JSON.stringify(defs), () => instancesOf(folder, defs, onProgress))).value });
       return;
     }
     if (e.data.type === 'curve') {
-      post({ type: 'curves', curves: await curvesOf(folder, e.data.sources, onProgress) });
+      const sources = e.data.sources;
+      post({ type: 'curves', curves: (await cached(folder, 'curves', JSON.stringify(sources), () => curvesOf(folder, sources, onProgress))).value });
       return;
     }
     if (e.data.type === 'context' || e.data.type === 'blocks') {

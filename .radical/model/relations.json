@@ -93,6 +93,19 @@
     "targetId": "c5829292-1066-494a-9c63-78abe795aa96"
   },
   {
+    "id": "04490e4c-559b-4e84-b993-bace19de97ed",
+    "relationType": "constrains",
+    "sourceId": "67c05609-df7a-4838-bc6b-0180d42142d6",
+    "targetId": "df4990c9-dd90-49cc-9eca-6507c3d5dd66"
+  },
+  {
+    "id": "0539615a-eec1-46f6-ba3b-259d9fbc108c",
+    "quote": "szacowanie VO2max z tempa i tętna: opiera się na wzorach populacyjnych, a CS liczę z Twoich własnych najlepszych odcinków.\nmozesz to zrobic",
+    "relationType": "derives",
+    "sourceId": "2ee5b387-72f8-482a-95d0-9159fd6bb065",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "059d373a-8c5b-4a09-b241-f8d81bccff6e",
     "relationType": "verifies",
     "sourceId": "69d17b09-2da3-460a-a147-f4e4abf8ccc6",
@@ -153,6 +166,12 @@
     "relationType": "derives",
     "sourceId": "5745b107-b2ee-4266-9c18-4e5286ed032c",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "07e2cdb9-d945-45db-89e6-d6479619d099",
+    "relationType": "verifies",
+    "sourceId": "b9907905-f70c-445d-a7f0-9e0d2355b3e4",
+    "targetId": "2cc97e54-4899-4f94-9b8c-24845459f7c0"
   },
   {
     "id": "07e3a338-01a9-4920-90a1-6113f63d9a27",
@@ -350,6 +369,18 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "0d8f2c61-3b08-4e72-bd85-5dd2b943081c",
+    "relationType": "satisfies",
+    "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
+    "targetId": "22d6df09-ddc7-4b2a-b735-e4b8aab92b10"
+  },
+  {
+    "id": "0da04f4c-3d76-47ff-a03e-9bb94c035ab6",
+    "relationType": "implements",
+    "sourceId": "cad3f241-093c-4f75-8cca-6cf44de04668",
+    "targetId": "67c05609-df7a-4838-bc6b-0180d42142d6"
+  },
+  {
     "id": "0dcbb53b-f004-48dc-bcdb-0d31fcf97707",
     "relationType": "illustrates",
     "sourceId": "3326b1ec-d31e-42a2-8e92-81f30f7ec6ef",
@@ -404,6 +435,12 @@
     "relationType": "derives",
     "sourceId": "2f20802d-6d6a-4eac-9620-f016383fc5be",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "0f93e1b5-92d8-4c60-95f3-e4a0b2311ddf",
+    "relationType": "constrains",
+    "sourceId": "5126b424-ff43-4f89-a418-179569e7e47d",
+    "targetId": "340e82f0-6223-4f6f-85eb-5418fff8ddec"
   },
   {
     "id": "0fa574d7-45d1-4ecd-90e7-9ef4f0f35d81",
@@ -959,6 +996,12 @@
     "targetId": "398fc27a-5680-40ee-a73f-6d2fba9f980f"
   },
   {
+    "id": "20befc21-1fb2-4181-9f44-d2fdb5daf6a0",
+    "relationType": "verifies",
+    "sourceId": "b9907905-f70c-445d-a7f0-9e0d2355b3e4",
+    "targetId": "cbed4aea-601a-491c-b4a3-735482d5b55e"
+  },
+  {
     "id": "20ec9cd9-643a-4819-90fa-a0f3f71cb4c6",
     "label": "Renders charts and map",
     "relationType": "interacts",
@@ -1199,6 +1242,13 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "27906284-6f66-43cd-adec-e9374ae7a607",
+    "quote": "a/b comparison to nie przypadkiem czesc analytics?\ntak doloz",
+    "relationType": "derives",
+    "sourceId": "b44139fd-e3bb-4b10-9e60-0c2aa1907358",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "283a8dc3-46cc-4205-a18e-9f0dffcf8ae0",
     "relationType": "emits",
     "sourceId": "f58f1376-76ae-401e-9a0b-97fb2c636e4f",
@@ -1288,6 +1338,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "2b8c5502-eb4c-4611-8b9e-b791a645de5c",
+    "relationType": "verifies",
+    "sourceId": "e83a8650-6db2-470e-9ed2-71c5e265e08c",
+    "targetId": "7670dcd8-f3c7-4529-bbe2-78f77a582699"
+  },
+  {
     "id": "2b96460c-4bc5-4442-ba69-58512c9efff8",
     "relationType": "verifies",
     "sourceId": "d72ff93a-47b3-4b30-937d-abc0d5f8fe77",
@@ -1364,6 +1420,12 @@
     "targetId": "0932911c-fca9-4062-ae93-6a736a8db939"
   },
   {
+    "id": "2cf71abf-e056-4c66-bc14-7fd8fbee4481",
+    "relationType": "verifies",
+    "sourceId": "c9b0a80c-9323-4a1f-8e7a-d521ca7be1a8",
+    "targetId": "91d74a54-7182-48e5-b12f-bb403539e0e5"
+  },
+  {
     "id": "2d229065-e14e-4bd3-9606-66dc5d3293bb",
     "relationType": "illustrates",
     "sourceId": "a58faa23-2592-4664-90ca-6b1c0143af21",
@@ -1406,6 +1468,12 @@
     "relationType": "verifies",
     "sourceId": "510a6296-aa7f-45bf-964f-559be6359a85",
     "targetId": "f6e6082a-1b7a-49e5-8f92-3bca3c726419"
+  },
+  {
+    "id": "2f145f7a-0daa-4469-bf3a-b982e0b94f34",
+    "relationType": "verifies",
+    "sourceId": "d180eb71-c70c-4c5a-8761-65426bcce3e6",
+    "targetId": "8690d92b-9be0-4782-8993-56acf708796a"
   },
   {
     "id": "2ffca083-ddb5-49b7-901a-dd38e2e39bc6",
@@ -1508,6 +1576,12 @@
     "relationType": "satisfies",
     "sourceId": "84b558e0-d87c-4134-8479-f01b164bcd47",
     "targetId": "dfc9fa5c-2440-4d8a-88d5-76c2d462d09a"
+  },
+  {
+    "id": "351ff5bc-313c-4d2c-928f-fd65c504f342",
+    "relationType": "verifies",
+    "sourceId": "d5cb6789-12aa-4032-83f6-ecffddc23c26",
+    "targetId": "b80c32c6-ab07-46e6-9b3a-92e7c6d4b40a"
   },
   {
     "id": "3545108c-b395-4506-aa20-aba8b4cb86c2",
@@ -1886,6 +1960,13 @@
     "technology": "postMessage"
   },
   {
+    "id": "44455dc4-3444-4d75-86e5-a844a3c9c514",
+    "quote": "dodatkwo ... wydziel model performance do osobnego tabu czyli: runs, analytics,performance,settings\nczyli form na zewnatrz analytics",
+    "relationType": "derives",
+    "sourceId": "eb1f0fcc-9d2d-4c0b-9bba-b2e5974ed29c",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "447eb97e-845f-4417-be76-25ac9fbebd22",
     "relationType": "satisfies",
     "sourceId": "a694fdc9-58ad-462b-a996-c49812b6da79",
@@ -1980,6 +2061,12 @@
     "relationType": "derives",
     "sourceId": "a07463a7-0792-4e04-89c9-288eaaa8cd70",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "472082f1-14ff-44e4-acb8-f1e607b7a46a",
+    "relationType": "illustrates",
+    "sourceId": "c8a74635-e779-4b75-81e7-8fcec5b8f1b7",
+    "targetId": "06b9896e-33c2-4668-b6eb-3f0115d9ceea"
   },
   {
     "id": "4721e581-f077-46db-89f5-e8bfbfe1bd7a",
@@ -2082,6 +2169,19 @@
     "targetId": "1cd3f54a-5563-44d5-8284-443db86b11e0"
   },
   {
+    "id": "4bee2889-1832-42e2-b10c-3bccb62f16ea",
+    "relationType": "constrains",
+    "sourceId": "fd9bcfa1-488a-4dc5-aba2-90b8fc256149",
+    "targetId": "340e82f0-6223-4f6f-85eb-5418fff8ddec"
+  },
+  {
+    "id": "4c057d32-c42e-4e8c-91da-151a58365cec",
+    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej",
+    "relationType": "derives",
+    "sourceId": "8690d92b-9be0-4782-8993-56acf708796a",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "4c308118-9fb2-4752-bc3c-8be3adacd835",
     "label": "Computes trend and A/B",
     "relationType": "interacts",
@@ -2131,6 +2231,18 @@
     "targetId": "c811d742-0659-4f3a-b7b9-da09229a7bf0"
   },
   {
+    "id": "4e93d26e-7404-4675-8860-045f82ccd5da",
+    "relationType": "verifies",
+    "sourceId": "fede3065-9a52-4458-a053-aa46b3ca46a3",
+    "targetId": "cbed4aea-601a-491c-b4a3-735482d5b55e"
+  },
+  {
+    "id": "4ec5037f-c3c1-412d-96ee-c159ae84ce27",
+    "relationType": "implements",
+    "sourceId": "1c403970-896a-4fa7-b787-3f5c1b09976d",
+    "targetId": "5126b424-ff43-4f89-a418-179569e7e47d"
+  },
+  {
     "id": "4f5f40f2-8a32-4084-920f-29e776a416db",
     "relationType": "illustrates",
     "sourceId": "c6d5b5bc-63e5-4e1d-b3e0-9f4b74617881",
@@ -2144,7 +2256,7 @@
   },
   {
     "id": "5090f4c7-a6e7-4fa2-8d9f-5b22529dfcd9",
-    "quote": "manifest.json          # schema and algorithm versions, list of imported files\nuser/                  # user-entered data, never recomputed\nderived/               # derived data, fully rebuildable",
+    "quote": "manifest.json          # schema and algorithm versions, list of imported files\nuser/                  # user-entered data, never recomputed\nderived/               # derived data, fully rebuildable\nczy wszystkie obliczone dane z plikow zrodlowych sa w 1 katalogu?\ntak chce",
     "relationType": "derives",
     "sourceId": "50fdf59d-10e8-4536-ad17-d8805203fa4b",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -2172,6 +2284,12 @@
     "relationType": "satisfies",
     "sourceId": "989ddea4-2268-46b9-a61d-ef102ca319a6",
     "targetId": "de34688d-e396-4d2a-9461-bfc5d27540a6"
+  },
+  {
+    "id": "51378ac6-d777-4bc6-bde9-58152db87be1",
+    "relationType": "traces-to",
+    "sourceId": "8690d92b-9be0-4782-8993-56acf708796a",
+    "targetId": "fd9bcfa1-488a-4dc5-aba2-90b8fc256149"
   },
   {
     "id": "515ab220-6b91-47c9-ba2d-b3b99d18acfa",
@@ -2256,6 +2374,13 @@
     "targetId": "39491f93-4fcc-4f9c-960b-e12750deef8f"
   },
   {
+    "id": "5632168a-0f6d-4aa4-8165-ae1d735ef6f7",
+    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej",
+    "relationType": "derives",
+    "sourceId": "cbed4aea-601a-491c-b4a3-735482d5b55e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "563c7ebb-01d5-43b1-adad-396d600a57af",
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
@@ -2284,6 +2409,12 @@
     "relationType": "realises",
     "sourceId": "31df2b33-7d61-4128-bd2a-a8fd73481b33",
     "targetId": "26cc095b-c47f-45bc-a2d5-e9927468dfb8"
+  },
+  {
+    "id": "575911f0-0710-4b43-847d-8205830a0700",
+    "relationType": "verifies",
+    "sourceId": "7d2e2918-4834-4f0a-b59b-c68d630cf02d",
+    "targetId": "06b9896e-33c2-4668-b6eb-3f0115d9ceea"
   },
   {
     "id": "57b6e26c-ad55-4eff-8397-04259084c394",
@@ -2352,6 +2483,12 @@
     "targetId": "f0ce90cd-4cf5-47df-bc6f-d44ce24ec168"
   },
   {
+    "id": "5b083882-475f-4147-b443-fce265c9eb9b",
+    "relationType": "verifies",
+    "sourceId": "b9907905-f70c-445d-a7f0-9e0d2355b3e4",
+    "targetId": "2ee5b387-72f8-482a-95d0-9159fd6bb065"
+  },
+  {
     "id": "5b42d7db-5cd4-49c6-bbe4-56f031f8156d",
     "quote": "People use this front end on their own devices, browsers and networks, some with disabilities and assistive technology. It has to load and respond quickly on an ordinary phone, work in the browsers its users have, be usable by everyone, look and behave consistently, and be built on a framework the team knows and that keeps receiving fixes. The choices and the numbers it is held to must be written down and checked, not rediscovered after users complain. The checks assume one front end per repository with its package.json at the root, a versions.txt listing the endoflife.date products and cycles in use, server templates (htmx) under templates/ or src/, and a RUM table rum_events(name, value, page_group, received_at) fed by the page.",
     "relationType": "derives",
@@ -2394,6 +2531,13 @@
     "quote": "chce aby wszystko bylo widoczne na raz co to oznacza wykorzystac szerkosc ekranu mape daj po prawej stronie metryki na dole na cala szerokosc",
     "relationType": "derives",
     "sourceId": "44cbbf7c-19e9-406a-89ef-b8859896d736",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "5c6a7db3-c0bf-4250-a825-fb1c7048ecee",
+    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej",
+    "relationType": "derives",
+    "sourceId": "2cc97e54-4899-4f94-9b8c-24845459f7c0",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
@@ -2482,6 +2626,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "610f6c5e-cce7-451d-b59d-952b8ef0e0a8",
+    "relationType": "traces-to",
+    "sourceId": "06b9896e-33c2-4668-b6eb-3f0115d9ceea",
+    "targetId": "f2b45101-eae1-486b-9c37-7905de9fad0a"
+  },
+  {
     "id": "6139cc47-271b-409d-aebb-e8a4c0211162",
     "relationType": "satisfies",
     "sourceId": "dcc9c750-4930-43ec-b29a-96d8cc3419e7",
@@ -2512,6 +2662,12 @@
     "relationType": "transition",
     "sourceId": "ad48e9b1-8e61-43a8-8bc3-aa2db53837ff",
     "targetId": "3427be02-d02e-446f-ab48-68ebfcc2c505"
+  },
+  {
+    "id": "624f1aef-e58d-4469-b7d0-5f70769e5f6f",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "39ce14d8-9ec6-4ebf-9f2c-e06be4ff635f"
   },
   {
     "id": "625d42a8-6b12-43cf-baa7-c3c8ebe8eef3",
@@ -2557,6 +2713,18 @@
     "targetId": "c6b6af5b-b448-4610-b76f-9621eaef5f67"
   },
   {
+    "id": "636b695f-d413-4704-b11f-6404152e95ae",
+    "relationType": "satisfies",
+    "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
+    "targetId": "cbed4aea-601a-491c-b4a3-735482d5b55e"
+  },
+  {
+    "id": "636bdb05-e11e-4396-b4cd-7f51d11741e6",
+    "relationType": "illustrates",
+    "sourceId": "be79318f-f4cc-475f-8b33-08c6727c3691",
+    "targetId": "39ce14d8-9ec6-4ebf-9f2c-e06be4ff635f"
+  },
+  {
     "id": "63a34770-ec81-4f4d-833b-00c5e2c7c880",
     "relationType": "illustrates",
     "sourceId": "8b8003c2-e262-4787-95d6-4576f080cdf3",
@@ -2575,10 +2743,22 @@
     "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
   },
   {
+    "id": "6429043b-afac-4563-b798-13e3f959acb5",
+    "relationType": "satisfies",
+    "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
+    "targetId": "91d74a54-7182-48e5-b12f-bb403539e0e5"
+  },
+  {
     "id": "6444960e-66b9-4fb9-a04b-99cca4038627",
     "relationType": "verifies",
     "sourceId": "aa326b0c-6268-4a06-919c-2df55b327a96",
     "targetId": "5745b107-b2ee-4266-9c18-4e5286ed032c"
+  },
+  {
+    "id": "64b2aa67-80a5-40c6-a2bc-881a606be886",
+    "relationType": "verifies",
+    "sourceId": "b9907905-f70c-445d-a7f0-9e0d2355b3e4",
+    "targetId": "22d6df09-ddc7-4b2a-b735-e4b8aab92b10"
   },
   {
     "cardinality": "many",
@@ -2619,6 +2799,12 @@
     "targetId": "f887a415-078c-4b2b-a508-463ef2387383"
   },
   {
+    "id": "67441d9a-f6d4-448a-8bdb-88ff16a13219",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "70862baf-3a94-4a8b-a51a-590bb1cfa605"
+  },
+  {
     "id": "67900fd1-015d-48ec-895c-c4ee382c004b",
     "relationType": "illustrates",
     "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
@@ -2642,6 +2828,12 @@
     "relationType": "verifies",
     "sourceId": "49ca3dc4-6bd9-4cc2-9e66-d0167cd137c8",
     "targetId": "318c99a5-6ed7-45ae-98f1-d7daa3f364c2"
+  },
+  {
+    "id": "68674bb4-1f83-4a5b-9d85-06a2a14f5e24",
+    "relationType": "verifies",
+    "sourceId": "385669e9-e7d8-422e-876a-a2b367a5aafa",
+    "targetId": "70862baf-3a94-4a8b-a51a-590bb1cfa605"
   },
   {
     "id": "68963725-9c9a-44f9-a97a-ed00d144202f",
@@ -3075,6 +3267,18 @@
     "targetId": "4f0590be-3281-4ba8-88ac-ec3d079f0825"
   },
   {
+    "id": "7960d79a-5b3b-4fee-af16-ce50d1706b48",
+    "relationType": "illustrates",
+    "sourceId": "c8a74635-e779-4b75-81e7-8fcec5b8f1b7",
+    "targetId": "7670dcd8-f3c7-4529-bbe2-78f77a582699"
+  },
+  {
+    "id": "79ddc18f-45fb-4a17-9586-a35aaecb2d78",
+    "relationType": "verifies",
+    "sourceId": "43884c3e-c026-4889-84aa-bb73f65bacfe",
+    "targetId": "2cc97e54-4899-4f94-9b8c-24845459f7c0"
+  },
+  {
     "id": "79e4ce89-82c0-4672-aed1-14ff9719f75f",
     "relationType": "verifies",
     "sourceId": "6e00e259-2327-4229-8aeb-2681b4eb3848",
@@ -3131,6 +3335,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "7b6d669e-e887-4320-aa2b-44821bd94225",
+    "relationType": "verifies",
+    "sourceId": "81c1313d-2418-4a87-94a1-4df11223d308",
+    "targetId": "22d6df09-ddc7-4b2a-b735-e4b8aab92b10"
+  },
+  {
     "id": "7b74892b-21c4-4f34-b5f2-4aafc842c879",
     "relationType": "verifies",
     "sourceId": "670674aa-8d04-4ca9-9389-9afb3f2dee44",
@@ -3166,6 +3376,13 @@
     "relationType": "performed-by",
     "sourceId": "f8af159a-4630-47ab-974a-40b94967fc25",
     "targetId": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9"
+  },
+  {
+    "id": "7d4232a3-fb34-403f-9cb2-95021e8f9f98",
+    "quote": "popraw settings w tym momencie mam settings oraz gears and tags ... w osobnych tabach",
+    "relationType": "derives",
+    "sourceId": "39ce14d8-9ec6-4ebf-9f2c-e06be4ff635f",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "7d76ca05-7ab4-4a37-a0b9-09511be0c66d",
@@ -3224,10 +3441,23 @@
     "targetId": "90c9a1a8-2fb4-4052-b3f2-d96b6dc13e51"
   },
   {
+    "id": "7f0f5aaa-55d4-4c3b-9855-b84452d75b18",
+    "relationType": "verifies",
+    "sourceId": "b9907905-f70c-445d-a7f0-9e0d2355b3e4",
+    "targetId": "91d74a54-7182-48e5-b12f-bb403539e0e5"
+  },
+  {
     "id": "7f781610-2d66-4d7a-a791-b15dbbcaa777",
     "relationType": "constrains",
     "sourceId": "cdb3ba69-24a7-48b5-a970-522185fa982b",
     "targetId": "dcc9c750-4930-43ec-b29a-96d8cc3419e7"
+  },
+  {
+    "id": "7f821045-d460-4270-ad25-d5b9d05999cd",
+    "quote": "znowu przegladnij performance ... chce aby to bylo uproszczone ... wszystkie dodaktowe informacje powinny byc jako why",
+    "relationType": "derives",
+    "sourceId": "7670dcd8-f3c7-4529-bbe2-78f77a582699",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "7f85ad99-b5fb-4b83-8189-90a22bb2cec7",
@@ -3442,6 +3672,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "86233c40-825e-4b4f-94d6-04093fccb4e9",
+    "relationType": "verifies",
+    "sourceId": "b98c5125-d50e-49b3-97fe-d34015c955a7",
+    "targetId": "2ee5b387-72f8-482a-95d0-9159fd6bb065"
+  },
+  {
     "id": "86735ee5-e733-40d2-8b52-1a77bf3bc284",
     "relationType": "verifies",
     "sourceId": "69d17b09-2da3-460a-a147-f4e4abf8ccc6",
@@ -3645,6 +3881,12 @@
     "targetId": "af580e00-9fde-4182-89d8-479d71707a14"
   },
   {
+    "id": "8cdeda9f-a8f2-4358-b9f7-627186655a37",
+    "relationType": "satisfies",
+    "sourceId": "df4990c9-dd90-49cc-9eca-6507c3d5dd66",
+    "targetId": "b80c32c6-ab07-46e6-9b3a-92e7c6d4b40a"
+  },
+  {
     "id": "8cf77e14-ab56-48d3-ab72-aa890e648ce3",
     "relationType": "performed-by",
     "sourceId": "1121947a-8a8c-4545-8caf-182e894e5259",
@@ -3802,6 +4044,12 @@
     "relationType": "emits",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
     "targetId": "abf40e24-6f3f-4f08-aadc-ec6a4a6f5368"
+  },
+  {
+    "id": "93caf066-5097-4192-9e09-becb82e1ed08",
+    "relationType": "verifies",
+    "sourceId": "fb4d09da-7dc0-4127-9813-c478e3638ca5",
+    "targetId": "b80c32c6-ab07-46e6-9b3a-92e7c6d4b40a"
   },
   {
     "id": "93f15374-d967-4d85-8923-fdf9a79bbc00",
@@ -4296,6 +4544,12 @@
     "targetId": "e6909b1e-ea15-4395-b4e5-0ecdb64eef5b"
   },
   {
+    "id": "a73a5423-826b-4abb-9069-c4d9af0f8c5a",
+    "relationType": "verifies",
+    "sourceId": "b9907905-f70c-445d-a7f0-9e0d2355b3e4",
+    "targetId": "8690d92b-9be0-4782-8993-56acf708796a"
+  },
+  {
     "id": "a82b78cf-df44-4e95-8546-eb4175eb14af",
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
@@ -4337,6 +4591,12 @@
     "relationType": "verifies",
     "sourceId": "e1fb2839-eff8-4d39-a460-d51388a469d5",
     "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
+  },
+  {
+    "id": "aa026dae-4afa-477c-b44d-9e62c6ea52cd",
+    "relationType": "implements",
+    "sourceId": "1c403970-896a-4fa7-b787-3f5c1b09976d",
+    "targetId": "fd9bcfa1-488a-4dc5-aba2-90b8fc256149"
   },
   {
     "id": "aa09601b-c90d-44cf-8bc3-c2c4bcf878c0",
@@ -4452,6 +4712,13 @@
     "targetId": "df4990c9-dd90-49cc-9eca-6507c3d5dd66"
   },
   {
+    "id": "aee717e6-5212-45f0-9df2-08b5af3e26dd",
+    "quote": "widze ze czesto rzeczy sa przeliczane, chce aby rpzeliczanie bylo raz i dane cache-owane\ni denormalizowane jesli trzeba",
+    "relationType": "derives",
+    "sourceId": "b80c32c6-ab07-46e6-9b3a-92e7c6d4b40a",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "aeeca765-c8da-4999-a30d-61b536c3bd13",
     "relationType": "satisfies",
     "sourceId": "39491f93-4fcc-4f9c-960b-e12750deef8f",
@@ -4502,6 +4769,12 @@
     "targetId": "3151aa14-7b07-4207-a5e3-939b1c23c899"
   },
   {
+    "id": "afe3abd5-e2bc-48a8-8ddd-c43d705a9e16",
+    "relationType": "illustrates",
+    "sourceId": "c8a74635-e779-4b75-81e7-8fcec5b8f1b7",
+    "targetId": "eb1f0fcc-9d2d-4c0b-9bba-b2e5974ed29c"
+  },
+  {
     "id": "aff80a1a-3e5f-4319-ac52-6c1f47d579a2",
     "relationType": "illustrates",
     "sourceId": "c6d5b5bc-63e5-4e1d-b3e0-9f4b74617881",
@@ -4526,6 +4799,12 @@
     "relationType": "traces-to",
     "sourceId": "a07463a7-0792-4e04-89c9-288eaaa8cd70",
     "targetId": "acc7080d-81b9-4b31-8f5c-db0d35e36abb"
+  },
+  {
+    "id": "b086c8ad-ad32-4159-a2ba-10edb0aae28c",
+    "relationType": "verifies",
+    "sourceId": "a2716f1a-e943-4247-bfb5-234e234c4ad7",
+    "targetId": "eb1f0fcc-9d2d-4c0b-9bba-b2e5974ed29c"
   },
   {
     "id": "b0ad7133-1d00-4389-ac75-7365839e0bf9",
@@ -4617,6 +4896,12 @@
     "targetId": "31df2b33-7d61-4128-bd2a-a8fd73481b33"
   },
   {
+    "id": "b41314ad-3297-4a4c-8e91-37a901c389fd",
+    "relationType": "verifies",
+    "sourceId": "d04af837-ef55-4c28-bc68-7ae01bbbd478",
+    "targetId": "b44139fd-e3bb-4b10-9e60-0c2aa1907358"
+  },
+  {
     "id": "b461c131-2772-46d3-b3f9-85f01a07561d",
     "relationType": "realises",
     "sourceId": "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7",
@@ -4633,6 +4918,12 @@
     "relationType": "traces-to",
     "sourceId": "09cf7a07-fee6-4808-ba18-ca6b6d9d5125",
     "targetId": "ddb20cc1-3fa4-4ac9-9e5c-025c9ce64812"
+  },
+  {
+    "id": "b4885f25-d244-495e-a4aa-c2de23493170",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "7670dcd8-f3c7-4529-bbe2-78f77a582699"
   },
   {
     "id": "b4a9cf31-a912-464e-bc4e-bb4a63779113",
@@ -4722,6 +5013,12 @@
     "targetId": "2a60339a-0a2c-4da8-b12e-4227eba8f4d1"
   },
   {
+    "id": "b77b8697-af33-4d4d-9f16-2dfda59f807f",
+    "relationType": "verifies",
+    "sourceId": "21156837-ae8d-48fe-820e-0e3d08822daa",
+    "targetId": "39ce14d8-9ec6-4ebf-9f2c-e06be4ff635f"
+  },
+  {
     "id": "b7a4eff9-d509-45bc-bf84-0eed5bc4f25a",
     "relationType": "performed-by",
     "sourceId": "0a03a337-a4d6-4de7-a70e-9b1074baa24e",
@@ -4757,6 +5054,13 @@
     "relationType": "illustrates",
     "sourceId": "c6d5b5bc-63e5-4e1d-b3e0-9f4b74617881",
     "targetId": "ae051ad4-bb7e-4998-b355-5cae616ceadd"
+  },
+  {
+    "id": "b83f7264-112f-4732-bfb3-641f19d3a476",
+    "quote": "w persformance wydaje mi sie ze mieszasz wszystkie dosytepne modele, przegladnij co jest... chce tam dane w bardziej ustruktyrozywany sposob",
+    "relationType": "derives",
+    "sourceId": "70862baf-3a94-4a8b-a51a-590bb1cfa605",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "b8adb312-1a27-48c4-8605-4e7d22926f71",
@@ -5238,6 +5542,13 @@
     "targetId": "41a57acc-3f2c-43ce-be90-4b19dc889fa6"
   },
   {
+    "id": "ca919e40-0420-4177-8539-c4bc4bdd806c",
+    "quote": "dopasowanie wag modelu Banistera do Twoich wyników: potrzebuje regularnych maksymalnych prób, a markery z zakładki Fitness markers to właśnie dane, na których takie dopasowanie można później oprzeć;\nmozesz to zrobic",
+    "relationType": "derives",
+    "sourceId": "22d6df09-ddc7-4b2a-b735-e4b8aab92b10",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "cab4041a-3301-4f8a-9d36-1c96bf6f8893",
     "relationType": "satisfies",
     "sourceId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d",
@@ -5274,6 +5585,12 @@
     "targetId": "a90357d6-8d79-4dd5-bb07-f49493d04b3c"
   },
   {
+    "id": "cc2717b1-4dcc-4b9b-a230-6d856394e84e",
+    "relationType": "illustrates",
+    "sourceId": "8b8003c2-e262-4787-95d6-4576f080cdf3",
+    "targetId": "b44139fd-e3bb-4b10-9e60-0c2aa1907358"
+  },
+  {
     "id": "cc973599-ea38-4839-a5de-0bc2874e7f53",
     "quote": "F11. Trend: a series of instances of one definition over time, for a chosen metric, filtered by context fields.\nInstances of one definition over time, noise threshold, gear changes as vertical lines",
     "relationType": "derives",
@@ -5299,6 +5616,12 @@
     "relationType": "transition",
     "sourceId": "c6397f85-d03a-43e2-9148-65a849432e0b",
     "targetId": "03e4345b-f2e8-4c9f-a605-6cf5afd24cf4"
+  },
+  {
+    "id": "ccf5546a-bc36-439a-b4cc-a7209add5edd",
+    "relationType": "implements",
+    "sourceId": "1c403970-896a-4fa7-b787-3f5c1b09976d",
+    "targetId": "f2b45101-eae1-486b-9c37-7905de9fad0a"
   },
   {
     "id": "cd0f9cd2-ef8e-4330-967f-2dda00fa2b62",
@@ -5423,6 +5746,12 @@
     "relationType": "illustrates",
     "sourceId": "338e617d-2563-4e79-997a-bf7596ac10aa",
     "targetId": "ed99d490-0c6d-4566-9ae9-32b21b831c7b"
+  },
+  {
+    "id": "d24fa791-9903-4f53-a924-61b2bfcf481d",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "eb1f0fcc-9d2d-4c0b-9bba-b2e5974ed29c"
   },
   {
     "id": "d27e8986-2cf1-49ce-b918-dd1ae0ddb71f",
@@ -5681,6 +6010,12 @@
     "targetId": "62fbb21f-afe7-4bc8-a566-5a86a6480fed"
   },
   {
+    "id": "dbdf35ad-d212-4c84-9ebd-9cc65a1daea1",
+    "relationType": "implements",
+    "sourceId": "81327506-c58c-4955-be4b-844f7499091b",
+    "targetId": "67c05609-df7a-4838-bc6b-0180d42142d6"
+  },
+  {
     "id": "dca68606-8464-427b-bf9b-e7df12d1a951",
     "relationType": "satisfies",
     "sourceId": "989ddea4-2268-46b9-a61d-ef102ca319a6",
@@ -5704,6 +6039,12 @@
     "relationType": "emits",
     "sourceId": "9564f075-8afd-4fc4-8c62-7fc3c97e14bd",
     "targetId": "eab1b9ab-39ad-4402-afac-783fea85ded2"
+  },
+  {
+    "id": "dde215fa-895b-4112-86f6-89f0bdc18846",
+    "relationType": "traces-to",
+    "sourceId": "22d6df09-ddc7-4b2a-b735-e4b8aab92b10",
+    "targetId": "5126b424-ff43-4f89-a418-179569e7e47d"
   },
   {
     "id": "de80fd02-7c3b-4ba8-80e0-959351675af5",
@@ -5850,6 +6191,18 @@
     "targetId": "422370cf-5624-4397-804e-862b68fe2f68"
   },
   {
+    "id": "e29ac8d8-e307-4881-91a0-74070a0c0075",
+    "relationType": "constrains",
+    "sourceId": "f2b45101-eae1-486b-9c37-7905de9fad0a",
+    "targetId": "340e82f0-6223-4f6f-85eb-5418fff8ddec"
+  },
+  {
+    "id": "e29b31ac-4301-4163-81cc-a17226686144",
+    "relationType": "traces-to",
+    "sourceId": "b80c32c6-ab07-46e6-9b3a-92e7c6d4b40a",
+    "targetId": "67c05609-df7a-4838-bc6b-0180d42142d6"
+  },
+  {
     "id": "e29d60e4-7d69-424f-847b-4cdb7da352a0",
     "relationType": "verifies",
     "sourceId": "6ce047df-9636-4978-af1d-efc85a227f6d",
@@ -5906,6 +6259,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "e52f7cd9-7267-45db-8bb7-a5493be4a88a",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "b44139fd-e3bb-4b10-9e60-0c2aa1907358"
+  },
+  {
     "id": "e54727de-f5d0-4ae2-b173-e05385bf9ef5",
     "relationType": "emits",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
@@ -5946,6 +6305,12 @@
     "relationType": "constrains",
     "sourceId": "a7abb030-0525-410d-91de-f857c91ba688",
     "targetId": "340e82f0-6223-4f6f-85eb-5418fff8ddec"
+  },
+  {
+    "id": "e7070307-ba64-4c18-9023-d5dae398b174",
+    "relationType": "verifies",
+    "sourceId": "3c90c78c-d981-46b4-88c7-1ad277d38123",
+    "targetId": "06b9896e-33c2-4668-b6eb-3f0115d9ceea"
   },
   {
     "id": "e764b013-a564-4e24-95c6-49e683ebbe7c",
@@ -6062,6 +6427,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "eaf54da4-1836-4552-9b6e-b83ba373b754",
+    "relationType": "illustrates",
+    "sourceId": "c8a74635-e779-4b75-81e7-8fcec5b8f1b7",
+    "targetId": "70862baf-3a94-4a8b-a51a-590bb1cfa605"
+  },
+  {
     "id": "eb0748f8-93a6-425a-9c5c-26ff2b8e3627",
     "relationType": "verifies",
     "sourceId": "59aee52c-dcea-4b4f-81a8-21f8a7ecab8f",
@@ -6143,6 +6514,13 @@
     "quote": "Minimum number of instances. Trend: at least 5. A/B comparison: at least 4 on each side. Below these numbers the system shows the points without a verdict.",
     "relationType": "derives",
     "sourceId": "e99d27f4-aa92-4a29-b259-8c7709b007d1",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "ede5536b-d37f-40f4-ab01-ec9c1aaec495",
+    "quote": "ponandto chce wiedziec jakie sa zalezenia ... np. jesli nigdy nie pomieglem na max na 3 min to kryzwa mocy jest bezwartosciowa",
+    "relationType": "derives",
+    "sourceId": "06b9896e-33c2-4668-b6eb-3f0115d9ceea",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
@@ -6253,6 +6631,12 @@
     "targetId": "39491f93-4fcc-4f9c-960b-e12750deef8f"
   },
   {
+    "id": "f091202e-13ac-42ea-93d7-53144870a2fa",
+    "relationType": "satisfies",
+    "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
+    "targetId": "2cc97e54-4899-4f94-9b8c-24845459f7c0"
+  },
+  {
     "id": "f1397459-9208-4f55-bcc8-84a62f0068c5",
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
@@ -6277,6 +6661,12 @@
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
     "targetId": "8cd8c786-c600-4808-95b3-d73aac37d4b1"
+  },
+  {
+    "id": "f2da64b7-4f65-4bc1-a685-d12c823b6efd",
+    "relationType": "satisfies",
+    "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
+    "targetId": "8690d92b-9be0-4782-8993-56acf708796a"
   },
   {
     "id": "f2fd4ac6-4cee-4770-bbca-ee84ad3381e3",
@@ -6347,6 +6737,13 @@
     "targetId": "f69a0da2-2a43-471f-9863-97268ea75c06"
   },
   {
+    "id": "f5709ef9-574e-4065-8096-ef14a1a0aeec",
+    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej",
+    "relationType": "derives",
+    "sourceId": "91d74a54-7182-48e5-b12f-bb403539e0e5",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "f5c9b7b7-f8f4-4514-83f2-925d0759936e",
     "relationType": "illustrates",
     "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
@@ -6408,10 +6805,28 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "f7af54fa-b50c-465b-bd34-fdf3111078c9",
+    "relationType": "satisfies",
+    "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
+    "targetId": "2ee5b387-72f8-482a-95d0-9159fd6bb065"
+  },
+  {
+    "id": "f7bbed64-9658-466d-b050-e2ff402c1b9d",
+    "relationType": "verifies",
+    "sourceId": "385669e9-e7d8-422e-876a-a2b367a5aafa",
+    "targetId": "06b9896e-33c2-4668-b6eb-3f0115d9ceea"
+  },
+  {
     "id": "f7c60032-2002-4baa-875c-72b7a0aebe1d",
     "relationType": "traces-to",
     "sourceId": "505e6fba-5b0d-4595-8792-d8e0cf2751c0",
     "targetId": "3151aa14-7b07-4207-a5e3-939b1c23c899"
+  },
+  {
+    "id": "f7d95747-faba-4f80-b90e-2bc8257bd295",
+    "relationType": "satisfies",
+    "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
+    "targetId": "06b9896e-33c2-4668-b6eb-3f0115d9ceea"
   },
   {
     "id": "f7fa5ef9-1bec-4e20-8851-11e4c680354c",

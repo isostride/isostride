@@ -38,7 +38,10 @@ export async function writeJson(folder: DataFolder, path: string, value: unknown
 export const PATHS = {
   fit: 'fit',
   root: 'strideprism',
-  manifest: 'strideprism/manifest.json',
+  /** with the rest of what is computed from the FIT files (the author's request of 21 Nov 2026) */
+  manifest: 'strideprism/derived/manifest.json',
+  /** where versions before 21 Nov 2026 kept it; moved into derived/ on first reading */
+  legacyManifest: 'strideprism/manifest.json',
   user: 'strideprism/user',
   gear: 'strideprism/user/gear.json',
   runTags: 'strideprism/user/run-tags.json',
@@ -52,6 +55,8 @@ export const PATHS = {
   blockInstances: 'strideprism/derived/block-instances.json',
   dayState: 'strideprism/derived/day-state.json',
   loadSummaries: 'strideprism/derived/load-summaries.json',
+  dataStamp: 'strideprism/derived/stamp.json',
+  cache: 'strideprism/derived/cache',
 } as const;
 
 /**

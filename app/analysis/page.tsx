@@ -19,7 +19,7 @@ import { mmss, runHref } from './links';
 import type { BuilderOptions } from './RuleBuilder';
 
 // The curve tab's chart, figures and table load when the tab is first opened (ADR "Built with React": 200 KB of script per route).
-const FormTab = dynamic(() => import('./FormTab').then((m) => m.FormTab), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>Loading the form…</div> });
+const AbTab = dynamic(() => import('./AbTab').then((m) => m.AbTab), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>Loading the A/B comparison…</div> });
 const CurveTab = dynamic(() => import('./CurveTab').then((m) => m.CurveTab), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>Loading the curve…</div> });
 
 const DAY = 86_400_000;
@@ -30,8 +30,8 @@ const ALL_RUNS = encodeRule(ruleOf({ type: 'run' }));
 const view = (mt: BlockMetric) => METRICS.find((x) => x.key === mt)!;
 
 /** The sections of the screen, one at a time (requirement "Analysis sections as tabs"). */
-type Tab = 'trends' | 'segments' | 'curve' | 'form';
-const TABS: [Tab, string][] = [['trends', 'Trends'], ['segments', 'Segments'], ['curve', 'Pace / power curve'], ['form', 'Form']];
+type Tab = 'trends' | 'segments' | 'ab' | 'curve';
+const TABS: [Tab, string][] = [['trends', 'Trends'], ['segments', 'Segments'], ['ab', 'A/B'], ['curve', 'Pace / power curve']];
 /** What sets a block apart, shown under its name: its kind, how its segments start, where its heart rate is read from. */
 function attributes(d: BlockDefinition | null): string[] {
   if (!d) return [];
@@ -154,7 +154,6 @@ function AnalysisPage() {
     const controller = new AbortController();
     let live = true;
     const wanted = codes.flatMap((code) => { const rule = decodeRule(code); return rule ? [{ id: ruleId(code), name: '', origin: 'manual' as const, status: 'active' as const, createdAt: '', params: { type: 'rule' as const, ...rule }, tolerances: { ...RULE_TOLERANCES } }] : []; });
-    setProgress({ done: 0, total: 0 });
     instancesInWorker(wanted, handle, (p) => live && setProgress({ done: p.done, total: p.total }), controller.signal)
       .then((got) => live && setAdhoc((prev) => { const next = new Map(prev); for (const code of codes) next.set(code, got[ruleId(code)] ?? []); return next; }))
       .catch(() => undefined)
@@ -181,11 +180,22 @@ function AnalysisPage() {
   // The tab, in the URL (tab=segments, tab=curve; Trends when left out; an older link with curve= opens the curve tab).
   const tabParam = params.get('tab');
   const tab: Tab = TABS.some(([t]) => t === tabParam) ? (tabParam as Tab) : params.has('curve') ? 'curve' : 'trends';
+  // The form, a tab of Analysis at first, is the Performance screen: its old links open there.
+  useEffect(() => { if (tabParam === 'form') router.replace('/performance?tab=load'); }, [tabParam, router]);
   const setTab = (t: Tab) => {
     const q = new URLSearchParams(params.toString());
     if (t === 'trends') q.delete('tab'); else q.set('tab', t);
     router.replace(`/analysis?${q.toString()}`);
   };
+  // The item the A/B tab splits, in the URL (ab=<item id>); the first block or rule when left out.
+  const abChosen = params.get('ab');
+  const chooseAb = (id: string) => {
+    const q = new URLSearchParams(params.toString());
+    q.set('ab', id);
+    router.replace(`/analysis?${q.toString()}`);
+  };
+  /** The link of this screen on the A/B tab, splitting an item. */
+  const abHref = (id: string) => { const q = new URLSearchParams(params.toString()); q.set('tab', 'ab'); q.set('ab', id); return `/analysis?${q.toString()}`; };
   // The curve, Speed or Power (curve=power; Speed when left out), read from the runs only while its tab is open.
   const curveMetric: CurveMetric = params.get('curve') === 'power' ? 'power' : 'speed';
   const curve: CurveMetric | null = tab === 'curve' ? curveMetric : null;
@@ -251,7 +261,6 @@ function AnalysisPage() {
     if (!list.length) return;
     const controller = new AbortController();
     let live = true;
-    setProgress({ done: 0, total: 0 });
     curvesInWorker(list, handle, (p) => live && setProgress({ done: p.done, total: p.total }), controller.signal)
       .then((got) => live && setCurves({ metric: list[0].metric ?? 'speed', by: new Map(Object.entries(got)) }))
       .catch(() => undefined)
@@ -358,18 +367,22 @@ function AnalysisPage() {
         {items.length >= MAX_ITEMS && <span className="muted small">Up to {MAX_ITEMS} at once.</span>}
       </div>
 
-      {progress && <div className="card" style={{ padding: '10px 14px', marginBottom: 12 }}><span className="muted">Reading the runs… {progress.done} / {progress.total || '…'}</span><div className="progress"><div style={{ width: progress.total ? `${(100 * progress.done) / progress.total}%` : '3%' }} /></div></div>}
 
       <>
         <div className="tabs analysis-tabs" role="tablist" aria-label="Analysis sections">
           {TABS.map(([t, name]) => (
             <button key={t} type="button" role="tab" id={`tab-${t}`} aria-controls={tab === t ? `panel-${t}` : undefined} aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{name}</button>
           ))}
+          {/* Progress in the row of the tabs, which keeps its height: nothing below moves (Core Web Vitals). */}
+          {progress && (
+            <span className="tabs-progress" role="status">
+              <span className="muted small">Reading the runs… {progress.done} / {progress.total || '…'}</span>
+              <span className="progress"><span style={{ width: progress.total ? `${(100 * progress.done) / progress.total}%` : '3%' }} /></span>
+            </span>
+          )}
         </div>
         <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="analysis-panel">
-          {/* The runner's form needs no items: the other tabs analyse the items chosen. */}
-          {tab === 'form' && <FormTab runs={runs} />}
-          {tab !== 'form' && !items.length && (
+          {!items.length && (
             <div className="card empty">
               Choose the data to analyse: press <b>+ Add block or run</b> and build a block from a rule (the fastest 5 minutes with the heart rate above 160, the laps of 3 to 5 km, the runs since March…), take one found in your runs, or add a single run.
             </div>
@@ -389,7 +402,9 @@ function AnalysisPage() {
               </div>
               <div className="card chart">
                 <h3 className="chart-title">Over time <span className="muted">· each block&apos;s segments with its trend line, each run&apos;s average</span></h3>
-                {groupsByMetric.map(({ mt, groups }, k) => (
+                {/* While a rule's segments are read, the charts' room is kept, so nothing below moves when they come. */}
+                {computing && <div className="chart-loading muted small" style={{ height: metrics.length > 1 ? metrics.length * 236 : 326 }}>Reading the runs…</div>}
+                {!computing && groupsByMetric.map(({ mt, groups }, k) => (
                   <div key={mt} className="stacked">
                     <div className="metric-head" style={{ paddingLeft: 52 }}><span className="metric-title">{view(mt).short}<span className="muted"> · {view(mt).name.replace(/^.*\((.*)\)$/, '$1')}</span></span></div>
                     <OverTimeChart title={view(mt).name} groups={groups} format={view(mt).fmt} tick={view(mt).tick} minSpan={view(mt).minSpan} invert={view(mt).invert} markers={markers}
@@ -412,7 +427,7 @@ function AnalysisPage() {
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ItemKey shape={shape(i)} color={color(i)} />{label(i)}</span>
                             <div className="attrs">
                               {attributes(defOf(i)).map((a) => <span key={a} className="chip">{a}</span>)}
-                              {i.kind === 'block' && <Link className="muted small" href={`/compare?def=${i.id}`}>Compare A/B →</Link>}
+                              <Link className="muted small" href={abHref(i.id)}>Compare A/B →</Link>
                             </div>
                           </td>
                           {i.kind === 'rule' && !adhoc.has(i.id)
@@ -498,6 +513,9 @@ function AnalysisPage() {
                 </div>
               )}
             </>
+          )}
+          {items.length > 0 && tab === 'ab' && (
+            <AbTab items={blocks.map((i) => ({ id: i.id, defId: defId(i), label: label(i) }))} all={all} chosen={abChosen} onChoose={chooseAb} computing={computing} />
           )}
           {items.length > 0 && tab === 'curve' && (
             <>

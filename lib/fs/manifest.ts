@@ -18,8 +18,18 @@ export function emptyManifest(): Manifest {
   return { schemaVersion: SCHEMA_VERSION, algorithmVersion: ALGORITHM_VERSION, files: {} };
 }
 
+/**
+ * The manifest, in derived/ with the rest of what is computed from the FIT files; one left at
+ * strideprism/ by an earlier version is moved there first.
+ */
 export async function readManifest(folder: DataFolder): Promise<Manifest | null> {
-  return readJson<Manifest>(folder, PATHS.manifest);
+  const manifest = await readJson<Manifest>(folder, PATHS.manifest);
+  if (manifest) return manifest;
+  const legacy = await readJson<Manifest>(folder, PATHS.legacyManifest);
+  if (!legacy) return null;
+  await writeJson(folder, PATHS.manifest, legacy);
+  await folder.remove(PATHS.legacyManifest);
+  return legacy;
 }
 
 export async function writeManifest(folder: DataFolder, manifest: Manifest): Promise<void> {

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { Key, dayLabel, monthLabel, monthTicks, niceTicks, useWidth } from '@/components';
 import { useOpenFolder } from '@/lib/client';
 import type { RunsIndex } from '@/lib/kernel';
-import { ACWR_DAYS, formSeries, type FormDay } from '@/lib/load';
+import { formSeries, type FormDay } from '@/lib/load';
 import { DEFAULT_PERFORMANCE, LOAD_MODELS, readSettings, type PerformanceSettings } from '@/lib/settings';
 
 /** The periods the chart shows, kept in the link (period=90, 365 or all). */
@@ -21,7 +21,7 @@ const timeOf = (day: string) => new Date(`${day}T12:00:00`).getTime();
 const signed = (v: number) => `${v > 0 ? '+' : ''}${Math.round(v)}`;
 
 /**
- * The Form tab of Analysis (requirement "Form over time"): the daily load of the model chosen in
+ * The Form tab of Performance (requirement "Form over time"): the daily load of the model chosen in
  * Settings, fitness (CTL) and fatigue (ATL), form (TSB) and the acute:chronic ratio, over the
  * period chosen, with today's values. Loaded when the tab opens.
  */
@@ -43,7 +43,6 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
   };
   const model = LOAD_MODELS.find((m) => m.key === p.load)!;
   const withLoad = runs.filter((r) => typeof r.load === 'number');
-  const estimated = withLoad.filter((r) => r.loadEstimated).length;
   const today = localDay(new Date());
   const all = useMemo(() => formSeries(withLoad.map((r) => ({ startTime: r.startTime, load: r.load as number })), p, today),
     // withLoad follows runs.
@@ -52,7 +51,7 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
   const now = all[all.length - 1];
 
   if (!withLoad.length) {
-    return <div className="card empty">No run has a load yet. Import runs, or open <Link href="/settings">Settings</Link> and save the performance model to compute the loads.</div>;
+    return <div className="card empty">No run has a load yet. Import runs, or open the <Link href="/performance?tab=model">Model</Link> tab and save it to compute the loads.</div>;
   }
 
   const t0 = timeOf(days[0].date);
@@ -83,7 +82,6 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
     setHover(Math.min(days.length - 1, Math.max(0, k)));
   };
   const h = hover === null ? null : days[hover];
-  const band = (v: number | null) => (v === null ? '' : v < ACWR_BAND[0] ? 'below the band: load falling' : v > ACWR_BAND[1] ? 'above the band: load rising fast' : 'in the band of steady build-up');
 
   return (
     <>
@@ -91,15 +89,14 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
         <div className="segmented" role="radiogroup" aria-label="Period">
           {PERIODS.map(([k, name]) => <button key={k} type="button" role="radio" aria-checked={period[0] === k} className={period[0] === k ? 'on' : ''} onClick={() => setPeriod(k)}>{name}</button>)}
         </div>
-        <span className="muted small">Load by <b>{model.name}</b> ({model.unit}), fitness τ {p.fitnessDays} d, fatigue τ {p.fatigueDays} d · <Link href="/settings">change in Settings</Link></span>
       </div>
       <div className="card chart">
         <dl className="form-figures" aria-label="Form today">
-          <div><dt>Fitness (CTL)</dt><dd className="tnum">{Math.round(now.fitness)}</dd><span className="muted">{model.unit} a day, {p.fitnessDays}-day average</span></div>
-          <div><dt>Fatigue (ATL)</dt><dd className="tnum">{Math.round(now.fatigue)}</dd><span className="muted">{p.fatigueDays}-day average</span></div>
-          <div><dt>Form (TSB)</dt><dd className="tnum">{signed(now.fitness - now.fatigue)}</dd><span className="muted">fitness − fatigue, tomorrow morning</span></div>
-          <div><dt>Acute:chronic</dt><dd className="tnum">{now.acwr === null ? '–' : now.acwr.toFixed(2)}</dd><span className="muted">{now.acwr === null ? `needs ${ACWR_DAYS[1]} days` : band(now.acwr)}</span></div>
-          <div><dt>Load, last 7 days</dt><dd className="tnum">{Math.round(all.slice(-7).reduce((s, d) => s + d.load, 0))}</dd><span className="muted">{model.unit}</span></div>
+          <div><dt>Fitness (CTL)</dt><dd className="tnum">{Math.round(now.fitness)}</dd></div>
+          <div><dt>Fatigue (ATL)</dt><dd className="tnum">{Math.round(now.fatigue)}</dd></div>
+          <div><dt>Form (TSB)</dt><dd className="tnum">{signed(now.fitness - now.fatigue)}</dd></div>
+          <div><dt>Acute:chronic</dt><dd className="tnum">{now.acwr === null ? '–' : now.acwr.toFixed(2)}</dd></div>
+          <div><dt>Load, last 7 days</dt><dd className="tnum">{Math.round(all.slice(-7).reduce((s, d) => s + d.load, 0))} <span className="unit">{model.unit}</span></dd></div>
         </dl>
         <div className="form-keys">
           <Key color="var(--axis)" label="daily load" kind="dot" />
@@ -155,9 +152,6 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
               <div>acute:chronic {h.acwr === null ? '–' : h.acwr.toFixed(2)}</div>
             </div>
           )}
-        </div>
-        <div className="chart-note">
-          Bars: the load of each day by {model.name}{estimated ? `; ${estimated} run${estimated === 1 ? '' : 's'} without what the model needs counted from ${estimated === 1 ? 'its' : 'their'} duration` : ''}. Fitness and fatigue: averages of the daily load weighted exponentially over {p.fitnessDays} and {p.fatigueDays} days (Banister’s fitness–fatigue model); form: fitness − fatigue of the day before, below zero while training outweighs recovery. Acute:chronic: the {ACWR_DAYS[0]}- over the {ACWR_DAYS[1]}-day average, the band {ACWR_BAND[0]}–{ACWR_BAND[1]} a guide to a steady build-up (Gabbett 2016), not a verdict.
         </div>
       </div>
     </>

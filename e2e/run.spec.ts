@@ -346,6 +346,7 @@ test.describe('Run chart', () => {
     // With no settings saved, the default zones stripe heart rate and pace (cadence is off by now).
     for (const m of ['heartRate', 'speed']) await expect(chart.locator(`.zone-stripe[data-metric="${m}"]`).first()).toBeVisible();
     await nav(page, 'Settings');
+    await page.getByRole('tab', { name: 'Zones' }).click();
     await expect(page.getByText(/^These are the default zones/)).toBeVisible();
     await expect(page.getByRole('textbox', { name: /^Pace/ })).toHaveValue('6:00, 5:15, 4:45, 4:15');
     await page.getByRole('textbox', { name: /^Heart rate/ }).fill('');
