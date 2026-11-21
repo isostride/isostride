@@ -7,6 +7,24 @@ import { NodeFolder } from './nodeFolder';
 /** The runner's COROS export (local only, not in git). */
 export const TEST_DATA = path.resolve(__dirname, '../../test_data/coros_fit_2026');
 
+/**
+ * The export as the tests were written against it (the runs up to 20 Nov 2026): the runner keeps
+ * using the folder, and a run added later (dated after that, or with a later COROS activity id)
+ * would change what the tests count. Files named by date are kept up to the date, files named by
+ * the activity id up to the id.
+ */
+export const FIXTURE_UNTIL = { date: '2026-11-20', id: 481897427972948672n };
+export const isFixture = (name: string): boolean => {
+  if (!name.endsWith('.fit')) return false;
+  if (/^\d{4}-\d{2}-\d{2}/.test(name)) return name.slice(0, 10) <= FIXTURE_UNTIL.date;
+  const id = name.match(/^(\d{15,20})_/);
+  return id ? BigInt(id[1]) <= FIXTURE_UNTIL.id : false;
+};
+/** The FIT files of the export the tests rest on, sorted. */
+export async function fitFixtures(): Promise<string[]> {
+  return (await fs.readdir(TEST_DATA)).filter(isFixture).sort();
+}
+
 /** Hand-picked files with values checked by hand against the COROS app and the raw FIT records. */
 export const FILES = {
   /** COROS PACE 4, 9.35 km, 3 laps, 2598 samples. */

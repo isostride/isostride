@@ -8,11 +8,11 @@ import { resample } from '@/lib/geo';
 import { importFolder, recomputeEverything } from '@/lib/pipeline';
 import { type RunFile, type RunsIndex } from '@/lib/kernel';
 import { parseFit } from '@/lib/ingest';
-import { TEST_DATA, addFile, makeDataFolder, recordMeasure } from '../support/fixtures';
+import { addFile, fitFixtures, makeDataFolder, recordMeasure, TEST_DATA } from '../support/fixtures';
 import type { NodeFolder } from '../support/nodeFolder';
 
 /** Runs since 3 Aug 2026 (the spec's acceptance data) and the files with a 25-minute tempo lap. */
-const ALL = (await fs.readdir(TEST_DATA)).filter((f) => f.endsWith('.fit')).sort();
+const ALL = (await fitFixtures()).sort();
 const SINCE_AUG = ALL.filter((f) => f >= '2026-08-03');
 /**
  * The runner's workouts with a lap set to 25 minutes, found in the files, one file per

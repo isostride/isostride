@@ -93,7 +93,7 @@ test.describe('Core Web Vitals met', () => {
     await page.getByRole('group', { name: 'Scale shown' }).getByRole('button', { name: /^Heart rate/ }).click();
     const lapBars = page.getByRole('group', { name: 'Laps' }).getByRole('button');
     await lapBars.nth(1).click();
-    await page.getByRole('button', { name: 'Show the whole run' }).click();
+    await page.getByRole('button', { name: 'Clear selection' }).click();
     worst.inp = Math.max(worst.inp, (await vitals(page)).INP);
     console.log(rows.join('\n'), `\nINP ${Math.round(worst.inp)} ms`);
 

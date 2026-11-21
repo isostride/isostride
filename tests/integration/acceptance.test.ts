@@ -1,13 +1,12 @@
-import fs from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import { BLOCK_METRICS, RECOMMENDATIONS_PATH, fromRecommendation, readDefinitions, writeDefinitions, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
 import { runBlocks } from '@/lib/detection';
 import { MIN_TREND_INSTANCES, computeTrend, selectInstances } from '@/lib/compare';
 import { PATHS, readJson } from '@/lib/fs';
 import { importFolder } from '@/lib/pipeline';
-import { TEST_DATA, makeDataFolder, recordMeasure } from '../support/fixtures';
+import { fitFixtures, makeDataFolder, recordMeasure, TEST_DATA } from '../support/fixtures';
 
-const SINCE_AUG = (await fs.readdir(TEST_DATA)).filter((f) => f.endsWith('.fit') && f >= '2026-08-03').sort();
+const SINCE_AUG = (await fitFixtures()).filter((f) => f >= '2026-08-03').sort();
 
 /**
  * Acceptance criterion 3 (FF "Matches preliminary analysis"): measures the heart rate
@@ -55,7 +54,7 @@ describe('Agreement with the preliminary analysis', () => {
  */
 describe('Success criterion of step 1', () => {
   it('Detects real change', async () => {
-    const files = (await fs.readdir(TEST_DATA)).filter((f) => f.endsWith('.fit'));
+    const files = (await fitFixtures());
     const folder = await makeDataFolder(files);
     await importFolder(folder);
     const recs = (await readJson<{ recommendations: Recommendation[] }>(folder, RECOMMENDATIONS_PATH))!.recommendations;

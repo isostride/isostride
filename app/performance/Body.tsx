@@ -16,6 +16,7 @@ import { IntensityTab } from './IntensityTab';
 import { LoadTab } from './LoadTab';
 import { CriticalTab, PredictionsTab } from './MarkersTab';
 import { OverviewTab } from './OverviewTab';
+import { TodoTab } from './TodoTab';
 import { PerformanceCard } from './PerformanceCard';
 import { TABS, type Tab } from './structure';
 import { Vo2Tab } from './Vo2Tab';
@@ -72,6 +73,7 @@ export function Body({ tab, view }: { tab: Tab; view: string }) {
     return <div className="card chart muted small" style={{ padding: 18 }} role="status">{preparing ? 'Preparing the summaries of your runs, once…' : 'Reading the runs…'}</div>;
   }
   if (tab === 'overview') return <OverviewTab models={report.models} by={by} now={report.now} />;
+  if (tab === 'todo') return <TodoTab models={report.models} by={by} />;
   if (tab === 'model') {
     return (
       <>

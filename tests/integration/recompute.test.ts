@@ -6,7 +6,7 @@ import { joinContext } from '@/lib/context';
 import { PATHS, emptyManifest, isOutdated } from '@/lib/fs';
 import { importFolder, recomputeEverything } from '@/lib/pipeline';
 import { ALGORITHM_VERSION } from '@/lib/kernel';
-import { FILES, TEST_DATA, checksums, makeDataFolder, recordMeasure } from '../support/fixtures';
+import { checksums, FILES, fitFixtures, makeDataFolder, recordMeasure, TEST_DATA } from '../support/fixtures';
 
 async function folderWithUserData() {
   const folder = await makeDataFolder([FILES.pace4, FILES.pace3, FILES.pace4First, FILES.later]);
@@ -67,7 +67,7 @@ describe('User data never overwritten', () => {
 describe('Recompute time budget', () => {
   it('Recompute within 15 min', async () => {
     // All of the runner's files; the time is scaled to the spec's ~300 runs.
-    const files = (await fs.readdir(TEST_DATA)).filter((f) => f.endsWith('.fit'));
+    const files = (await fitFixtures());
     const folder = await makeDataFolder(files);
     const t0 = performance.now();
     const report = await recomputeEverything(folder);

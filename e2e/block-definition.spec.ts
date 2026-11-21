@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addFromPicker, fitFiles, importAll, nav, openPicker, openRun, openWithFolder, showList, clearAnalysis } from './support';
+import { addFromPicker, fitFiles, importAll, nav, openPicker, openRun, openWithFolder, showList, clearAnalysis, setChart } from './support';
 
 test.describe('Accept or reject recommendation', () => {
   test('Accept recommendation', async ({ page }) => {
@@ -28,12 +28,15 @@ test.describe('Accept or reject recommendation', () => {
     await page.getByRole('button', { name: 'Chart', exact: true }).click();
     const listed = page.locator('.run-block');
     await expect(listed.first()).toBeVisible({ timeout: 30_000 });
+    await page.mouse.move(0, 0);
     await expect(chart.locator('.block-band')).toHaveCount(0);
     await listed.first().hover();
     await expect(chart.locator('.block-band')).toHaveCount(1);
     await chart.hover();
     await expect(chart.locator('.block-band')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Draw on the chart' }).click();
+    // Settings, Charts draws every kept block on the chart.
+    await setChart(page, 'blocks on');
+    await page.getByRole('button', { name: 'Chart', exact: true }).click();
     await expect(chart.locator('.block-band')).toHaveCount(await listed.count());
     await page.goBack();
     await expect(chip).toHaveCount(1, { timeout: 30_000 });

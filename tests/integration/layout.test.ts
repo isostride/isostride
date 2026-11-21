@@ -8,9 +8,9 @@ import { joinContext } from '@/lib/context';
 import { PATHS, readJson, readManifest } from '@/lib/fs';
 import { importFolder } from '@/lib/pipeline';
 import { type RunFile, type RunsIndex, SCHEMA_VERSION, ALGORITHM_VERSION } from '@/lib/kernel';
-import { TEST_DATA, makeDataFolder, recordMeasure } from '../support/fixtures';
+import { fitFixtures, makeDataFolder, recordMeasure, TEST_DATA } from '../support/fixtures';
 
-const SINCE_AUG = (await fs.readdir(TEST_DATA)).filter((f) => f.endsWith('.fit') && f >= '2026-08-03').sort();
+const SINCE_AUG = (await fitFixtures()).filter((f) => f >= '2026-08-03').sort();
 
 describe('Data folder layout', () => {
   it('Folder layout written', { timeout: 120_000 }, async () => {

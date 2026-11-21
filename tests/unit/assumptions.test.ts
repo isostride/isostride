@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bestEfforts, effortEvidence, effortOf, formSeries, performanceReport, summarizeLoad, type BestOfLength, type LoadSummary, type ModelKey, type ModelReport, type ReportInput } from '@/lib/load';
+import { bestEfforts, effortEvidence, effortOf, formSeries, performanceReport, summarizeLoad, todoList, type BestOfLength, type LoadSummary, type ModelKey, type ModelReport, type ReportInput } from '@/lib/load';
 import { DEFAULT_PERFORMANCE, type PerformanceSettings } from '@/lib/settings';
 import { syntheticRun } from '../support/synthetic';
 
@@ -131,5 +131,34 @@ describe('Model assumptions', () => {
     expect(wrist.by.intensity.trust).toBe('ok');
     // Every model says what it rests on and where it is shown.
     for (const m of good.models) { expect(m.inputs.length + m.parents.length, m.key).toBeGreaterThan(0); expect(m.where.tab, m.key).toBeTruthy(); }
+  });
+});
+
+describe('To do for the models', () => {
+  it('The list says what to do', () => {
+    // Nothing saved, never all-out: the settings come first, then the efforts to run; each item names the models it holds back.
+    const never = todoList(report(NEVER_ALL_OUT, DEFAULT_PERFORMANCE, { zonesOwn: false }).models);
+    const open = never.filter((t) => !t.done);
+    const keys = open.map((t) => t.key);
+    expect(new Set(keys.slice(0, 3))).toEqual(new Set(['resthr', 'maxhr', 'zones']));
+    // Within a kind, the worse first: zones not set (unmet) before a resting heart rate in doubt.
+    expect(keys.indexOf('zones')).toBeLessThan(keys.indexOf('resthr'));
+    expect(open.find((t) => t.key === 'maxhr')!.place).toBe('model');
+    expect(open.find((t) => t.key === 'zones')!.place).toBe('zones');
+    const allout = open.find((t) => t.key === 'allout')!;
+    expect(allout.kind).toBe('train');
+    expect(allout.status).toBe('unmet');
+    expect(allout.models).toEqual(expect.arrayContaining(['efforts', 'powerEfforts']));
+    expect(allout.now.some((l) => l.startsWith('All-out efforts at 3 lengths or more'))).toBe(true);
+    // The kinds in order: settings, what to record, what to run, what comes with time; open before done.
+    const kinds = open.map((t) => t.kind);
+    expect([...kinds].sort((a, b) => ['set', 'record', 'train', 'wait'].indexOf(a) - ['set', 'record', 'train', 'wait'].indexOf(b))).toEqual(kinds);
+    // A limit of a method is no task: the population formula and the contested band stay behind "Why?".
+    expect(never.some((t) => ['population', 'band', 'guide', 'method'].includes(t.key))).toBe(false);
+    // Set and run all-out: those items are done.
+    const set = todoList(report(ALL_OUT, SET).models);
+    for (const k of ['resthr', 'maxhr', 'zones', 'allout']) expect(set.find((t) => t.key === k)?.done).toBe(true);
+    expect(set.findIndex((t) => t.done)).toBeGreaterThan(-1);
+    expect(set.slice(set.findIndex((t) => t.done)).every((t) => t.done)).toBe(true);
   });
 });

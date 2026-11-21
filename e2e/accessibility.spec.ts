@@ -51,12 +51,15 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
           found.push(...(await serious(page, `Performance · ${tab} · ${view} (${scheme})`)));
         }
       }
+      await page.getByRole('tab', { name: 'To do', exact: true }).click();
+      await page.locator('.todo-item').first().waitFor();
+      found.push(...(await serious(page, `Performance · To do (${scheme})`)));
       await page.getByRole('tab', { name: 'Model', exact: true }).click();
       await page.getByRole('region', { name: 'Performance model' }).waitFor();
       found.push(...(await serious(page, `Performance · Model (${scheme})`)));
       await nav(page, 'Settings');
       // The tabs of Settings: zones, gear, tags.
-      for (const tab of ['Zones', 'Gear', 'Tags', 'Display']) {
+      for (const tab of ['Zones', 'Gear', 'Tags', 'Charts', 'Display']) {
         await page.getByRole('tab', { name: tab, exact: true }).click();
         await page.getByRole('tabpanel').getByRole('region', { name: tab }).waitFor();
         found.push(...(await serious(page, `Settings · ${tab} (${scheme})`)));

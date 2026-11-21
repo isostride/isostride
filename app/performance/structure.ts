@@ -4,7 +4,7 @@ import type { ModelGroup, ModelKey } from '@/lib/load';
  * The Performance screen by the evidence its models rest on (requirement "Performance structured
  * by evidence"): an overview, a tab per group with its views, and the settings.
  */
-export type Tab = 'overview' | ModelGroup | 'model';
+export type Tab = 'overview' | ModelGroup | 'todo' | 'model';
 
 export interface View {
   key: string;
@@ -42,6 +42,7 @@ export const TABS: { key: Tab; name: string; /** the evidence a group's models r
       { key: 'vdot', name: 'On VDOT', models: ['fittedVdot'] },
     ],
   },
+  { key: 'todo', name: 'To do', views: [] },
   { key: 'model', name: 'Model', views: [] },
 ];
 

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { fitFiles, importAll, nav, openWithFolder, readText, showList } from './support';
+import { fitFiles, importAll, nav, openWithFolder, readText, showList, setChart } from './support';
 
 /** Seconds of a clock: 12:30 or 1:05:00. */
 const secs = (c: string) => c.split(':').map(Number).reduce((a, b) => a * 60 + b, 0);
@@ -42,8 +42,9 @@ test.describe('Run chart', () => {
     await expect(scale.getByRole('button', { pressed: true })).toContainText('Heart rate');
     await expect(chart.locator('.run-line').last()).toHaveAttribute('data-metric', 'heartRate');
     // By default each line in its own band, top to bottom, its name in the gutter; overlaid, they share the height.
-    // The chart menu (scenario "Chart set up in the side menu"): the bands, the lines, the axis are in it;
-    // the metrics stay above the chart. It slides in from the right and the chart redraws while it stays open.
+    // The chart menu (scenario "Chart set up in the side menu"): what concerns this run (its blocks, a block
+    // to make, the zones); how every chart draws is set in Settings, Charts, which it links to. The metrics
+    // stay above the chart. It slides in from the right and the chart redraws while it stays open.
     const menuButton = page.getByRole('button', { name: 'Chart', exact: true });
     const menu = page.getByRole('dialog', { name: 'Chart menu' });
     await menuButton.click();
@@ -52,24 +53,25 @@ test.describe('Run chart', () => {
     const box2 = (await menu.boundingBox())!;
     expect(box2.x + box2.width).toBeGreaterThanOrEqual(1439);
     await expect(menu.getByRole('group', { name: 'Metrics shown' })).toHaveCount(0);
-    await expect(page.getByRole('radio', { name: 'Bands' })).toHaveAttribute('aria-checked', 'true');
+    await expect(menu.getByRole('radio')).toHaveCount(0);
+    await expect(menu.getByRole('link', { name: 'Chart settings in Settings' })).toHaveAttribute('href', '/settings?tab=charts');
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
     await expect(chart.locator('.band-name')).toHaveText(['Pace', 'HR', 'Cadence', 'GCT']);
     const tops = await chart.locator('.band-name rect').evaluateAll((rs) => rs.map((r) => Number(r.getAttribute('y'))));
     expect(tops).toEqual([...tops].sort((a, b) => a - b));
-    await page.getByRole('radio', { name: 'Overlaid' }).click();
+    // Settings, Charts (scenario "Chart settings in Settings"): overlaid, the lines share the height; back to bands.
+    await setChart(page, 'Overlaid');
     await expect(chart.locator('.band-name')).toHaveCount(0);
     await expect(chart.locator('.run-scale').first()).toHaveText(/^\d{2,3}$/); // heart rate's scale, focused
-    await page.getByRole('radio', { name: 'Bands' }).click();
+    await setChart(page, 'Bands');
     await expect(chart.locator('.band-name')).toHaveCount(4);
     // Smooth (the default) draws the rolling mean; Raw the 10 s windows.
-    await expect(page.getByRole('radio', { name: 'Smooth' })).toHaveAttribute('aria-checked', 'true');
     const smoothPath = await chart.locator('.run-line').first().getAttribute('d');
-    await page.getByRole('radio', { name: 'Raw' }).click();
+    await setChart(page, 'Raw');
     await expect.poll(() => chart.locator('.run-line').first().getAttribute('d')).not.toBe(smoothPath);
-    await page.getByRole('radio', { name: 'Smooth' }).click();
+    await setChart(page, 'Smooth');
     await expect.poll(() => chart.locator('.run-line').first().getAttribute('d')).toBe(smoothPath);
-    await page.keyboard.press('Escape');
-    await expect(menu).toHaveCount(0);
     // A fifth metric waits until one of the four is turned off; it takes the free colour.
     const picker = page.getByRole('group', { name: 'Metrics shown' });
     const off = picker.getByRole('button', { pressed: false }).first();
@@ -87,7 +89,8 @@ test.describe('Run chart', () => {
     const lapCount = await lapRows.count();
     await expect(lapBars).toHaveCount(lapCount);
     await expect(lapBars.first()).toHaveAccessibleName(/^Lap 1 · \d+\.\d\d km · \d+:\d\d$/);
-    const clearSelection = () => page.getByRole('button', { name: 'Show the whole run' }).click();
+    // Clear selection: at the top right of the chart, beside its menu; there only while a stretch is selected.
+    const clearSelection = () => page.locator('.run-board .metrics-bar').getByRole('button', { name: 'Clear selection' }).click();
     // Its bar: the chart zooms to the lap, the bar and the row are marked.
     await lapBars.first().click();
     await expect(lapBars.first()).toHaveAttribute('aria-pressed', 'true');
@@ -187,18 +190,17 @@ test.describe('Run chart', () => {
     });
     expect(await marksOnLine()).toEqual([true, true]);
     await page.mouse.move(0, 0);
-    await menuButton.click();
-    await page.getByRole('radio', { name: 'Raw' }).click();
+    await setChart(page, 'Raw');
     await expect.poll(marksOnLine).toEqual([true, true]);
-    await page.getByRole('radio', { name: 'Smooth' }).click();
-    await page.keyboard.press('Escape');
+    await setChart(page, 'Smooth');
     await page.locator('.stat-cell[data-metric="heartRate"][data-stat="max"]').hover();
     await expect(chart.locator('.mark-max text')).toHaveText(/^max \d+ bpm$/);
     await expect(stats.getByRole('row', { name: /^Heart rate/ }).locator('.trend-cell')).toHaveText(/^[+−]\d+ bpm$/);
     await expect(page.locator('.range-stats .decoupling')).toHaveText(/^Pa:HR [+−]\d+\.\d %$/);
     await page.mouse.move(0, 0);
-    // The statistics' head keeps only the selection and its ✕; the block types are in the chart menu.
-    await expect(page.locator('.range-stats').getByRole('button')).toHaveText(['✕']);
+    // The statistics' head holds no button (Clear selection is at the top right of the chart); the block types are in the chart menu.
+    await expect(page.locator('.range-stats').getByRole('button')).toHaveCount(0);
+    await expect(page.locator('.run-board .metrics-bar').getByRole('button', { name: 'Clear selection' })).toBeVisible();
     await menuButton.click();
     await expect(menu.getByRole('heading', { name: 'Make a block' })).toBeVisible();
     await expect(menu.locator('.menu-actions button').first()).toBeVisible();
@@ -272,7 +274,7 @@ test.describe('Run chart', () => {
     await expect(page.locator('.range-stats h3')).toHaveText('Selection');
 
     // Closing the selection shows the whole run.
-    await page.getByRole('button', { name: 'Show the whole run' }).click();
+    await page.getByRole('button', { name: 'Clear selection' }).click();
     await expect(page.locator('.readout')).toContainText(/^Whole run · /);
     await expect(page.locator('.range-stats h3')).toHaveText('Whole run');
     await expect(route).toHaveAttribute('data-zoom', String(wholeZoom));
@@ -329,16 +331,13 @@ test.describe('Run chart', () => {
     // by time, a clock with the distance under each tick.
     await expect(chart.locator('.run-tick').first()).toHaveText(/^\d+:\d\d$/);
     await expect(chart.locator('.run-tick-sub').nth(1)).toHaveText(/^\d+(\.\d+)? km$/);
-    await menuButton.click();
-    await page.getByRole('radio', { name: 'Distance' }).click();
+    await setChart(page, 'Distance');
     await expect(chart.locator('.run-tick').first()).toHaveText(/^\d+(\.\d+)? km$/);
     await expect(chart.locator('.run-tick-sub').nth(1)).toHaveText(/^\d+:\d\d$/);
     const kms = (await chart.locator('.run-tick').allTextContents()).map((k) => parseFloat(k));
     expect(kms.length).toBeGreaterThanOrEqual(3);
     expect(new Set(kms.slice(1).map((k, i) => Math.round((k - kms[i]) * 1000))).size).toBe(1);
-    await page.getByRole('radio', { name: 'Time' }).click();
-    await page.getByRole('button', { name: 'Close the chart menu' }).click();
-    await expect(menu).toHaveCount(0);
+    await setChart(page, 'Time');
     await expect(chart.locator('.run-tick').first()).toHaveText(/^\d+:\d\d$/);
 
     // Zones (scenario "Zones set and coloured"): heart rate zones from a maximum of 190 bpm in the
@@ -374,10 +373,7 @@ test.describe('Run chart', () => {
 
     // The view kept in the link and remembered for the run (scenario "Run view survives a reload").
     await page.getByRole('group', { name: 'Laps' }).getByRole('button').nth(1).click();
-    await menuButton.click();
-    await page.getByRole('radio', { name: 'Overlaid' }).click();
-    await page.getByRole('radio', { name: 'Distance' }).click();
-    await page.keyboard.press('Escape');
+    await setChart(page, 'Overlaid', 'Distance');
     await page.getByRole('group', { name: 'Scale shown' }).getByRole('button', { name: /^Heart rate/ }).click();
     await expect.poll(() => new URL(page.url()).searchParams.get('f')).toBe('heartRate');
     const link = new URL(page.url()).searchParams;

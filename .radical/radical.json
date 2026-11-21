@@ -688,6 +688,10 @@
     ] },
     { "element": "a4c3a2bf-49e0-4aaa-b00a-2d2b896b07ec", "name": "Folder menu and history used", "tests": [
       "e2e/journeys.spec.ts › Journeys › Import, recompute, block definition, trend, export and A/B without the network"
+    ] },
+    { "element": "b66b289b-d780-4c0d-9344-2a50ac02e340", "name": "To do list built from the checks", "tests": [
+      "tests/unit/assumptions.test.ts › To do for the models › The list says what to do",
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
     ] }
   ]
 }

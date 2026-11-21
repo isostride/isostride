@@ -106,6 +106,7 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
         { group: 'Screens', glyph: 'import', label: 'Data folder', hint: 'Import, recompute, another folder', run: go('/folder') },
         { group: 'Screens', glyph: 'ab', label: 'A/B comparison', hint: 'Analysis', run: go('/analysis?tab=ab') },
         { group: 'Screens', glyph: 'model', label: 'Load model', hint: 'Performance', run: go('/performance?tab=model') },
+        { group: 'Screens', glyph: 'tags', label: 'To do for the models', hint: 'Performance', run: go('/performance?tab=todo') },
         { group: 'Screens', glyph: 'gear', label: 'Gear', hint: 'Settings', run: go('/settings?tab=gear') },
         { group: 'Screens', glyph: 'tags', label: 'Tags', hint: 'Settings', run: go('/settings?tab=tags') },
         { group: 'Screens', glyph: 'display', label: 'Display', hint: 'Settings · theme and map background', run: go('/settings?tab=display') },

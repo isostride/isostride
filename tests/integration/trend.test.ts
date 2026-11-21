@@ -1,17 +1,16 @@
-import fs from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import { fromRecommendation, RECOMMENDATIONS_PATH, writeDefinitions, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
 import { runBlocks } from '@/lib/detection';
 import { instancesCsv, selectInstances, computeTrend, profiles } from '@/lib/compare';
 import { PATHS, readJson } from '@/lib/fs';
 import { importFolder } from '@/lib/pipeline';
-import { TEST_DATA, makeDataFolder, recordMeasure } from '../support/fixtures';
+import { fitFixtures, makeDataFolder, recordMeasure, TEST_DATA } from '../support/fixtures';
 import { days, inst } from '../support/instances';
 
 describe('Analysis time budget', () => {
   it('Trend within 3 s', async () => {
     // The runner's whole year, a promenade definition accepted: time the trend of every metric.
-    const files = (await fs.readdir(TEST_DATA)).filter((f) => f.endsWith('.fit'));
+    const files = (await fitFixtures());
     const folder = await makeDataFolder(files);
     await importFolder(folder);
     const recs = (await readJson<{ recommendations: Recommendation[] }>(folder, RECOMMENDATIONS_PATH))!.recommendations;

@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { RECOMMENDATIONS_PATH, fromRecommendation, writeDefinitions, type BlockInstance, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
 import { runBlocks } from '@/lib/detection';
@@ -6,7 +5,7 @@ import { abCsv, byField, computeAb, interleaved, hash } from '@/lib/compare';
 import { rng } from '@/lib/stats';
 import { PATHS, readJson } from '@/lib/fs';
 import { importFolder } from '@/lib/pipeline';
-import { TEST_DATA, makeDataFolder, recordMeasure } from '../support/fixtures';
+import { fitFixtures, makeDataFolder, recordMeasure, TEST_DATA } from '../support/fixtures';
 import { days, inst } from '../support/instances';
 
 /** 8 + 8 promenade passes: A every other week, B the weeks between (rotated). */
@@ -21,7 +20,7 @@ const split = byField('shoes', 'Shoes A', 'Shoes B');
 describe('Real data', () => {
   let all: BlockInstance[] = [];
   beforeAll(async () => {
-    const files = (await fs.readdir(TEST_DATA)).filter((f) => f.endsWith('.fit'));
+    const files = (await fitFixtures());
     const folder = await makeDataFolder(files);
     await importFolder(folder);
     const recs = (await readJson<{ recommendations: Recommendation[] }>(folder, RECOMMENDATIONS_PATH))!.recommendations;

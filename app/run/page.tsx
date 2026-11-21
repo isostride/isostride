@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget } from '@/components';
-import { useOpenFolder, runInWorker } from '@/lib/client';
+import { readChartSettings, runInWorker, useChartSettings, useOpenFolder } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { canDefineFromLaps, definitionFromLaps, efficiencyOf, definitionFromSelection, rangeStats, readDefinitions, selectionOptions, zoneShares, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockType } from '@/lib/blocks';
@@ -63,10 +63,6 @@ function forDrawing(v: (number | null)[], stopped: boolean[]): (number | null)[]
 /** The metrics shown, at most 4: a slot each, the slot giving the colour, so a metric keeps its colour while shown. */
 const SLOTS_KEY = 'strideprism.runChart';
 const SLOT_COUNT = 4;
-const LAYOUT_KEY = 'strideprism.runChartLayout';
-const BLOCKS_KEY = 'strideprism.runChartBlocks';
-const AXIS_KEY = 'strideprism.runChartAxis';
-const SMOOTH_KEY = 'strideprism.runChartSmooth';
 const DEFAULT_SLOTS: (WindowKey | null)[] = ['speed', 'heartRate', 'cadence', 'groundContactTime'];
 const KEYS = new Set<string>(METRICS.map((m) => m.key));
 /** The least and the most height of the chart's plot, px. */
@@ -75,6 +71,8 @@ const MAX_CHART = 560;
 
 /** The key of a run's remembered view in the browser. */
 const viewKey = (id: string) => `strideprism.runView.${id}`;
+/** The key of the view a run was left with before its link was written: the link it was left at, and the view. */
+const leftKey = (id: string) => `strideprism.runViewLeft.${id}`;
 
 /** The last choices made on any run: the base of a run opened with nothing in its link nor memory. */
 function lastChoices(): RunView {
@@ -82,10 +80,7 @@ function lastChoices(): RunView {
   try {
     const saved = JSON.parse(localStorage.getItem(SLOTS_KEY) ?? 'null');
     if (Array.isArray(saved) && saved.length === SLOT_COUNT && saved.every((k) => k === null || KEYS.has(k))) v.slots = saved;
-    if (localStorage.getItem(LAYOUT_KEY) === 'overlay') v.layout = 'overlay';
-    if (localStorage.getItem(BLOCKS_KEY) === 'on') v.blocks = true;
-    if (localStorage.getItem(AXIS_KEY) === 'distance') v.axis = 'distance';
-    if (localStorage.getItem(SMOOTH_KEY) === 'raw') v.smooth = false;
+    Object.assign(v, readChartSettings());
   } catch { /* the defaults */ }
   return v;
 }
@@ -127,8 +122,16 @@ function RunPage() {
   // run's memory, then the last choices made on any run.
   const [start] = useState<RunView>(() => {
     let memory: URLSearchParams | null = null;
-    try { const m = localStorage.getItem(viewKey(id)); if (m) memory = new URLSearchParams(m); } catch { /* none */ }
-    return viewFromParams(mergeParams(new URLSearchParams(params.toString()), memory), lastChoices(), KEYS);
+    let link = new URLSearchParams(params.toString());
+    try {
+      const m = localStorage.getItem(viewKey(id));
+      if (m) memory = new URLSearchParams(m);
+      // Back at the very link the run was left at, before its last change reached it: that change wins.
+      const left = JSON.parse(localStorage.getItem(leftKey(id)) ?? 'null') as { link: string; view: string } | null;
+      localStorage.removeItem(leftKey(id));
+      if (left && left.link === params.toString()) link = new URLSearchParams(left.view);
+    } catch { /* none */ }
+    return viewFromParams(mergeParams(link, memory), lastChoices(), KEYS);
   });
   const [slots, setSlots] = useState<(WindowKey | null)[]>(start.slots as (WindowKey | null)[]);
   const [focus, setFocus] = useState<string | null>(start.focus);
@@ -143,14 +146,13 @@ function RunPage() {
   const [mapLed, setMapLed] = useState(start.map !== null);
   /** the camera of the map moved by hand, for the link */
   const [mapCam, setMapCam] = useState<MapCamera | null>(start.map);
-  /** each line in its own band (the default) or all over the whole height */
-  const [layout, setLayout] = useState<'bands' | 'overlay'>(start.layout);
-  /** the kept blocks drawn on the chart: off by default ("jest to nieczytelne"), or the one pointed at in the list */
-  const [showBlocks, setShowBlocks] = useState(start.blocks);
-  /** the x axis: by time (the default) or by distance */
-  const [axis, setAxis] = useState<'time' | 'distance'>(start.axis);
-  /** the lines smoothed by a rolling mean that follows the zoom (the default), or the raw windows */
-  const [smooth, setSmooth] = useState(start.smooth);
+  // How the chart draws, from Settings, Charts ("ustawienia z charts przenies do settings - charts"):
+  // each line in its own band (the default) or all over the whole height; smoothed by a rolling mean
+  // that follows the zoom (the default) or the raw windows; the x axis by time (the default) or by
+  // distance; the kept blocks drawn on it (off by default, "jest to nieczytelne") or only the one
+  // pointed at in the list. The link records them; Settings decide them.
+  const [chartSettings] = useChartSettings();
+  const { layout, axis, smooth, blocks: showBlocks } = chartSettings;
   /** a statistic pointed at in the table, lit on the chart */
   const [hot, setHot] = useState<{ key: string; stat: 'min' | 'avg' | 'max' } | null>(null);
   /** the chart menu from the right ("dodatkowe menu ktore bedzie sie rozwijalo z prawej") */
@@ -182,22 +184,33 @@ function RunPage() {
   }, [run]);
   // Every change of the view goes into the link (replaced, no new history entry), the run's memory and
   // the last choices; a quarter of a second after the last one, as a wheel makes many in a row.
+  // The view not yet written when the screen is left (within that quarter of a second) goes into the
+  // run's memory as it closes, so coming back finds it (the link of the page left cannot change then).
+  const unsaved = useRef<string | null>(null);
+  /** the query of the link as last written (or as opened) */
+  const written = useRef(params.toString());
   useEffect(() => {
+    const view: RunView = { range: zoom, slots, focus, layout, axis, smooth, blocks: showBlocks, map: mapLed ? mapCam : null };
+    const query = viewToParams(id, view).toString();
+    unsaved.current = query;
     const t = setTimeout(() => {
-      const view: RunView = { range: zoom, slots, focus, layout, axis, smooth, blocks: showBlocks, map: mapLed ? mapCam : null };
-      const query = viewToParams(id, view).toString();
+      unsaved.current = null;
       if (location.search !== `?${query}`) window.history.replaceState(null, '', `${location.pathname}?${query}`);
+      written.current = query;
       try {
         localStorage.setItem(viewKey(id), query);
         localStorage.setItem(SLOTS_KEY, JSON.stringify(slots));
-        localStorage.setItem(LAYOUT_KEY, layout);
-        localStorage.setItem(BLOCKS_KEY, showBlocks ? 'on' : 'off');
-        localStorage.setItem(AXIS_KEY, axis);
-        localStorage.setItem(SMOOTH_KEY, smooth ? 'smooth' : 'raw');
       } catch { /* not kept */ }
     }, 250);
     return () => clearTimeout(t);
   }, [id, zoom, slots, focus, layout, axis, smooth, showBlocks, mapLed, mapCam]);
+  useEffect(() => () => {
+    if (!unsaved.current) return;
+    try {
+      localStorage.setItem(viewKey(id), unsaved.current);
+      localStorage.setItem(leftKey(id), JSON.stringify({ link: written.current, view: unsaved.current }));
+    } catch { /* not kept */ }
+  }, [id]);
 
   useEffect(() => {
     readJson<RunFile>(folder, PATHS.runFile(id)).then(setRun).catch(() => setRun(null));
@@ -262,6 +275,8 @@ function RunPage() {
   if (run === undefined) return <div className="page muted">Loading…</div>;
   if (!run || !view) return <div className="page">Run not found. <Link href="/" className="muted">← Runs</Link></div>;
   const { x, laps, series, total, dmap } = view;
+  /** the x axis drawn: by distance only when the run has one */
+  const xAxis = axis === 'distance' && dmap.max > 0 ? 'distance' : 'time';
   // A stretch chosen anyhow becomes the range shown, exactly: the selection is the range.
   const select = (b: { from: number; to: number }) => setDomain(clampDomain([b.from, b.to], total));
   const clear = () => { setZoom(null); setMapLed(false); };
@@ -359,10 +374,17 @@ function RunPage() {
               );
             })}
           </div>
-          <span className="chart-summary muted small">{layout === 'bands' ? 'Bands' : 'Overlaid'} · by {axis}{showBlocks && blocks.length ? ` · ${blocks.length} block${blocks.length > 1 ? 's' : ''}` : ''}</span>
+          <span className="chart-summary muted small">{layout === 'bands' ? 'Bands' : 'Overlaid'} · by {xAxis}{showBlocks && blocks.length ? ` · ${blocks.length} block${blocks.length > 1 ? 's' : ''}` : ''}</span>
           <span className="readout sr-only" aria-live="polite">
             {zoomed ? `${clock(domain[0])}–${clock(domain[1])} of ${clock(total)}` : `Whole run · ${clock(total)}`}
           </span>
+          {/* Clear selection, top right of the chart (the runner's request: "chce miec clear selection w prawym gornym rogu"): there while a stretch is selected. */}
+          {selection && (
+            <button className="btn sm clear-selection" title="Clear the selection and show the whole run" onClick={clear}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              Clear selection
+            </button>
+          )}
           <button className={`btn sm chart-menu-btn ${menu ? 'on' : ''}`} aria-expanded={menu} aria-controls="chart-menu" onClick={() => setMenu(!menu)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
             Chart
@@ -372,7 +394,7 @@ function RunPage() {
           <div className="run-chart-col">
             <RunChart x={x} total={total} lines={lines} focus={focus} onFocus={setFocus} domain={domain} onDomain={setDomain} laps={laps}
               blocks={blocks.filter((b) => showBlocks || b.id === pointed).map((b) => ({ from: b.start, to: b.end, ok: b.status === 'accepted', name: b.name }))}
-              cursor={cursor} onCursor={setCursor} selection={null} onSelect={select} head={head} height={chartHeight} layout={layout} axis={axis} dmap={dmap}
+              cursor={cursor} onCursor={setCursor} selection={null} onSelect={select} head={head} height={chartHeight} layout={layout} axis={xAxis} dmap={dmap}
               marks={Object.fromEntries(shownStats.map(({ line, v }) => [line.key, v]))} hot={hot} />
             <div className="legend chart-foot">
               <span><i style={{ background: 'var(--surface-2)' }} />alternate laps</span>
@@ -420,11 +442,7 @@ function RunPage() {
               </span>
             )}
             <span className="spacer" />
-            {selection ? (
-              <button className="btn sm icon" aria-label="Show the whole run" title="Close the selection and show the whole run" onClick={clear}>✕</button>
-            ) : (
-              <span className="muted small">Select a stretch on the chart, the map or a lap to see its statistics.</span>
-            )}
+            {!selection && <span className="muted small">Select a stretch on the chart, the map or a lap to see its statistics.</span>}
           </div>
           <div className="range-body">
           <div className="range-side">
@@ -486,35 +504,15 @@ function RunPage() {
             <button className="btn sm icon" aria-label="Close the chart menu" onClick={() => setMenu(false)}>✕</button>
           </div>
           <section>
-            <h3>Lines</h3>
-            <div className="segmented" role="radiogroup" aria-label="Lines">
-              {([['bands', 'Bands'], ['overlay', 'Overlaid']] as const).map(([k, l]) => (
-                <button key={k} type="button" role="radio" aria-checked={layout === k} className={layout === k ? 'on' : ''} onClick={() => setLayout(k)}>{l}</button>
-              ))}
-            </div>
-          </section>
-          <section>
-            <h3>Line</h3>
-            <div className="segmented" role="radiogroup" aria-label="Smoothing">
-              {([[true, 'Smooth'], [false, 'Raw']] as const).map(([k, l]) => (
-                <button key={l} type="button" role="radio" aria-checked={smooth === k} className={smooth === k ? 'on' : ''} onClick={() => setSmooth(k)}>{l}</button>
-              ))}
-            </div>
-            <p className="muted small">{smooth ? `The mean over ${Math.round(span)} s, following the zoom.` : 'The 10 s windows as they are.'}</p>
-          </section>
-          <section>
-            <h3>X axis</h3>
-            <div className="segmented" role="radiogroup" aria-label="X axis">
-              {([['time', 'Time'], ['distance', 'Distance']] as const).map(([k, l]) => (
-                <button key={k} type="button" role="radio" aria-checked={axis === k} className={axis === k ? 'on' : ''} disabled={k === 'distance' && dmap.max <= 0} onClick={() => setAxis(k)}>{l}</button>
-              ))}
-            </div>
+            <h3>Drawing <span className="muted">· {layout === 'bands' ? 'bands' : 'overlaid'}, {smooth ? 'smoothed' : 'raw'}, by {xAxis}</span></h3>
+            <p className="muted small">The lines, their smoothing, the x axis and the blocks drawn are set for every chart in Settings.</p>
+            <Link className="btn sm" href="/settings?tab=charts">Chart settings in Settings</Link>
           </section>
           <section>
             <h3>Blocks in this run <span className="muted">· {blocks.length}</span></h3>
             {blocks.length === 0 ? <p className="muted small">None of your kept blocks has a segment in this run.</p> : (
               <>
-                <button type="button" className={`pill ${showBlocks ? 'on' : ''}`} aria-pressed={showBlocks} onClick={() => setShowBlocks(!showBlocks)}>Draw on the chart</button>
+                <p className="muted small">{showBlocks ? 'Drawn on the chart (Settings, Charts).' : 'Point at one to see it on the chart; Settings, Charts draws them all.'}</p>
                 <div className="run-blocks">
                   {blocks.map((b) => (
                     <button key={b.id} type="button" className="run-block" onMouseEnter={() => setPointed(b.id)} onMouseLeave={() => setPointed(null)} onFocus={() => setPointed(b.id)} onBlur={() => setPointed(null)} onClick={() => select({ from: b.start, to: b.end })}>

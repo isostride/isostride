@@ -1848,6 +1848,13 @@
     "targetId": "84b558e0-d87c-4134-8479-f01b164bcd47"
   },
   {
+    "id": "3ebd6500-eaa2-4ec6-bf06-5b6f8cb5d75d",
+    "quote": "w sekcji performance chce zakladke todo .. w ktorej jest lista rzeczy do zrobienia aby modele dzialay poprawnie",
+    "relationType": "derives",
+    "sourceId": "83f9eaba-c80b-43d0-98e0-3c61939655f5",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "3ec918bc-6a5a-48db-8f5f-0fe690753add",
     "relationType": "satisfies",
     "sourceId": "2a60339a-0a2c-4da8-b12e-4227eba8f4d1",
@@ -3276,6 +3283,12 @@
     "targetId": "acc7080d-81b9-4b31-8f5c-db0d35e36abb"
   },
   {
+    "id": "76e614e4-e7fe-4740-8838-500968758986",
+    "relationType": "satisfies",
+    "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
+    "targetId": "83f9eaba-c80b-43d0-98e0-3c61939655f5"
+  },
+  {
     "id": "772b893a-a14c-4b85-b5e0-20e1a6711c6b",
     "relationType": "verifies",
     "sourceId": "a5594f9e-b2dd-4555-9cfe-84de48874542",
@@ -3286,6 +3299,12 @@
     "relationType": "satisfies",
     "sourceId": "a694fdc9-58ad-462b-a996-c49812b6da79",
     "targetId": "da832a20-4c6e-48e6-9bce-d34a6396158a"
+  },
+  {
+    "id": "7792d83e-09d1-4fa8-be7b-bfeb54ce71cd",
+    "relationType": "verifies",
+    "sourceId": "b66b289b-d780-4c0d-9344-2a50ac02e340",
+    "targetId": "83f9eaba-c80b-43d0-98e0-3c61939655f5"
   },
   {
     "id": "77b804d6-c0ac-4874-918a-3893c0b1f608",
@@ -5782,6 +5801,13 @@
     "targetId": "f2b45101-eae1-486b-9c37-7905de9fad0a"
   },
   {
+    "id": "ccfa5c4f-d5f2-44e0-9850-81c74f2e6f57",
+    "quote": "ustawienia z charts przenies do settings - charts",
+    "relationType": "derives",
+    "sourceId": "81ad7b9e-17ca-4f1c-9679-239bec871155",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "cd0f9cd2-ef8e-4330-967f-2dda00fa2b62",
     "relationType": "realises",
     "sourceId": "dcc9c750-4930-43ec-b29a-96d8cc3419e7",
@@ -6500,6 +6526,13 @@
     "relationType": "verifies",
     "sourceId": "3c90c78c-d981-46b4-88c7-1ad277d38123",
     "targetId": "06b9896e-33c2-4668-b6eb-3f0115d9ceea"
+  },
+  {
+    "id": "e732dbf6-a0e8-4780-a3ea-a4127ccee920",
+    "quote": "chce miec clear selectionw prawym gornym rogu zamiast na dole w widgedzie selection",
+    "relationType": "derives",
+    "sourceId": "8cd8c786-c600-4808-95b3-d73aac37d4b1",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "e764b013-a564-4e24-95c6-49e683ebbe7c",

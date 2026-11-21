@@ -38,8 +38,19 @@ export async function putFitFiles(page: Page, files: string[]): Promise<void> {
   }, payload);
 }
 
+/**
+ * The export as the tests were written against it (the runs up to 20 Nov 2026): a run the runner
+ * adds to the folder later is left out, so it does not change what the tests count.
+ */
+const isFixture = (name: string): boolean => {
+  if (!name.endsWith('.fit')) return false;
+  if (/^\d{4}-\d{2}-\d{2}/.test(name)) return name.slice(0, 10) <= '2026-11-20';
+  const id = name.match(/^(\d{15,20})_/);
+  return id ? BigInt(id[1]) <= 481897427972948672n : false;
+};
+
 export async function fitFiles(count: number, from = '2026-08-03'): Promise<string[]> {
-  return (await fs.readdir(TEST_DATA)).filter((f) => f.endsWith('.fit') && f >= from).sort().slice(0, count);
+  return (await fs.readdir(TEST_DATA)).filter((f) => isFixture(f) && f >= from).sort().slice(0, count);
 }
 
 /** Records a measurement for the model's metric conditions (reports/measures-e2e.json). */
@@ -104,6 +115,22 @@ export async function importAll(page: Page): Promise<void> {
   await page.getByText(/^Imported \d+ runs?/).waitFor({ timeout: 60_000 });
   await page.locator('.sidebar').getByRole('link', { name: /Runs$/ }).click();
   await page.getByRole('heading', { name: 'Runs' }).waitFor();
+}
+
+/**
+ * On a run: sets its chart in Settings, Charts (each choice a radio by its name, or 'blocks on' /
+ * 'blocks off' for the switch), then returns to the run as it was left.
+ */
+export async function setChart(page: Page, ...choices: string[]): Promise<void> {
+  await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
+  await page.getByRole('tab', { name: 'Charts', exact: true }).click();
+  const card = page.getByRole('region', { name: 'Charts' });
+  for (const c of choices) {
+    if (c === 'blocks on' || c === 'blocks off') await card.getByRole('checkbox', { name: /Blocks on the chart/ }).setChecked(c === 'blocks on');
+    else await card.getByRole('radio', { name: c, exact: true }).click();
+  }
+  await page.goBack();
+  await page.getByRole('img', { name: /^Run metrics · / }).waitFor();
 }
 
 /** Clicks a screen in the sidebar (its link's name starts with an icon). */

@@ -12,7 +12,7 @@ test.describe('Performance model', () => {
     await expect(page.locator('.sidebar nav').getByRole('link')).toHaveText(['Runs', 'Analysis', 'Performance', 'Settings']);
     // Settings in tabs, zones first; gear and tags are tabs of it, not a screen of the navigation.
     await nav(page, 'Settings');
-    await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Zones', 'Gear', 'Tags', 'Display']);
+    await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Zones', 'Gear', 'Tags', 'Charts', 'Display']);
     await page.getByRole('tab', { name: 'Tags' }).click();
     await expect(page).toHaveURL(/\/settings\?tab=tags/);
     await expect(page.getByRole('region', { name: 'Tags' })).toContainText('Workout type');
@@ -26,7 +26,7 @@ test.describe('Performance model', () => {
     // Performance is laid out by the evidence its models rest on: an overview, a tab per group, the settings.
     await nav(page, 'Performance');
     const tabs = page.getByRole('tablist', { name: 'Performance sections' });
-    await expect(tabs.getByRole('tab')).toHaveText(['Overview', 'Load', 'Capacity', 'Aerobic', 'Response', 'Model']);
+    await expect(tabs.getByRole('tab')).toHaveText(['Overview', 'Load', 'Capacity', 'Aerobic', 'Response', 'To do', 'Model']);
     await expect(tabs.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
     await expect(page).toHaveURL(/\/performance$/);
     // The overview is the map of the models: each with its name, what it says now, its trust and a "Why?"; no list repeats it.
@@ -61,6 +61,27 @@ test.describe('Performance model', () => {
     await expect(panel('Critical speed and D′').getByRole('link', { name: /^Best efforts of 2–20 min/ })).toBeVisible();
     await why('Critical speed and D′').click();
     await expect(page.getByRole('region', { name: /^Why:/ })).toHaveCount(0);
+
+    // To do: what the runner can do so the models work — nothing saved yet, so the settings come first, each saying where it is done.
+    await tabs.getByRole('tab', { name: 'To do' }).click();
+    await expect(page).toHaveURL(/\/performance\?tab=todo$/);
+    const setNow = page.getByRole('region', { name: 'Set now' });
+    await expect(page.getByRole('region', { name: 'Progress' }).getByRole('heading')).toHaveText(/^\d+ things? to do$/);
+    for (const key of ['zones', 'resthr']) await expect(setNow.locator(`[data-todo="${key}"]`)).toBeVisible();
+    await expect(setNow.locator('[data-todo="resthr"]')).toContainText('Your resting heart rate is set: 60 bpm is the default');
+    await expect(setNow.locator('[data-todo="resthr"]').getByRole('link', { name: 'Load of a run' })).toBeVisible();
+    // An item the files cannot check is set aside by the runner, and brought back.
+    const before = await page.locator('.todo-item:not(.done):not(.aside)').count();
+    const judged = page.locator('.todo-item.todo-unknown').first();
+    const judgedKey = (await judged.getAttribute('data-todo'))!;
+    await judged.getByRole('button', { name: 'Set aside' }).click();
+    await expect(page.locator('.todo-item:not(.done):not(.aside)')).toHaveCount(before - 1);
+    await page.getByText(/^Done and set aside/).click();
+    await page.locator(`[data-todo="${judgedKey}"]`).getByRole('button', { name: 'Bring back' }).click();
+    await expect(page.locator('.todo-item:not(.done):not(.aside)')).toHaveCount(before);
+    // Where a setting is made: the Model tab.
+    await setNow.locator('[data-todo="resthr"]').getByRole('link', { name: 'Open the Model tab →' }).click();
+    await expect(page).toHaveURL(/\/performance\?tab=model/);
 
     // Its Model tab: Banister TRIMP until chosen otherwise; Power TSS against the critical power of the curve, saved, the loads recomputed.
     await tabs.getByRole('tab', { name: 'Model' }).click();

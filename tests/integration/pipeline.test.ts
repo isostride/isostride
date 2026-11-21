@@ -1,13 +1,12 @@
-import fs from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import { RECOMMENDATIONS_PATH, fromRecommendation, writeDefinitions, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
 import { PATHS, readJson } from '@/lib/fs';
 import { writeGear } from '@/lib/gear';
 import type { RunsIndex } from '@/lib/kernel';
 import { importFolder, refreshBlocks, refreshContext } from '@/lib/pipeline';
-import { TEST_DATA, makeDataFolder } from '../support/fixtures';
+import { fitFixtures, makeDataFolder, TEST_DATA } from '../support/fixtures';
 
-const FILES = (await fs.readdir(TEST_DATA)).filter((f) => f.endsWith('.fit') && f >= '2026-10-01' && f < '2026-11-01').sort();
+const FILES = (await fitFixtures()).filter((f) => f >= '2026-10-01' && f < '2026-11-01').sort();
 
 describe('Pipeline', () => {
   it('Gear change refreshes context and blocks', async () => {
