@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import { runInWorker, useOpenFolder } from '@/lib/client';
+import { runInWorker, useMapTiles, useNarrowMenu, useOpenFolder, useTheme, type Theme } from '@/lib/client';
 import { GearTags } from './GearTags';
 import { DEFAULT_ZONES, ZONE_METRICS, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneRanges, zoneShade, zonesFromMaxHr, type ZoneMetric } from '@/lib/settings';
 
@@ -29,15 +29,15 @@ function ZoneChips({ m, boundaries }: { m: ZoneMetric; boundaries: number[] }) {
   );
 }
 
-/** The Settings tabs (requirement "Settings in tabs"), kept in the link (tab=zones, gear, tags). */
-type Tab = 'zones' | 'gear' | 'tags';
-const TABS: [Tab, string][] = [['zones', 'Zones'], ['gear', 'Gear'], ['tags', 'Tags']];
+/** The Settings tabs (requirement "Settings in tabs"), kept in the link (tab=zones, gear, tags, display). */
+type Tab = 'zones' | 'gear' | 'tags' | 'display';
+const TABS: [Tab, string][] = [['zones', 'Zones'], ['gear', 'Gear'], ['tags', 'Tags'], ['display', 'Display']];
 
 export default function SettingsPageWrapper() {
   return <Suspense fallback={<div className="page"><div className="page-head"><h1>Settings</h1></div></div>}><SettingsPage /></Suspense>;
 }
 
-/** Settings: the zones of the metrics, the gear and the tags, one tab at a time. */
+/** Settings: the zones of the metrics, the gear, the tags and the display, one tab at a time. */
 function SettingsPage() {
   const params = useSearchParams();
   const router = useRouter();
@@ -64,8 +64,52 @@ function SettingsPage() {
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === 'zones' && <ZonesCard />}
         {(tab === 'gear' || tab === 'tags') && <GearTags part={tab} />}
+        {tab === 'display' && <DisplayCard />}
       </div>
     </div>
+  );
+}
+
+/**
+ * How the app looks and what it may fetch (the runner's request of 21 Nov 2026: "ustawienia schema
+ * - light/dark i online/offline przenies do settings"): the theme, and the map background from the
+ * network. Kept in this browser, not in the data folder: they belong to the device, not the runs.
+ */
+function DisplayCard() {
+  const [theme, setTheme] = useTheme();
+  const [mapTiles, setMapTiles] = useMapTiles();
+  const [narrow, setNarrow] = useNarrowMenu();
+  return (
+    <section className="card display-card" aria-label="Display">
+      <div className="settings-head"><div><h2>Display</h2><p className="muted small">Kept in this browser: they belong to the device, not to the data folder.</p></div></div>
+      <div className="display-row">
+        <div>
+          <div className="display-name">Theme</div>
+          <div className="muted small">Light, dark, or as the system is set.</div>
+        </div>
+        <div className="segmented" role="radiogroup" aria-label="Theme">
+          {(['light', 'dark', 'system'] as Theme[]).map((t) => (
+            <button key={t} type="button" className={theme === t ? 'on' : ''} onClick={() => setTheme(t)} role="radio" aria-checked={theme === t}>
+              {t === 'light' ? 'Light' : t === 'dark' ? 'Dark' : 'System'}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="display-row">
+        <label htmlFor="map-tiles">
+          <div className="display-name">Map background <span className="muted">(online)</span></div>
+          <div className="muted small">Map tiles from the OpenStreetMap server under a run&apos;s route. The server learns the area of the route shown; off, nothing leaves this device.</div>
+        </label>
+        <input id="map-tiles" type="checkbox" className="switch" checked={mapTiles} onChange={(e) => setMapTiles(e.target.checked)} />
+      </div>
+      <div className="display-row display-wide">
+        <label htmlFor="narrow-menu">
+          <div className="display-name">Narrow side menu</div>
+          <div className="muted small">On a wide screen, the side menu shows its icons only.</div>
+        </label>
+        <input id="narrow-menu" type="checkbox" className="switch" checked={narrow} onChange={(e) => setNarrow(e.target.checked)} />
+      </div>
+    </section>
   );
 }
 

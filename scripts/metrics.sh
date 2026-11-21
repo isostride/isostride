@@ -48,6 +48,7 @@ if [ -f "$E" ]; then
   sensee --metric build.server_routes=/buildServerRoutes --metric build.static_routes_missing=/buildStaticRoutesMissing 2>/dev/null || true
   sensee --label browser=chromium --metric e2e.supported_browser.started=/supportedStartedChromium 2>/dev/null || true
   sensee --metric performance.views.run_files_read=/performanceRunFilesRead 2>/dev/null || true
+  sensee --metric layout.phone.screens_wider_than_screen=/phoneScreensWiderThanScreen 2>/dev/null || true
 fi
 # Test strategy (scripts/test-metrics.mjs, scripts/coverage-new.mjs, scripts/nightly.sh).
 T=reports/measures-tests.json

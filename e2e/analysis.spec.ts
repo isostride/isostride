@@ -64,6 +64,16 @@ test.describe('Analysis workspace', () => {
     await page.getByLabel('Top').selectOption('5');
     await expect(segments.getByRole('row')).toHaveCount(6);
     await expect(segments.getByRole('row').nth(1)).toContainText(/\d:\d\d \/km/);
+    // Read at a glance: the rank a badge, the first three in the accent; beside each value a bar, the best the longest.
+    await expect(segments.locator('.rank')).toHaveText(['1', '2', '3', '4', '5']);
+    await expect(segments.locator('.rank.top')).toHaveCount(3);
+    const barWidth = (n: number) => segments.locator('tbody tr').nth(n).locator('.cell-bar > i').evaluate((e) => e.getBoundingClientRect().width);
+    expect(await barWidth(0)).toBeGreaterThan(await barWidth(4));
+    // The row under the pointer is highlighted, its "Open run →" a pill.
+    await segments.locator('tbody tr').nth(1).hover();
+    const pill = segments.locator('tbody tr').nth(1).getByRole('link', { name: 'Open run →' });
+    await expect.poll(() => pill.evaluate((e) => getComputedStyle(e).boxShadow)).not.toBe('none');
+    expect(await segments.locator('tbody tr').nth(1).locator('td').first().evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(await segments.locator('tbody tr').nth(3).locator('td').first().evaluate((e) => getComputedStyle(e).backgroundColor));
     await segments.getByRole('row').nth(1).getByRole('link', { name: 'Open run →' }).click();
     await expect(page.locator('.range-stats h3')).toHaveText('Selection');
     // The run's back link names the screen it was opened from and returns to it as it was left.

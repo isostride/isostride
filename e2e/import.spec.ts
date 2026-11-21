@@ -75,8 +75,9 @@ test.describe('Import FIT files', () => {
 test.describe('Non-blocking processing', () => {
   test('UI responsive during import', async ({ page }) => {
     await openWithFolder(page, await fitFiles(40));
+    await page.locator('.sidebar .brand').click();
     await page.getByRole('button', { name: 'Import folder' }).click();
-    await expect(page.getByText(/Working in the background/)).toBeVisible();
+    await expect(page.getByText(/^Importing · \d+ \/ /)).toBeVisible();
     // While the worker imports, another screen opens at once.
     const t0 = Date.now();
     await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
@@ -87,5 +88,34 @@ test.describe('Non-blocking processing', () => {
       await page.locator('.sidebar').getByRole('link', { name: /Runs$/ }).click();
       await expect(page.locator('.run-tile')).toHaveCount(40, { timeout: 2000 });
     }).toPass({ timeout: 60_000 });
+  });
+});
+
+test.describe('New runs imported by themselves', () => {
+  test('A run dropped into the folder is imported when the app comes back into view', async ({ page }) => {
+    const files = await fitFiles(4, '2026-08-20');
+    const later = (await fitFiles(5, '2026-08-20'))[4];
+    await openWithFolder(page, files);
+    const notice = page.locator('.toast-region .toast');
+    // Before the first import nothing is imported by itself: the runner starts it.
+    await page.waitForTimeout(2200);
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await page.waitForTimeout(500);
+    await expect(page.getByText('Nothing imported yet.', { exact: false })).toBeVisible();
+    await expect(notice).toHaveCount(0);
+    await importAll(page);
+    await expect(page.locator('.glance-dl')).toContainText('4 runs');
+    // A run dropped into the folder: when the window comes back into view, it is imported and said so.
+    await putFitFiles(page, [later]);
+    await page.waitForTimeout(2200);
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await expect(notice).toHaveText('Imported 1 new run from the folder.', { timeout: 30_000 });
+    await expect(page.locator('.glance-dl')).toContainText('5 runs');
+    // Nothing new: another look imports nothing, and the notice goes after a few seconds.
+    await expect(notice).toHaveCount(0, { timeout: 10_000 });
+    await page.waitForTimeout(2200);
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await page.waitForTimeout(1000);
+    await expect(notice).toHaveCount(0);
   });
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 
 /**
  * The shared pieces of every chart: real-pixel sizing (so text is never stretched), round axis
@@ -32,6 +32,60 @@ export function niceTicks(lo: number, hi: number, count = 4): number[] {
   const out: number[] = [];
   for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(Math.round(v / step) * step);
   return out;
+}
+
+/**
+ * Round ticks that enclose [lo, hi]: the first at or under lo, the last at or over hi, so the
+ * scale ends on a gridline and no line runs past the top or the bottom one.
+ */
+export function coverTicks(lo: number, hi: number, count = 4): number[] {
+  const enclose = (n: number) => {
+    const inner = niceTicks(lo, hi, n);
+    if (inner.length < 2) return inner;
+    const step = inner[1] - inner[0];
+    const round = (v: number) => Math.round(v / step) * step;
+    const out = [...inner];
+    while (out[0] > lo + step * 1e-9) out.unshift(round(out[0] - step));
+    while (out[out.length - 1] < hi - step * 1e-9) out.push(round(out[out.length - 1] + step));
+    return out;
+  };
+  // Of about `count` to `count` + 2 ticks, the set that wastes the least room beyond the data
+  // (0–427 ends at 500, not 600); the fewer ticks on a tie.
+  const waste = (t: number[]) => (t.length < 2 ? Infinity : (t[t.length - 1] - t[0]) / Math.max(1e-12, hi - lo));
+  let best = enclose(count);
+  for (const n of [count + 1, count + 2]) { const t = enclose(n); if (waste(t) < waste(best) - 0.05) best = t; }
+  return best;
+}
+
+/**
+ * A column from a baseline: square where it stands, its data end rounded (4 px, less on a narrow
+ * or short column). Below the baseline the rounded end is the lower one.
+ */
+export function columnPath(x: number, w: number, yEnd: number, yBase: number, r = 4): string {
+  const h = Math.abs(yBase - yEnd);
+  const k = Math.max(0, Math.min(r, w / 2, h));
+  const up = yEnd <= yBase;
+  const [a, b] = [x, x + w];
+  if (up) return `M${a},${yBase}V${yEnd + k}Q${a},${yEnd} ${a + k},${yEnd}H${b - k}Q${b},${yEnd} ${b},${yEnd + k}V${yBase}Z`;
+  return `M${a},${yBase}V${yEnd - k}Q${a},${yEnd} ${a + k},${yEnd}H${b - k}Q${b},${yEnd} ${b},${yEnd - k}V${yBase}Z`;
+}
+
+/** An id fit for url(#…) inside an svg, unique to the component. */
+export function useSvgId(prefix: string): string {
+  return `${prefix}-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+}
+
+/**
+ * The wash under a line: its colour fading from about 16 % at the top of the plot to nothing at
+ * its base (the area fill of the chart look). Put it in the svg's defs and fill with url(#id).
+ */
+export function WashGradient({ id, color, top, base, strength = 0.16 }: { id: string; color: string; top: number; base: number; strength?: number }) {
+  return (
+    <linearGradient id={id} gradientUnits="userSpaceOnUse" x1="0" x2="0" y1={top} y2={base}>
+      <stop offset="0" stopColor={color} stopOpacity={strength} />
+      <stop offset="1" stopColor={color} stopOpacity={0} />
+    </linearGradient>
+  );
 }
 
 /**
@@ -92,6 +146,26 @@ export function monthTicks(t0: number, t1: number): number[] {
 
 export const monthLabel = (t: number) => new Date(t).toLocaleDateString(undefined, { month: 'short' });
 export const dayLabel = (t: number) => new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+
+/**
+ * A small bar inside a table cell: how large a value is against the others of its column (a
+ * meter on a track of the same hue). Decoration: the value itself stays in the cell as text.
+ */
+export function CellBar({ share, tone = 'accent' }: { share: number; tone?: 'accent' | 'quiet' }) {
+  const w = Math.max(0, Math.min(1, Number.isFinite(share) ? share : 0));
+  return <span className={`cell-bar ${tone}`} aria-hidden="true"><i style={{ width: `${(w * 100).toFixed(1)}%` }} /></span>;
+}
+
+/** A row of a tooltip: the key of its series (line or dot), its name and its value. */
+export function TipRow({ color, label, value, kind = 'line' }: { color: string; label: string; value: string; kind?: 'line' | 'dot' }) {
+  return (
+    <div className="tip-row">
+      <i className={kind === 'line' ? 'key-line' : 'key-dot'} style={{ background: color }} aria-hidden="true" />
+      <span className="tip-label">{label}</span>
+      <b className="tnum">{value}</b>
+    </div>
+  );
+}
 
 /** A legend entry: a short line key or a dot in the series colour, the name in text ink. */
 export function Key({ color, label, kind = 'line' }: { color: string; label: string; kind?: 'line' | 'dot' }) {

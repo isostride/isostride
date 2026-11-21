@@ -12,7 +12,7 @@ test.describe('Performance model', () => {
     await expect(page.locator('.sidebar nav').getByRole('link')).toHaveText(['Runs', 'Analysis', 'Performance', 'Settings']);
     // Settings in tabs, zones first; gear and tags are tabs of it, not a screen of the navigation.
     await nav(page, 'Settings');
-    await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Zones', 'Gear', 'Tags']);
+    await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Zones', 'Gear', 'Tags', 'Display']);
     await page.getByRole('tab', { name: 'Tags' }).click();
     await expect(page).toHaveURL(/\/settings\?tab=tags/);
     await expect(page.getByRole('region', { name: 'Tags' })).toContainText('Workout type');
@@ -29,24 +29,25 @@ test.describe('Performance model', () => {
     await expect(tabs.getByRole('tab')).toHaveText(['Overview', 'Load', 'Capacity', 'Aerobic', 'Response', 'Model']);
     await expect(tabs.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
     await expect(page).toHaveURL(/\/performance$/);
-    // The overview is a line per model: its name, what it says now, its trust and a "Why?"; nothing else.
-    for (const group of ['Load', 'Capacity', 'Aerobic', 'Response']) await expect(page.getByRole('region', { name: `${group} models` })).toBeVisible({ timeout: 60_000 });
-    const rows = page.locator('li[data-model]');
+    // The overview is the map of the models: each with its name, what it says now, its trust and a "Why?"; no list repeats it.
+    await expect(page.getByRole('region', { name: 'Map of the models' })).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('.overview-list, li[data-model]')).toHaveCount(0);
+    const rows = page.locator('.map-node[data-model]');
     await expect(rows).toHaveCount(17);
-    for (const trust of await rows.locator('.trust').allTextContents()) expect(['Reliable', 'Rough', 'Not reliable', 'No data']).toContain(trust);
+    for (const trust of await rows.locator('.map-trust').allTextContents()) expect(['Reliable', 'Rough', 'Not reliable', 'No data']).toContain(trust);
     await expect(rows.getByRole('button', { name: /^Why\?/ })).toHaveCount(17);
     const why = (model: string) => page.getByRole('button', { name: new RegExp(`^Why\\? ${model}`) });
     const panel = (model: string) => page.getByRole('region', { name: new RegExp(`^Why: ${model}`) });
-    // Critical speed is drawn under the best efforts it is fitted to, and is no more reliable than they are.
-    await expect(page.locator('li[data-model="cs"] .overview-row')).toHaveClass(/depth-1/);
+    // Critical speed is drawn beside the best efforts it is fitted to, a line between them, and is no more reliable than they are.
+    await expect(page.locator('.map-edge[data-from="efforts"][data-to="cs"]')).toHaveCount(1);
     const order = ['ok', 'rough', 'no', 'nodata'];
-    const trustOf = async (model: string) => order.indexOf((await page.locator(`li[data-model="${model}"]`).getAttribute('data-trust'))!);
+    const trustOf = async (model: string) => order.indexOf((await page.locator(`.map-node[data-model="${model}"]`).getAttribute('data-trust'))!);
     expect(await trustOf('cs')).toBeGreaterThanOrEqual(await trustOf('efforts'));
     expect(await trustOf('vdot')).toBeGreaterThanOrEqual(await trustOf('efforts'));
     // Nothing was saved yet: the load is rough and the intensity not reliable; the reasons stay behind "Why?".
-    const load = page.locator('li[data-model="load"]');
+    const load = page.locator('.map-node[data-model="load"]');
     await expect(load).toHaveAttribute('data-trust', 'rough');
-    await expect(page.locator('li[data-model="intensity"]')).toHaveAttribute('data-trust', 'no');
+    await expect(page.locator('.map-node[data-model="intensity"]')).toHaveAttribute('data-trust', 'no');
     await expect(load).not.toContainText('resting heart rate');
     await expect(page.getByRole('region', { name: /^Why:/ })).toHaveCount(0);
     // "Why?" opens the rest: why the trust, the assumptions with what the data show, what it rests on, what it is, how to read it.
@@ -116,7 +117,10 @@ test.describe('Performance model', () => {
     await expect(page).toHaveURL(/period=all/);
     const box = (await chart.boundingBox())!;
     await page.mouse.move(box.x + box.width * 0.7, box.y + 100);
-    await expect(page.locator('.tooltip')).toContainText(/fitness \d+ · fatigue \d+/);
+    // The tooltip: a row per line, its key, its name and its value.
+    await expect(page.locator('.tooltip .tip-row')).toHaveCount(5);
+    await expect(page.locator('.tooltip')).toContainText(/fitness\s*\d+/);
+    await expect(page.locator('.tooltip')).toContainText(/fatigue\s*\d+/);
     await page.mouse.move(box.x + box.width / 2, box.y - 60);
     // The view is its figures and its chart: no note under them. Above, its models in a line, each with its trust and a "Why?".
     await expect(page.locator('.chart-note')).toHaveCount(0);
@@ -204,5 +208,55 @@ test.describe('Performance model', () => {
     const runFiles = opened.filter((n) => /^\d{8}-\d{6}\.json$/.test(n));
     await recordMeasure('performanceRunFilesRead', runFiles.length);
     expect(runFiles).toEqual([]);
+  });
+
+  test('Model map drawn', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openWithFolder(page, await fitFiles(30, '2026-08-20'));
+    await importAll(page);
+    await nav(page, 'Performance');
+    // Above the list, the map: a lane per kind of evidence, the response between the load and the performance it links,
+    // columns from what is measured to what is fitted; every model a link wearing its trust.
+    const map = page.getByRole('region', { name: 'Map of the models' });
+    await expect(map.locator('.map-node')).toHaveCount(17, { timeout: 60_000 });
+    // The overview close to one 1440 × 900 screen: at most a short scroll to see the whole map.
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight - innerHeight)).toBeLessThanOrEqual(120);
+    // On a taller window the map takes its whole height: it reaches the bottom of the window, nothing to scroll, the rows wider apart.
+    await page.setViewportSize({ width: 1440, height: 1200 });
+    await expect.poll(() => page.evaluate(() => innerHeight - document.querySelector('.model-map')!.getBoundingClientRect().bottom), { message: 'room under the map' }).toBeLessThanOrEqual(24);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(map.locator('.map-lane-head a')).toHaveText(['Load', 'Response', 'Aerobic', 'Capacity']);
+    await expect(map.locator('.map-col-title')).toHaveText(['From your runs', 'Built on them', 'Fitted response']);
+    // Measured from the runs on the left, what is built on them to the right of it, the responses last.
+    const left = async (key: string) => (await map.locator(`.map-node[data-model="${key}"]`).boundingBox())!.x;
+    expect(await left('efforts')).toBeLessThan(await left('cs'));
+    expect(await left('cs')).toBeLessThan(await left('fittedVdot'));
+    for (const node of await map.locator('.map-node').all()) {
+      const trust = (await node.getAttribute('data-trust'))!;
+      await expect(node).toContainText({ ok: 'Reliable', rough: 'Rough', no: 'Not reliable', nodata: 'No data' }[trust]!);
+    }
+    await expect(map.getByRole('link', { name: /^Critical speed and D′\s*4:\d\d \/km/ })).toBeVisible();
+    // A line from each model to every model resting on it, across the columns to the responses too.
+    const edge = (from: string, to: string) => map.locator(`.map-edge[data-from="${from}"][data-to="${to}"]`);
+    await expect(map.locator('.map-edge')).toHaveCount(11);
+    for (const [from, to] of [['efforts', 'cs'], ['load', 'form'], ['load', 'fittedHr'], ['vo2hr', 'fittedHr'], ['vdot', 'fittedVdot']]) await expect(edge(from, to)).toHaveCount(1);
+    // A coloured line marks the model that holds back the trust of the next: both wear the same trust, the line its colour.
+    for (const line of await map.locator('.map-edge.caps').all()) {
+      const trust = (await line.getAttribute('class'))!.match(/caps-(\w+)/)![1];
+      await expect(map.locator(`.map-node[data-model="${await line.getAttribute('data-from')}"]`)).toHaveAttribute('data-trust', trust);
+      await expect(map.locator(`.map-node[data-model="${await line.getAttribute('data-to')}"]`)).toHaveAttribute('data-trust', trust);
+    }
+    // Under the pointer a model's chain stands out: what it rests on and what rests on it; the rest recede.
+    await map.locator('.map-node[data-model="vdot"]').hover();
+    await expect(edge('efforts', 'vdot')).toHaveClass(/lit/);
+    await expect(edge('vdot', 'fittedVdot')).toHaveClass(/lit/);
+    await expect(edge('load', 'form')).toHaveClass(/faded/);
+    await expect(map.locator('.map-node[data-model="ef"]')).toHaveClass(/faded/);
+    await expect(map.locator('.map-node[data-model="efforts"]')).not.toHaveClass(/faded/);
+    // The keyboard does the same, and a model opens its view.
+    await map.locator('.map-node[data-model="cs"] .map-link').focus();
+    await expect(edge('efforts', 'cs')).toHaveClass(/lit/);
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/performance\?tab=capacity&view=critical/);
   });
 });

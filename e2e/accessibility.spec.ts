@@ -25,6 +25,10 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
         await page.waitForTimeout(200);
         found.push(...(await serious(page, `${screen} (${scheme})`)));
       }
+      // The Data folder screen, under the logo.
+      await page.locator('.sidebar .brand').click();
+      await page.getByRole('heading', { level: 1, name: 'Data folder' }).waitFor();
+      found.push(...(await serious(page, `Data folder (${scheme})`)));
       // The A/B tab of Analysis, on the block taken.
       await nav(page, 'Analysis');
       await page.getByRole('tab', { name: 'A/B' }).click();
@@ -32,10 +36,10 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       found.push(...(await serious(page, `Analysis · A/B (${scheme})`)));
       // Performance: its overview, every view of every group, and the settings.
       await nav(page, 'Performance');
-      await page.locator('li[data-model]').first().waitFor({ timeout: 60_000 });
+      await page.locator('.map-node[data-model]').first().waitFor({ timeout: 60_000 });
       found.push(...(await serious(page, `Performance · Overview (${scheme})`)));
       // With a model's "Why?" open: its assumptions, what it rests on, how to read it.
-      await page.locator('li[data-model="efforts"]').getByRole('button', { name: /^Why\?/ }).click();
+      await page.locator('.map-node[data-model="efforts"]').getByRole('button', { name: /^Why\?/ }).click();
       await page.getByRole('region', { name: /^Why:/ }).waitFor();
       found.push(...(await serious(page, `Performance · Why (${scheme})`)));
       for (const [tab, views] of [['Load', ['Form', 'Weekly load', 'Intensity']], ['Capacity', ['Best efforts', 'Critical speed and power', 'Predictions and VDOT']], ['Aerobic', ['Efficiency', 'Decoupling', 'VO2max from heart rate']], ['Response', ['On VO2max from heart rate', 'On VDOT']]] as const) {
@@ -52,7 +56,7 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       found.push(...(await serious(page, `Performance · Model (${scheme})`)));
       await nav(page, 'Settings');
       // The tabs of Settings: zones, gear, tags.
-      for (const tab of ['Zones', 'Gear', 'Tags']) {
+      for (const tab of ['Zones', 'Gear', 'Tags', 'Display']) {
         await page.getByRole('tab', { name: tab, exact: true }).click();
         await page.getByRole('tabpanel').getByRole('region', { name: tab }).waitFor();
         found.push(...(await serious(page, `Settings · ${tab} (${scheme})`)));

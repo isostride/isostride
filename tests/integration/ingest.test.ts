@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { PATHS, readJson, readManifest } from '@/lib/fs';
+import { PATHS, listFitFiles, readJson, readManifest, unseenFitFiles } from '@/lib/fs';
 import { importFolder } from '@/lib/pipeline';
 import { type RunFile, type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { parseFit } from '@/lib/ingest';
@@ -34,6 +34,24 @@ describe('Import FIT files', () => {
     expect(report.skipped).toBe(3);
     expect(report.outcomes.map((o) => o.file)).toEqual([`fit/${FILES.later}`]);
     expect(await runs(folder)).toHaveLength(4);
+  });
+});
+
+describe('New runs imported by themselves', () => {
+  it('Unseen files found after the first import', async () => {
+    const folder = await makeDataFolder([FILES.pace3, FILES.pace4]);
+    // The FIT files of the folder (in fit/), and none counted as unseen before the first import.
+    expect(await listFitFiles(folder)).toEqual([`fit/${FILES.pace3}`, `fit/${FILES.pace4}`]);
+    expect(await unseenFitFiles(folder)).toEqual([]);
+    await importFolder(folder);
+    expect(await unseenFitFiles(folder)).toEqual([]);
+    // A run dropped into the folder is unseen until the next import, which reads only it.
+    await addFile(folder, FILES.later);
+    expect(await unseenFitFiles(folder)).toEqual([`fit/${FILES.later}`]);
+    const report = await importFolder(folder);
+    expect(report.imported).toBe(1);
+    expect(report.skipped).toBe(2);
+    expect(await unseenFitFiles(folder)).toEqual([]);
   });
 });
 

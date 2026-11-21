@@ -76,9 +76,18 @@ interface RunChartProps {
 
 const same = (v: number) => v;
 
-/** The gutter left of the plot for the names and values of the scales, px; the plot starts after it. */
-const GUTTER = 58;
-const PLOT_L = LANE.l + GUTTER;
+/** The width under which the chart is narrow (a phone): a slim gutter, the bands' names inside the plot. */
+const NARROW = 560;
+/**
+ * The room left and right of the plot, px: a lane, then the gutter for the names and values of the
+ * scales (58 px). On a narrow chart the gutter holds only the values (34 px) and the lanes shrink,
+ * so the plot takes nearly the whole width.
+ */
+function geometry(width: number) {
+  const narrow = width < NARROW;
+  const laneL = narrow ? 2 : LANE.l;
+  return { narrow, laneL, laneR: narrow ? 4 : LANE.r, plotL: laneL + (narrow ? 34 : 58) };
+}
 /** The least distance between two labels of the gutter, px. */
 const LABEL_GAP = 11;
 
@@ -108,6 +117,7 @@ function valueAt(x: number[], y: (number | null)[], at: number): number | null {
  */
 export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, laps = [], blocks = [], cursor, onCursor, selection, onSelect, head, height = 260, layout = 'bands', axis = 'time', dmap, onMoveSelection, marks = {}, hot = null }: RunChartProps) {
   const [box, width] = useWidth();
+  const { narrow, laneL, laneR, plotL: PLOT_L } = geometry(width);
   const svg = useRef<SVGSVGElement>(null);
   const wrap = useRef<HTMLDivElement>(null);
   const clip = useId();
@@ -119,7 +129,7 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
   const H = top + height + 36;
   const [d0, d1] = domain;
   const span = d1 - d0 || 1;
-  const plotW = width - PLOT_L - LANE.r;
+  const plotW = width - PLOT_L - laneR;
   // Spaced by distance, a time is placed at the distance run by then; the domain stays in time.
   const byDist = axis === 'distance' && !!dmap;
   const fwd = byDist ? dmap!.toDist : same;
@@ -192,12 +202,13 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
   // near one already placed is left out, the names and the focused line's values placed first.
   const gutter = useMemo(() => {
     const want: { id: string; y: number; text: string; name?: boolean; color?: string; rank: number }[] = [];
-    if (banded) drawn.forEach((d) => want.push({ id: `n${d.line.key}`, y: d.b0 + BAND_PAD + 8, text: d.line.short, name: true, color: d.line.color, rank: 0 }));
+    // On a narrow chart the names stand inside the plot (below), the gutter keeps only the values.
+    if (banded && !narrow) drawn.forEach((d) => want.push({ id: `n${d.line.key}`, y: d.b0 + BAND_PAD + 8, text: d.line.short, name: true, color: d.line.color, rank: 0 }));
     for (const d of labelled) for (const t of d.ticks) want.push({ id: `${d.line.key}${t}`, y: d.py(t) + 3.5, text: d.line.tick(t, tickDecimals(d.ticks)), rank: d === scale ? 1 : 2 });
     const kept: typeof want = [];
     for (const w of [...want].sort((a, b) => a.rank - b.rank)) if (kept.every((k) => Math.abs(k.y - w.y) >= LABEL_GAP)) kept.push(w);
     return kept;
-  }, [drawn, labelled, banded, scale]);
+  }, [drawn, labelled, banded, scale, narrow]);
   // The zone names at the right edge, in the middle of their stripes; one too near another is left out.
   const zoneLabels = useMemo(() => {
     const want = (banded ? drawn : scale ? [scale] : []).flatMap((d) => d.stripes.filter((st) => st.h >= 12).map((st) => ({ id: `zn${d.line.key}${st.z}`, y: st.y + st.h / 2 + 3.5, text: `Z${st.z + 1}`, rank: d === scale ? 0 : 1 })));
@@ -218,8 +229,10 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
       const { domain: d, total: T, onDomain: set, fwd: to, inv: back } = live.current;
       const overview = (e.target as Element).closest?.('.overview');
       const r = (overview ?? plot).getBoundingClientRect();
-      const w = r.width - PLOT_L - LANE.r;
-      const frac = Math.min(1, Math.max(0, (e.clientX - r.left - PLOT_L) / w));
+      // The margins of the chart's width now (they change with it).
+      const g = geometry(r.width);
+      const w = r.width - g.plotL - g.laneR;
+      const frac = Math.min(1, Math.max(0, (e.clientX - r.left - g.plotL) / w));
       const a = to(d[0]);
       const z = to(d[1]) - a;
       const sideways = Math.abs(e.deltaX) > Math.abs(e.deltaY) || (e.shiftKey && !e.ctrlKey && !e.metaKey);
@@ -243,7 +256,7 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
 
   const at = (e: MouseEvent<SVGSVGElement>) => {
     const r = svg.current!.getBoundingClientRect();
-    return Math.min(d1, Math.max(d0, inv(f0 + ((e.clientX - r.left - PLOT_L) / (r.width - PLOT_L - LANE.r)) * fspan)));
+    return Math.min(d1, Math.max(d0, inv(f0 + ((e.clientX - r.left - PLOT_L) / (r.width - PLOT_L - laneR)) * fspan)));
   };
   const up = (e: MouseEvent<SVGSVGElement>) => {
     if (drag === null) return;
@@ -264,7 +277,7 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
   };
 
   const sel = drag !== null && cursor !== null ? { from: Math.min(drag, cursor), to: Math.max(drag, cursor) } : selection;
-  const band = (b: Band) => { const a = Math.max(px(b.from), PLOT_L); const z = Math.min(px(b.to), width - LANE.r); return { x: a, width: Math.max(1, z - a) }; };
+  const band = (b: Band) => { const a = Math.max(px(b.from), PLOT_L); const z = Math.min(px(b.to), width - laneR); return { x: a, width: Math.max(1, z - a) }; };
   const inView = (b: Band) => b.to > d0 && b.from < d1;
   const cx = cursor !== null && cursor >= d0 && cursor <= d1 ? px(cursor) : null;
   const order = [...drawn.filter((d) => d !== scale), ...(scale ? [scale] : [])];
@@ -312,17 +325,17 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
               <rect x={PLOT_L} y={st.y} width={Math.max(0, plotW)} height={st.h} fill={d.line.color} fillOpacity={zoneShade(st.z, st.n)} />
             </g>
           )))}
-          {zoneLabels.map((z) => <text key={z.id} x={width - LANE.r - 4} y={z.y} fontSize="9.5" textAnchor="end" fill="var(--text-2)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke" className="zone-name">{z.text}</text>)}
-          {scale?.ticks.map((t) => <line key={`g${t}`} x1={PLOT_L} x2={width - LANE.r} y1={scale.py(t)} y2={scale.py(t)} stroke="var(--grid)" strokeWidth="1" />)}
+          {zoneLabels.map((z) => <text key={z.id} x={width - laneR - 4} y={z.y} fontSize="9.5" textAnchor="end" fill="var(--text-2)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke" className="zone-name">{z.text}</text>)}
+          {scale?.ticks.map((t) => <line key={`g${t}`} x1={PLOT_L} x2={width - laneR} y1={scale.py(t)} y2={scale.py(t)} stroke="var(--grid)" strokeWidth="1" />)}
           {gutter.map((g) => g.name ? (
             <g key={g.id} className="band-name">
-              <rect x={LANE.l} y={g.y - 4} width={8} height={2.5} rx={1.25} fill={g.color} />
+              <rect x={laneL} y={g.y - 4} width={8} height={2.5} rx={1.25} fill={g.color} />
               <text x={PLOT_L - 6} y={g.y} fontSize="10" fontWeight="600" textAnchor="end" fill="var(--text-2)">{g.text}</text>
             </g>
           ) : (
             <text key={g.id} x={PLOT_L - 6} y={g.y} fontSize="10" textAnchor="end" fill="var(--muted)" className="tnum run-scale">{g.text}</text>
           ))}
-          {blocks.filter((b) => b.name && inView(b)).map((b, i) => <text key={`n${i}`} x={Math.min(px(b.to), width - LANE.r) - 4} y={13} fontSize="10" textAnchor="end" fill="var(--text)">{b.name}</text>)}
+          {blocks.filter((b) => b.name && inView(b)).map((b, i) => <text key={`n${i}`} x={Math.min(px(b.to), width - laneR) - 4} y={13} fontSize="10" textAnchor="end" fill="var(--text)">{b.name}</text>)}
           {sel && inView(sel) && <rect {...band(sel)} y={top} height={height} fill="var(--accent)" opacity="0.16" className="run-selection" />}
           <g clipPath={`url(#${clip})`}>
             {scale && <path d={scale.area} fill={`url(#${wash})`} />}
@@ -359,8 +372,8 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
             const avgLit = hot?.key === d.line.key && hot.stat === 'avg';
             return (
               <g data-metric={d.line.key}>
-                <line className={`run-mark mark-avg ${avgLit ? 'mark-hot' : ''}`} x1={PLOT_L} x2={width - LANE.r} y1={ya} y2={ya} stroke={d.line.color} strokeWidth={avgLit ? 2.5 : 1.25} strokeDasharray="6 4" />
-                <text x={PLOT_L + 6} y={ya - 4} fontSize="10" textAnchor="start" fill="var(--text)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke" fontWeight={avgLit ? 700 : 500}>avg {d.line.format(mk.avg)}</text>
+                <line className={`run-mark mark-avg ${avgLit ? 'mark-hot' : ''}`} x1={PLOT_L} x2={width - laneR} y1={ya} y2={ya} stroke={d.line.color} strokeWidth={avgLit ? 2.5 : 1.25} strokeDasharray="6 4" />
+                <text x={PLOT_L + 6 + (narrow && banded ? 22 + d.line.short.length * 6.5 : 0)} y={ya - 4} fontSize="10" textAnchor="start" fill="var(--text)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke" fontWeight={avgLit ? 700 : 500}>avg {d.line.format(mk.avg)}</text>
                 {ext && inX(ext.minAt) && label(px(ext.minAt), d.py(ext.min), `min ${d.line.format(ext.min)}`, 'mark-min', hot?.key === d.line.key && hot.stat === 'min')}
                 {ext && inX(ext.maxAt) && label(px(ext.maxAt), d.py(ext.max), `max ${d.line.format(ext.max)}`, 'mark-max', hot?.key === d.line.key && hot.stat === 'max')}
               </g>
@@ -371,12 +384,19 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
             const v = valueAt(x, d.line.y, cursor!);
             return v === null ? null : <circle key={d.line.key} cx={cx} cy={d.py(v)} r="4" fill={d.line.color} stroke="var(--surface)" strokeWidth="2" />;
           })}
-          <line x1={PLOT_L} x2={width - LANE.r} y1={top + height} y2={top + height} stroke="var(--axis)" strokeWidth="1" />
+          {/* A narrow chart names its bands inside the plot, at the top left of each, over the lines. */}
+          {narrow && banded && drawn.map((d) => (
+            <g key={`in${d.line.key}`} className="band-name inside">
+              <rect x={PLOT_L + 5} y={d.b0 + BAND_PAD + 4} width={8} height={2.5} rx={1.25} fill={d.line.color} />
+              <text x={PLOT_L + 17} y={d.b0 + BAND_PAD + 8} fontSize="10" fontWeight="650" textAnchor="start" fill="var(--text)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke">{d.line.short}</text>
+            </g>
+          ))}
+          <line x1={PLOT_L} x2={width - laneR} y1={top + height} y2={top + height} stroke="var(--axis)" strokeWidth="1" />
           {(byDist
             ? kmTicks(f0, f0 + fspan).map((m) => ({ x: PLOT_L + ((m - f0) / fspan) * plotW, main: kmLabel(m), sub: clock(inv(m)) }))
             : spanTicks(d0, d1).map((t) => ({ x: px(t), main: clock(t), sub: dmap ? kmLabel(dmap.toDist(t)) : '' }))
           ).map((k) => {
-            const anchor = k.x < PLOT_L + 16 ? 'start' : k.x > width - LANE.r - 16 ? 'end' : 'middle';
+            const anchor = k.x < PLOT_L + 16 ? 'start' : k.x > width - laneR - 16 ? 'end' : 'middle';
             return (
               <g key={k.main}>
                 <text x={k.x} y={top + height + 15} fontSize="10" textAnchor={anchor} fill="var(--muted)" className="tnum run-tick">{k.main}</text>
@@ -414,7 +434,8 @@ function Overview({ x, total, line, laps, domain, onDomain, selection, onSelect,
   const ref = useRef<SVGSVGElement>(null);
   const [brush, setBrush] = useState<Band | null>(null);
   const h = 34;
-  const plotW = width - PLOT_L - LANE.r;
+  const { laneR, plotL: PLOT_L } = geometry(width);
+  const plotW = width - PLOT_L - laneR;
   const end = fwd(total) || 1;
   const px = (t: number) => PLOT_L + (fwd(t) / end) * plotW;
   const path = useMemo(() => {
@@ -433,7 +454,7 @@ function Overview({ x, total, line, laps, domain, onDomain, selection, onSelect,
 
   const down = (e: MouseEvent<SVGSVGElement>) => {
     const r = ref.current!.getBoundingClientRect();
-    const tAt = (cx: number) => Math.min(total, Math.max(0, inv(((cx - r.left - PLOT_L) / (r.width - PLOT_L - LANE.r)) * end)));
+    const tAt = (cx: number) => Math.min(total, Math.max(0, inv(((cx - r.left - PLOT_L) / (r.width - PLOT_L - laneR)) * end)));
     const start = tAt(e.clientX);
     const [a, b] = domain;
     const sel = selection;
@@ -476,7 +497,7 @@ function Overview({ x, total, line, laps, domain, onDomain, selection, onSelect,
       {win && (
         <g>
           {!brush && <rect x={PLOT_L} y={0} width={Math.max(0, px(win.from) - PLOT_L)} height={h} fill="var(--surface)" opacity="0.55" />}
-          {!brush && <rect x={px(win.to)} y={0} width={Math.max(0, width - LANE.r - px(win.to))} height={h} fill="var(--surface)" opacity="0.55" />}
+          {!brush && <rect x={px(win.to)} y={0} width={Math.max(0, width - laneR - px(win.to))} height={h} fill="var(--surface)" opacity="0.55" />}
           <rect className="overview-window" x={px(win.from)} y={0.75} width={Math.max(2, px(win.to) - px(win.from))} height={h - 1.5} rx="5" fill="var(--accent-soft)" stroke="var(--accent)" strokeWidth="1.5" />
         </g>
       )}

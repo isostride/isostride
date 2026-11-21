@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useDataVersion } from '@/components';
 import { runInWorker, useOpenFolder } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
 import type { RunsIndex } from '@/lib/kernel';
@@ -38,6 +39,8 @@ export function Body({ tab, view }: { tab: Tab; view: string }) {
   const [preparing, setPreparing] = useState(false);
   /** raised when the model is saved: the loads were recomputed */
   const [version, setVersion] = useState(0);
+  /** raised when an import or a recompute ends, wherever it was started */
+  const dataVersion = useDataVersion();
 
   useEffect(() => {
     let live = true;
@@ -55,7 +58,7 @@ export function Body({ tab, view }: { tab: Tab; view: string }) {
       if (live) { setData({ runs: fresh?.runs ?? [], summaries: file?.runs ?? {}, settings }); setPreparing(false); }
     })().catch(() => live && setPreparing(false));
     return () => { live = false; };
-  }, [folder, handle, version]);
+  }, [folder, handle, version, dataVersion]);
 
   const today = localDay(new Date());
   const days = useMemo(() => (data ? formSeries(data.runs.filter((r) => typeof r.load === 'number').map((r) => ({ startTime: r.startTime, load: r.load as number })), data.settings.performance, today) : []), [data, today]);

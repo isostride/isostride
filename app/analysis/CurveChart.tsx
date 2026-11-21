@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, type MouseEvent } from 'react';
-import { ItemKey, Mark, ensureSpan, niceTicks, tickDecimals, useWidth, type Shape } from '@/components';
+import { ItemKey, Mark, coverTicks, ensureSpan, tickDecimals, useWidth, type Shape } from '@/components';
 
 const M = { l: 52, r: 16, b: 26 };
 
@@ -46,8 +46,9 @@ export function CurveChart({ label, lines, durations, format, tick, gap, higherI
     const vs = all.map((p) => p.value);
     const span = Math.max(...vs) - Math.min(...vs) || Math.abs(vs[0]) * 0.05 || 1;
     const [lo0, hi0] = ensureSpan(Math.min(...vs) - span * 0.06, Math.max(...vs) + span * 0.06, minSpan);
-    const ticks = niceTicks(lo0, hi0, 4).filter((t) => t >= lo0 && t <= hi0);
-    return { d0: Math.min(...ds), d1: Math.max(...ds) || 1, lo: Math.min(lo0, ticks[0] ?? lo0), hi: Math.max(hi0, ticks[ticks.length - 1] ?? hi0), ticks };
+    // The scale ends on gridlines that enclose the curve and its estimate.
+    const ticks = coverTicks(lo0, hi0, 4);
+    return { d0: Math.min(...ds), d1: Math.max(...ds) || 1, lo: ticks[0] ?? lo0, hi: ticks[ticks.length - 1] ?? hi0, ticks };
     // pts follows lines.
   }, [lines, minSpan]);
   if (!scale) return <div ref={box} className="muted small" style={{ padding: 12 }}>No run with a stretch yet: add a run or the runs matching a period.</div>;
@@ -77,18 +78,26 @@ export function CurveChart({ label, lines, durations, format, tick, gap, higherI
         ))}
         <line x1={M.l} x2={width - M.r} y1={H - M.b} y2={H - M.b} stroke="var(--axis)" />
         {xTicks.map((d) => <text key={d} x={x(d)} y={H - 8} fontSize="11" fill="var(--muted)" textAnchor="middle">{durationLabel(d)}</text>)}
+        {/* What the bests fall short of the estimate: the area between the two, in the item's colour. */}
+        {lines.map((l) => {
+          if (!l.estimateAt || l.points.length < 2) return null;
+          const sorted = [...l.points].sort((a, b) => a.duration - b.duration);
+          const top = sorted.map((p) => `${x(p.duration).toFixed(1)},${y(l.estimateAt!(p.duration)).toFixed(1)}`);
+          const bottom = [...sorted].reverse().map((p) => `${x(p.duration).toFixed(1)},${y(p.value).toFixed(1)}`);
+          return <polygon key={`s${l.key}`} className="curve-shortfall" points={[...top, ...bottom].join(' ')} fill={l.color} opacity={lines.length > 1 ? 0.06 : 0.1} />;
+        })}
         {lines.map((l) => l.estimateAt && l.points.map((p) => (
           <line key={`g${l.key}${p.duration}`} className="curve-gap" x1={x(p.duration)} x2={x(p.duration)} y1={y(p.value)} y2={y(l.estimateAt!(p.duration))} stroke={l.color} strokeWidth="1" opacity="0.45" strokeDasharray="2 2" />
         )))}
         {lines.map((l) => l.estimate && l.estimate.length > 1 && (
-          <polyline key={`e${l.key}`} className="curve-estimate" points={[...l.estimate].sort((a, b) => a.duration - b.duration).map((p) => `${x(p.duration).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ')} fill="none" stroke={l.color} strokeWidth="1.75" strokeDasharray="6 4" opacity="0.8" />
+          <polyline key={`e${l.key}`} className="curve-estimate" points={[...l.estimate].sort((a, b) => a.duration - b.duration).map((p) => `${x(p.duration).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ')} fill="none" stroke={l.color} strokeWidth="1.75" strokeDasharray="6 4" strokeLinecap="round" opacity="0.85" />
         ))}
         {lines.map((l) => {
           const sorted = [...l.points].sort((a, b) => a.duration - b.duration);
-          return sorted.length > 1 && <polyline key={l.key} className="curve-line" points={sorted.map((p) => `${x(p.duration).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ')} fill="none" stroke={l.color} strokeWidth="2" strokeLinejoin="round" />;
+          return sorted.length > 1 && <polyline key={l.key} className="curve-line" points={sorted.map((p) => `${x(p.duration).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ')} fill="none" stroke={l.color} strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" />;
         })}
         {lines.map((l) => l.points.map((p) => <Mark key={`${l.key}${p.duration}`} shape={l.shape} x={x(p.duration)} y={y(p.value)} r={4.5} color={l.color} />))}
-        {hover && <line x1={hover.mx} x2={hover.mx} y1={T} y2={H - M.b} stroke="var(--axis)" />}
+        {hover && <line x1={hover.mx} x2={hover.mx} y1={T} y2={H - M.b} stroke="var(--axis-strong)" />}
         {hover && lines.map((l) => l.estimateAt && (() => { const v = l.estimateAt!(hover.duration); return v >= lo && v <= hi ? <circle key={`h${l.key}`} cx={hover.mx} cy={y(v)} r={4} fill="var(--surface)" stroke={l.color} strokeWidth="2" /> : null; })())}
         {highlight && lines.filter((l) => l.key === highlight.key).flatMap((l) => l.points.filter((p) => p.duration === highlight.duration)).map((p) => (
           <circle key="highlight" className="curve-highlight" cx={x(p.duration)} cy={y(p.value)} r={10} fill="none" stroke="var(--text)" strokeWidth="2" />

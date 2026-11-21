@@ -32,6 +32,10 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
     // Import.
     await tabTo(page, 'button', 'Choose data folder');
     await page.keyboard.press('Enter');
+    // The logo leads to the Data folder screen, where the import starts.
+    await tabTo(page, 'link', /^Strideprism/);
+    await page.keyboard.press('Enter');
+    await page.getByRole('heading', { name: 'Data folder' }).waitFor();
     await tabTo(page, 'button', 'Import folder');
     await page.keyboard.press('Enter');
     await expect(page.getByText(/^Imported \d+ runs?/)).toBeVisible({ timeout: 60_000 });

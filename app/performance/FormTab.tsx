@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
-import { Key, dayLabel, monthLabel, monthTicks, niceTicks, useWidth } from '@/components';
+import { Key, TipRow, WashGradient, columnPath, dayLabel, monthLabel, monthTicks, niceTicks, useSvgId, useWidth } from '@/components';
 import { useOpenFolder } from '@/lib/client';
 import type { RunsIndex } from '@/lib/kernel';
 import { formSeries, type FormDay } from '@/lib/load';
@@ -33,6 +33,7 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
   const [p, setP] = useState<PerformanceSettings>(DEFAULT_PERFORMANCE);
   const [hover, setHover] = useState<number | null>(null);
   const [box, width] = useWidth();
+  const washId = useSvgId('form-wash');
   useEffect(() => { readSettings(folder).then((s) => setP(s.performance)).catch(() => undefined); }, [folder]);
 
   const period = PERIODS.find(([k]) => k === params.get('period')) ?? PERIODS[0];
@@ -82,6 +83,13 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
     setHover(Math.min(days.length - 1, Math.max(0, k)));
   };
   const h = hover === null ? null : days[hover];
+  const last = days[days.length - 1];
+  const xs = (d: FormDay) => x(d.date).toFixed(1);
+  // The wash under fitness, down to the panel's base; the area of form between its line and zero.
+  const fitnessArea = `M${xs(days[0])},${yLoad(0)}${days.map((d) => `L${xs(d)},${yLoad(d.fitness).toFixed(1)}`).join('')}L${xs(last)},${yLoad(0)}Z`;
+  const formArea = `M${xs(days[0])},${yForm(0)}${days.map((d) => `L${xs(d)},${yForm(d.form).toFixed(1)}`).join('')}L${xs(last)},${yForm(0)}Z`;
+  const barW = Math.max(2, Math.min(10, step * 0.6));
+  const ends: [string, number | null, (v: number) => number][] = [['var(--series-1)', last.fitness, yLoad], ['var(--series-2)', last.fatigue, yLoad], ['var(--series-3)', last.form, yForm], ['var(--series-4)', last.acwr, yAcwr]];
 
   return (
     <>
@@ -114,42 +122,49 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
                 <text x={M.l - 8} y={yLoad(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{v}</text>
               </g>
             ))}
-            <text x={M.l} y={top.load - 10} fontSize="11" fill="var(--muted)">daily load, fitness and fatigue · {model.unit}</text>
-            {days.map((d) => d.load > 0 && <rect key={d.date} className="form-load" x={x(d.date) - Math.max(1, step * 0.35)} width={Math.max(2, step * 0.7)} y={yLoad(d.load)} height={top.load + PANELS.load - yLoad(d.load)} rx={1} fill="var(--axis)" />)}
-            <polyline className="form-fitness" points={line((d) => d.fitness, yLoad)} fill="none" stroke="var(--series-1)" strokeWidth="2" />
-            <polyline className="form-fatigue" points={line((d) => d.fatigue, yLoad)} fill="none" stroke="var(--series-2)" strokeWidth="2" />
+            <defs><WashGradient id={washId} color="var(--series-1)" top={top.load} base={yLoad(0)} strength={0.2} /></defs>
+            <text x={M.l} y={top.load - 10} className="panel-title">Daily load, fitness and fatigue <tspan fill="var(--muted)" fontWeight="400">· {model.unit}</tspan></text>
+            {days.map((d, i) => d.load > 0 && <path key={d.date} className="form-load" d={columnPath(x(d.date) - barW / 2, barW, yLoad(d.load), yLoad(0), 2)} fill="var(--axis)" opacity={hover === null || hover === i ? 1 : 0.5} />)}
+            <path className="form-fitness-wash" d={fitnessArea} fill={`url(#${washId})`} />
+            <polyline className="form-fitness" points={line((d) => d.fitness, yLoad)} fill="none" stroke="var(--series-1)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+            <polyline className="form-fatigue" points={line((d) => d.fatigue, yLoad)} fill="none" stroke="var(--series-2)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
             {/* Form, around zero. */}
-            <text x={M.l} y={top.form - 12} fontSize="11" fill="var(--muted)">form (TSB)</text>
+            <text x={M.l} y={top.form - 12} className="panel-title">Form <tspan fill="var(--muted)" fontWeight="400">· TSB, fitness less fatigue</tspan></text>
+            <path className="form-form-area" d={formArea} fill="var(--series-3)" opacity={0.12} />
             {formTicks.map((v) => (
               <g key={`f${v}`}>
                 <line x1={M.l} x2={width - M.r} y1={yForm(v)} y2={yForm(v)} stroke={v === 0 ? 'var(--axis)' : 'var(--grid)'} />
                 <text x={M.l - 8} y={yForm(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{signed(v)}</text>
               </g>
             ))}
-            <polyline className="form-form" points={line((d) => d.form, yForm)} fill="none" stroke="var(--series-3)" strokeWidth="2" />
+            <polyline className="form-form" points={line((d) => d.form, yForm)} fill="none" stroke="var(--series-3)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
             {/* The acute:chronic ratio, its band of steady build-up. */}
-            <text x={M.l} y={top.acwr - 12} fontSize="11" fill="var(--muted)">acute:chronic</text>
-            <rect x={M.l} width={width - M.l - M.r} y={yAcwr(ACWR_BAND[1])} height={yAcwr(ACWR_BAND[0]) - yAcwr(ACWR_BAND[1])} fill="var(--band)" />
+            <text x={M.l} y={top.acwr - 12} className="panel-title">Acute:chronic <tspan fill="var(--muted)" fontWeight="400">· the band of steady build-up, {ACWR_BAND[0]}–{ACWR_BAND[1]}</tspan></text>
+            <rect x={M.l} width={width - M.l - M.r} y={yAcwr(ACWR_BAND[1])} height={yAcwr(ACWR_BAND[0]) - yAcwr(ACWR_BAND[1])} rx={4} fill="var(--band)" />
             {ACWR_BAND.map((v) => <text key={`a${v}`} x={M.l - 8} y={yAcwr(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{v.toFixed(1)}</text>)}
-            <polyline className="form-acwr" points={line((d) => d.acwr, yAcwr)} fill="none" stroke="var(--series-4)" strokeWidth="2" />
+            <polyline className="form-acwr" points={line((d) => d.acwr, yAcwr)} fill="none" stroke="var(--series-4)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
             {/* The time axis. */}
             <line x1={M.l} x2={width - M.r} y1={H - PANELS.axis} y2={H - PANELS.axis} stroke="var(--axis)" />
             {(months.length > 1 ? months : [t0, t1]).map((t) => {
               const px = M.l + ((t - t0) / Math.max(1, t1 - t0)) * (width - M.l - M.r);
               return <text key={t} x={px} y={H - 6} fontSize="11" fill="var(--muted)" textAnchor="middle">{months.length > 1 ? monthLabel(t) : dayLabel(t)}</text>;
             })}
-            {h && <line x1={x(h.date)} x2={x(h.date)} y1={top.load} y2={H - PANELS.axis} stroke="var(--axis)" />}
-            {h && <circle cx={x(h.date)} cy={yLoad(h.fitness)} r={4} fill="var(--surface)" stroke="var(--series-1)" strokeWidth="2" />}
-            {h && <circle cx={x(h.date)} cy={yLoad(h.fatigue)} r={4} fill="var(--surface)" stroke="var(--series-2)" strokeWidth="2" />}
-            {h && <circle cx={x(h.date)} cy={yForm(h.form)} r={4} fill="var(--surface)" stroke="var(--series-3)" strokeWidth="2" />}
+            {/* The end of each line, today: a dot with a surface ring. */}
+            {!h && ends.map(([c, v, yy]) => v === null ? null : <circle key={c} className="form-end" cx={x(last.date)} cy={yy(v)} r={4.5} fill={c} stroke="var(--surface)" strokeWidth="2" />)}
+            {h && <line x1={x(h.date)} x2={x(h.date)} y1={top.load} y2={H - PANELS.axis} stroke="var(--axis-strong)" />}
+            {h && <circle cx={x(h.date)} cy={yLoad(h.fitness)} r={5} fill="var(--surface)" stroke="var(--series-1)" strokeWidth="2.5" />}
+            {h && <circle cx={x(h.date)} cy={yLoad(h.fatigue)} r={5} fill="var(--surface)" stroke="var(--series-2)" strokeWidth="2.5" />}
+            {h && <circle cx={x(h.date)} cy={yForm(h.form)} r={5} fill="var(--surface)" stroke="var(--series-3)" strokeWidth="2.5" />}
+            {h && h.acwr !== null && <circle cx={x(h.date)} cy={yAcwr(h.acwr)} r={5} fill="var(--surface)" stroke="var(--series-4)" strokeWidth="2.5" />}
           </svg>
           {h && (
             <div className="tooltip" style={{ left: x(h.date) > width - 260 ? x(h.date) - 248 : x(h.date) + 14, top: 8 }}>
               <div className="tip-value">{dayLabel(timeOf(h.date))}</div>
-              <div>load {Math.round(h.load)} {model.unit}</div>
-              <div>fitness {Math.round(h.fitness)} · fatigue {Math.round(h.fatigue)}</div>
-              <div>form that morning {signed(h.form)}</div>
-              <div>acute:chronic {h.acwr === null ? '–' : h.acwr.toFixed(2)}</div>
+              <TipRow kind="dot" color="var(--axis)" label="load" value={`${Math.round(h.load)} ${model.unit}`} />
+              <TipRow color="var(--series-1)" label="fitness" value={String(Math.round(h.fitness))} />
+              <TipRow color="var(--series-2)" label="fatigue" value={String(Math.round(h.fatigue))} />
+              <TipRow color="var(--series-3)" label="form that morning" value={signed(h.form)} />
+              <TipRow color="var(--series-4)" label="acute:chronic" value={h.acwr === null ? '–' : h.acwr.toFixed(2)} />
             </div>
           )}
         </div>

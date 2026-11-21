@@ -664,6 +664,30 @@
     ] },
     { "element": "e83a8650-6db2-470e-9ed2-71c5e265e08c", "name": "Why opened for a model", "tests": [
       "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
+    ] },
+    { "element": "9c9a3c37-246a-4fc6-8c44-32d267325a51", "name": "Screens fit a phone", "tests": [
+      "e2e/mobile.spec.ts › Layout that fits a phone › Screens fit a phone"
+    ] },
+    { "element": "e2fddc4a-181d-426e-ac56-3fec9f7fd88f", "name": "No screen wider than a phone", "tests": [
+      "e2e/mobile.spec.ts › Layout that fits a phone › Screens fit a phone"
+    ] },
+    { "element": "e0555ad8-2a1d-4143-9ff5-5d5c7a198792", "name": "Model map drawn", "tests": [
+      "e2e/performance.spec.ts › Performance model › Model map drawn"
+    ] },
+    { "element": "312ca156-8c46-4a9b-b1de-e001731c5f6a", "name": "Charts end on gridlines", "tests": [
+      "tests/unit/scale.test.ts › Chart scales › Charts end on gridlines"
+    ] },
+    { "element": "65d2402c-ca94-4a38-9c46-0f28075084a9", "name": "Segments table read at a glance", "tests": [
+      "e2e/analysis.spec.ts › Analysis workspace › Rule blocks compared, ranked and curved"
+    ] },
+    { "element": "051990c0-368a-4666-b423-ff370d7cb2fe", "name": "Run dropped into the folder imported", "tests": [
+      "e2e/import.spec.ts › New runs imported by themselves › A run dropped into the folder is imported when the app comes back into view"
+    ] },
+    { "element": "3828b443-8b56-40b5-b1d9-11cc7e92ba6b", "name": "Palette searched and opened", "tests": [
+      "e2e/runs.spec.ts › Search runs › Runs searched and the calendar browsed"
+    ] },
+    { "element": "a4c3a2bf-49e0-4aaa-b00a-2d2b896b07ec", "name": "Folder menu and history used", "tests": [
+      "e2e/journeys.spec.ts › Journeys › Import, recompute, block definition, trend, export and A/B without the network"
     ] }
   ]
 }

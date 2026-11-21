@@ -20,8 +20,12 @@ test.describe('Map background', () => {
     expect(external).toEqual([]);
     await expect(map.locator('.map-tiles')).toHaveCount(0);
 
-    // Switched on: tiles from tile.openstreetmap.org only, under the route, with the attribution.
+    // Switched on in Settings (Display): tiles from tile.openstreetmap.org only, under the route, with the attribution.
+    await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
+    await page.getByRole('tab', { name: 'Display', exact: true }).click();
     await page.getByRole('checkbox', { name: /Map background/ }).check();
+    await page.goBack();
+    await map.waitFor();
     await expect(map.locator('.map-tiles image').first()).toBeAttached();
     await expect(page.getByRole('link', { name: '© OpenStreetMap contributors' })).toBeVisible();
     await expect.poll(() => external.length).toBeGreaterThan(0);
@@ -32,7 +36,9 @@ test.describe('Map background', () => {
     // The setting is remembered on the next visit.
     await page.reload();
     await page.getByRole('img', { name: 'Route' }).waitFor();
-    await expect(page.getByRole('checkbox', { name: /Map background/ })).toBeChecked();
     await expect(page.getByRole('img', { name: 'Route' }).locator('.map-tiles image').first()).toBeAttached();
+    await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
+    await page.getByRole('tab', { name: 'Display', exact: true }).click();
+    await expect(page.getByRole('checkbox', { name: /Map background/ })).toBeChecked();
   });
 });

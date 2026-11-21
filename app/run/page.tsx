@@ -433,6 +433,8 @@ function RunPage() {
             </dl>
           </div>
           {shownStats.length ? (
+            // The table scrolls sideways on a narrow screen: the region takes the focus, so the keyboard can scroll it.
+            <div className="table-scroll" tabIndex={0} role="region" aria-label="Statistics of the stretch shown">
             <table className="data stats-grid" aria-label="Statistics">
               <thead>
                 <tr>
@@ -470,6 +472,7 @@ function RunPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           ) : (
             <div className="muted small range-foot">Turn a metric on above the chart to see its statistics here.</div>
           )}

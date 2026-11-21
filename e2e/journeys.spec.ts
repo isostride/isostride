@@ -9,10 +9,13 @@ test.describe('Light and dark theme', () => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await openWithFolder(page, await fitFiles(1));
     expect(await bg(page)).toBe('rgb(29, 31, 35)');
+    // The theme is set in Settings, its Display tab.
+    await nav(page, 'Settings');
+    await page.getByRole('tab', { name: 'Display', exact: true }).click();
     await page.getByRole('radio', { name: 'Light' }).click();
     expect(await bg(page)).toBe('rgb(244, 245, 247)');
     await page.reload();
-    await page.getByRole('heading', { name: 'Runs' }).waitFor();
+    await page.getByRole('heading', { name: 'Settings' }).waitFor();
     expect(await bg(page)).toBe('rgb(244, 245, 247)');
     await page.getByRole('radio', { name: 'System' }).click();
     expect(await bg(page)).toBe('rgb(29, 31, 35)');
@@ -27,10 +30,28 @@ test.describe('Journeys', () => {
     await openWithFolder(page, await fitFiles(30, '2026-05-01'));
     await importAll(page);
 
+    // The Data folder screen, under the logo: the folder and what it holds, import, recompute, another folder.
+    await page.locator('.sidebar .brand').click();
+    await expect(page).toHaveURL(/\/folder$/);
+    const facts = page.getByLabel('What the folder holds');
+    await expect(page.locator('.folder-name')).toContainText('data');
+    await expect(facts).toContainText(/Runs\d+/);
+    await expect(facts).toContainText('FIT files read30');
+    await expect(page.getByRole('region', { name: 'Folder' }).getByRole('button')).toHaveText(['Import folder', 'Recompute everything', 'Change folder…']);
     // Recompute everything from the FIT files.
     page.once('dialog', (d) => d.accept());
     await page.getByRole('button', { name: 'Recompute everything' }).click();
     await expect(page.getByText(/^Recomputed \d+ runs/)).toBeVisible({ timeout: 60_000 });
+    // Back and forward through the screens seen.
+    await nav(page, 'Settings');
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page.getByRole('heading', { name: 'Data folder' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Forward' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Forward' }).click();
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Forward' })).toBeDisabled();
+    await page.getByRole('button', { name: 'Back' }).click();
 
     // Block definition: on the Analysis screen, take a suggested route segment (about 4.5 min, so pace, not HR).
     await nav(page, 'Analysis');

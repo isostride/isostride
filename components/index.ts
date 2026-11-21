@@ -13,3 +13,4 @@ export * from './metrics';
 export * from './mapCamera';
 export * from './runView';
 export * from './screenTrail';
+export * from './dataVersion';

@@ -1,5 +1,5 @@
 import { ALGORITHM_VERSION, SCHEMA_VERSION } from '@/lib/kernel';
-import { PATHS, readJson, writeJson, type DataFolder } from './folder';
+import { PATHS, listFitFiles, readJson, writeJson, type DataFolder } from './folder';
 
 export type ImportStatus =
   | { status: 'imported'; runId: string }
@@ -39,4 +39,15 @@ export async function writeManifest(folder: DataFolder, manifest: Manifest): Pro
 /** True when the folder's derived data was built by an older algorithm than this app's (spec: offer to recompute). */
 export function isOutdated(manifest: Manifest | null): boolean {
   return manifest !== null && manifest.algorithmVersion < ALGORITHM_VERSION;
+}
+
+/**
+ * The FIT files of an imported folder that no import has seen: a run dropped into the folder since
+ * (requirement "New runs imported by themselves"). None before the first import, which the runner
+ * starts, nor a file an import failed on (it is tried again by the next import the runner starts).
+ */
+export async function unseenFitFiles(folder: DataFolder): Promise<string[]> {
+  const manifest = await readManifest(folder);
+  if (!manifest || !Object.keys(manifest.files).length) return [];
+  return (await listFitFiles(folder)).filter((f) => !manifest.files[f]);
 }

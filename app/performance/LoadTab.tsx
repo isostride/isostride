@@ -42,7 +42,7 @@ export function LoadTab({ days, unit }: { days: FormDay[]; unit: string }) {
       <h3 className="chart-title" style={{ marginTop: 16 }}>Ramp rate</h3>
       <TimeChart label="Ramp rate" times={times} height={150} zero
         series={[{ key: 'ramp', label: 'ramp rate', color: 'var(--series-3)', kind: 'bar', values: shown.map((w) => w.ramp) }]}
-        format={(v) => `${signed(Math.round(v * 10) / 10)} a week`} tick={(v) => signed(Math.round(v))} />
+        format={(v) => `${signed(Math.round(v * 10) / 10)} a week`} tick={(v) => signed(v)} />
     </div>
   );
 }

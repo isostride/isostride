@@ -70,14 +70,15 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
     <>
       {saved && <div className="banner">✓ {saved}</div>}
 
-      {part === 'gear' && <div className="card" style={{ padding: 16, marginBottom: 16 }} role="region" aria-label="Gear">
-        <h3 style={{ margin: '0 0 12px', fontSize: 14 }}>Gear</h3>
-        <div className="muted" style={{ fontSize: 11, display: 'flex', justifyContent: 'space-between', margin: '0 0 6px 200px' }}>
-          <span>{first}</span><span>{last}</span>
+      {part === 'gear' && <div className="card gear-card" role="region" aria-label="Gear">
+        <h3 className="gear-title">Gear</h3>
+        <div className="gear-row gear-span muted">
+          <span />
+          <div><span>{first}</span><span>{last}</span></div>
         </div>
         {gear.length === 0 && <div className="muted" style={{ padding: '8px 0 16px' }}>No gear yet. Add your shoes and heart rate sensors with the dates you used them; runs get them by date.</div>}
         {gear.map((g) => (
-          <div key={g.id} style={{ display: 'grid', gridTemplateColumns: '190px 1fr', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+          <div key={g.id} className="gear-row">
             <div>
               <div style={{ fontWeight: 550 }}>{g.type === 'shoes' ? '👟' : '♥'} {g.name}</div>
               <div className="muted" style={{ fontSize: 12 }}>{counts.get(g.id) ?? 0} runs</div>
@@ -86,7 +87,7 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
               <div style={{ position: 'relative', height: 14, background: 'var(--surface-2)', borderRadius: 7 }}>
                 <div style={{ position: 'absolute', left: `${pos(g.from)}%`, right: `${100 - pos(g.to ?? last)}%`, top: 0, bottom: 0, borderRadius: 7, background: g.type === 'shoes' ? 'var(--series-1)' : 'var(--err)', opacity: 0.85 }} />
               </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'center', fontSize: 12 }}>
+              <div className="gear-dates">
                 <label className="muted">from <input type="date" value={g.from} onChange={(e) => e.target.value && update(g, { from: e.target.value })} /></label>
                 <label className="muted">to <input type="date" value={g.to ?? ''} onChange={(e) => update(g, { to: e.target.value || null })} /></label>
                 {g.to === null && <span className="chip">in use</span>}
@@ -96,9 +97,9 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
             </div>
           </div>
         ))}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-          <input aria-label="Gear name" placeholder="Name, e.g. Shoes A" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} style={{ padding: 6, minWidth: 180 }} />
-          <select aria-label="Gear type" value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as GearType })} style={{ padding: 6 }}>
+        <div className="gear-add">
+          <input aria-label="Gear name" placeholder="Name, e.g. Shoes A" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+          <select className="select" aria-label="Gear type" value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as GearType })}>
             {(Object.keys(TYPE_LABEL) as GearType[]).map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
           </select>
           <label className="muted">from <input type="date" value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} /></label>
@@ -108,8 +109,8 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
       </div>}
 
       {part === 'tags' && tags && (
-        <div className="card" style={{ padding: 16 }} role="region" aria-label="Tags">
-          <h3 style={{ margin: '0 0 12px', fontSize: 14 }}>Tags</h3>
+        <div className="card gear-card" role="region" aria-label="Tags">
+          <h3 className="gear-title">Tags</h3>
           <TagList label="Workout type" values={tags.dictionary.workoutTypes} counts={counts}
             onChange={(v) => saveTags({ ...tags, dictionary: { ...tags.dictionary, workoutTypes: v } })} />
           <TagList label="Technique cue" values={tags.dictionary.techniqueCues} counts={counts}
@@ -123,15 +124,15 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
 function TagList({ label, values, counts, onChange }: { label: string; values: string[]; counts: Map<string, number>; onChange: (v: string[]) => void }) {
   const [text, setText] = useState('');
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
-      <span style={{ width: 120 }} className="muted">{label}</span>
+    <div className="tag-row">
+      <span className="tag-label muted">{label}</span>
       {values.map((v) => (
         <span key={v} className="chip">
           {v} · {counts.get(v) ?? 0}{' '}
-          <button style={{ border: 0, background: 'none', padding: 0, color: 'var(--muted)' }} onClick={() => onChange(values.filter((x) => x !== v))} aria-label={`Remove ${v}`}>×</button>
+          <button className="tag-remove" onClick={() => onChange(values.filter((x) => x !== v))} aria-label={`Remove ${v}`}>×</button>
         </span>
       ))}
-      <input aria-label={`Add to ${label}`} placeholder="+ add" value={text} onChange={(e) => setText(e.target.value)} style={{ padding: 4, width: 120 }}
+      <input aria-label={`Add to ${label}`} placeholder="+ add" value={text} onChange={(e) => setText(e.target.value)} className="tag-add"
         onKeyDown={(e) => { if (e.key === 'Enter' && text.trim() && !values.includes(text.trim())) { onChange([...values, text.trim()]); setText(''); } }} />
     </div>
   );

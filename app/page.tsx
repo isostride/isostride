@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useWidth } from '@/components';
+import { CellBar, columnPath, useWidth } from '@/components';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useOpenFolder, runInWorker, watchJob } from '@/lib/client';
@@ -36,7 +36,6 @@ function RunsPage() {
   const [index, setIndex] = useState<RunsIndex | null>(null);
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const [gear, setGear] = useState<Gear[]>([]);
   const [tags, setTags] = useState<RunTagsFile | null>(null);
   // The unit of the load model chosen in Settings (requirement "Load model chosen in Settings").
@@ -94,30 +93,17 @@ function RunsPage() {
     });
   }, [load]);
 
-  // ⌘K → "Import folder" lands here with ?action=import.
+  // An old link with ?action=import opens the Data folder screen, which imports.
   useEffect(() => {
     if (params.get('action') === 'import' && !actionDone.current) {
       actionDone.current = true;
-      router.replace('/');
-      start('import');
+      router.replace('/folder?action=import');
     }
   });
 
-  const start = async (kind: 'import' | 'recompute') => {
-    setMessage(null);
-    setProgress({ done: 0, total: 0 });
-    try {
-      const m = await runInWorker(kind, handle, (p) => setProgress({ done: p.done, total: p.total }));
-      setMessage(`${kind === 'recompute' ? 'Recomputed' : 'Imported'} ${m.imported} run${m.imported === 1 ? '' : 's'}` + (m.duplicates ? `, ${m.duplicates} duplicate` : '') + (m.errors ? `, ${m.errors} could not be imported` : '') + '.');
-    } catch (e) {
-      setMessage(`${kind === 'recompute' ? 'Recompute' : 'Import'} failed: ${e instanceof Error ? e.message : String(e)}`);
-    }
-    setProgress(null);
-    load();
-  };
-
   const runs = [...(index?.runs ?? [])].reverse();
-  const failed = Object.entries(manifest?.files ?? {}).filter(([, s]) => s.status === 'error') as [string, { status: 'error'; reason: string }][];
+  /** The longest run, the scale of the distance bars of the list. */
+  const longest = Math.max(1, ...runs.map((r) => r.distance ?? 0));
   const totalKm = runs.reduce((a, r) => a + r.distance, 0) / 1000;
   const weeks = useMemo(() => weeksOf(index?.runs ?? []), [index]);
 
@@ -133,19 +119,11 @@ function RunsPage() {
             ))}
           </div>
         )}
-        <button className="btn" onClick={() => confirm('Rebuild all derived data from the FIT files? Your gear, tags and block definitions stay as they are.') && start('recompute')} disabled={!!progress}>
-          Recompute everything
-        </button>
-        <button className="btn primary" onClick={() => start('import')} disabled={!!progress}>
-          {progress ? 'Working…' : 'Import folder'}
-        </button>
       </div>
 
       {isOutdated(manifest) && (
         <div className="banner warn">
-          ⚠ Data in this folder was built with algorithm v{manifest!.algorithmVersion}; this app is v{ALGORITHM_VERSION}.
-          <span style={{ flex: 1 }} />
-          <button className="btn primary" onClick={() => start('recompute')} disabled={!!progress}>Recompute</button>
+          ⚠ Data in this folder was built with algorithm v{manifest!.algorithmVersion}; this app is v{ALGORITHM_VERSION}: recompute it on the <Link href="/folder">Data folder</Link> screen, under the Strideprism logo.
         </div>
       )}
       {progress && (
@@ -154,16 +132,8 @@ function RunsPage() {
           <div className="progress"><div style={{ width: progress.total ? `${(100 * progress.done) / progress.total}%` : '3%' }} /></div>
         </div>
       )}
-      {message && <div className="banner">{message}</div>}
 
       {runs.length > 0 && <WeeksAtAGlance weeks={weeks} runs={runs.length} totalKm={totalKm} since={runs[runs.length - 1].startTime} />}
-
-      {failed.length > 0 && (
-        <div className="banner err">
-          <span>⚠ {failed.length} file{failed.length > 1 ? 's' : ''} could not be imported and will be tried again on the next import:</span>
-          <span className="muted">{failed.map(([f, s]) => `${f.split('/').pop()} — ${s.reason}`).join(' · ')}</span>
-        </div>
-      )}
 
       {runs.length > 0 && (
         <RunsToolbar search={search} onSearch={setSearch} found={runs.filter(match).length} total={runs.length}
@@ -172,7 +142,7 @@ function RunsPage() {
       {runs.length > 0 && view === 'calendar' ? <Calendar weeks={weeks} match={match} searching={isSearching(search)} loadUnit={loadUnit} /> : (
       <div className="card">
         {runs.length === 0 ? (
-          <div className="empty">{index ? 'No runs yet.' : 'Nothing imported yet.'} Put your COROS FIT files in this folder (or its fit/ subfolder) and press <b>Import folder</b>.</div>
+          <div className="empty">{index ? 'No runs yet.' : 'Nothing imported yet.'} Put your COROS FIT files in this folder (or its fit/ subfolder), then open the <Link href="/folder">Data folder</Link> screen (the Strideprism logo) and press <b>Import folder</b>.</div>
         ) : (
           <table className="data">
             <thead>
@@ -187,7 +157,7 @@ function RunsPage() {
                     <td className="strong">{date(r.startTime)}</td>
                     <td className="muted">{time(r.startTime)}</td>
                     <td>{r.title ? <span className="title-cell">{r.title}</span> : <span className="muted">–</span>}</td>
-                    <td className="num">{km(r.distance)}</td>
+                    <td className="num"><CellBar share={r.distance / longest} />{km(r.distance)}</td>
                     <td className="num">{duration(r.duration)}</td>
                     <td className="num strong">{pace(r.avgSpeed)}</td>
                     <td className="num">{r.avgHeartRate ?? '–'}</td>
@@ -258,7 +228,7 @@ function WeeksAtAGlance({ weeks, runs, totalKm, since }: { weeks: LogWeek[]; run
             return (
               <g key={w.start} className="glance-bar" onMouseEnter={() => setHover(i)}>
                 <rect x={i * bw} y={0} width={bw} height={H} fill="transparent" />
-                {w.distance > 0 && <rect x={i * bw + Math.max(4, bw * 0.18)} y={H - h} width={bw - 2 * Math.max(4, bw * 0.18)} height={h} rx="3" fill={w.current ? 'var(--accent)' : 'var(--series-1)'} opacity={hover === null || hover === i ? 1 : 0.55} />}
+                {w.distance > 0 && <path d={columnPath(i * bw + Math.max(4, (bw - Math.min(24, bw * 0.64)) / 2), Math.min(24, bw * 0.64), H - h, H)} fill={w.current ? 'var(--accent)' : 'var(--series-1)'} opacity={hover === null || hover === i ? 1 : 0.45} />}
                 {(W > 640 || i % 3 === 2 || w.current) && <text x={i === bars.length - 1 ? W - 2 : i * bw + bw / 2} y={H + 13} fontSize="9.5" textAnchor={i === bars.length - 1 ? 'end' : 'middle'} fill="var(--muted)">{shortDate(w.start)}</text>}
               </g>
             );

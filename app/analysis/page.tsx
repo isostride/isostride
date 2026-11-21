@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ItemKey, METRIC_VIEW, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup } from '@/components';
+import { ItemKey, METRIC_VIEW, useDataVersion, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup } from '@/components';
 import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule, ruleOf } from '@/lib/blocks';
 import { curvesInWorker, instancesInWorker, runInWorker, useOpenFolder } from '@/lib/client';
 import { MAX_ITEMS, addItem, changesByMetric, computeTrend, describeDelta, describeTrend, formatAmount, percentChange, firstUsableMetric, formatItems, instancesCsv, parseItems, reasonSummary, runMean, selectInstances, valueOf, type AnalysisItem } from '@/lib/compare';
@@ -13,13 +13,16 @@ import { PATHS, isOutdated, readJson, readManifest } from '@/lib/fs';
 import { date } from '@/lib/format';
 import { readGear, readRunTags, type Gear } from '@/lib/gear';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
-import { AddDialog, TYPE_LABEL, runName } from './AddDialog';
-import { BlockSheet } from './BlockSheet';
+import { TYPE_LABEL, runName } from './names';
 import { mmss, runHref } from './links';
 import type { BuilderOptions } from './RuleBuilder';
 
 // The curve tab's chart, figures and table load when the tab is first opened (ADR "Built with React": 200 KB of script per route).
 const AbTab = dynamic(() => import('./AbTab').then((m) => m.AbTab), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>Loading the A/B comparison…</div> });
+/** The picker and the sheet that edits a block, loaded when they open. */
+const AddDialog = dynamic(() => import('./AddDialog').then((m) => m.AddDialog), { ssr: false });
+const BlockSheet = dynamic(() => import('./BlockSheet').then((m) => m.BlockSheet), { ssr: false });
+const SegmentsTable = dynamic(() => import('./SegmentsTable').then((m) => m.SegmentsTable), { ssr: false, loading: () => <div className="muted small" style={{ padding: 18 }}>Loading the segments…</div> });
 const CurveTab = dynamic(() => import('./CurveTab').then((m) => m.CurveTab), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>Loading the curve…</div> });
 
 const DAY = 86_400_000;
@@ -105,7 +108,9 @@ function AnalysisPage() {
     setOutdated(isOutdated(await readManifest(folder)));
     setLoaded(true);
   }, [folder]);
-  useEffect(() => { load(); }, [load]);
+  // Read again when an import or a recompute ends (one started by itself included).
+  const dataVersion = useDataVersion();
+  useEffect(() => { load(); }, [load, dataVersion]);
 
   // The items live in the URL; with none given, all runs ("domyslnie powinien brac wszystkie treningi"),
   // or the block a link names (def=…).
@@ -369,11 +374,13 @@ function AnalysisPage() {
 
 
       <>
-        <div className="tabs analysis-tabs" role="tablist" aria-label="Analysis sections">
-          {TABS.map(([t, name]) => (
-            <button key={t} type="button" role="tab" id={`tab-${t}`} aria-controls={tab === t ? `panel-${t}` : undefined} aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{name}</button>
-          ))}
-          {/* Progress in the row of the tabs, which keeps its height: nothing below moves (Core Web Vitals). */}
+        {/* The progress stands in the row of the tabs, which keeps its height: nothing below moves (Core Web Vitals). */}
+        <div className="tabs-row">
+          <div className="tabs analysis-tabs" role="tablist" aria-label="Analysis sections">
+            {TABS.map(([t, name]) => (
+              <button key={t} type="button" role="tab" id={`tab-${t}`} aria-controls={tab === t ? `panel-${t}` : undefined} aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{name}</button>
+            ))}
+          </div>
           {progress && (
             <span className="tabs-progress" role="status">
               <span className="muted small">Reading the runs… {progress.done} / {progress.total || '…'}</span>
@@ -494,22 +501,7 @@ function AnalysisPage() {
                     )}
                     <span className="muted small">{segments.length} in · {selection.rejected.length} left out{selection.rejected.length ? `: ${reasonSummary(selection.rejected).join(', ')}` : ''}</span>
                   </div>
-                  <table className="data" aria-label="Segments">
-                    <thead><tr>{sort !== 'date' && <th>#</th>}<th>Date</th><th>Title</th><th className="num">{tableView.name}</th><th>Stretch</th><th /></tr></thead>
-                    <tbody>
-                      {tableRows.map(({ i, v }, k) => (
-                        <tr key={i.id}>
-                          {sort !== 'date' && <td className="muted">{k + 1}</td>}
-                          <td className="strong">{date(i.runStart)}</td>
-                          <td>{titleOf(i.runId) ?? <span className="muted">–</span>}</td>
-                          <td className="num">{tableView.fmt(v)}</td>
-                          <td className="muted">{mmss(i.start)}–{mmss(i.end)} · {(i.distance / 1000).toFixed(2)} km</td>
-                          <td className="num"><Link className="muted" href={`/run?id=${i.runId}&from=${i.start}&to=${i.end}`}>Open run →</Link></td>
-                        </tr>
-                      ))}
-                      {!tableRows.length && <tr><td colSpan={6} className="muted small">{computing ? 'Reading the runs…' : 'No segment has a value for this metric.'}</td></tr>}
-                    </tbody>
-                  </table>
+                  <SegmentsTable rows={tableRows} ranked={sort !== 'date'} lowerBetter={lowerBetter} metricName={tableView.name} fmt={tableView.fmt} titleOf={titleOf} computing={computing} />
                 </div>
               )}
             </>

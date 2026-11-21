@@ -96,9 +96,14 @@ export async function openWithFolder(page: Page, files: string[]): Promise<void>
   await page.getByRole('heading', { name: 'Runs' }).waitFor();
 }
 
+/** Imports the folder on the Data folder screen (the logo leads to it), then returns to Runs. */
 export async function importAll(page: Page): Promise<void> {
+  await page.locator('.sidebar .brand').click();
+  await page.getByRole('heading', { name: 'Data folder' }).waitFor();
   await page.getByRole('button', { name: 'Import folder' }).click();
   await page.getByText(/^Imported \d+ runs?/).waitFor({ timeout: 60_000 });
+  await page.locator('.sidebar').getByRole('link', { name: /Runs$/ }).click();
+  await page.getByRole('heading', { name: 'Runs' }).waitFor();
 }
 
 /** Clicks a screen in the sidebar (its link's name starts with an icon). */

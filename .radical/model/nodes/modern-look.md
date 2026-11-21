@@ -1,0 +1,8 @@
+---
+id: "ddd52515-b84d-4d59-bcff-b68b736430e6"
+type: "requirement"
+label: "Modern look"
+action: "present the screens in a current visual style, through the theme's tokens in the light and the dark theme"
+ears_type: "ubiquitous"
+rationale: "\"The runner asked: \\\"zrob kolejna iteracja UI .. ma byc super nowoczeny zgodny z trendami\\\", after the first pass: \\\"chce aby ui byl bardziej nowoczeny\\\", and after the second: \\\"jeszcze odwazniejszy ui\\\". Model's choices of what that means now: on a wide screen a side menu that floats off the edges of the window as a deep blue rail in both themes (never black: \"moze byc ciemno blekitny itp ale nie czarny\"), its icons in rounded chips, the screen in view marked by a gradient chip; on a phone a tab bar that floats as an island, a gradient pill behind the icon of the screen in view; a gradient of the accent and a second hue on the primary button (with a glow), the tab in view, the current week and today's date; the heading of every screen large and heavy, its letters running from ink into the brand's hues; capsule buttons; rounder cards with a lighter line and a deeper soft shadow; the weeks at a glance as a bento of tiles, the figures tinted with the brand's hues; figures in tiles of their own, in heavier type; trust labels tinted by their status; tinted run tiles in the calendar that lift under the pointer; a stronger two-colour wash behind the page over a fine grid of dots; translucent blurred bars that stay in view, thin scrollbars, quick eased transitions and a slight give when pressed, switched off for those who ask for reduced motion; the surfaces, the accent and the series colours of the earlier look kept.\""
+---

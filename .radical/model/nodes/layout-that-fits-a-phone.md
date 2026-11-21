@@ -1,0 +1,8 @@
+---
+id: "b4b221e2-9bf4-4166-b055-d255f8e0b444"
+type: "requirement"
+label: "Layout that fits a phone"
+action: "lay every screen out at the width of the device, from a phone to a wide screen, without the page scrolling sideways, with the screens reached from a tab bar at the bottom of a phone, controls large enough for a finger on a touch screen, and the chart of a run taking the whole width of a phone"
+ears_type: "ubiquitous"
+rationale: "The runner asked: \"layout ma byc responsywny ... mam na mysli mobile devices\", and of the run on a phone: \"widok treningu i chart ... popraw aby zajmowal cala szerokosc optymalnie\". Model's choices: the phone layout under 820 px; the side menu's elements as a slim top bar (logo, search; the theme and the map background are in Settings since the runner asked for it) and a bottom tab bar (Runs, Analysis, Performance, Settings); a calendar week as seven compact days with its name over them and its totals under them; rows of choices and the filter scrolling in one line; wide tables scrolling inside their card; sheets, the picker and the chart menu taking the screen over the bars; controls of 40 px and tabs of 44 px on touch screens; the bars kept clear of the notch and the home indicator; the run's chart card from edge to edge of the phone, and under 560 px of chart a gutter of 34 px for the values only, the names of the bands inside the plot, so the plot spans more than 85 % of the width."
+---

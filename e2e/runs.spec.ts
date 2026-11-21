@@ -54,5 +54,32 @@ test.describe('Search runs', () => {
     expect((await band.boundingBox())!.y).toBeGreaterThanOrEqual(bar.y + bar.height);
     await page.getByRole('button', { name: 'Today' }).click();
     await expect.poll(async () => Math.round((await calendar.locator('.cal-week.current').boundingBox())!.y)).toBeLessThan(200);
+
+    // The command palette (⌘K): the screens, the latest runs and the actions in coloured groups; searched, moved through and opened from the keyboard.
+    await page.keyboard.press('ControlOrMeta+k');
+    const palette = page.getByRole('dialog', { name: 'Command palette' });
+    const options = palette.getByRole('option');
+    // With nothing typed: the four screens, the latest runs, the actions, each group with its count.
+    await expect(palette.locator('.cmdk-group > span:first-child')).toHaveText(['Screens', 'Runs', 'Actions']);
+    await expect(palette.locator('.cmdk-item.group-screens .cmdk-label')).toHaveText(['Runs', 'Analysis', 'Performance', 'Settings']);
+    await expect(palette.locator('.cmdk-item.group-runs')).toHaveCount(5);
+    await expect(palette.locator('.cmdk-item.group-runs .cmdk-side').first()).toHaveText(/^\d+\.\d km$/);
+    await expect(palette.locator('.cmdk-item.group-runs .cmdk-hint').first()).toHaveText(/\d+:\d\d · \d+:\d\d \/km$/);
+    // A month finds the runs of it; the arrows move the item in view, Enter opens it.
+    await palette.getByRole('combobox').fill('aug');
+    await expect(palette.locator('.cmdk-group > span:first-child')).toHaveText(['Runs']);
+    await expect(options.first()).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('ArrowDown');
+    await expect(options.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(palette.getByRole('combobox')).toHaveAttribute('aria-activedescendant', 'cmdk-1');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/run\?id=2026-?08/);
+    await expect(palette).toHaveCount(0);
+    // Nothing found: said so, with what to try.
+    await page.keyboard.press('ControlOrMeta+k');
+    await palette.getByRole('combobox').fill('zzqx');
+    await expect(palette.locator('.cmdk-empty')).toContainText('Nothing found for “zzqx”');
+    await page.keyboard.press('Escape');
+    await expect(palette).toHaveCount(0);
   });
 });

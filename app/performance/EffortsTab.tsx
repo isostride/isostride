@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { RunsIndex } from '@/lib/kernel';
 import { MARKER_DAYS, type BestEffort, type Effort, type PerformanceNow } from '@/lib/load';
 import { date, pace as fmtPace } from '@/lib/format';
+import { CellBar } from '@/components';
 import { runHref } from '../analysis/links';
 
 const EFFORT_LABEL: Record<Effort, string> = { allout: 'all-out', hard: 'hard, not all-out', easy: 'not all-out', unknown: 'no heart rate' };
@@ -11,16 +12,16 @@ const EFFORT_LABEL: Record<Effort, string> = { allout: 'all-out', hard: 'hard, n
 function Table({ label, efforts, format, maxHr, runs }: { label: string; efforts: (BestEffort | null)[]; format: (v: number) => string; maxHr: number | null; runs: RunsIndex['runs'] }) {
   const title = new Map(runs.map((r) => [r.id, r.title ?? null]));
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div className="table-scroll">
       <table className="data efforts-table" aria-label={label}>
         <thead><tr><th>Length</th><th className="num">Best</th><th>Effort</th><th className="num">Of max heart rate</th><th>Run</th></tr></thead>
         <tbody>
           {efforts.map((e, k) => (e === null ? null : (
             <tr key={k} data-effort={e.effort}>
               <td className="strong">{e.duration / 60} min</td>
-              <td className="num tnum">{format(e.value)}</td>
+              <td className="num tnum strong">{format(e.value)}</td>
               <td><span className="trust"><i className={`trust-dot ${e.effort}`} aria-hidden="true" />{EFFORT_LABEL[e.effort]}</span></td>
-              <td className="num tnum muted">{e.hr !== null && maxHr ? `${Math.round((e.hr / maxHr) * 100)} %` : '–'}</td>
+              <td className="num tnum muted">{e.hr !== null && maxHr ? <><CellBar share={e.hr / maxHr} />{Math.round((e.hr / maxHr) * 100)} %</> : '–'}</td>
               <td><Link href={runHref(e.runId, e.at?.[0], e.at?.[1])}>{date(e.startTime)}{title.get(e.runId) ? ` · ${title.get(e.runId)}` : ''} →</Link></td>
             </tr>
           )))}

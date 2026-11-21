@@ -1,11 +1,9 @@
 'use client';
 
-import Link from 'next/link';
-import { useState } from 'react';
 import type { ModelKey, ModelReport, PerformanceNow } from '@/lib/load';
 import { duration as fmtDuration, pace as fmtPace } from '@/lib/format';
-import { TrustChip, WhyButton, WhyPanel, type Models } from './Assumptions';
-import { TABS, performanceHref } from './structure';
+import type { Models } from './Assumptions';
+import { ModelMap } from './ModelMap';
 
 const signed = (v: number) => `${v > 0 ? '+' : ''}${Math.round(v)}`;
 const pct = (v: number) => `${Math.round(v * 100)} %`;
@@ -39,34 +37,9 @@ function saysNow(key: ModelKey, now: PerformanceNow): string {
 
 /**
  * The overview of Performance (requirements "Performance structured by evidence", "Model
- * assumptions checked" and "Performance kept simple"): a line per model — its name under what it
- * rests on, what it says now, its trust — and the rest behind its "Why?".
+ * assumptions checked", "Performance kept simple" and "Map of the models"): the map of the models,
+ * each with what it says now, its trust and its "Why?". The map is the overview: no list repeats it.
  */
 export function OverviewTab({ models, by, now }: { models: ModelReport[]; by: Models; now: PerformanceNow }) {
-  const [open, setOpen] = useState<ModelKey | null>(null);
-  return (
-    <>
-      {TABS.filter((g) => g.evidence).map((g) => (
-        <section key={g.key} className="card overview-group" aria-label={`${g.name} models`}>
-          <div className="overview-head">
-            <h2><Link href={performanceHref(g.key)}>{g.name}</Link></h2>
-            <span className="muted">{g.evidence}</span>
-          </div>
-          <ul className="overview-list">
-            {models.filter((m) => m.group === g.key).map((m) => (
-              <li key={m.key} data-model={m.key} data-trust={m.trust}>
-                <div className={`overview-row depth-${m.depth}`}>
-                  <Link className="overview-name" href={performanceHref(m.where.tab, m.where.view)}>{m.depth > 0 && <span aria-hidden="true">↳ </span>}{m.name}</Link>
-                  <span className="overview-now tnum">{saysNow(m.key, now)}</span>
-                  <TrustChip trust={m.trust} />
-                  <WhyButton m={m} open={open === m.key} onToggle={() => setOpen(open === m.key ? null : m.key)} />
-                </div>
-                {open === m.key && <WhyPanel m={m} by={by} />}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
-    </>
-  );
+  return <ModelMap models={models} by={by} says={(m) => saysNow(m.key, now)} />;
 }

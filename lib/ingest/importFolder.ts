@@ -1,5 +1,5 @@
 import { ALGORITHM_VERSION, SCHEMA_VERSION, type Windows, type Lap, type Samples, type RunFile, type RunIndexRow, type RunsIndex } from '@/lib/kernel';
-import { PATHS, fitDirectory, joinPath, readJson, writeJson, type DataFolder, emptyManifest, readManifest, writeManifest, type Manifest } from '@/lib/fs';
+import { PATHS, listFitFiles, readJson, writeJson, type DataFolder, emptyManifest, readManifest, writeManifest, type Manifest } from '@/lib/fs';
 import { buildWindows } from '@/lib/prepare';
 import { FitImportError, parseFit, runId } from './parseFit';
 
@@ -48,11 +48,7 @@ export async function importRuns(folder: DataFolder, opts: ImportOptions = {}): 
   };
   const byStart = new Map(index.runs.map((r) => [r.startTime, r.id]));
 
-  const dir = await fitDirectory(folder);
-  const files = (await folder.list(dir))
-    .filter((e) => e.kind === 'file' && e.name.toLowerCase().endsWith('.fit'))
-    .map((e) => joinPath(dir, e.name))
-    .sort();
+  const files = await listFitFiles(folder);
   // Files an earlier import handled are not read again; a file that failed is tried again.
   const todo = files.filter((f) => !manifest.files[f] || manifest.files[f].status === 'error');
 

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { ItemKey, METRIC_VIEW, type Shape } from '@/components';
+import { CellBar, ItemKey, METRIC_VIEW, type Shape } from '@/components';
 import { CURVE_DURATIONS, MIN_FIT_POINTS, MIN_FIT_SECONDS, estimateCurve, estimatedValue, type CurveEstimate, type CurveMetric, type CurvePoint } from '@/lib/curve';
 import { date, duration as fmtDuration, pace as fmtPace } from '@/lib/format';
 import { CurveChart, type CurveLine } from './CurveChart';
@@ -44,6 +44,8 @@ export function CurveTab({ metric, items, bests, missingPower }: {
   };
   // The curve's bests, a row per item and length, with the run and the stretch each comes from.
   const bestRows = lines.flatMap((l) => (bests.get(l.key) ?? []).map((p) => ({ line: l, p, estimate: l.estimateAt?.(p.duration) ?? null })));
+  /** The widest gap to the estimate among the rows: the scale of the gap bars. */
+  const widestGap = Math.max(1e-9, ...bestRows.map((r) => (r.estimate === null ? 0 : Math.abs(r.p.value - r.estimate))));
   return (
     <>
       <div className="card chart">
@@ -108,10 +110,10 @@ export function CurveTab({ metric, items, bests, missingPower }: {
                   <td className="strong">{p.duration < 60 ? `${p.duration} s` : p.duration < 3600 ? `${p.duration / 60} min` : `${p.duration / 3600} h`}</td>
                   <td className="num tnum">{curveFmt(p.value)}</td>
                   <td className="num tnum muted">{estimate === null ? '–' : curveFmt(estimate)}</td>
-                  <td className="muted">{estimate === null ? '' : curveGap(p.value, estimate)}</td>
+                  <td className="muted">{estimate === null ? '' : <><CellBar tone="quiet" share={Math.abs(p.value - estimate) / widestGap} />{curveGap(p.value, estimate)}</>}</td>
                   <td>{date(p.date)}{p.title ? <span className="muted"> · {p.title}</span> : null}</td>
                   <td className="muted">{mmss(p.from)}–{mmss(p.to)}</td>
-                  <td className="num"><Link className="muted" href={runHref(p.runId, p.from, p.to)}>Open run →</Link></td>
+                  <td className="num"><Link className="row-open" href={runHref(p.runId, p.from, p.to)}>Open run →</Link></td>
                 </tr>
               ))}
             </tbody>

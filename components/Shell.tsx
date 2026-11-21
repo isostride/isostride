@@ -3,13 +3,43 @@
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { useFolder, useMapTiles } from '@/lib/client';
+import dynamic from 'next/dynamic';
+import { useFolder, useNarrowMenu, useTheme } from '@/lib/client';
 import { Logo } from './Logo';
 import { Welcome } from './Welcome';
 import { CommandPalette } from './CommandPalette';
 import { recordAddress } from './screenTrail';
 
-type Theme = 'light' | 'dark' | 'system';
+/** The automatic import, loaded after the screen: it waits for the folder anyway (requirement "New runs imported by themselves"). */
+const AutoImport = dynamic(() => import('./AutoImport').then((m) => m.AutoImport), { ssr: false });
+
+/**
+ * Back and forward through the screens seen in this tab (the runner's request: "dodaj back/forward
+ * buttons"), each usable only when the browser can go that way (the Navigation API, in the
+ * Chromium browsers the app runs in; without it both stay usable).
+ */
+function HistoryNav() {
+  const [can, setCan] = useState({ back: true, forward: true });
+  useEffect(() => {
+    const nav = (window as unknown as { navigation?: EventTarget & { canGoBack: boolean; canGoForward: boolean } }).navigation;
+    if (!nav) return;
+    const read = () => setCan({ back: nav.canGoBack, forward: nav.canGoForward });
+    // The router changes the history inside its insertion effect, where no state may be set: the
+    // change is read once that is over.
+    let pending = 0;
+    const later = () => { cancelAnimationFrame(pending); pending = requestAnimationFrame(read); };
+    read();
+    nav.addEventListener('currententrychange', later);
+    return () => { cancelAnimationFrame(pending); nav.removeEventListener('currententrychange', later); };
+  }, []);
+  return (
+    <div className="history-nav" role="group" aria-label="History">
+      <button type="button" aria-label="Back" title="Back" disabled={!can.back} onClick={() => history.back()}><Icon d={ICONS.back} size={16} /></button>
+      <button type="button" aria-label="Forward" title="Forward" disabled={!can.forward} onClick={() => history.forward()}><Icon d={ICONS.forward} size={16} /></button>
+    </div>
+  );
+}
+
 
 /** A 20px stroked icon; the paths are drawn on a 24-unit grid. */
 function Icon({ d, size = 18 }: { d: string; size?: number }) {
@@ -28,6 +58,8 @@ const ICONS = {
   settings: 'M4 21v-7|M4 10V3|M12 21v-9|M12 8V3|M20 21v-5|M20 12V3|M1 14h6|M9 8h6|M17 16h6',
   folder: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
   search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z|M21 21l-4.3-4.3',
+  back: 'M15 5l-7 7 7 7',
+  forward: 'M9 5l7 7-7 7',
 };
 
 const NAV = [
@@ -51,25 +83,22 @@ function ScreenTrail() {
   return null;
 }
 
-/** App Shell: the sidebar (folder, search, screens, theme) and the page; the Welcome screen until the data folder is open. */
+/**
+ * App Shell: the sidebar (folder, search, screens) and the page; the Welcome screen until the data
+ * folder is open. On a phone the same elements are laid out by the stylesheet as a slim top bar
+ * (logo, search) and a bottom tab bar of the screens (the author's request of 21 Nov 2026: "layout
+ * ma byc responsywny ... mobile devices"). The theme and the map background are set in Settings
+ * ("ustawienia schema - light/dark i online/offline przenies do settings"); the shell applies the theme.
+ * The logo and the folder's name lead to the Data folder screen (import, recompute, another folder:
+ * "pod logiem nie chce popup ale normalna strone"); back and forward sit beside the logo.
+ */
 export function Shell({ children }: { children: ReactNode }) {
   const { state } = useFolder();
   const path = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
-  const [theme, setTheme] = useState<Theme>('system');
-  const [mapTiles, setMapTiles] = useMapTiles();
+  const [collapsed] = useNarrowMenu();
+  const [theme, setTheme] = useTheme();
 
-  useEffect(() => {
-    const saved = (localStorage.getItem('theme') as Theme | null) ?? 'system';
-    setTheme(saved);
-  }, []);
-  useEffect(() => {
-    if (theme === 'system') document.documentElement.removeAttribute('data-theme');
-    else document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const cycleTheme = useCallback(() => setTheme((t) => (t === 'light' ? 'dark' : t === 'dark' ? 'system' : 'light')), []);
+  const cycleTheme = useCallback(() => setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light'), [theme, setTheme]);
 
   if (state.status !== 'open') return <Welcome />;
 
@@ -78,45 +107,32 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className={`shell ${collapsed ? 'collapsed' : ''}`}>
       <Suspense fallback={null}><ScreenTrail /></Suspense>
       <aside className="sidebar">
-        <button className="brand" onClick={() => setCollapsed((c) => !c)} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-          <Logo />
-          {!collapsed && <span>Strideprism</span>}
-        </button>
-        <div className="crumbs" title={`Data folder: ${state.folder.name}`}>
-          <Icon d={ICONS.folder} size={15} />
-          {!collapsed && <b>{state.folder.name}</b>}
+        <div className="brand-row">
+          <Link className={`brand ${path.startsWith('/folder') ? 'active' : ''}`} href="/folder" title="Data folder: import, recompute, change" aria-current={path.startsWith('/folder') ? 'page' : undefined}>
+            <Logo />
+            <span className="label">Strideprism</span>
+          </Link>
+          <HistoryNav />
         </div>
+        <Link className="crumbs" href="/folder" title={`Data folder: ${state.folder.name}`}>
+          <Icon d={ICONS.folder} size={15} />
+          <b className="label">{state.folder.name}</b>
+        </Link>
         <button className="search" onClick={() => window.dispatchEvent(new Event('open-palette'))} title="Search runs, blocks, screens (⌘K)">
           <Icon d={ICONS.search} size={15} />
-          {!collapsed && <><span>Search…</span><span className="kbd">⌘K</span></>}
+          <span className="label">Search…</span><span className="kbd label">⌘K</span>
         </button>
         <nav className="nav" aria-label="Screens">
           {NAV.map((n) => (
             <Link key={n.href} href={n.href} className={`nav-item ${active(n.href) ? 'active' : ''}`} title={n.label} aria-current={active(n.href) ? 'page' : undefined}>
               <Icon d={n.ico} />
-              {!collapsed && <span>{n.label}</span>}
+              <span className="label">{n.label}</span>
             </Link>
           ))}
         </nav>
-        <div className="sidebar-bottom">
-          {!collapsed && (
-            <div className="segmented" role="radiogroup" aria-label="Theme">
-              {(['light', 'dark', 'system'] as Theme[]).map((t) => (
-                <button key={t} className={theme === t ? 'on' : ''} onClick={() => setTheme(t)} role="radio" aria-checked={theme === t}>
-                  {t === 'light' ? 'Light' : t === 'dark' ? 'Dark' : 'System'}
-                </button>
-              ))}
-            </div>
-          )}
-          {!collapsed && (
-            <label className="setting" title="Map tiles from the OpenStreetMap server: it learns the area of the route shown">
-              <input type="checkbox" checked={mapTiles} onChange={(e) => setMapTiles(e.target.checked)} />
-              Map background <span className="muted">(online)</span>
-            </label>
-          )}
-        </div>
       </aside>
       <div className="main">{children}</div>
+      <AutoImport />
       <CommandPalette onTheme={cycleTheme} />
     </div>
   );

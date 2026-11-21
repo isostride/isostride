@@ -4,14 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import type { BlockDefinition, BlockParams, Recommendation, Rule } from '@/lib/blocks';
 import type { AnalysisItem } from '@/lib/compare';
 import type { RunsIndex } from '@/lib/kernel';
+import { TYPE_LABEL, runName } from './names';
 import { RuleBuilder, type BuilderOptions } from './RuleBuilder';
 
-export const runName = (start: string, distance: number, title?: string | null) =>
-  `${title ? `${title} · ` : ''}${new Date(start).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })} · ${(distance / 1000).toFixed(1)} km`;
-
-export const TYPE_LABEL: Record<BlockParams['type'], string> = {
-  route: 'route segment', structure: 'workout lap', steady: 'steady fragment', effort: 'effort, any route', tag: 'workout type', pattern: 'lap pattern', rule: 'rule',
-};
 
 type Option =
   | { kind: 'block'; id: string; text: string; hint: string }

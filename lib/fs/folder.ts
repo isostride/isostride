@@ -71,3 +71,12 @@ export async function fitDirectory(folder: DataFolder): Promise<string> {
 export function joinPath(dir: string, name: string): string {
   return dir ? `${dir}/${name}` : name;
 }
+
+/** The FIT files of the folder (of its fit/ subfolder when it has one), as paths, sorted. */
+export async function listFitFiles(folder: DataFolder): Promise<string[]> {
+  const dir = await fitDirectory(folder);
+  return (await folder.list(dir))
+    .filter((e) => e.kind === 'file' && e.name.toLowerCase().endsWith('.fit'))
+    .map((e) => joinPath(dir, e.name))
+    .sort();
+}
