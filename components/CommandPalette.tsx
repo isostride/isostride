@@ -7,7 +7,7 @@ import { readDefinitions } from '@/lib/blocks';
 import { PATHS, readJson } from '@/lib/fs';
 import type { RunsIndex } from '@/lib/kernel';
 
-type Group = 'Screens' | 'Actions' | 'Runs' | 'Blocks';
+type Group = 'Screens' | 'Actions' | 'Runs' | 'Segments';
 type Glyph = 'runs' | 'analysis' | 'ab' | 'performance' | 'model' | 'settings' | 'gear' | 'tags' | 'display' | 'block' | 'run' | 'import' | 'theme';
 
 interface Item {
@@ -24,8 +24,8 @@ interface Item {
 }
 
 /** The order of the groups, and how many of each show before anything is typed. */
-const GROUPS: Group[] = ['Screens', 'Runs', 'Blocks', 'Actions'];
-const UNTYPED: Record<Group, number> = { Screens: 5, Runs: 5, Blocks: 4, Actions: 2 };
+const GROUPS: Group[] = ['Screens', 'Runs', 'Segments', 'Actions'];
+const UNTYPED: Record<Group, number> = { Screens: 5, Runs: 5, Segments: 4, Actions: 2 };
 const TYPED = 40;
 
 /** The icons of the palette, 24-unit strokes; several paths are separated by "|". */
@@ -100,19 +100,19 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
       const all: Item[] = [
         // The five screens first: with nothing typed, only they show.
         { group: 'Screens', glyph: 'runs', label: 'Runs', hint: 'Calendar and list of your runs', run: go('/') },
-        { group: 'Screens', glyph: 'block', label: 'Blocks', hint: 'Every block, its segments, new ones', run: go('/blocks') },
-        { group: 'Screens', glyph: 'analysis', label: 'Analysis', hint: 'Trends, segments and curves', run: go('/analysis') },
+        { group: 'Screens', glyph: 'block', label: 'Segments', hint: 'Every segment, its efforts, new ones', run: go('/segments') },
+        { group: 'Screens', glyph: 'analysis', label: 'Compare', hint: 'Trends, efforts, A/B and curves', run: go('/compare') },
         { group: 'Screens', glyph: 'performance', label: 'Performance', hint: 'The map of the models', run: go('/performance') },
         { group: 'Screens', glyph: 'settings', label: 'Settings', hint: 'Zones, gear, tags, display', run: go('/settings') },
         { group: 'Screens', glyph: 'import', label: 'Data folder', hint: 'Import, recompute, another folder', run: go('/folder') },
-        { group: 'Screens', glyph: 'ab', label: 'A/B comparison', hint: 'Analysis', run: go('/analysis?tab=ab') },
+        { group: 'Screens', glyph: 'ab', label: 'A/B comparison', hint: 'Compare', run: go('/compare?tab=ab') },
         { group: 'Screens', glyph: 'model', label: 'Load model', hint: 'Performance', run: go('/performance?tab=model') },
         { group: 'Screens', glyph: 'tags', label: 'To do for the models', hint: 'Performance', run: go('/performance?tab=todo') },
         { group: 'Screens', glyph: 'gear', label: 'Gear', hint: 'Settings', run: go('/settings?tab=gear') },
         { group: 'Screens', glyph: 'tags', label: 'Tags', hint: 'Settings', run: go('/settings?tab=tags') },
         { group: 'Screens', glyph: 'display', label: 'Display', hint: 'Settings · theme and map background', run: go('/settings?tab=display') },
         { group: 'Actions', glyph: 'import', label: 'Import folder', hint: 'Read the new FIT files of the folder', run: go('/folder?action=import') },
-        { group: 'Actions', glyph: 'block', label: 'New block', hint: 'Blocks · which runs, which stretch, which conditions', run: go('/blocks?new=1') },
+        { group: 'Actions', glyph: 'block', label: 'New segment', hint: 'Segments · which runs, which part of each, which conditions', run: go('/segments?new=1') },
         { group: 'Actions', glyph: 'theme', label: 'Switch theme', hint: 'Light, dark, system', run: () => { onTheme(); } },
       ];
       const runs = (await readJson<RunsIndex>(state.folder, PATHS.runsIndex))?.runs ?? [];
@@ -128,8 +128,8 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
         });
       }
       for (const d of (await readDefinitions(state.folder)).filter((x) => x.status === 'active')) {
-        all.push({ group: 'Blocks', glyph: 'block', label: d.name, hint: 'Block · Analysis', run: go(`/analysis?items=b:${d.id}:0`) });
-        all.push({ group: 'Blocks', glyph: 'ab', label: d.name, hint: 'Block · Compare A/B', run: go(`/analysis?items=b:${d.id}:0&tab=ab&ab=${d.id}`) });
+        all.push({ group: 'Segments', glyph: 'block', label: d.name, hint: 'Segment · Compare', run: go(`/compare?items=b:${d.id}:0`) });
+        all.push({ group: 'Segments', glyph: 'ab', label: d.name, hint: 'Segment · Compare A/B', run: go(`/compare?items=b:${d.id}:0&tab=ab&ab=${d.id}`) });
       }
       setItems(all);
     })();
@@ -159,8 +159,8 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
             aria-expanded="true"
             aria-controls="cmdk-list"
             aria-activedescendant={shown[active] ? `cmdk-${active}` : undefined}
-            aria-label="Search runs, blocks, screens"
-            placeholder="Search runs, blocks, screens…"
+            aria-label="Search runs, segments, screens"
+            placeholder="Search runs, segments, screens…"
             onChange={(e) => { setQ(e.target.value); setActive(0); }}
             onKeyDown={(e) => {
               if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => Math.min(shown.length - 1, a + 1)); }
@@ -191,7 +191,7 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
             <div className="cmdk-empty">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /><path d="M8.5 11h5" /></svg>
               <b>Nothing found for “{q}”</b>
-              <span>Try a date, a run title, a block or a screen.</span>
+              <span>Try a date, a run title, a segment or a screen.</span>
             </div>
           )}
         </div>

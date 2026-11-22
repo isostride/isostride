@@ -102,8 +102,8 @@ function ChartsCard() {
       <Choice name="X axis" hint="By time, the distance under each tick; by distance, the time under each (a run without distance stays by time)." label="X axis" value={chart.axis} options={[['time', 'Time'], ['distance', 'Distance']]} onChange={set('axis')} />
       <div className="display-row">
         <label htmlFor="chart-blocks">
-          <div className="display-name">Blocks on the chart</div>
-          <div className="muted small">Draw every kept block that has a segment in the run; off, only the one pointed at in the chart menu.</div>
+          <div className="display-name">Segments on the chart</div>
+          <div className="muted small">Draw the efforts of every segment in the run; off, only the one pointed at in the chart menu.</div>
         </label>
         <input id="chart-blocks" type="checkbox" className="switch" checked={chart.blocks} onChange={(e) => setChart({ blocks: e.target.checked })} />
       </div>

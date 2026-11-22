@@ -6,7 +6,7 @@ import { recordMeasure } from './support';
 
 /** The folder the static export lands in (npm run build; the end-to-end server serves it). */
 const EXPORT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.next-build');
-const SCREENS = ['index', 'run', 'blocks', 'analysis', 'compare', 'gear', 'settings'];
+const SCREENS = ['index', 'run', 'segments', 'blocks', 'analysis', 'compare', 'gear', 'settings'];
 
 async function walk(dir: string): Promise<string[]> {
   const entries = await fs.readdir(dir, { withFileTypes: true });

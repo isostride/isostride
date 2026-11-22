@@ -9,9 +9,9 @@ function TrendRedirect() {
   const router = useRouter();
   useEffect(() => {
     const def = params.get('def');
-    router.replace(def ? `/analysis?items=b:${def}:0` : '/analysis');
+    router.replace(def ? `/compare?items=b:${def}:0` : '/compare');
   }, [params, router]);
-  return <div className="page"><div className="page-head"><h1>Analysis</h1></div></div>;
+  return <div className="page"><div className="page-head"><h1>Compare</h1></div></div>;
 }
 
 export default function TrendPage() {

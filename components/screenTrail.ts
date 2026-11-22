@@ -15,7 +15,7 @@ const PREV = 'strideprism.prevPage';
 
 /** The screens a back link can name, by path. */
 export const SCREEN_NAMES: Record<string, string> = {
-  '/': 'Runs', '/analysis': 'Analysis', '/performance': 'Performance', '/settings': 'Settings',
+  '/': 'Runs', '/compare': 'Compare', '/performance': 'Performance', '/settings': 'Settings',
 };
 
 const pathOf = (url: string) => url.split('?')[0] || '/';

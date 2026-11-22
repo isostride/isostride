@@ -25,7 +25,7 @@ const parseNum = (text: string, scale = 1): number | null => {
   return Number.isFinite(n) ? n * scale : null;
 };
 const PRESET_LABEL: Record<PeriodPreset, string> = { all: 'All runs', month: 'Last 30 days', quarter: 'Last 3 months', year: 'This year' };
-const SHAPES: [RuleShape['type'], string][] = [['run', 'Whole runs'], ['lap', 'Laps'], ['fastest', 'Fastest stretch'], ['steady', 'Steady stretch']];
+const SHAPES: [RuleShape['type'], string][] = [['run', 'Whole runs'], ['lap', 'Laps'], ['fastest', 'Best effort'], ['steady', 'Steady effort']];
 const stretchLabel = (w: { kind: 'time' | 'distance'; target: number }) => (w.kind === 'time' ? `${w.target / 60} min` : `${w.target / 1000} km`);
 
 /** A pair of inputs for one range; the value is kept in the rule's unit. */
@@ -129,8 +129,8 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
     <div className="builder">
       <div className="builder-section">
         <div className="field">
-          <span>Segment</span>
-          <div className="segmented" role="radiogroup" aria-label="Segment">
+          <span>From each run</span>
+          <div className="segmented" role="radiogroup" aria-label="From each run">
             {reference && <button type="button" role="radio" aria-checked={shape.type === reference.type} className={shape.type === reference.type ? 'on' : ''} onClick={() => setShape(reference.type)} title="Taken from a run">{shapeName(reference)}</button>}
             {SHAPES.map(([t, l]) => <button key={t} type="button" role="radio" aria-checked={shape.type === t} className={shape.type === t ? 'on' : ''} onClick={() => setShape(t)}>{l}</button>)}
           </div>
@@ -153,7 +153,7 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
         {shape.type === 'fastest' && (
           <label className="field check">
             <input type="checkbox" checked={!!shape.effort} onChange={(e) => setRule((r) => ({ ...r, shape: { ...shape, effort: e.target.checked || undefined } }))} />
-            <span>Only when run as an effort <span className="muted small">(the run&apos;s fastest stretch of the length, run hard)</span></span>
+            <span>Only when run as an effort <span className="muted small">(the run&apos;s best effort of the length, run hard)</span></span>
           </label>
         )}
         {shape.type === 'lap' && (reference?.type === 'lap' || shape.planned) && (
@@ -196,7 +196,7 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
       </div>
 
       <div className="builder-section">
-        <div className="builder-title">The segment, on average</div>
+        <div className="builder-title">The effort, on average</div>
         <Range label="Pace" names={['Pace from', 'Pace to']} unit="/km" from={c.paceMin} to={c.paceMax} show={mmss} parse={parsePace} onChange={(a, b) => cond({ paceMin: a, paceMax: b })} />
         <Range label="Heart rate" names={['Heart rate from', 'Heart rate to']} unit="bpm" from={c.hrMin} to={c.hrMax} show={String} parse={(t) => parseNum(t)} onChange={(a, b) => cond({ hrMin: a, hrMax: b })} />
         {shape.type !== 'fastest' && (
@@ -205,15 +205,15 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
             <Range label="Duration" names={['Duration from', 'Duration to']} unit="min" from={c.durationMin} to={c.durationMax} show={(v) => String(Math.round(v / 60))} parse={(t) => parseNum(t, 60)} onChange={(a, b) => cond({ durationMin: a, durationMax: b })} />
           </>
         )}
-        <div className="builder-title" title="Checked in each 10 s window of the segment">The segment, at every moment</div>
+        <div className="builder-title" title="Checked in each 10 s window of the effort">The effort, at every moment</div>
         <Range label="Heart rate never below / above" names={['Heart rate never below', 'Heart rate never above']} unit="bpm" from={c.alwaysHrMin} to={c.alwaysHrMax} show={String} parse={(t) => parseNum(t)} onChange={(a, b) => cond({ alwaysHrMin: a, alwaysHrMax: b })} />
         <Range label="Pace always within" names={['Pace always from', 'Pace always to']} unit="/km" from={c.alwaysPaceMin} to={c.alwaysPaceMax} show={mmss} parse={parsePace} onChange={(a, b) => cond({ alwaysPaceMin: a, alwaysPaceMax: b })} />
         <details className="more">
           <summary className="muted small">More: start, how many per run, statistic</summary>
           {shape.type !== 'run' && (
             <label className="field">
-              <span>Start of the segment</span>
-              <select className="select small" aria-label="Start of the segment" value={c.start} onChange={(e) => cond({ start: e.target.value as BlockStart })}>
+              <span>Start of the effort</span>
+              <select className="select small" aria-label="Start of the effort" value={c.start} onChange={(e) => cond({ start: e.target.value as BlockStart })}>
                 <option value="any">any</option>
                 <option value="standing">standing (right after a stop)</option>
                 <option value="flying">flying (on the move)</option>
@@ -229,8 +229,8 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
             </div>
           )}
           <div className="field">
-            <span>Statistic of each segment</span>
-            <div className="segmented" role="radiogroup" aria-label="Statistic" title="The average over the moving samples; the median, minimum or maximum over the segment's 10 s windows">
+            <span>Statistic of each effort</span>
+            <div className="segmented" role="radiogroup" aria-label="Statistic" title="The average over the moving samples; the median, minimum or maximum over the effort's 10 s windows">
               {STATS.map((st: Stat) => <button key={st} type="button" role="radio" aria-checked={rule.stat === st} className={rule.stat === st ? 'on' : ''} onClick={() => setRule((r) => ({ ...r, stat: st }))}>{STAT_LABEL[st]}</button>)}
             </div>
           </div>
@@ -241,7 +241,7 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
 
       <div className="preview" aria-live="polite">
         <div className="preview-count">
-          {error ? `Could not read the runs: ${error}` : found === null ? 'Looking for segments…' : `${accepted.length} segment${accepted.length === 1 ? '' : 's'} in ${inRuns} run${inRuns === 1 ? '' : 's'}`}
+          {error ? `Could not read the runs: ${error}` : found === null ? 'Looking for efforts…' : `${accepted.length} effort${accepted.length === 1 ? '' : 's'} in ${inRuns} run${inRuns === 1 ? '' : 's'}`}
           {leftOut > 0 && <span className="muted"> · {leftOut} left out (shorter than a minute)</span>}
         </div>
         {accepted.length > 0 && (

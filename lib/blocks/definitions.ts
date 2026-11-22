@@ -1,7 +1,7 @@
 import { meanHeading } from '@/lib/geo';
 import { DEFAULT_TOLERANCES, LOGICAL_HR_SKIP, RULE_TOLERANCES, type RefPoint, type BlockType, type BlockDefinition, type BlockDefinitionsFile, type BlockParams, type Recommendation, type Rule, type Tolerances } from './types';
 import { EMPTY_CONDITIONS, EMPTY_FILTER, asRuleDefinition, ruleName, ruleOf } from './rule';
-import { PROFILE_MIN_SCORE, type ProfileKey } from './profile';
+import { PROFILE_MIN_SCORE, SIMILAR_PACE_WITHIN, type ProfileKey } from './profile';
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
 
 /** user/block-definitions.json: the runner's definitions and the recommendations they rejected. */
@@ -83,17 +83,22 @@ function fmt(sec: number): string {
   return `${Math.floor(r / 60)}:${String(r % 60).padStart(2, '0')}`;
 }
 
+/** A pace band around a pace, s/km: within SIMILAR_PACE_WITHIN of it, to the whole second. */
+const likePace = (pace: number) => ({ paceMin: Math.round(pace * (1 - SIMILAR_PACE_WITHIN)), paceMax: Math.round(pace * (1 + SIMILAR_PACE_WITHIN)) });
+
 /**
  * A route block of every pass over a track at any pace, the general conditions off: what the Find
  * similar panel lists as the same route, kept (requirement "Similar stretches of a selection").
  */
-export function definitionFromRoute(track: RefPoint[], now = new Date()): BlockDefinition {
+export function definitionFromRoute(track: RefPoint[], pace: number | null = null, now = new Date()): BlockDefinition {
   const heading = Math.round(meanHeading(track));
   const length = (track.length - 1) * 10;
+  const band = pace ? likePace(pace) : null;
   return {
     id: newDefinitionId(), origin: 'manual', status: 'active', createdAt: now.toISOString(),
-    name: `${(length / 1000).toFixed(1)} km ${COMPASS[Math.round(heading / 45) % 8]}-bound, any pace`,
-    params: { type: 'rule', ...ruleOf({ type: 'route', track, length, heading }) },
+    name: `${(length / 1000).toFixed(1)} km ${COMPASS[Math.round(heading / 45) % 8]}-bound, ${band ? `pace ${fmt(band.paceMin)}–${fmt(band.paceMax)}` : 'any pace'}`,
+    // The pace band is the rule's own condition, shown and changed in the editor ("jak klikne edit to wszystko jest puste").
+    params: { type: 'rule', ...ruleOf({ type: 'route', track, length, heading }), conditions: { ...EMPTY_CONDITIONS, ...band } },
     tolerances: { ...RULE_TOLERANCES },
   };
 }
@@ -104,7 +109,7 @@ export function definitionFromProfile(key: ProfileKey, now = new Date()): BlockD
   return {
     id: newDefinitionId(), origin: 'manual', status: 'active', createdAt: now.toISOString(),
     name: `Like ${(key.distance / 1000).toFixed(1)} km${climb === null ? '' : `, ${climb} m up`}, pace ${fmt(key.pace)}`,
-    params: { type: 'rule', ...ruleOf({ type: 'profile', key, minScore: PROFILE_MIN_SCORE }) },
+    params: { type: 'rule', ...ruleOf({ type: 'profile', key, minScore: PROFILE_MIN_SCORE }), conditions: { ...EMPTY_CONDITIONS, ...likePace(key.pace) } },
     tolerances: { ...RULE_TOLERANCES },
   };
 }

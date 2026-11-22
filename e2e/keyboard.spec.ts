@@ -40,18 +40,18 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
     await page.keyboard.press('Enter');
     await expect(page.getByText(/^Imported \d+ runs?/)).toBeVisible({ timeout: 60_000 });
     // Block definition: on the Analysis screen, the picker opens with the search focused; Enter takes the first block found in the runs.
-    await tabTo(page, 'link', /Analysis$/);
+    await tabTo(page, 'link', /Compare$/);
     await page.keyboard.press('Enter');
-    await tabTo(page, 'button', '+ Add block or run');
+    await tabTo(page, 'button', '+ Add segment or run');
     await page.keyboard.press('Enter');
-    await expect(page.getByRole('textbox', { name: 'Search blocks and runs' })).toBeFocused();
+    await expect(page.getByRole('textbox', { name: 'Search segments and runs' })).toBeFocused();
     await page.keyboard.type('km');
     await page.keyboard.press('Enter');
     await expect(page.locator('.item-chip')).toHaveCount(1, { timeout: 30_000 });
     // Analysis for pace.
     await tabTo(page, 'button', 'Pace');
     await page.keyboard.press('Enter');
-    await expect(page.getByRole('heading', { level: 1, name: 'Analysis' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Compare' })).toBeVisible();
     // A/B comparison, a tab of Analysis.
     await tabTo(page, 'tab', 'A/B');
     await page.keyboard.press('Enter');

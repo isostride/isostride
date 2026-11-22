@@ -63,22 +63,32 @@ export function runSubject(row: IndexedRun): Subject {
   return { distance: row.distance, duration: row.duration, pace: row.avgSpeed > 0 ? 1000 / row.avgSpeed : null, heartRate: row.avgHeartRate };
 }
 
-/** The stretch [from, to) s of a run as the subject: its distance, duration, pace over the elapsed time and mean heart rate. */
+/**
+ * The stretch [from, to) s of a run as the subject: its distance, duration, pace over the moving time
+ * (a wait at the lights left out, as the similar efforts read it) and mean heart rate.
+ */
 export function stretchSubject(run: RunFile, from: number, to: number): Subject {
   const s = run.samples;
   let first: number | null = null;
   let last = 0;
   let hr = 0;
   let n = 0;
+  let moving = 0;
+  let prev: number | null = null;
   for (let k = 0; k < s.t.length; k++) {
     if (s.t[k] < from || s.t[k] >= to) continue;
     const d = s.distance[k];
     if (d !== null) { if (first === null) first = d; last = d; }
     const h = s.heartRate[k];
     if (h !== null) { hr += h; n++; }
+    // Moving: a gap of up to 5 s at 0.8 m/s or more (the moving time of a profile).
+    const sp = s.speed[k];
+    if (prev !== null) { const dt = s.t[k] - prev; if (dt > 0 && dt <= 5 && (sp === null || sp >= 0.8)) moving += dt; }
+    prev = s.t[k];
   }
   const distance = first === null ? 0 : last - first;
-  return { distance, duration: to - from, pace: distance > 0 ? (to - from) / (distance / 1000) : null, heartRate: n ? hr / n : null };
+  const time = moving > 0 ? moving : to - from;
+  return { distance, duration: to - from, pace: distance > 0 ? time / (distance / 1000) : null, heartRate: n ? hr / n : null };
 }
 
 /** Lap i of a run as the subject: its own distance, timer time and pace, and its mean heart rate. */
@@ -114,7 +124,7 @@ export function shapeName(shape: RuleShape): string {
   if (shape.type === 'profile') {
     const k = shape.key;
     const climb = k.altitude ? Math.round(k.altitude.reduce((s, a, i, xs) => s + (i && a > xs[i - 1] ? a - xs[i - 1] : 0), 0)) : null;
-    return `Same profile: ${(k.distance / 1000).toFixed(1)} km${climb === null ? '' : `, ${climb} m up`}, pace ${mmss(Math.round(k.pace))}`;
+    return `Same profile: ${(k.distance / 1000).toFixed(1)} km${climb === null ? '' : `, ${climb} m up`}, pace shape of ${mmss(Math.round(k.pace))}`;
   }
   return `Fastest ${lengthName(shape.kind, shape.target)}${shape.effort ? ', run as an effort' : ''}`;
 }

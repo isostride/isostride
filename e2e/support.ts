@@ -126,7 +126,7 @@ export async function setChart(page: Page, ...choices: string[]): Promise<void> 
   await page.getByRole('tab', { name: 'Charts', exact: true }).click();
   const card = page.getByRole('region', { name: 'Charts' });
   for (const c of choices) {
-    if (c === 'blocks on' || c === 'blocks off') await card.getByRole('checkbox', { name: /Blocks on the chart/ }).setChecked(c === 'blocks on');
+    if (c === 'blocks on' || c === 'blocks off') await card.getByRole('checkbox', { name: /Segments on the chart/ }).setChecked(c === 'blocks on');
     else await card.getByRole('radio', { name: c, exact: true }).click();
   }
   await page.goBack();
@@ -154,16 +154,17 @@ export const GEAR_AUTUMN = {
   ],
 };
 
-/** On the Analysis screen, which opens with All runs: removes it, to start from no item. */
+/** On the Analysis screen, which opens empty: removes whatever a link put there, to start from no item. */
 export async function clearAnalysis(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Remove All runs' }).click();
-  await page.locator('.item-chip').first().waitFor({ state: 'detached' });
+  await page.getByRole('heading', { name: 'Compare' }).waitFor();
+  const remove = page.locator('.item-chip').getByRole('button', { name: /^Remove / });
+  while (await remove.count()) await remove.first().click();
 }
 
 /** Opens the picker of the Analysis screen: its list of blocks and runs (a block is made on the Blocks screen). */
 export async function openPicker(page: Page) {
-  await page.getByRole('button', { name: '+ Add block or run' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Add block or run' });
+  await page.getByRole('button', { name: '+ Add segment or run' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add segment or run' });
   await dialog.waitFor();
   return dialog;
 }
@@ -187,7 +188,7 @@ export async function setUpWithBlock(page: Page, { files = fitFiles(30, '2026-05
   await page.getByRole('button', { name: 'Choose data folder' }).click();
   await page.getByRole('heading', { name: 'Runs' }).waitFor();
   await importAll(page);
-  await nav(page, 'Analysis');
+  await nav(page, 'Compare');
   await clearAnalysis(page);
   await addFromPicker(page, block);
   await page.locator('.item-chip').first().waitFor({ timeout: 30_000 });

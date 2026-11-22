@@ -29,6 +29,7 @@ sense --metric derived.files_without_algorithm_version=/derivedFilesWithoutVersi
 sense --metric load.model_change.run_files_read=/loadModelChangeRunFilesRead
 sense --metric cache.repeat.run_files_read=/cachedResultRunFilesRead --metric context.change.run_files_read=/contextChangeRunFilesRead
 sense --metric import.repeat.records_added=/repeatRecordsAdded
+sense --metric blocks.legacy_differing=/legacyBlocksDiffering --metric ui.block_words=/uiBlockWords --metric run.cross_run_reads=/runCrossRunReads
 sense --label dataset=author --metric import.errors=/historicalImportErrors --metric import.runs_missing_developer_fields=/historicalRunsMissingDeveloperFields
 # Acceptance criterion 3: a value the run could not compute (no pass in the period) is left unmeasured.
 sense --metric acceptance.promenade.steady_passes=/promenadeSteadyPasses

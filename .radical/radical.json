@@ -693,7 +693,7 @@
     { "element": "0d40d086-746a-4574-9906-9fd84865b734", "name": "Route coloured and read on a large map", "tests": [
       "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
     ] },
-    { "element": "5e113a45-b3dc-4903-869c-0bcb5ddc1796", "name": "Similar stretches found and overlaid", "tests": [
+    { "element": "5e113a45-b3dc-4903-869c-0bcb5ddc1796", "name": "Similar segments found and overlaid", "tests": [
       "e2e/block-definition.spec.ts › Definition from selection › Definition from chart selection"
     ] },
     { "element": "a23ad5ec-41a8-4148-9fcd-a762769f05a9", "name": "Block built from a rule with a live count", "tests": [
@@ -704,6 +704,18 @@
     ] },
     { "element": "0cc567d0-0a83-43d8-89ee-d1b377bd057b", "name": "Block deletion confirmed in the app", "tests": [
       "e2e/block-definition.spec.ts › Every block on one screen › Block built from a rule with a live count"
+    ] },
+    { "element": "07ce31af-0c60-42e3-b466-c8f7df67df77", "name": "Analysis saved and opened again", "tests": [
+      "e2e/analysis.spec.ts › Analysis workspace › Rule blocks compared, ranked and curved"
+    ] },
+    { "element": "2065821d-656d-48ea-8619-7fc1a7b22651", "name": "Older blocks find the same efforts", "tests": [
+      "tests/integration/selection.test.ts › Definition from selection › Definition from chart selection"
+    ] },
+    { "element": "cb1a6603-6ea5-471a-81f0-3170190745b2", "name": "Screens say segment and effort", "tests": [
+      "tests/unit/wording.test.ts › Words of the screens › Screens say segment and effort"
+    ] },
+    { "element": "ec1c74f4-8d5f-43b3-81f5-f53a068d8a64", "name": "Run screen compares nothing", "tests": [
+      "tests/unit/screens.test.ts › Screens and their parts › The Run screen compares nothing itself"
     ] }
   ]
 }

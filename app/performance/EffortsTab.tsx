@@ -5,7 +5,7 @@ import type { RunsIndex } from '@/lib/kernel';
 import { MARKER_DAYS, type BestEffort, type Effort, type PerformanceNow } from '@/lib/load';
 import { date, pace as fmtPace } from '@/lib/format';
 import { CellBar } from '@/components';
-import { runHref } from '../analysis/links';
+import { runHref } from '../compare/links';
 
 const EFFORT_LABEL: Record<Effort, string> = { allout: 'all-out', hard: 'hard, not all-out', easy: 'not all-out', unknown: 'no heart rate' };
 

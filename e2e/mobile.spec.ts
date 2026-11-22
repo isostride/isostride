@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { devices, expect, test, type Page } from '@playwright/test';
-import { fitFiles, importAll, nav, openWithFolder, recordMeasure } from './support';
+import { addFromPicker, fitFiles, importAll, nav, openWithFolder, recordMeasure } from './support';
 
 // A phone: its width, a touch screen (requirement "Layout that fits a phone").
 test.use({ ...devices['Pixel 7'] });
@@ -26,7 +26,7 @@ test.describe('Layout that fits a phone', () => {
 
     // The screens are a tab bar floating at the bottom of the screen, each tab large enough for a finger; a slim bar at the top.
     const tabs = page.getByRole('navigation', { name: 'Screens' });
-    await expect(tabs.getByRole('link')).toHaveText(['Runs', 'Blocks', 'Analysis', 'Performance', 'Settings']);
+    await expect(tabs.getByRole('link')).toHaveText(['Runs', 'Segments', 'Compare', 'Performance', 'Settings']);
     const bar = (await tabs.boundingBox())!;
     const under = height - (bar.y + bar.height);
     expect(under).toBeGreaterThan(0);
@@ -89,18 +89,19 @@ test.describe('Layout that fits a phone', () => {
     await page.locator('.chart-menu').getByRole('button').first().click();
 
     // Analysis: each tab; the picker is a sheet over the bars.
-    await nav(page, 'Analysis');
+    await nav(page, 'Compare');
+    await addFromPicker(page, 'All runs');
     await page.locator('.item-chip').first().waitFor({ timeout: 30_000 });
-    await check('Analysis · Trends', true);
-    for (const tab of ['Segments', 'A/B', 'Pace / power curve']) {
+    await check('Compare · Trends', true);
+    for (const tab of ['Efforts', 'A/B', 'Pace / power curve']) {
       await page.getByRole('tab', { name: tab }).click();
-      await check(`Analysis · ${tab}`);
+      await check(`Compare · ${tab}`);
     }
-    await page.getByRole('button', { name: '+ Add block or run' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Add block or run' });
+    await page.getByRole('button', { name: '+ Add segment or run' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Add segment or run' });
     await expect(dialog).toBeVisible();
     expect(await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest('[role="dialog"]'), [width / 2, height - 20])).toBe(true);
-    await check('Analysis · picker');
+    await check('Compare · picker');
     await page.keyboard.press('Escape');
 
     // Performance: the overview, every view, a "Why?" open.

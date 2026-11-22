@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { similarOf } from '@/lib/detection';
+import { figuresOf, similarOf } from '@/lib/detection';
 import { PATHS, readJson } from '@/lib/fs';
 import type { RunsIndex } from '@/lib/kernel';
 import { importFolder } from '@/lib/pipeline';
@@ -30,5 +30,10 @@ describe('Similar stretches in the data folder', () => {
     // A stretch too short to compare, and a run not in the folder.
     expect((await similarOf(folder, { runId: own.id, from: 600, to: 630 })).why).toMatch(/^Select at least 400 m/);
     expect((await similarOf(folder, { runId: 'none', from: 0, to: 600 })).why).toBe('The run is not in the data folder.');
+    // The curves of efforts by distance, for the overlay: each read from its run; one without distance left out.
+    const parts = [{ runId: own.id, from: own.duration * 0.3, to: own.duration * 0.5 }, ...r.route.slice(0, 1).map((x) => ({ runId: x.runId, from: x.from, to: x.to })), { runId: 'none', from: 0, to: 60 }];
+    const figures = await figuresOf(folder, parts);
+    expect(Object.keys(figures)).toHaveLength(parts.length - 1);
+    expect(figures[`${own.id}:${own.duration * 0.3}`].curves.pace).toHaveLength(20);
   }, 120_000);
 });

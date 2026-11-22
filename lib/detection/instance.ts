@@ -96,7 +96,7 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
   const tol: Tolerances = def.tolerances;
   const reasons: string[] = [];
   const begins = startKind(s.t, s.speed, start);
-  if (tol.start !== 'any' && begins !== tol.start) reasons.push(`start: ${begins}, the block needs a ${tol.start} start`);
+  if (tol.start !== 'any' && begins !== tol.start) reasons.push(`start: ${begins}, the segment needs a ${tol.start} start`);
   // Heart rate from the block's own heart rate start, when it has one: the same in every instance.
   // Efficiency (metres per heartbeat) from the same samples as the heart rate.
   const hrIdx = tol.hrSkip !== null ? moving.filter((i) => s.t[i] >= start + tol.hrSkip!) : moving;
@@ -114,10 +114,10 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
   if (cv >= tol.cvMax) reasons.push(`pace steadiness: CV ${cv.toFixed(2)}, limit ${tol.cvMax}`);
   // One decision per run (the author's decision of 19 Nov 2026): no metric is left out of an
   // instance on its own; a fragment too short for any meaningful mean is rejected as a whole.
-  if (duration < MIN_SECONDS.block) reasons.push(`block ${Math.round(duration)} s, minimum ${MIN_SECONDS.block} s`);
+  if (duration < MIN_SECONDS.block) reasons.push(`effort ${Math.round(duration)} s, minimum ${MIN_SECONDS.block} s`);
   if (tol.effortBeforeMax !== null) {
-    if (effortBefore === null) reasons.push('effort before the block: less than 1 min of data');
-    else if (Math.abs(effortBefore) > tol.effortBeforeMax) reasons.push(`effort before the block: ${pct(Math.abs(effortBefore))}, limit ${pct(tol.effortBeforeMax)}`);
+    if (effortBefore === null) reasons.push('effort before it: less than 1 min of data');
+    else if (Math.abs(effortBefore) > tol.effortBeforeMax) reasons.push(`effort before it: ${pct(Math.abs(effortBefore))}, limit ${pct(tol.effortBeforeMax)}`);
   }
 
   // Lap number (1-based): given for structure blocks, else the lap the block starts in.

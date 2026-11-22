@@ -7,7 +7,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'stride.prism',
-  description: 'Compare blocks of runs within the same context.',
+  description: 'Compare the same segments of your runs within the same context.',
 };
 
 // A phone lays the page out at its own width, under its notch and home indicator (the stylesheet

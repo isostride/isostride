@@ -292,7 +292,7 @@ export function RouteMap({ lat, lon, t, cursor, selection = null, onSelect, view
           Expand
         </button>
       )}
-      <span className="map-hint" aria-live="polite">{onSelect && first !== null ? 'Now click the end of the stretch' : hint ?? (onSelect ? 'Scroll to zoom · drag to move · click two points to select' : 'Scroll to zoom · drag to move')}</span>
+      <span className="map-hint" aria-live="polite">{onSelect && first !== null ? 'Now click the end of the segment' : hint ?? (onSelect ? 'Scroll to zoom · drag to move · click two points to select' : 'Scroll to zoom · drag to move')}</span>
       {controls && (
         <div className="map-zoom" role="group" aria-label="Zoom of the map">
           <button type="button" className="btn sm icon" aria-label="Zoom in" onClick={() => zoomBy(0.5)}>+</button>

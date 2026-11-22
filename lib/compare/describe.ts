@@ -44,34 +44,34 @@ export interface Description {
 export function describeTrend(s: TrendSeries, metric: BlockMetric, fmt: (v: number) => string): Description {
   const label = METRIC_LABEL[metric];
   const n = s.points.length;
-  if (!s.fit) return { headline: 'Not enough instances yet', sentence: `${n} instance${n === 1 ? '' : 's'} of ${label.toLowerCase()} here; a verdict needs at least ${MIN_TREND_INSTANCES}.`, change: false };
+  if (!s.fit) return { headline: 'Not enough efforts yet', sentence: `${n} effort${n === 1 ? '' : 's'} of ${label.toLowerCase()} here; a verdict needs at least ${MIN_TREND_INSTANCES}.`, change: false };
   const day = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
   const first = s.points[0].date;
   const last = s.points[n - 1].date;
   const start = s.fit.intercept;
   const end = s.fit.intercept + s.fit.change;
   const [a, b] = s.fit.ci;
-  const what = `${label} on this block went from ${fmt(start)} to ${fmt(end)} (fitted) between ${day(first)} and ${day(last)}, over ${n} instances.`;
+  const what = `${label} on this segment went from ${fmt(start)} to ${fmt(end)} (fitted) between ${day(first)} and ${day(last)}, over ${n} efforts.`;
   const noise = `±${roundFor(metric, s.noise)} ${METRIC_UNIT[metric]}`;
   const interval = `${roundFor(metric, a)} to ${roundFor(metric, b)} ${METRIC_UNIT[metric]}`;
   if (s.fit.verdict === 'change')
-    return { headline: `Changed: ${describeDelta(metric, s.fit.change)}`, sentence: `${what} That is more than the noise between instances (${noise}), and the 95% interval of the change (${interval}) stays on one side of zero.`, change: true };
-  const why = Math.abs(s.fit.change) <= s.noise ? `within the noise between instances (${noise})` : `not certain: the 95% interval of the change (${interval}) includes zero`;
+    return { headline: `Changed: ${describeDelta(metric, s.fit.change)}`, sentence: `${what} That is more than the noise between efforts (${noise}), and the 95% interval of the change (${interval}) stays on one side of zero.`, change: true };
+  const why = Math.abs(s.fit.change) <= s.noise ? `within the noise between efforts (${noise})` : `not certain: the 95% interval of the change (${interval}) includes zero`;
   return { headline: 'No detectable change', sentence: `${what} That is ${why}.`, change: false };
 }
 
 /** An A/B comparison in plain words: B against A, by how much, and whether it is beyond the noise. */
 export function describeAb(r: { a: { label: string; points: unknown[] }; b: { label: string; points: unknown[] }; difference: number | null; ci: [number, number] | null; noise: number | null; verdict: 'change' | 'no detectable change' | null }, metric: BlockMetric, minEach: number): Description {
   const label = METRIC_LABEL[metric].toLowerCase();
-  const counts = `${r.a.points.length} instances with ${r.a.label}, ${r.b.points.length} with ${r.b.label}`;
+  const counts = `${r.a.points.length} efforts with ${r.a.label}, ${r.b.points.length} with ${r.b.label}`;
   if (r.difference === null) return { headline: 'Nothing to compare yet', sentence: `${counts}.`, change: false };
   const what = `With ${r.b.label}, ${label} is ${describeDelta(metric, r.difference)} than with ${r.a.label} (${counts}).`;
   if (!r.verdict || !r.ci || r.noise === null)
-    return { headline: 'No verdict yet', sentence: `${what} A verdict needs at least ${minEach} instances on each side.`, change: false };
+    return { headline: 'No verdict yet', sentence: `${what} A verdict needs at least ${minEach} efforts on each side.`, change: false };
   const noise = `±${roundFor(metric, r.noise)} ${METRIC_UNIT[metric]}`;
   const interval = `${roundFor(metric, r.ci[0])} to ${roundFor(metric, r.ci[1])} ${METRIC_UNIT[metric]}`;
   if (r.verdict === 'change')
-    return { headline: `Difference: ${describeDelta(metric, r.difference)} with ${r.b.label}`, sentence: `${what} That is more than the noise between instances (${noise}), and the 95% interval of the difference (${interval}) stays on one side of zero.`, change: true };
-  const why = Math.abs(r.difference) <= r.noise ? `within the noise between instances (${noise})` : `not certain: the 95% interval of the difference (${interval}) includes zero`;
+    return { headline: `Difference: ${describeDelta(metric, r.difference)} with ${r.b.label}`, sentence: `${what} That is more than the noise between efforts (${noise}), and the 95% interval of the difference (${interval}) stays on one side of zero.`, change: true };
+  const why = Math.abs(r.difference) <= r.noise ? `within the noise between efforts (${noise})` : `not certain: the 95% interval of the difference (${interval}) includes zero`;
   return { headline: 'No detectable difference', sentence: `${what} That is ${why}.`, change: false };
 }

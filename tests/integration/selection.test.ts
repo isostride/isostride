@@ -5,7 +5,7 @@ import { PATHS, readJson } from '@/lib/fs';
 import { resample } from '@/lib/geo';
 import { importFolder } from '@/lib/pipeline';
 import { type RunFile, type RunsIndex } from '@/lib/kernel';
-import { FILES, makeDataFolder } from '../support/fixtures';
+import { FILES, makeDataFolder, recordMeasure } from '../support/fixtures';
 
 async function nov9() {
   const folder = await makeDataFolder([FILES.pace4]);
@@ -45,5 +45,8 @@ describe('Definition from selection', () => {
     // An older workout-lap block reads as that rule and finds the same lap.
     const older = asRuleDefinition({ ...def, params: { type: 'structure', kind: 'time', target: 1500, tolerance: 0.03 } as const });
     expect(older.params).toEqual({ type: 'rule', ...rule });
+    // Read as its rule, the older block finds the same lap (ADR "A block is a rule").
+    const again = detectInstances(older, run, row, []);
+    await recordMeasure('legacyBlocksDiffering', JSON.stringify(again.map((i) => [i.start, i.end])) === JSON.stringify(found.map((i) => [i.start, i.end])) ? 0 : 1);
   });
 });

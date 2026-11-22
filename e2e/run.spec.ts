@@ -198,13 +198,14 @@ test.describe('Run chart', () => {
     await expect(stats.getByRole('row', { name: /^Heart rate/ }).locator('.trend-cell')).toHaveText(/^[+−]\d+ bpm$/);
     await expect(page.locator('.range-stats .decoupling')).toHaveText(/^Pa:HR [+−]\d+\.\d %$/);
     await page.mouse.move(0, 0);
-    // The statistics' head holds only Find similar (Clear selection is at the top right of the chart).
-    await expect(page.locator('.range-stats').getByRole('button')).toHaveText(['Find similar']);
+    // The statistics' head holds no button, only Compare similar, which leads to Compare (Clear selection is at the top right of the chart).
+    await expect(page.locator('.range-stats').getByRole('button')).toHaveCount(0);
+    await expect(page.locator('.range-stats').getByRole('link', { name: 'Compare similar' })).toHaveAttribute('href', /^\/compare\?similar=/);
     await expect(page.locator('.run-board .metrics-bar').getByRole('button', { name: 'Clear selection' })).toBeVisible();
     await menuButton.click();
     // No block is made here any more (requirement "One way to make a block"): the menu leads to the Blocks screen.
-    await expect(menu.getByRole('heading', { name: 'Blocks', exact: true })).toBeVisible();
-    await expect(menu.getByRole('link', { name: 'Blocks', exact: true })).toBeVisible();
+    await expect(menu.getByRole('heading', { name: 'Segments', exact: true })).toBeVisible();
+    await expect(menu.getByRole('link', { name: 'Segments', exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
 
     // The wheel zooms around the point under the pointer (no + and − buttons): a notch out doubles the

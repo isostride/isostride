@@ -11,18 +11,18 @@ describe('Back to the previous screen', () => {
     // No screen before: back to Runs.
     const s = store();
     expect(backTarget(s)).toEqual({ href: '/', label: 'Runs', viaHistory: false });
-    // Runs, then Analysis whose link changes as it is used, then a run: back to Analysis as it was left, through the history.
+    // Runs, then Compare whose link changes as it is used, then a run: back to Compare as it was left, through the history.
     recordAddress(s, '/', null);
-    recordAddress(s, '/analysis', '/');
-    recordAddress(s, '/analysis?items=b1&tab=segments', '/analysis');
-    recordAddress(s, '/run?id=r1', '/analysis?items=b1&tab=segments');
-    expect(backTarget(s)).toEqual({ href: '/analysis?items=b1&tab=segments', label: 'Analysis', viaHistory: true });
+    recordAddress(s, '/compare', '/');
+    recordAddress(s, '/compare?items=b1&tab=segments', '/compare');
+    recordAddress(s, '/run?id=r1', '/compare?items=b1&tab=segments');
+    expect(backTarget(s)).toEqual({ href: '/compare?items=b1&tab=segments', label: 'Compare', viaHistory: true });
     // The run's own link changing (its view in the address) changes nothing.
     recordAddress(s, '/run?id=r1&from=60&to=600', '/run?id=r1');
-    expect(backTarget(s)).toEqual({ href: '/analysis?items=b1&tab=segments', label: 'Analysis', viaHistory: true });
-    // A second run opened from the first: still back to Analysis, by its link (the page right behind is the first run).
+    expect(backTarget(s)).toEqual({ href: '/compare?items=b1&tab=segments', label: 'Compare', viaHistory: true });
+    // A second run opened from the first: still back to Compare, by its link (the page right behind is the first run).
     recordAddress(s, '/run?id=r2', '/run?id=r1&from=60&to=600');
-    expect(backTarget(s)).toEqual({ href: '/analysis?items=b1&tab=segments', label: 'Analysis', viaHistory: false });
+    expect(backTarget(s)).toEqual({ href: '/compare?items=b1&tab=segments', label: 'Compare', viaHistory: false });
     // From the calendar with a search: back to it, named Runs.
     recordAddress(s, '/?q=tempo', '/run?id=r2');
     recordAddress(s, '/run?id=r3', '/?q=tempo');
@@ -32,7 +32,7 @@ describe('Back to the previous screen', () => {
     expect(backTarget(s).href).toBe('/?q=tempo');
     // Storage that fails: back to Runs.
     const broken: TrailStore = { getItem: () => { throw new Error('denied'); }, setItem: () => { throw new Error('denied'); } };
-    recordAddress(broken, '/analysis', null);
+    recordAddress(broken, '/compare', null);
     expect(backTarget(broken)).toEqual({ href: '/', label: 'Runs', viaHistory: false });
   });
 });

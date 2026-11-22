@@ -65,7 +65,7 @@ export function TrendChart({ trend, format, tick = format, invert, markers, sele
     return (
       <div ref={box} className="card empty">
         No accepted instances for this metric and filter.
-        {emptyReasons && emptyReasons.length > 0 && <div className="small" style={{ marginTop: 6 }}>Left out most often for: {emptyReasons.join(' · ')}. Open Instances for each one&apos;s reason, or try another metric.</div>}
+        {emptyReasons && emptyReasons.length > 0 && <div className="small" style={{ marginTop: 6 }}>Left out most often for: {emptyReasons.join(' · ')}. Open Efforts for each one&apos;s reason, or try another metric.</div>}
       </div>
     );
   const { t0, t1, lo, hi, ticks } = scale;
@@ -154,7 +154,7 @@ export function TrendChart({ trend, format, tick = format, invert, markers, sele
         {hover && <circle cx={hover.x} cy={hover.y} r={8} fill="none" stroke="var(--text)" strokeWidth="1.5" />}
       </svg>
       {hover && <Tooltip h={hover} format={format} width={width} />}
-      <div className="chart-note">Band: the noise between instances (±1 standard deviation) around the fitted line. Click points to compare their profiles below.</div>
+      <div className="chart-note">Band: the noise between efforts (±1 standard deviation) around the fitted line. Click points to compare their profiles below.</div>
     </div>
   );
 }
@@ -217,7 +217,7 @@ export function ProfileChart({ lines, format, tick = format, minSpan = 0, invert
         {Array.from({ length: n }, (_, k) => k).filter((k) => k % every === 0 && x(k) < width - M.r - 110).map((k) => (
           <text key={k} x={x(k)} y={h - 8} fontSize="11" fill="var(--muted)" textAnchor="middle" className="tnum">{k + 1}</text>
         ))}
-        <text x={width - M.r} y={h - 8} fontSize="11" fill="var(--muted)" textAnchor="end">min of the block</text>
+        <text x={width - M.r} y={h - 8} fontSize="11" fill="var(--muted)" textAnchor="end">min of the effort</text>
         {lines.map((l, li) => {
           let d = '';
           l.values.forEach((v, k) => { if (v !== null) d += `${d ? 'L' : 'M'}${x(k).toFixed(1)},${y(v).toFixed(1)}`; });

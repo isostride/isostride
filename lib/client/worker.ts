@@ -9,6 +9,8 @@ export type DoneEvent = Extract<WorkerEvent, { type: 'done' }>;
 export type SimilarQuery = Extract<WorkerRequest, { type: 'similar' }>['query'];
 export type SimilarResult = Extract<WorkerEvent, { type: 'similar' }>['result'];
 export type SimilarStretch = SimilarResult['route'][number];
+/** An effort's figures and its 10 s windows, for the chart of the Efforts tab. */
+export type EffortFigures = Extract<WorkerEvent, { type: 'figures' }>['figures'][string];
 export interface JobState {
   job: WorkerJob;
   done: number;
@@ -71,7 +73,7 @@ function start(request: WorkerRequest, onProgress?: Progress, signal?: AbortSign
 }
 
 /** Runs one job in a fresh Processing Worker; resolves when it is done. */
-export async function runInWorker(job: Exclude<WorkerJob, 'instances' | 'curve' | 'similar'>, handle: FileSystemDirectoryHandle, onProgress?: Progress): Promise<DoneEvent> {
+export async function runInWorker(job: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures'>, handle: FileSystemDirectoryHandle, onProgress?: Progress): Promise<DoneEvent> {
   const m = await start({ type: job, handle }, onProgress);
   if (m.type !== 'done') throw new Error(`unexpected ${m.type}`);
   return m;
@@ -96,4 +98,11 @@ export async function similarInWorker(query: SimilarQuery, handle: FileSystemDir
   const m = await start({ type: 'similar', handle, query }, onProgress, signal);
   if (m.type !== 'similar') throw new Error(`unexpected ${m.type}`);
   return m.result;
+}
+
+/** The curves by distance of stretches of runs (efforts), keyed `${runId}:${from}`, from the Processing Worker. */
+export async function figuresInWorker(stretches: SimilarQuery[], handle: FileSystemDirectoryHandle, signal?: AbortSignal): Promise<Record<string, EffortFigures>> {
+  const m = await start({ type: 'figures', handle, stretches }, undefined, signal);
+  if (m.type !== 'figures') throw new Error(`unexpected ${m.type}`);
+  return m.figures;
 }

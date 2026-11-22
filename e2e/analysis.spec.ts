@@ -9,19 +9,19 @@ test.describe('Analysis workspace', () => {
     await page.goto('/ask?kind=best&window=600s&from=2026-03-01');
     const fastest = page.locator('.item-chip', { hasText: 'Fastest 10 min · since 2026-03-01' });
     await expect(fastest).toHaveCount(1, { timeout: 30_000 });
-    await expect(page).toHaveURL(/\/analysis\?items=q/);
+    await expect(page).toHaveURL(/\/compare\?items=q/);
     // A second block, made in the one editor (New block… in the picker opens it on the Blocks screen):
     // whole runs since 1 March, each read by its maximum; then added here from the picker.
-    await page.getByRole('button', { name: '+ Add block or run' }).click();
-    await page.getByRole('dialog', { name: 'Add block or run' }).getByRole('link', { name: 'New block…' }).click();
-    const dialog = page.getByRole('dialog', { name: 'New block' });
+    await page.getByRole('button', { name: '+ Add segment or run' }).click();
+    await page.getByRole('dialog', { name: 'Add segment or run' }).getByRole('link', { name: 'New segment…' }).click();
+    const dialog = page.getByRole('dialog', { name: 'New segment' });
     await dialog.getByRole('radio', { name: 'Whole runs' }).click();
     await dialog.getByLabel('From', { exact: true }).fill('2026-03-01');
     await dialog.getByText('More: start, how many per run, statistic').click();
     await dialog.getByRole('radio', { name: 'maximum' }).click();
-    await expect(dialog.locator('.preview-count')).toContainText('12 segments in 12 runs', { timeout: 30_000 });
-    await dialog.getByRole('button', { name: 'Save block' }).click();
-    await expect(page.getByRole('region', { name: 'Blocks', exact: true }).getByRole('row', { name: /^Runs · since 2026-03-01 · maximum/ })).toBeVisible({ timeout: 30_000 });
+    await expect(dialog.locator('.preview-count')).toContainText('12 efforts in 12 runs', { timeout: 30_000 });
+    await dialog.getByRole('button', { name: 'Save segment' }).click();
+    await expect(page.getByRole('region', { name: 'Segments', exact: true }).getByRole('row', { name: /^Runs · since 2026-03-01 · maximum/ })).toBeVisible({ timeout: 30_000 });
     await page.goBack();
     await addFromPicker(page, 'Runs · since 2026-03-01 · maximum');
     const whole = page.locator('.item-chip', { hasText: 'Runs · since 2026-03-01 · maximum' });
@@ -34,8 +34,8 @@ test.describe('Analysis workspace', () => {
       if ((await b.getAttribute('aria-pressed')) !== 'true') await b.click();
     }
     const changes = page.getByRole('table', { name: 'Changes' });
-    await expect(changes.getByRole('columnheader')).toHaveText(['Block', 'Pace', 'Heart rate']);
-    await expect(changes.getByRole('row').nth(2)).toContainText(/12 segments/, { timeout: 30_000 });
+    await expect(changes.getByRole('columnheader')).toHaveText(['Segment', 'Pace', 'Heart rate']);
+    await expect(changes.getByRole('row').nth(2)).toContainText(/12 efforts/, { timeout: 30_000 });
     const hr = page.getByRole('img', { name: 'Over time · Heart rate (bpm)' });
     await expect(hr.locator('.trend-line')).toHaveCount(2);
 
@@ -54,19 +54,21 @@ test.describe('Analysis workspace', () => {
     await clickPoint(hr);
 
     // The sections are tabs, kept in the link: Trends first, then Segments, A/B and the curve; one at a time.
-    const tabs = page.getByRole('tablist', { name: 'Analysis sections' });
-    await expect(tabs.getByRole('tab')).toHaveText(['Trends', 'Segments', 'A/B', 'Pace / power curve']);
+    const tabs = page.getByRole('tablist', { name: 'Compare sections' });
+    await expect(tabs.getByRole('tab')).toHaveText(['Trends', 'Efforts', 'A/B', 'Pace / power curve']);
     await expect(tabs.getByRole('tab', { name: 'Trends' })).toHaveAttribute('aria-selected', 'true');
-    await tabs.getByRole('tab', { name: 'Segments' }).click();
+    await tabs.getByRole('tab', { name: 'Efforts' }).click();
     await expect(page).toHaveURL(/tab=segments/);
     await expect(changes).toHaveCount(0);
     await expect(page.getByRole('group', { name: 'Metrics' })).toHaveCount(0);
     // The segments of the fastest-10-minutes block, ranked; the first opens the run with the stretch selected.
-    const segments = page.getByRole('table', { name: 'Segments' });
-    await page.getByLabel('Block', { exact: true }).selectOption({ label: 'Fastest 10 min · since 2026-03-01' });
+    const segments = page.getByRole('table', { name: 'Efforts' });
+    await page.getByLabel('Segment', { exact: true }).selectOption({ label: 'Fastest 10 min · since 2026-03-01' });
     await page.getByRole('radio', { name: 'Best first' }).click();
     await page.getByLabel('Top').selectOption('5');
     await expect(segments.getByRole('row')).toHaveCount(6);
+    // Each effort leads to the efforts like it: the link asks Compare for them.
+    await expect(segments.getByRole('row').nth(1).getByRole('link', { name: 'Similar' })).toHaveAttribute('href', /similar=\d{8}-\d{6}%7E\d+%7E\d+$/);
     await expect(segments.getByRole('row').nth(1)).toContainText(/\d:\d\d \/km/);
     // Read at a glance: the rank a badge, the first three in the accent; beside each value a bar, the best the longest.
     await expect(segments.locator('.rank')).toHaveText(['1', '2', '3', '4', '5']);
@@ -81,12 +83,33 @@ test.describe('Analysis workspace', () => {
     await segments.getByRole('row').nth(1).getByRole('link', { name: 'Open run →' }).click();
     await expect(page.locator('.range-stats h3')).toHaveText('Selection');
     // The run's back link names the screen it was opened from and returns to it as it was left.
-    await page.getByRole('link', { name: '← Analysis' }).click();
-    await expect(page).toHaveURL(/\/analysis\?.*tab=segments/);
+    await page.getByRole('link', { name: '← Compare' }).click();
+    await expect(page).toHaveURL(/\/compare\?.*tab=segments/);
     await expect(page.locator('.item-chip')).toHaveCount(2);
 
     // Back on Segments after the run (the tab is in the link).
-    await expect(tabs.getByRole('tab', { name: 'Segments' })).toHaveAttribute('aria-selected', 'true');
+    await expect(tabs.getByRole('tab', { name: 'Efforts' })).toHaveAttribute('aria-selected', 'true');
+
+    // Saved (scenario "Analysis saved and opened again"): named in the app, kept with its items and tab;
+    // Analysis opened from the menu is empty, and the saved analysis opens as it was.
+    await page.getByRole('button', { name: 'Save analysis' }).click();
+    const save = page.getByRole('dialog', { name: 'Save analysis' });
+    await expect(save.getByLabel('Name of the analysis')).toHaveValue(/^Fastest 10 min · since 2026-03-01 \+ Runs · since 2026-03-01…$/);
+    await save.getByLabel('Name of the analysis').fill('Spring check');
+    await save.getByRole('button', { name: 'Save analysis' }).click();
+    await expect(page).toHaveURL(/[?&]a=an-/);
+    await expect(page.getByRole('button', { name: 'Saved' })).toBeVisible();
+    await page.locator('.sidebar').getByRole('link', { name: /Runs$/ }).click();
+    await page.locator('.sidebar').getByRole('link', { name: /Compare$/ }).click();
+    await expect(page.getByText(/^Choose the data to analyse/)).toBeVisible();
+    await expect(page.locator('.item-chip')).toHaveCount(0);
+    // Listed on the empty screen, opened with a click (the list in the head opens them too).
+    const saved = page.getByRole('region', { name: 'Your saved analyses' });
+    await expect(saved.getByRole('button', { name: /^Spring check/ })).toHaveText(/^Spring check2 items · saved \w{3} \d+, 2026/);
+    await expect(saved.getByRole('button', { name: 'Delete Spring check' })).toBeVisible();
+    await saved.getByRole('button', { name: /^Spring check/ }).click();
+    await expect(page.locator('.item-chip')).toHaveCount(2, { timeout: 30_000 });
+    await expect(tabs.getByRole('tab', { name: 'Efforts' })).toHaveAttribute('aria-selected', 'true');
     // The curve tab, Speed first: one line per block, from its segments; time against pace, kept in the link.
     await tabs.getByRole('tab', { name: 'Pace / power curve' }).click(); // the state follows the link, a moment later
     await expect(page).toHaveURL(/tab=curve/);
@@ -151,5 +174,12 @@ test.describe('Analysis workspace', () => {
     await expect(curve.locator('.curve-line')).toHaveCount(2, { timeout: 60_000 });
     // A best of the curve opens the run it comes from, the stretch selected.
     await clickPoint(curve);
+
+    // A saved analysis deleted from the list of the empty screen, once confirmed in the app.
+    await page.locator('.sidebar').getByRole('link', { name: /Runs$/ }).click();
+    await page.locator('.sidebar').getByRole('link', { name: /Compare$/ }).click();
+    await saved.getByRole('button', { name: 'Delete Spring check' }).click();
+    await page.getByRole('alertdialog', { name: 'Delete this analysis?' }).getByRole('button', { name: 'Delete' }).click();
+    await expect(saved).toHaveCount(0);
   });
 });

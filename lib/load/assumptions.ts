@@ -300,8 +300,8 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
       ],
     },
     efforts: {
-      key: 'efforts', group: 'capacity', depth: 0, name: 'Best efforts of 2–20 min', method: `the fastest stretch of each length in the last ${MARKER_DAYS} days`, tells: 'the pace you held at your hardest, by length',
-      inputs: ['pace of your hardest stretches', 'heart rate in them', 'maximum heart rate'], parents: [], where: { tab: 'capacity', view: 'efforts' }, has: evidence.lengths >= THRESHOLDS.lengths,
+      key: 'efforts', group: 'capacity', depth: 0, name: 'Best efforts of 2–20 min', method: `the best effort of each length in the last ${MARKER_DAYS} days`, tells: 'the pace you held at your hardest, by length',
+      inputs: ['pace of your hardest efforts', 'heart rate in them', 'maximum heart rate'], parents: [], where: { tab: 'capacity', view: 'efforts' }, has: evidence.lengths >= THRESHOLDS.lengths,
       checks: effortChecks(evidence, 'the critical speed'),
     },
     cs: {
@@ -331,7 +331,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
     },
     powerEfforts: {
       key: 'powerEfforts', group: 'capacity', depth: 0, name: 'Best power of 2–20 min', method: `the highest average power of each length in the last ${MARKER_DAYS} days`, tells: 'the power you held at your hardest, by length',
-      inputs: ['power of your hardest stretches', 'heart rate in them', 'maximum heart rate'], parents: [], where: { tab: 'capacity', view: 'efforts' }, has: powerEvidence.lengths >= THRESHOLDS.lengths,
+      inputs: ['power of your hardest efforts', 'heart rate in them', 'maximum heart rate'], parents: [], where: { tab: 'capacity', view: 'efforts' }, has: powerEvidence.lengths >= THRESHOLDS.lengths,
       checks: [
         check('power', 'Power in the runs', graded(inWindow.length ? powerRuns.length / inWindow.length : 0, THRESHOLDS.coverage), `${powerRuns.length} of ${inWindow.length} runs of the last ${MARKER_DAYS} days have power`),
         check('watch', 'The power comes from one watch', powerWatches.size <= 1 ? 'met' : 'doubt', powerWatches.size <= 1 ? [...powerWatches][0] ?? 'no power' : `${[...powerWatches].join(' and ')}: running power is computed differently by each make and model, so their watts do not compare`),

@@ -51,13 +51,13 @@ export function CurveTab({ metric, items, bests, missingPower }: {
       <div className="card chart">
         {metric === 'speed' ? (
           <>
-            <h3 className="chart-title">Pace curve <span className="muted">· for each length of time, the fastest stretch of that length inside the item&apos;s segments</span></h3>
+            <h3 className="chart-title">Pace curve <span className="muted">· for each length of time, the best effort of that length inside the item&apos;s efforts</span></h3>
             <CurveChart label="Pace curve" lines={lines} durations={CURVE_DURATIONS} format={curveFmt} tick={view('speed').tick} minSpan={view('speed').minSpan} highlight={focusBest}
               gap={(m, e) => { const g = curveGap(m, e); return g === 'on the estimate' ? g : `${g} than the estimate`; }} />
           </>
         ) : (
           <>
-            <h3 className="chart-title">Power curve <span className="muted">· for each length of time, the highest average power of a stretch of that length inside the item&apos;s segments</span></h3>
+            <h3 className="chart-title">Power curve <span className="muted">· for each length of time, the highest average power held for that length inside the item&apos;s efforts</span></h3>
             <CurveChart label="Power curve" higherIsBetter lines={lines} durations={CURVE_DURATIONS} format={curveFmt} tick={view('power').tick} minSpan={view('power').minSpan} highlight={focusBest}
               gap={(m, e) => { const g = curveGap(m, e); return g === 'on the estimate' ? g : `${g} the estimate`; }} />
           </>
@@ -85,24 +85,24 @@ export function CurveTab({ metric, items, bests, missingPower }: {
                   <dl className="curve-param-dl">
                     {tiles.map(([name, value, sub]) => <div key={name}><dt>{name}</dt><dd className="tnum">{value}</dd>{sub && <dd className="muted sub">{sub}</dd>}</div>)}
                   </dl>
-                ) : <span className="muted small">No estimate: it needs {MIN_FIT_POINTS} bests of {MIN_FIT_SECONDS / 60} min and more, so segments at least that long.</span>}
+                ) : <span className="muted small">No estimate: it needs {MIN_FIT_POINTS} bests of {MIN_FIT_SECONDS / 60} min and more, so efforts at least that long.</span>}
               </section>
             );
           })}
         </div>
         {missingPower && <div className="chart-note">An item without a line holds no runs with power: its runs were recorded without a power meter.</div>}
         {metric === 'speed'
-          ? <div className="chart-note">Solid: the fastest stretch of each length inside the item&apos;s segments (a block of whole runs covers every length its runs do). Dashed: the estimate, a power law of time (Riegel 1981) with its slope fitted to those bests and its level raised to the strongest of them, so no best lies above it; the dotted strokes are each best&apos;s gap to it; move the pointer along the chart to read the estimate at any length. Critical speed and D′ from the critical speed model (Monod &amp; Scherrer 1965; Jones &amp; Vanhatalo 2017), fitted to the bests of 2–20 min.</div>
-          : <div className="chart-note">Solid: the highest average power of a stretch of each length inside the item&apos;s segments (a pause counts as no power). Dashed: the estimate, a power law of time with its slope fitted to those bests and its level raised to the strongest of them, so no best lies above it; the dotted strokes are each best&apos;s gap to it; move the pointer along the chart to read the estimate at any length. Critical power and W′ from the critical power model (Monod &amp; Scherrer 1965; Moritani et al. 1981), work against time fitted to the bests of 2–20 min.</div>}
+          ? <div className="chart-note">Solid: the best effort of each length inside the item&apos;s efforts (a segment of whole runs covers every length its runs do). Dashed: the estimate, a power law of time (Riegel 1981) with its slope fitted to those bests and its level raised to the strongest of them, so no best lies above it; the dotted strokes are each best&apos;s gap to it; move the pointer along the chart to read the estimate at any length. Critical speed and D′ from the critical speed model (Monod &amp; Scherrer 1965; Jones &amp; Vanhatalo 2017), fitted to the bests of 2–20 min.</div>
+          : <div className="chart-note">Solid: the highest average power held for each length inside the item&apos;s efforts (a pause counts as no power). Dashed: the estimate, a power law of time with its slope fitted to those bests and its level raised to the strongest of them, so no best lies above it; the dotted strokes are each best&apos;s gap to it; move the pointer along the chart to read the estimate at any length. Critical power and W′ from the critical power model (Monod &amp; Scherrer 1965; Moritani et al. 1981), work against time fitted to the bests of 2–20 min.</div>}
       </div>
       {bestRows.length > 0 && (
         <div className="card" style={{ marginTop: 12, overflowX: 'auto' }}>
           <div className="toolbar" style={{ padding: '12px 18px 0' }}>
             <span className="chart-title" style={{ margin: 0 }}>Bests</span>
-            <span className="muted small">the stretches the curve comes from; open one to see it in its run</span>
+            <span className="muted small">the efforts the curve comes from; open one to see it in its run</span>
           </div>
           <table className="data curve-bests" aria-label="Curve bests" onMouseLeave={() => setFocusBest(null)}>
-            <thead><tr>{lines.length > 1 && <th>Item</th>}<th>Length</th><th className="num">{metric === 'power' ? 'Power' : 'Pace'}</th><th className="num">Estimate</th><th>Gap</th><th>Run</th><th>Stretch</th><th /></tr></thead>
+            <thead><tr>{lines.length > 1 && <th>Item</th>}<th>Length</th><th className="num">{metric === 'power' ? 'Power' : 'Pace'}</th><th className="num">Estimate</th><th>Gap</th><th>Run</th><th>In the run</th><th /></tr></thead>
             <tbody>
               {bestRows.map(({ line, p, estimate }) => (
                 <tr key={`${line.key}${p.duration}`} className={focusBest?.key === line.key && focusBest.duration === p.duration ? 'focus' : ''} onMouseEnter={() => setFocusBest({ key: line.key, duration: p.duration })}>

@@ -63,10 +63,12 @@ describe('Similar stretches', () => {
     const own = runNorth('own', 1800, () => PACE(300), { alt: hillAt(2000) });
     const ref = { track: trackOfStretch(own, 600, 1200), key: profileOfStretch(trackOf(own), 600, 1200) };
     expect(ref.track.length).toBeGreaterThan(150);
-    // The same line run faster: a pass over the stretch, at its own pace; no profile asked of it.
-    const again = similarIn(ref, runNorth('again', 1800, () => PACE(270), { alt: hillAt(2000) }), 'Tempo');
+    // The same line run a little faster: a pass over the stretch, at its own pace; no profile asked of it.
+    const again = similarIn(ref, runNorth('again', 1800, () => PACE(285), { alt: hillAt(2000) }), 'Tempo');
     expect(again.route).toHaveLength(1);
-    expect(again.route[0].pace).toBeCloseTo(270, -1);
+    expect(again.route[0].pace).toBeCloseTo(285, -1);
+    // The same line run easy, 20 % slower: no like effort ("mnostwo biegow np po 5:23" for one at 4:12).
+    expect(similarIn(ref, runNorth('easy', 2400, () => PACE(360), { alt: hillAt(2000) }), null).route).toHaveLength(0);
     expect(again.route[0].title).toBe('Tempo');
     expect(again.profile).toBeNull();
     // 8 km east, the hill a kilometre earlier: no pass, its stretch of the same profile found at the hill.
@@ -89,6 +91,12 @@ describe('Similar stretches', () => {
     const passes = detectInstances(route, fast, rowFor(fast), pts);
     expect(passes).toHaveLength(1);
     expect(passes[0].status).toBe('accepted');
+    // With the reference's pace: only passes within 10 % of it.
+    const atPace = definitionFromRoute(trackOfStretch(own, 600, 1200), 300);
+    expect(atPace.name).toBe('2.0 km north-bound, pace 4:30–5:30');
+    expect(detectInstances(atPace, fast, rowFor(fast), pts)).toHaveLength(0);
+    const slower = runNorth('slower', 1800, () => PACE(310), { alt: hillAt(2000) });
+    expect(detectInstances(atPace, slower, rowFor(slower), resample(slower.samples.lat, slower.samples.lon, slower.samples.t, 10))).toHaveLength(1);
     const profile = definitionFromProfile(profileOfStretch(trackOf(own), 600, 1200)!);
     expect(profile.name).toMatch(/^Like 2\.0 km, 20 m up, pace 5:00$/);
     const elsewhere = runNorth('elsewhere', 1800, () => PACE(300), { lon: 2.3, alt: hillAt(1000) });

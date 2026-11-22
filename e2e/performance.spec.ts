@@ -9,7 +9,7 @@ test.describe('Performance model', () => {
     await importAll(page);
 
     // The navigation: Runs, Analysis, Performance, Settings.
-    await expect(page.locator('.sidebar nav').getByRole('link')).toHaveText(['Runs', 'Blocks', 'Analysis', 'Performance', 'Settings']);
+    await expect(page.locator('.sidebar nav').getByRole('link')).toHaveText(['Runs', 'Segments', 'Compare', 'Performance', 'Settings']);
     // Settings in tabs, zones first; gear and tags are tabs of it, not a screen of the navigation.
     await nav(page, 'Settings');
     await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Zones', 'Gear', 'Tags', 'Charts', 'Display']);

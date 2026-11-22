@@ -68,7 +68,7 @@ export function selectInstances(all: BlockInstance[], definitionId: string, metr
     }
     // Nesting: one fragment of a run enters a result once.
     const overlap = included.find((o) => o.runId === i.runId && i.start < o.end && o.start < i.end);
-    if (!reasons.length && overlap) reasons.push(`overlaps an included block of the same run (min ${Math.floor(overlap.start / 60)}–${Math.ceil(overlap.end / 60)})`);
+    if (!reasons.length && overlap) reasons.push(`overlaps an included effort of the same run (min ${Math.floor(overlap.start / 60)}–${Math.ceil(overlap.end / 60)})`);
     if (reasons.length) rejected.push({ instance: i, reasons });
     else included.push(i);
   }

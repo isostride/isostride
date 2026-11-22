@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addFromPicker, fitFiles, importAll, nav, openWithFolder, recordMeasure, clearAnalysis } from './support';
+import { addFromPicker, fitFiles, importAll, nav, openWithFolder, recordMeasure } from './support';
 
 
 const bg = (page: import('@playwright/test').Page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
@@ -54,10 +54,10 @@ test.describe('Journeys', () => {
     await page.getByRole('button', { name: 'Back' }).click();
 
     // Block definition: on the Analysis screen, take a suggested route segment (about 4.5 min, so pace, not HR).
-    await nav(page, 'Analysis');
-    // Analysis opens with all runs; the block is taken in their place.
-    await expect(page.locator('.item-chip')).toHaveText([/^All runs/]);
-    await clearAnalysis(page);
+    await nav(page, 'Compare');
+    // Analysis opens empty; the segment is taken from the picker.
+    await expect(page.getByText(/^Choose the data to analyse/)).toBeVisible();
+    await expect(page.locator('.item-chip')).toHaveCount(0);
     await addFromPicker(page, /^1\.6 km/);
     await expect(page.locator('.item-chip')).toHaveCount(1, { timeout: 30_000 });
 

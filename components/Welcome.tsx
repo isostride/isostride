@@ -12,7 +12,7 @@ export function Welcome() {
       <div className="card">
         <Logo size={56} />
         <h1 aria-label="stride.prism">stride<i className="brand-dot" aria-hidden="true">.</i>prism</h1>
-        <p className="muted">Compare blocks of your runs in the same context, and see changes the watch averages hide.</p>
+        <p className="muted">Compare the same segments of your runs in the same context, and see changes the watch averages hide.</p>
         {state.status === 'unsupported' && (
           <div className="banner err" style={{ marginTop: 18, textAlign: 'left' }}>
             <span>⚠</span>

@@ -952,6 +952,12 @@
     "targetId": "4af56562-2cf3-4808-a6a5-5cd7d3dd13fd"
   },
   {
+    "id": "1e31b832-8d14-4c67-8d9a-db66356e1b92",
+    "relationType": "verifies",
+    "sourceId": "5e113a45-b3dc-4903-869c-0bcb5ddc1796",
+    "targetId": "83720867-f025-4cd7-9162-1ea53afba93f"
+  },
+  {
     "id": "1e49d885-8476-4c69-a9a0-67145349e933",
     "relationType": "verifies",
     "sourceId": "afe8191c-e280-4118-b571-53e876cd904e",
@@ -1355,6 +1361,12 @@
     "relationType": "verifies",
     "sourceId": "7bc5e495-26c7-48cc-9d47-1607dd64f8d1",
     "targetId": "edf14cec-c720-4d6e-b09b-f2ad6d867283"
+  },
+  {
+    "id": "2b7400b9-9efe-4930-ade2-2bfb5ae7fdd6",
+    "relationType": "verifies",
+    "sourceId": "07ce31af-0c60-42e3-b466-c8f7df67df77",
+    "targetId": "1f3b890f-c7bc-4503-87ca-92e0a78d4900"
   },
   {
     "id": "2b8838bf-7375-4351-9a25-e822eeea0d9a",
@@ -2501,6 +2513,12 @@
     "targetId": "06b9896e-33c2-4668-b6eb-3f0115d9ceea"
   },
   {
+    "id": "577ed679-8a9d-49cb-a7ee-e3a166532a8c",
+    "relationType": "verifies",
+    "sourceId": "5e113a45-b3dc-4903-869c-0bcb5ddc1796",
+    "targetId": "d7bcb3de-7535-41db-a527-7363f721026a"
+  },
+  {
     "id": "57b6e26c-ad55-4eff-8397-04259084c394",
     "relationType": "constrains",
     "sourceId": "668193e6-22d8-49d5-a71f-1bda90dcf4d6",
@@ -2618,6 +2636,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "5c5fd0b5-b2b8-46ad-b87e-74eed1de574f",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "83720867-f025-4cd7-9162-1ea53afba93f"
+  },
+  {
     "id": "5c6a7db3-c0bf-4250-a825-fb1c7048ecee",
     "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej",
     "relationType": "derives",
@@ -2701,6 +2725,13 @@
     "relationType": "satisfies",
     "sourceId": "c8218f3c-c48b-4800-a633-b190e85d5833",
     "targetId": "0cc6539e-3293-4327-970f-e394a053c69a"
+  },
+  {
+    "id": "60dfccee-8269-40ee-b1eb-6cf1c7252577",
+    "quote": "powinno byl puste .. ale chce miec mozliwosc zapisania analiz",
+    "relationType": "derives",
+    "sourceId": "1f3b890f-c7bc-4503-87ca-92e0a78d4900",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "61062bca-318c-4325-b706-7cc0ac36c5ae",
@@ -2788,6 +2819,12 @@
     "relationType": "illustrates",
     "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
     "targetId": "ca9f71d9-a02c-4454-a417-41c4d4f6f610"
+  },
+  {
+    "id": "62d78d6d-45fd-4de2-b80d-22d06ae227a1",
+    "relationType": "implements",
+    "sourceId": "ec1c74f4-8d5f-43b3-81f5-f53a068d8a64",
+    "targetId": "4d9acf84-0320-4492-b578-7cec7d6fd5a8"
   },
   {
     "cardinality": "one",
@@ -3989,6 +4026,12 @@
     "targetId": "5c74f072-bc1e-432a-b153-61e4dd5f1f64"
   },
   {
+    "id": "8aff4c7a-9510-404a-ae41-e2c128606172",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "1f3b890f-c7bc-4503-87ca-92e0a78d4900"
+  },
+  {
     "id": "8b4ea015-679e-4988-8843-ae5f9cce0c65",
     "relationType": "derives",
     "sourceId": "5c74f072-bc1e-432a-b153-61e4dd5f1f64",
@@ -4057,6 +4100,13 @@
     "targetId": "936e1f6e-a1ae-4a68-84db-f7e636ec464e"
   },
   {
+    "id": "8de561d1-de0a-4a88-b2dc-a65f200097cc",
+    "quote": "maja byc tak rozbudowane jak w sekcji runs",
+    "relationType": "derives",
+    "sourceId": "83720867-f025-4cd7-9162-1ea53afba93f",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "8e0a3434-e1d6-4c8f-a34d-d4a6d5e08ae9",
     "relationType": "realises",
     "sourceId": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9",
@@ -4092,6 +4142,12 @@
     "relationType": "satisfies",
     "sourceId": "2632e603-65fd-4661-b830-d128d7f98975",
     "targetId": "edf14cec-c720-4d6e-b09b-f2ad6d867283"
+  },
+  {
+    "id": "8fe201b1-288e-4144-878c-1f4e0248155e",
+    "relationType": "implements",
+    "sourceId": "2065821d-656d-48ea-8619-7fc1a7b22651",
+    "targetId": "067d7856-f2fe-4f01-b1cf-760ef5527a91"
   },
   {
     "id": "90408e81-06ca-49a8-a9fd-dec6ca30e5b3",
@@ -4289,6 +4345,12 @@
     "relationType": "satisfies",
     "sourceId": "a694fdc9-58ad-462b-a996-c49812b6da79",
     "targetId": "c5829292-1066-494a-9c63-78abe795aa96"
+  },
+  {
+    "id": "975d41b6-333d-4441-a337-11610887f19f",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "d7bcb3de-7535-41db-a527-7363f721026a"
   },
   {
     "id": "977c1b90-53a3-49a5-bd4d-b2ea342b5622",
@@ -5280,6 +5342,13 @@
     "relationType": "illustrates",
     "sourceId": "c6d5b5bc-63e5-4e1d-b3e0-9f4b74617881",
     "targetId": "ae051ad4-bb7e-4998-b355-5cae616ceadd"
+  },
+  {
+    "id": "b823b1c5-3009-47c8-b105-62f9742e8e80",
+    "quote": "zostawic jak jest czy je polaczyc",
+    "relationType": "derives",
+    "sourceId": "d7bcb3de-7535-41db-a527-7363f721026a",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "b83f7264-112f-4732-bfb3-641f19d3a476",
@@ -6341,6 +6410,12 @@
     "relationType": "illustrates",
     "sourceId": "29452319-21e3-42fa-a4e2-87267d468dc4",
     "targetId": "0932911c-fca9-4062-ae93-6a736a8db939"
+  },
+  {
+    "id": "dd851a7e-f769-4e77-a33b-7cc8f83fc991",
+    "relationType": "implements",
+    "sourceId": "cb1a6603-6ea5-471a-81f0-3170190745b2",
+    "targetId": "dee907bd-7d05-45b5-a939-e6d54cb9d154"
   },
   {
     "id": "dd9971bb-8fbc-4c55-9670-364c296bb7bf",

@@ -2,14 +2,15 @@
 import { BrowserFolder } from '@/lib/fs';
 import type { BlockDefinition, BlockInstance } from '@/lib/blocks';
 import { curvesOf, type CurvePoint, type CurveSource } from '@/lib/curve';
-import { instancesOf, similarOf, type SimilarQuery, type SimilarResult } from '@/lib/detection';
+import { figuresOf, instancesOf, similarOf, type EffortFigures, type SimilarQuery, type SimilarResult } from '@/lib/detection';
 import { cached, importFolder, recomputeEverything, refreshBlocks, refreshContext } from '@/lib/pipeline';
 
 /** Messages between the Web App and the Processing Worker. */
-/** context: gear or tags changed; blocks: block definitions changed; instances: blocks not kept, computed now; curve: pace curves of stretches; similar: stretches like a selected one. */
-export type WorkerJob = 'import' | 'recompute' | 'context' | 'blocks' | 'instances' | 'curve' | 'similar';
+/** context: gear or tags changed; blocks: block definitions changed; instances: blocks not kept, computed now; curve: pace curves of stretches; similar: stretches like a selected one; figures: the curves of stretches by distance. */
+export type WorkerJob = 'import' | 'recompute' | 'context' | 'blocks' | 'instances' | 'curve' | 'similar' | 'figures';
 export type WorkerRequest =
-  | { type: Exclude<WorkerJob, 'instances' | 'curve' | 'similar'>; handle: FileSystemDirectoryHandle }
+  | { type: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures'>; handle: FileSystemDirectoryHandle }
+  | { type: 'figures'; handle: FileSystemDirectoryHandle; stretches: SimilarQuery[] }
   | { type: 'similar'; handle: FileSystemDirectoryHandle; query: SimilarQuery }
   | { type: 'instances'; handle: FileSystemDirectoryHandle; defs: BlockDefinition[] }
   | { type: 'curve'; handle: FileSystemDirectoryHandle; sources: CurveSource[] };
@@ -19,6 +20,7 @@ export type WorkerEvent =
   | { type: 'instances'; instances: Record<string, BlockInstance[]> }
   | { type: 'curves'; curves: Record<string, CurvePoint[]> }
   | { type: 'similar'; result: SimilarResult }
+  | { type: 'figures'; figures: Record<string, EffortFigures> }
   | { type: 'error'; message: string };
 
 const post = (e: WorkerEvent) => (self as unknown as { postMessage(m: unknown): void }).postMessage(e);
@@ -36,6 +38,11 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
     if (e.data.type === 'curve') {
       const sources = e.data.sources;
       post({ type: 'curves', curves: (await cached(folder, 'curves', JSON.stringify(sources), () => curvesOf(folder, sources, onProgress))).value });
+      return;
+    }
+    if (e.data.type === 'figures') {
+      const stretches = e.data.stretches;
+      post({ type: 'figures', figures: (await cached(folder, 'figures', JSON.stringify(stretches), () => figuresOf(folder, stretches, onProgress))).value });
       return;
     }
     if (e.data.type === 'similar') {

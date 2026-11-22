@@ -46,7 +46,7 @@ describe('Strict condition matching', () => {
     // 20% faster in the 2 minutes before the block.
     const run = syntheticRun(1500, (t) => ({ speed: t < 720 ? PACE_5_00 * 1.2 : PACE_5_00 }));
     const inst = buildInstance(steadyDef(), run, rowFor(run), 720, 1020);
-    expect(inst.reasons).toContain('effort before the block: 20%, limit 12%');
+    expect(inst.reasons).toContain('effort before it: 20%, limit 12%');
   });
 });
 
@@ -83,7 +83,7 @@ describe('Minimum block length', () => {
     const run = syntheticRun(1500, () => ({ speed: PACE_5_00 }));
     const inst = buildInstance(steadyDef(), run, rowFor(run), 720, 765);
     expect(inst.status).toBe('rejected');
-    expect(inst.reasons).toContain('block 45 s, minimum 60 s');
+    expect(inst.reasons).toContain('effort 45 s, minimum 60 s');
   });
 });
 

@@ -51,7 +51,7 @@ export function CurveChart({ label, lines, durations, format, tick, gap, higherI
     return { d0: Math.min(...ds), d1: Math.max(...ds) || 1, lo: ticks[0] ?? lo0, hi: ticks[ticks.length - 1] ?? hi0, ticks };
     // pts follows lines.
   }, [lines, minSpan]);
-  if (!scale) return <div ref={box} className="muted small" style={{ padding: 12 }}>No run with a stretch yet: add a run or the runs matching a period.</div>;
+  if (!scale) return <div ref={box} className="muted small" style={{ padding: 12 }}>No run with an effort yet: add a run or the runs matching a period.</div>;
   const { d0, d1, lo, hi, ticks } = scale;
   const x = (d: number) => M.l + ((Math.log(d) - d0) / (d1 - d0 || 1)) * (width - M.l - M.r);
   const durationAt = (px: number) => Math.exp(d0 + ((px - M.l) / (width - M.l - M.r)) * (d1 - d0 || 1));

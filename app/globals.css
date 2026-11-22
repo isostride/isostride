@@ -1490,3 +1490,50 @@ a.crumbs:hover b { color: var(--text); }
 .btn.danger-solid { background: var(--err); border-color: var(--err); color: var(--on-ink); }
 .btn.danger-solid:hover { background: color-mix(in srgb, var(--err) 88%, var(--ink)); }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- larger hit areas (the runner's request: "przyciski po prawej stronie zwieksz obszar czulosci") ----------
+   Small buttons and the links of table rows catch a click about 40 px high, beyond what they draw;
+   the row links look like buttons at rest, not only under the pointer. */
+.btn.sm, table.data a.row-open { position: relative; }
+.btn.sm::after, table.data a.row-open::after { content: ''; position: absolute; inset: -7px -4px; border-radius: 12px; }
+table.data a.row-open { height: 30px; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+table.data tr:hover a.row-open, table.data a.row-open:focus-visible { border-color: var(--line-strong); }
+@media (pointer: coarse) {
+  table.data a.row-open { height: 36px; padding: 0 14px; font-size: 13px; }
+}
+
+/* ---------- saved analyses (requirement "Saved analyses") ---------- */
+.saved-analyses { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.saved-analyses .select { max-width: 260px; }
+.save-name { display: grid; gap: 6px; margin: 0 0 16px; }
+.save-name input { width: 100%; }
+.confirm-actions .spacer { flex: 1; }
+.saved-list { padding: 14px 0 8px; margin-bottom: 12px; }
+.saved-list h2 { font-size: 14px; margin: 0 16px 8px; }
+.saved-list ul { list-style: none; margin: 0; padding: 0 8px; display: grid; gap: 2px; }
+.saved-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 8px 10px; border: 0; border-radius: 12px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.saved-row:hover, .saved-row:focus-visible { background: var(--surface-2); outline: none; }
+.saved-row b { font-weight: 650; }
+.saved-open { margin-left: auto; color: var(--muted); font-size: 12.5px; font-weight: 550; }
+.saved-row:hover .saved-open { color: var(--accent); }
+.saved-item { display: flex; align-items: center; gap: 8px; padding-right: 8px; }
+.saved-item .saved-row { flex: 1; min-width: 0; }
+table.data tr.reference > td { background: color-mix(in srgb, var(--accent) 9%, var(--surface)); }
+.ref-chip { margin-left: 8px; font-size: 11px; font-weight: 600; }
+.row-actions { white-space: nowrap; }
+
+/* ---------- the chart of the Efforts tab ("maja byc tak rozbudowane jak w sekcji runs") ---------- */
+.effort-chart { margin: 12px 16px; padding: 12px 0 8px; }
+.effort-chart-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 0 14px 8px; }
+.effort-chart-metrics { padding: 0 14px 8px; }
+.effort-chart-head .spacer { flex: 1; }
+.effort-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 0 14px 6px; font-size: 12px; }
+.effort-legend span, .effort-name, .effort-card-row span { display: inline-flex; align-items: center; gap: 6px; }
+.effort-legend i, .effort-name i, .effort-card-row i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; flex: none; }
+.effort-plot { position: relative; width: 100%; padding: 0 14px; box-sizing: border-box; }
+.effort-plot svg { display: block; touch-action: pan-y; }
+.effort-card { top: 8px; display: grid; gap: 4px; min-width: 200px; }
+.effort-card-row { display: flex; flex-wrap: wrap; gap: 2px 14px; align-items: center; }
+.effort-card-label { flex-basis: 100%; font-size: 11px; }
+.effort-figures td { vertical-align: middle; }
+.effort-range { display: block; font-weight: 400; }

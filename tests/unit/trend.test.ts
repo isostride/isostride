@@ -77,7 +77,7 @@ describe('Fragment counted once', () => {
     const b = inst('2026-08-01', { runId: 'r1', start: 840, end: 1320 });
     const { included, rejected } = selectInstances([a, b], 'def', 'speed');
     expect(included.map((i) => i.id)).toEqual([a.id]);
-    expect(rejected[0].reasons[0]).toBe('overlaps an included block of the same run (min 10–18)');
+    expect(rejected[0].reasons[0]).toBe('overlaps an included effort of the same run (min 10–18)');
   });
 });
 

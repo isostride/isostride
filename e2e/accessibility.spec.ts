@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { nav, openPicker, openRun, recordMeasure, setUpWithBlock } from './support';
+import { addFromPicker, nav, openPicker, openRun, recordMeasure, setUpWithBlock } from './support';
 
 /** WCAG 2.2 AA rules axe checks automatically (ADR "Built with React"). */
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -19,7 +19,7 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       await page.emulateMedia({ colorScheme: scheme });
       if (scheme === 'light') await setUpWithBlock(page);
       else await page.reload();
-      for (const screen of ['Runs', 'Analysis', 'Performance', 'Settings']) {
+      for (const screen of ['Runs', 'Compare', 'Performance', 'Settings']) {
         await nav(page, screen);
         await page.getByRole('heading', { level: 1, name: screen }).waitFor();
         await page.waitForTimeout(200);
@@ -30,10 +30,11 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       await page.getByRole('heading', { level: 1, name: 'Data folder' }).waitFor();
       found.push(...(await serious(page, `Data folder (${scheme})`)));
       // The A/B tab of Analysis, on the block taken.
-      await nav(page, 'Analysis');
+      await nav(page, 'Compare');
+      await addFromPicker(page, /^1\.6 km northeast/);
       await page.getByRole('tab', { name: 'A/B' }).click();
       await page.getByRole('img', { name: 'Difference and interval' }).waitFor({ timeout: 30_000 });
-      found.push(...(await serious(page, `Analysis · A/B (${scheme})`)));
+      found.push(...(await serious(page, `Compare · A/B (${scheme})`)));
       // Performance: its overview, every view of every group, and the settings.
       await nav(page, 'Performance');
       await page.locator('.map-node[data-model]').first().waitFor({ timeout: 60_000 });
@@ -65,16 +66,16 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
         found.push(...(await serious(page, `Settings · ${tab} (${scheme})`)));
       }
       // The picker of the Analysis screen: its list.
-      await nav(page, 'Analysis');
+      await nav(page, 'Compare');
       const dialog = await openPicker(page);
       found.push(...(await serious(page, `Picker list (${scheme})`)));
       await page.keyboard.press('Escape');
       // The Blocks screen, and the one editor of a block with the segments counted.
-      await nav(page, 'Blocks');
-      found.push(...(await serious(page, `Blocks (${scheme})`)));
-      await page.getByRole('button', { name: 'New block' }).click();
-      await page.getByRole('dialog', { name: 'New block' }).locator('.preview-count', { hasText: /segments? in/ }).waitFor({ timeout: 30_000 });
-      found.push(...(await serious(page, `Block editor (${scheme})`)));
+      await nav(page, 'Segments');
+      found.push(...(await serious(page, `Segments (${scheme})`)));
+      await page.getByRole('button', { name: 'New segment' }).click();
+      await page.getByRole('dialog', { name: 'New segment' }).locator('.preview-count', { hasText: /efforts? in/ }).waitFor({ timeout: 30_000 });
+      found.push(...(await serious(page, `Segment editor (${scheme})`)));
       await page.keyboard.press('Escape');
       await nav(page, 'Runs');
       await openRun(page);

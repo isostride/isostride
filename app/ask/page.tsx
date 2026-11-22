@@ -20,7 +20,7 @@ function AskRedirect() {
     if (STATS.includes(p.get('stat') as Stat)) rule.stat = p.get('stat') as Stat;
     const q = new URLSearchParams({ items: `q:${encodeRule(rule)}:0` });
     if (shape.type === 'run' && p.get('metric')) q.set('m', p.get('metric')!);
-    router.replace(`/analysis?${q.toString()}`);
+    router.replace(`/compare?${q.toString()}`);
   }, [p, router]);
-  return <div className="page muted">Opening in Analysis…</div>;
+  return <div className="page muted">Opening in Compare…</div>;
 }

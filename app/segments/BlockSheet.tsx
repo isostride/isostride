@@ -13,7 +13,7 @@ const FIELDS: { key: Exclude<keyof Tolerances, 'start'>; label: string; unit: st
   { key: 'gradeMax', label: 'Grade: effort pace vs pace, max', unit: '%', scale: 100 },
   { key: 'cvMax', label: 'Pace steadiness: CV below', unit: '' },
   { key: 'effortBeforeMax', label: 'Effort in the 2 min before, max difference', unit: '%', scale: 100 },
-  { key: 'hrSkip', label: 'Heart rate from minute (of the block, every instance); empty: the whole block', unit: 'min', scale: 1 / 60 },
+  { key: 'hrSkip', label: 'Heart rate from minute (of each effort); empty: the whole effort', unit: 'min', scale: 1 / 60 },
   { key: 'routeShare', label: 'Route: points matched, min', unit: '%', scale: 100 },
   { key: 'routeRadius', label: 'Route: within', unit: 'm' },
 ];
@@ -24,7 +24,7 @@ const FIELDS: { key: Exclude<keyof Tolerances, 'start'>; label: string; unit: st
  * conditions, how many per run and the statistic, with the segments counted as it changes, and the
  * matching checks. A new block, one kept, a suggestion or one taken from a run all open here.
  */
-export function BlockSheet({ def, kept, options, handle, onClose, onSave, onDelete, title = 'Block' }: {
+export function BlockSheet({ def, kept, options, handle, onClose, onSave, onDelete, title = 'Segment' }: {
   def: BlockDefinition;
   /** a block kept in the folder (it can be deleted), or one not kept yet */
   kept: boolean;
@@ -50,7 +50,7 @@ export function BlockSheet({ def, kept, options, handle, onClose, onSave, onDele
     return () => window.removeEventListener('keydown', esc);
   }, []);
   const [confirmDialog, confirm] = useConfirm();
-  const remove = async () => { if (onDelete && (await confirm({ title: 'Delete this block?', message: `“${def.name}” and its segments go. If it came from a suggestion, the suggestion is offered again.`, confirm: 'Delete', danger: true }))) onDelete(def); };
+  const remove = async () => { if (onDelete && (await confirm({ title: 'Delete this segment?', message: `“${def.name}” and its efforts go. If it came from a suggestion, the suggestion is offered again.`, confirm: 'Delete', danger: true }))) onDelete(def); };
   const show = (f: (typeof FIELDS)[number]) => {
     const v = tol[f.key];
     if (v === null) return '';
@@ -76,12 +76,12 @@ export function BlockSheet({ def, kept, options, handle, onClose, onSave, onDele
         </div>
         <RuleBuilder initial={rule as Rule} initialName={kept || def.name ? def.name : undefined} options={options} handle={handle} tolerances={tol} footer={(s) => (
           <>
-            <button className="btn primary" disabled={!s.segments} onClick={() => onSave({ ...one, name: s.name, params: { type: 'rule', ...s.rule }, tolerances: tol })}>{kept ? 'Save & re-detect' : 'Save block'}</button>
-            {kept && onDelete && <button className="btn danger" onClick={remove}>Delete block</button>}
+            <button className="btn primary" disabled={!s.segments} onClick={() => onSave({ ...one, name: s.name, params: { type: 'rule', ...s.rule }, tolerances: tol })}>{kept ? 'Save & find again' : 'Save segment'}</button>
+            {kept && onDelete && <button className="btn danger" onClick={remove}>Delete segment</button>}
           </>
         )}>
           <details className="builder-section matching-checks">
-            <summary>Matching checks <span className="muted small">· what every segment is checked for besides the rule; empty: not checked</span></summary>
+            <summary>Matching checks <span className="muted small">· what every effort is checked for besides the rule; empty: not checked</span></summary>
             {fields.map((f) => (
               <label key={f.key} className="field">
                 <span>{f.label}</span>
@@ -93,8 +93,8 @@ export function BlockSheet({ def, kept, options, handle, onClose, onSave, onDele
             ))}
             {/* The start is the rule's (More, above); an older block's own check shows here while it is set. */}
             {tol.start !== 'any' && <label className="field">
-              <span>Start of every segment</span>
-              <select aria-label="Start of every segment" value={tol.start} onChange={(e) => setTol({ ...tol, start: e.target.value as BlockStart })}>
+              <span>Start of every effort</span>
+              <select aria-label="Start of every effort" value={tol.start} onChange={(e) => setTol({ ...tol, start: e.target.value as BlockStart })}>
                 <option value="any">any</option>
                 <option value="standing">standing (right after a stop)</option>
                 <option value="flying">flying (on the move)</option>

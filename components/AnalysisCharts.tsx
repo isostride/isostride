@@ -85,7 +85,7 @@ export function OverTimeChart({ groups, format, tick, invert, markers, minSpan =
     const hi = Math.max(hi0, ticks[ticks.length - 1] ?? hi0);
     return { t0: domain?.[0] ?? Math.min(...ts) - 4 * DAY, t1: domain?.[1] ?? Math.max(...ts) + 4 * DAY, lo, hi, ticks };
   }, [groups, domain, minSpan]);
-  if (!scale) return <div ref={box} className="muted small" style={{ padding: 12 }}>No instances or runs with this metric.</div>;
+  if (!scale) return <div ref={box} className="muted small" style={{ padding: 12 }}>No efforts or runs with this metric.</div>;
   const { t0, t1, lo, hi, ticks } = scale;
   const shown = markers.filter((m) => Date.parse(m.date) > t0 && Date.parse(m.date) < t1).sort((a, b) => a.date.localeCompare(b.date));
   const lane = shown.length && labels ? 36 : 10;

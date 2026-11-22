@@ -645,3 +645,36 @@ Q: (użytkownik) i czy mialem racje?
 A: (model) Yes: the server was wrong (plain http), and Chrome on Android does give a page a folder over https; it is Safari on the iPhone that lacks it.
 Q: (model) Czy na https://192.168.1.55:3001 pojawił się przycisk „Choose data folder”?
 A: (użytkownik) tak dziala
+Q: (użytkownik) wydaje mi sie ze slowo stretch nie jest domenowe w przypadku biegania ...
+A: (model) Agreed: "stretch" reads as stretching. On every screen it is now "segment" (a part of a run, selected or found: Similar segments, Select a segment, the Segment column of Blocks), "best effort" for the fastest of a length (Best effort in the block editor, the pace curve, the performance models), and "In the run" for where a segment lies in its run.
+Q: (użytkownik) a czy block to dobra nazwa?
+A: (model) No: in running a block is a training block, weeks of a plan. Proposed Strava's words: Segment for a block (the same part taken from many runs), Effort for each time it was run (a segment of a block now), Selection for the part chosen on a run.
+A: (użytkownik) uzyj segment + effort
+Q: (użytkownik) czy warto teraz zmienic runs na efforts?
+A: (model) No: a run is the whole workout, an effort one pass over a segment inside it ("6 efforts in 4 runs"); Runs stays.
+Q: (użytkownik) przyciski po prawej stronie zwieksz obszar czulosci ... wg mnie jest teraz poziom tekstu a nie calego przycisku
+Q: (użytkownik) wogole jest problem ... z klikamien, wejdz w analysis, kliknij efforts i pozniej ponownie trends ... nie dziala
+Q: (użytkownik) w analysis domyslnie jest all runs ... powinno zostac to co bylo w tej lub poprzedniej sesji
+Q: (użytkownik) albo inaczej ... powinno byl puste .. ale chce miec mozliwosc zapisania analiz
+Q: (użytkownik) open saved analysis .. chce aby ta lista pojawila sie na ekranie analysis po wejsciu
+A: (model) Done: on every screen a block is now a Segment (the Segments screen, /segments; /blocks leads there) and each time it was run an Effort ("12 efforts in 12 runs", the Efforts tab of Analysis); the part chosen on a run is a selection. Analysis opens empty; Save analysis keeps what it shows (segments and runs, metrics, tab) under a name in the data folder; the saved analyses are listed on the empty screen (name, items, date saved) and in the head, and open with a click; an open one is saved again in place or as new, or deleted. All runs is offered first in the picker.
+Q: (użytkownik) a co z usuwaniem analiz?
+A: (model) Done: every saved analysis on the empty Analysis screen has Delete in its row; it asks in the app first, then removes the analysis (its segments and runs stay). The open analysis can also be deleted from its Save dialog.
+Q: (użytkownik) ok mam problem ... w tym momencie gdy podgladam run mam ekran w ktorym analizuje run, dodatkowo mam analysis na zewnatrz .. zostawic jak jest czy je polaczyc.
+A: (użytkownik) tak [Compare: the screen renamed, Compare these efforts in Find similar, Compare this run on the Run screen]
+A: (model) Done: Analysis is now Compare (/compare; /analysis and the old A/B links lead there). On the Run screen Compare this run opens the run in Compare; in Find similar, Compare these efforts opens them in Compare as a trend at once, an unsaved segment with Save on its chip (kept for the browser tab), and Save as a segment stays beside it. From Compare a point still opens its run, and ← Compare returns.
+Q: (użytkownik) ciagle jest find similar na run ...
+A: (model) Done: the Run screen no longer searches; by the selection it has Compare similar, which opens Compare with the similar efforts above its sections (same route, same profile, the overlay), Compare these efforts adding them to the comparison as a trend, Save as a segment adding the saved one, and a link back to the selection in its run.
+Q: (użytkownik) jestest teraz lepiej ... chce aby widget similar effort ktory pojawia sie jak przechodze z runa .. byl integralna czescia compare ....
+A: (model) Done: Similar is a tab of Compare (Trends · Efforts · Similar · A/B · Pace / power curve). Its reference is a part of a run: Compare similar on the Run screen opens it, and every effort on the Efforts tab has Similar beside Open run; without one it says how to choose. Compare these efforts adds them and shows Trends; Clear the reference empties the tab, the comparison stays.
+A: (model) Compare's script was at 199.9 KB of its 200 KB: the verdicts under the trends (the table of changes and the verdicts in words) now load with the Trends tab, and the editor's choices when the editor opens; the screen is 198.4 KB.
+A: (użytkownik) tak [Similar into the Efforts tab: no Similar tab; Compare similar adds unsaved segments of the same route and the same profile, the selection marked among their efforts; the overlay by distance on the Efforts tab for any segment's efforts; Similar by an effort does the same. The model chose: both segments added, each only when it finds efforts.]
+A: (model) Done: no Similar tab or panel any more. Compare similar (from a run) or Similar (by an effort) adds "Same route as …" and "Same profile as …" to Compare as unsaved segments (Save on their chips), and opens the Efforts tab: the selection marked "your selection" among their efforts, and the overlay by distance (pace, heart rate, elevation) above the table, for the efforts ticked in it, of any segment.
+Q: (użytkownik) compare similar powinien faktycznie wyszukiwac podobne segmenty ...
+Q: (model) [proposed: search among the existing segments]
+A: (użytkownik) nie ... wchodze na run: 17 Nov 2026 · 20:25, distance 7.39 km, moving time 31:04, average pace 4:12 /km; klikam compare similar; mam zaznaczone 3 pierwsze ... ale ponizej mnostwo biegow np po 5:23
+A: (model) The "similar" efforts were any pace on the same route, and on the same profile the pace counted only a fifth. Now an effort is similar only within 10 % of the part's pace (3:47–4:37 for 4:12 /km), on the same route and of the same profile alike; the band is kept in the segment, shown in its name ("… · 4:12 /km ±10 %") and in the editor.
+Q: (użytkownik) ok ... ustawiaj takze odpowiednie parametry segmentu .. bo jak klikne edit to wszystko jest puste ... chyba recznie wybierasz runy co nie?
+A: (model) No run is picked by hand: the segment is a rule (the same route's track, or the same profile, and a pace band) and finds its efforts in every run; but the pace band was hidden inside the route, so the editor's fields were empty. The band is now the rule's own condition, Pace on average, shown and editable; that average is the moving pace, as the search reads it.
+Q: (użytkownik) w sekcji efforts i wykresy - wygladaja ubogo ... maja byc tak rozbudowane jak w sekcji runs
+A: (model) Done: the Efforts tab draws the efforts ticked on a chart like the run's: metrics chosen like on the run (pace, heart rate, cadence first), each in its band on one scale with the zones of Settings behind, along distance or time, smoothed or raw, a cursor across the bands with every effort's values, and a table under it of each effort's time, distance, climb and each metric's average with its lowest–highest.

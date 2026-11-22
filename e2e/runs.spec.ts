@@ -61,7 +61,7 @@ test.describe('Search runs', () => {
     const options = palette.getByRole('option');
     // With nothing typed: the four screens, the latest runs, the actions, each group with its count.
     await expect(palette.locator('.cmdk-group > span:first-child')).toHaveText(['Screens', 'Runs', 'Actions']);
-    await expect(palette.locator('.cmdk-item.group-screens .cmdk-label')).toHaveText(['Runs', 'Blocks', 'Analysis', 'Performance', 'Settings']);
+    await expect(palette.locator('.cmdk-item.group-screens .cmdk-label')).toHaveText(['Runs', 'Segments', 'Compare', 'Performance', 'Settings']);
     await expect(palette.locator('.cmdk-item.group-runs')).toHaveCount(5);
     await expect(palette.locator('.cmdk-item.group-runs .cmdk-side').first()).toHaveText(/^\d+\.\d km$/);
     await expect(palette.locator('.cmdk-item.group-runs .cmdk-hint').first()).toHaveText(/\d+:\d\d · \d+:\d\d \/km$/);

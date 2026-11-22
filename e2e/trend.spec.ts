@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { GEAR_AUTUMN, fitFiles, nav, openPicker, readText, setUpWithBlock } from './support';
+import { GEAR_AUTUMN, addFromPicker, fitFiles, nav, openPicker, readText, setUpWithBlock } from './support';
 
 const opened = (page: Page) => page.evaluate(() => (window as any).__opened as string[]);
 const RUN_FILE = /^\d{8}-\d{6}\.json$/;
@@ -20,7 +20,8 @@ test.describe('Denormalized index files', () => {
     await nav(page, 'Runs');
     await page.getByRole('heading', { level: 1, name: 'Runs' }).waitFor();
     await page.evaluate(() => { (window as any).__opened.length = 0; });
-    await nav(page, 'Analysis');
+    await nav(page, 'Compare');
+    await addFromPicker(page, /^1\.6 km northeast/);
     await page.getByRole('button', { name: 'Pace', exact: true }).click();
     await expect(page.getByRole('img', { name: 'Over time' })).toBeVisible();
     await page.getByRole('tab', { name: 'A/B' }).click();
@@ -35,7 +36,8 @@ test.describe('Show trend', () => {
   test('Trend draws noise threshold and gear changes', async ({ page }) => {
     // The promenade northbound: five passes meet the conditions, from August to October, on one watch.
     await setUpWithBlock(page, { files: fitFiles(200, '2026-08-03'), gear: GEAR_AUTUMN, block: /^1\.0 km northeast/ });
-    await nav(page, 'Analysis');
+    await nav(page, 'Compare');
+    await addFromPicker(page, /^1\.0 km northeast/);
     await page.getByRole('button', { name: 'Pace', exact: true }).click();
     const chart = page.getByRole('img', { name: 'Over time' });
     await expect(chart).toBeVisible();
@@ -76,7 +78,7 @@ test.describe('Analysis workspace', () => {
     // The table of changes: one row per block, one column per metric, each with its verdict.
     const table = page.getByRole('table', { name: 'Changes' });
     await expect(table.getByRole('row')).toHaveCount(2);
-    await expect(table.getByRole('columnheader')).toHaveText(['Block', 'Pace', 'Heart rate']);
+    await expect(table.getByRole('columnheader')).toHaveText(['Segment', 'Pace', 'Heart rate']);
     await expect(table.getByText(/no detectable change|^change ·/).first()).toBeVisible();
     // Switching off the joined points and the trend line hides them on every chart.
     await page.getByRole('checkbox', { name: 'Join points' }).uncheck();

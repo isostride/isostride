@@ -57,7 +57,7 @@ function FolderPage() {
 
   const [confirmDialog, confirm] = useConfirm();
   const run = useCallback(async (kind: Job) => {
-    if (kind === 'recompute' && !(await confirm({ title: 'Recompute everything?', message: 'All derived data are rebuilt from the FIT files. Your gear, tags and blocks stay as they are.', confirm: 'Recompute' }))) return;
+    if (kind === 'recompute' && !(await confirm({ title: 'Recompute everything?', message: 'All derived data are rebuilt from the FIT files. Your gear, tags and segments stay as they are.', confirm: 'Recompute' }))) return;
     setMessage(null);
     try {
       setMessage(said(kind, await runInWorker(kind, handle)));
@@ -128,7 +128,7 @@ function FolderPage() {
         {!busy && message && <div className="folder-message" role="status">{message}</div>}
         <div className="folder-notes muted small">
           <p><b>Import folder</b> reads only the FIT files no import has seen. New runs are also imported by themselves when you come back to the app.</p>
-          <p><b>Recompute everything</b> builds all the derived data again from the FIT files; your gear, tags and blocks stay as they are.</p>
+          <p><b>Recompute everything</b> builds all the derived data again from the FIT files; your gear, tags and segments stay as they are.</p>
           <p><b>Change folder</b> opens another folder of runs; this one is left as it is.</p>
         </div>
       </section>

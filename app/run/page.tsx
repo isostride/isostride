@@ -5,21 +5,15 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget } from '@/components';
-import { readChartSettings, runInWorker, useChartSettings, useOpenFolder } from '@/lib/client';
+import { readChartSettings, useChartSettings, useOpenFolder } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
-import { efficiencyOf, rangeStats, readDefinitions, zoneShares, writeDefinitions, type BlockDefinition, type BlockInstance } from '@/lib/blocks';
-import { builderOptions } from '../blocks/options';
-import type { BuilderOptions } from '../blocks/RuleBuilder';
+import { efficiencyOf, rangeStats, readDefinitions, zoneShares, type BlockInstance } from '@/lib/blocks';
 import { date, duration, km, pace, time } from '@/lib/format';
 import { LOAD_MODELS, readSettings, zoneOf, zoneShade } from '@/lib/settings';
 
 /** The map made large, coloured by a metric: loaded when it opens. */
 const RouteExpanded = dynamic(() => import('./RouteExpanded').then((m) => m.RouteExpanded), { ssr: false });
-/** The stretches like the selection in other runs: loaded when it is asked for. */
-const SimilarPanel = dynamic(() => import('./SimilarPanel').then((m) => m.SimilarPanel), { ssr: false });
-/** The one editor of a block, for a block kept from Find similar: loaded when it opens. */
-const BlockSheet = dynamic(() => import('../blocks/BlockSheet').then((m) => m.BlockSheet), { ssr: false });
 
 type WindowKey = 'speed' | 'efficiency' | 'effortPace' | 'heartRate' | 'cadence' | 'groundContactTime' | 'verticalOscillation' | 'stepLength' | 'power' | 'altitude' | 'legSpringStiffness';
 const round0 = (unit: string) => (v: number) => `${Math.round(v)} ${unit}`;
@@ -119,16 +113,6 @@ function RunPage() {
   const [back, setBack] = useState<{ href: string; label: string; viaHistory: boolean }>({ href: '/', label: 'Runs', viaHistory: false });
   useEffect(() => { setBack(backTarget(window.sessionStorage)); }, []);
   const goBack = (e: MouseEvent) => { if (back.viaHistory && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); router.back(); } };
-  const [creating, setCreating] = useState(false);
-  /** the stretch searched for similar ones ("zaznaczam fragment i klikam przycisk"); null: the panel closed */
-  const [similar, setSimilar] = useState<{ from: number; to: number } | null>(null);
-  /** a block from Find similar, open in the one editor before it is kept (requirement "One way to make a block") */
-  const [keeping, setKeeping] = useState<BlockDefinition | null>(null);
-  const [options, setOptions] = useState<BuilderOptions | null>(null);
-  useEffect(() => {
-    if (!keeping || options) return;
-    readJson<RunsIndex>(folder, PATHS.runsIndex).then((ix) => builderOptions(folder, ix?.runs ?? [])).then(setOptions).catch(() => undefined);
-  }, [keeping, options, folder]);
   const [run, setRun] = useState<RunFile | null | undefined>(undefined);
   const [title, setTitle] = useState<string | null>(null);
   const [cursor, setCursor] = useState<number | null>(null);
@@ -284,13 +268,6 @@ function RunPage() {
     return { ...rangeStats(run, from, to), what: zoom ? 'Selection' : 'Whole run' };
   }, [run, view, zoom]);
 
-  const save = async (def: BlockDefinition) => {
-    setCreating(true);
-    await writeDefinitions(folder, [...(await readDefinitions(folder)), def]);
-    await runInWorker('blocks', handle);
-    // The new block opens where blocks are used: on the Analysis screen.
-    router.push(`/analysis?items=b:${def.id}:0`);
-  };
 
   if (run === undefined) return <div className="page muted">Loading…</div>;
   if (!run || !view) return <div className="page">Run not found. <Link href="/" className="muted">← Runs</Link></div>;
@@ -379,7 +356,7 @@ function RunPage() {
         <span className="chip">{run.device}</span>
         <span className="chip">{run.laps.length} laps</span>
         {run.temperature !== null && <span className="chip">{run.temperature} °C</span>}
-        <Link className="btn" href={`/analysis?items=r:${run.id}:0`}>Add to Analysis</Link>
+        <Link className="btn" href={`/compare?items=r:${run.id}:0`} title="Open this run in Compare, beside your segments and other runs">Compare this run</Link>
       </div>
       <div className="card run-board">
         <div className="metrics-bar">
@@ -393,7 +370,7 @@ function RunPage() {
               );
             })}
           </div>
-          <span className="chart-summary muted small">{layout === 'bands' ? 'Bands' : 'Overlaid'} · by {xAxis}{showBlocks && blocks.length ? ` · ${blocks.length} block${blocks.length > 1 ? 's' : ''}` : ''}</span>
+          <span className="chart-summary muted small">{layout === 'bands' ? 'Bands' : 'Overlaid'} · by {xAxis}{showBlocks && blocks.length ? ` · ${blocks.length} segment${blocks.length > 1 ? 's' : ''}` : ''}</span>
           <span className="readout sr-only" aria-live="polite">
             {zoomed ? `${clock(domain[0])}–${clock(domain[1])} of ${clock(total)}` : `Whole run · ${clock(total)}`}
           </span>
@@ -417,7 +394,7 @@ function RunPage() {
               marks={Object.fromEntries(shownStats.map(({ line, v }) => [line.key, v]))} hot={hot} />
             <div className="legend chart-foot">
               <span><i style={{ background: 'var(--surface-2)' }} />alternate laps</span>
-              {(showBlocks || pointed) && <span><i style={{ background: 'var(--band)', borderTop: '2px solid var(--series-1)' }} />block segment (top line: accepted)</span>}
+              {(showBlocks || pointed) && <span><i style={{ background: 'var(--band)', borderTop: '2px solid var(--series-1)' }} />effort of a segment (top line: accepted)</span>}
               <span>each line on its own scale · drag to select · scroll to zoom at the pointer · what is shown is the selection</span>
             </div>
           </div>
@@ -462,11 +439,11 @@ function RunPage() {
             )}
             <span className="spacer" />
             {selection && (
-              <button type="button" className="btn sm primary" title="Find stretches like this one in your other runs: the same route, or the same distance, terrain and pace" onClick={() => setSimilar({ ...selection })}>
-                Find similar
-              </button>
+              <Link className="btn sm primary" title="Compare this part with the efforts like it in your other runs: the same route, or the same distance, terrain and pace" href={`/compare?similar=${encodeURIComponent(`${id}~${selection.from}~${selection.to}`)}`}>
+                Compare similar
+              </Link>
             )}
-            {!selection && <span className="muted small">Select a stretch on the chart, the map or a lap to see its statistics.</span>}
+            {!selection && <span className="muted small">Select a part of the run on the chart, the map or a lap to see its statistics.</span>}
           </div>
           <div className="range-body">
           <div className="range-side">
@@ -476,7 +453,7 @@ function RunPage() {
           </div>
           {shownStats.length ? (
             // The table scrolls sideways on a narrow screen: the region takes the focus, so the keyboard can scroll it.
-            <div className="table-scroll" tabIndex={0} role="region" aria-label="Statistics of the stretch shown">
+            <div className="table-scroll" tabIndex={0} role="region" aria-label="Statistics of the part shown">
             <table className="data stats-grid" aria-label="Statistics">
               <thead>
                 <tr>
@@ -521,13 +498,6 @@ function RunPage() {
           </div>
         </div>
       )}
-      {similar && handle && (
-        <SimilarPanel runId={id} from={similar.from} to={similar.to} handle={handle} selection={selection} keeping={creating}
-          onSearch={() => selection && setSimilar({ ...selection })} onKeep={(d) => setKeeping(d)} onClose={() => setSimilar(null)} />
-      )}
-      {keeping && options && (
-        <BlockSheet def={keeping} kept={false} title="New block" options={options} handle={handle} onClose={() => setKeeping(null)} onSave={(d) => { setKeeping(null); save(d); }} />
-      )}
       {bigMap && (
         <RouteExpanded lat={run.samples.lat} lon={run.samples.lon} t={run.samples.t} start={view.w.start[0] ?? 0} step={view.w.start.length > 1 ? view.w.start[1] - view.w.start[0] : 10}
           metrics={METRICS.filter((m) => has(m.key)).map((m) => ({ key: m.key, title: m.title, format: m.format, invert: m.invert, values: rollingMean(x, series[m.key], 30), zones: zones[m.key] }))}
@@ -541,12 +511,12 @@ function RunPage() {
           </div>
           <section>
             <h3>Drawing <span className="muted">· {layout === 'bands' ? 'bands' : 'overlaid'}, {smooth ? 'smoothed' : 'raw'}, by {xAxis}</span></h3>
-            <p className="muted small">The lines, their smoothing, the x axis and the blocks drawn are set for every chart in Settings.</p>
+            <p className="muted small">The lines, their smoothing, the x axis and the segments drawn are set for every chart in Settings.</p>
             <Link className="btn sm" href="/settings?tab=charts">Chart settings in Settings</Link>
           </section>
           <section>
-            <h3>Blocks in this run <span className="muted">· {blocks.length}</span></h3>
-            {blocks.length === 0 ? <p className="muted small">None of your kept blocks has a segment in this run.</p> : (
+            <h3>Segments in this run <span className="muted">· {blocks.length}</span></h3>
+            {blocks.length === 0 ? <p className="muted small">None of your segments has an effort in this run.</p> : (
               <>
                 <p className="muted small">{showBlocks ? 'Drawn on the chart (Settings, Charts).' : 'Point at one to see it on the chart; Settings, Charts draws them all.'}</p>
                 <div className="run-blocks">
@@ -562,9 +532,9 @@ function RunPage() {
             )}
           </section>
           <section>
-            <h3>Blocks</h3>
-            <p className="muted small">Select a stretch and press Find similar to compare it with your other runs and keep it as a block; every block is on the Blocks screen.</p>
-            <Link className="btn sm" href="/blocks">Blocks</Link>
+            <h3>Segments</h3>
+            <p className="muted small">Select a part of the run and press Compare similar to compare it with your other runs and save it as a segment; every segment is on the Segments screen.</p>
+            <Link className="btn sm" href="/segments">Segments</Link>
           </section>
           <section>
             <h3>Zones</h3>

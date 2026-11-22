@@ -19,6 +19,12 @@ const SHAPE_SCALE = 0.2;
 const LEVEL_SCALE = 0.2;
 /** The parts' weights (model's choice): terrain and the pace's shape alike, its level less. */
 const WEIGHTS = { terrain: 0.4, shape: 0.4, level: 0.2 } as const;
+/**
+ * A like effort runs at a like pace (the runner's report of 22 Nov 2026: a part run at 4:12 /km brought
+ * "mnostwo biegow np po 5:23"): within this share of the reference's pace, on the same route and of
+ * the same profile alike (model's choice).
+ */
+export const SIMILAR_PACE_WITHIN = 0.1;
 /** A stretch counts as of the same profile from this score. */
 export const PROFILE_MIN_SCORE = 0.6;
 /** A sample counts as moving below this gap, s, and above this speed, m/s. */
@@ -157,7 +163,7 @@ export interface ProfileMatch {
  * The stretch of a run, of the key's distance, whose profile is closest to the key's: every start
  * every 25 m, outside the stretches `skip` names (s); null when none reaches `minScore`.
  */
-export function bestProfileMatch(key: ProfileKey, tr: Track, minScore = PROFILE_MIN_SCORE, skip: [number, number][] = []): ProfileMatch | null {
+export function bestProfileMatch(key: ProfileKey, tr: Track, minScore = PROFILE_MIN_SCORE, skip: [number, number][] = [], band: { min: number | null; max: number | null } = { min: null, max: null }): ProfileMatch | null {
   let best: ProfileMatch | null = null;
   const end = tr.d.length ? tr.d[tr.d.length - 1] : 0;
   for (let a = tr.d[0] ?? 0; a + key.distance <= end; a += STEP) {
@@ -166,6 +172,8 @@ export function bestProfileMatch(key: ProfileKey, tr: Track, minScore = PROFILE_
     if (skip.some(([x, y]) => Math.min(to, y) - Math.max(from, x) > 0.5 * (to - from))) continue;
     const c = profileAt(tr, a, key.distance);
     if (!c) continue;
+    // Only in the pace band, when one is set (s/km, by the moving time).
+    if ((band.min !== null && c.pace < band.min) || (band.max !== null && c.pace > band.max)) continue;
     const parts = profileParts(key, c);
     const score = profileScore(parts);
     if (score >= minScore && (!best || score > best.score)) best = { from, to, start: a, parts, score };

@@ -1,7 +1,7 @@
 import { PATHS, readJson, type DataFolder } from '@/lib/fs';
 import { resample } from '@/lib/geo';
-import type { RunFile, RunsIndex } from '@/lib/kernel';
-import { PROFILE_MIN_SCORE, bestProfileMatch, distanceAtTime, profileOfStretch, stretchFigures, trackOf, type ProfileKey, type ProfileParts, type RefPoint, type StretchFigures, type Track } from '@/lib/blocks';
+import { WINDOW_METRICS, type RunFile, type RunsIndex } from '@/lib/kernel';
+import { PROFILE_MIN_SCORE, SIMILAR_PACE_WITHIN, bestProfileMatch, efficiencyOf, distanceAtTime, profileOfStretch, stretchFigures, trackOf, type ProfileKey, type ProfileParts, type RefPoint, type StretchFigures, type Track } from '@/lib/blocks';
 import { findPasses } from './routeMatch';
 
 /**
@@ -68,11 +68,12 @@ export function similarIn(ref: { track: RefPoint[]; key: ProfileKey | null }, ru
     const pts = resample(run.samples.lat, run.samples.lon, run.samples.t, 10);
     for (const p of findPasses(ref.track, pts)) {
       const s = stretchOf(run, title, tr, pts[p.from].t, pts[p.to].t);
-      if (s) route.push(s);
+      // At a like pace only ("mnostwo biegow np po 5:23" for a part at 4:12 /km).
+      if (s && (!ref.key || Math.abs(s.pace / ref.key.pace - 1) <= SIMILAR_PACE_WITHIN)) route.push(s);
     }
   }
   if (route.length || !ref.key) return { route, profile: null };
-  const m = bestProfileMatch(ref.key, tr, PROFILE_MIN_SCORE);
+  const m = bestProfileMatch(ref.key, tr, PROFILE_MIN_SCORE, [], { min: ref.key.pace * (1 - SIMILAR_PACE_WITHIN), max: ref.key.pace * (1 + SIMILAR_PACE_WITHIN) });
   const s = m && stretchOf(run, title, tr, m.from, m.to);
   return { route, profile: s ? { ...s, score: m!.score, parts: m!.parts } : null };
 }
@@ -99,7 +100,7 @@ export async function similarOf(folder: DataFolder, q: SimilarQuery, onProgress?
   const key = profileOfStretch(tr, q.from, q.to);
   const reference = stretchOf(own, ownRow?.title ?? null, tr, q.from, q.to);
   const track = trackOfStretch(own, q.from, q.to);
-  if (!key || !reference) return { ...empty, reference, track, why: 'Select at least 400 m of a run with distance to find stretches like it.' };
+  if (!key || !reference) return { ...empty, reference, track, why: 'Select at least 400 m of a run with distance to find efforts like it.' };
   const ref = { track: track.length >= MIN_TRACK ? track : [], key };
   const route: SimilarStretch[] = [];
   const profile: SimilarStretch[] = [];
@@ -116,4 +117,66 @@ export async function similarOf(folder: DataFolder, q: SimilarQuery, onProgress?
   route.sort((a, b) => b.runStart.localeCompare(a.runStart) || a.from - b.from);
   profile.sort((a, b) => b.score! - a.score!);
   return { reference, key, track: ref.track, route, profile: profile.slice(0, MAX_PROFILE), why: null };
+}
+
+/**
+ * The figures of stretches of runs, each [from, to) s of its run, for the overlay of the Efforts tab
+ * (the runner's "tak" to the overlay of any segment's efforts by distance): each run read once; a
+ * stretch without distance is left out. Keyed `${runId}:${from}`.
+ */
+export async function figuresOf(folder: DataFolder, stretches: SimilarQuery[], onProgress?: (p: { done: number; total: number; file: string }) => void): Promise<Record<string, EffortFigures>> {
+  const index = await readJson<RunsIndex>(folder, PATHS.runsIndex);
+  const titles = new Map((index?.runs ?? []).map((r) => [r.id, r.title ?? null]));
+  const byRun = new Map<string, SimilarQuery[]>();
+  for (const s of stretches) byRun.set(s.runId, [...(byRun.get(s.runId) ?? []), s]);
+  const out: Record<string, EffortFigures> = {};
+  let done = 0;
+  for (const [runId, list] of byRun) {
+    const run = await readJson<RunFile>(folder, PATHS.runFile(runId));
+    onProgress?.({ done: ++done, total: byRun.size, file: runId });
+    if (!run) continue;
+    const tr = trackOf(run);
+    for (const s of list) {
+      const f = stretchOf(run, titles.get(runId) ?? null, tr, s.from, s.to);
+      if (f) out[`${runId}:${s.from}`] = { ...f, series: seriesOf(run, tr, s.from, s.to) };
+    }
+  }
+  return out;
+}
+
+/** The metrics of an effort's chart, as the run chart has them; pace and effort pace in s/km. */
+export const EFFORT_METRICS = [...WINDOW_METRICS, 'efficiency'] as const;
+export type EffortMetric = (typeof EFFORT_METRICS)[number];
+
+/** An effort's 10 s windows: where each lies in it (m and s from its start), and each metric's value (null when stopped or not recorded). */
+export interface EffortSeries {
+  d: number[];
+  t: number[];
+  values: Record<EffortMetric, (number | null)[]>;
+}
+
+/** The figures of an effort and its windows, for the chart of the Efforts tab. */
+export type EffortFigures = SimilarStretch & { series: EffortSeries };
+
+/** The windows of [from, to) s of a run, as the chart of the Efforts tab draws them ("maja byc tak rozbudowane jak w sekcji runs"). */
+export function seriesOf(run: RunFile, tr: Track, from: number, to: number): EffortSeries {
+  const w = run.windows;
+  const step = w.start.length > 1 ? w.start[1] - w.start[0] : 10;
+  const d0 = distanceAtTime(tr, from) ?? 0;
+  const out: EffortSeries = { d: [], t: [], values: Object.fromEntries(EFFORT_METRICS.map((m) => [m, []])) as unknown as EffortSeries['values'] };
+  for (let i = 0; i < w.start.length; i++) {
+    const c = w.start[i] + step / 2;
+    if (c < from || c >= to) continue;
+    out.d.push((distanceAtTime(tr, c) ?? d0) - d0);
+    out.t.push(c - from);
+    const stopped = w.flags.stopped[i];
+    for (const m of EFFORT_METRICS) {
+      let v: number | null;
+      if (m === 'efficiency') v = efficiencyOf(w.speed[i], w.heartRate[i]);
+      else if (m === 'speed' || m === 'effortPace') { const sp = w[m][i]; v = sp !== null && sp > 0 ? 1000 / sp : null; }
+      else v = w[m][i];
+      out.values[m].push(stopped && m !== 'altitude' ? null : v);
+    }
+  }
+  return out;
 }

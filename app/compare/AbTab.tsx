@@ -72,7 +72,7 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
     URL.revokeObjectURL(a.href);
   };
 
-  if (!item) return <div className="card empty">A/B splits the segments of a block in two: add All runs or a block with <b>+ Add block or run</b> (a single run has no two groups).</div>;
+  if (!item) return <div className="card empty">A/B splits the efforts of a segment in two: add All runs or a segment with <b>+ Add segment or run</b> (a single run has no two groups).</div>;
 
   const included = result ? [...result.a.points, ...result.b.points].map((p) => p.instance) : [];
   const base = item.label.replace(/[^\w-]+/g, '_');
@@ -103,12 +103,12 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
         )}
         <span className="spacer" />
         {result && <button className="btn" onClick={() => { download(`${base}-ab.csv`, abCsv(result, item.label)); download(`${base}-ab-instances.csv`, instancesCsv(included)); }}>Export A/B CSV</button>}
-        {result && <button className="btn" onClick={() => setPanel(true)}>Instances: {included.length} in · {result.rejected.length} left out</button>}
+        {result && <button className="btn" onClick={() => setPanel(true)}>Efforts: {included.length} in · {result.rejected.length} left out</button>}
       </div>
 
       {!result ? (
         <div className="card empty">
-          {computing ? 'Reading the runs…' : 'No context field splits this item’s segments yet.'} Register two pairs of shoes (or tag runs) in the Gear tab of <Link href="/settings?tab=gear">Settings</Link>; each instance carries the shoes of its run.
+          {computing ? 'Reading the runs…' : 'No context field splits this item’s efforts yet.'} Register two pairs of shoes (or tag runs) in the Gear tab of <Link href="/settings?tab=gear">Settings</Link>; each effort carries the shoes of its run.
         </div>
       ) : (
         <>
@@ -131,7 +131,7 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
           </div>
 
           <div className="card chart" style={{ marginTop: 12 }}>
-            <h3 className="chart-title">Inside the block, minute by minute <span className="muted">· the mean of each group</span></h3>
+            <h3 className="chart-title">Inside the segment, minute by minute <span className="muted">· the mean of each group</span></h3>
             <ProfileChart lines={[{ id: 'a', label: result.a.label, values: meanProfile(result.a.points, metric) }, { id: 'b', label: result.b.label, values: meanProfile(result.b.points, metric) }]} format={m.fmt} tick={m.tick} minSpan={m.minSpan} invert={m.invert} colors={AB} ariaLabel="Per-minute profile of the two groups" />
           </div>
 

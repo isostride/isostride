@@ -131,7 +131,8 @@ export function ruleSegments(rule: Rule, run: RunFile, row: IndexedRun, ctx: { t
     const pts = ctx.track ?? resample(run.samples.lat, run.samples.lon, run.samples.t, 10);
     candidates = findPasses(shape.track, pts, tol.routeRadius, tol.routeShare).map((p) => ({ from: pts[p.from].t, to: pts[p.to].t, heading: shape.heading }));
   } else if (shape.type === 'profile') {
-    const m = bestProfileMatch(shape.key, trackOf(run), shape.minScore);
+    // The best stretch among those in the rule's pace band, so a faster or slower one does not hide it.
+    const m = bestProfileMatch(shape.key, trackOf(run), shape.minScore, [], { min: c.paceMin, max: c.paceMax });
     candidates = m ? [{ from: m.from, to: m.to }] : [];
   }
   if (candidates) {

@@ -9,7 +9,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EXPORT = path.join(ROOT, '.next-build');
 /** web-vitals, loaded by the test only (never part of the app, nothing sent over the network). */
 const WEB_VITALS = path.join(ROOT, 'node_modules/web-vitals/dist/web-vitals.iife.js');
-const SCREENS = [['Runs', '/'], ['Analysis', '/analysis'], ['Performance', '/performance'], ['Settings', '/settings']] as const;
+const SCREENS = [['Runs', '/'], ['Compare', '/compare'], ['Performance', '/performance'], ['Settings', '/settings']] as const;
 const BUDGET = { lcp: 2500, cls: 0.1, tbt: 200, inp: 200, scriptKB: 200 };
 
 async function instrument(page: Page) {
@@ -55,31 +55,34 @@ test.describe('Core Web Vitals met', () => {
     await putFitFiles(page, await fitFiles(30, '2026-05-01'));
     await page.getByRole('button', { name: 'Choose data folder' }).click();
     await importAll(page);
-    await page.goto('/analysis');
+    await page.goto('/compare');
     await addFromPicker(page, /km/);
-    await page.locator('.item-chip', { hasNotText: 'All runs' }).first().waitFor({ timeout: 30_000 }); // beside All runs
+    await page.locator('.item-chip').first().waitFor({ timeout: 30_000 });
+    // Analysis opens empty: it is measured with the segment taken, by its link.
+    const analysis = new URL(page.url()).pathname + new URL(page.url()).search;
 
     const worst = { lcp: 0, cls: 0, tbt: 0, inp: 0, scriptKB: 0 };
     const rows: string[] = [];
-    for (const [name, url] of SCREENS) {
+    for (const [name, screen] of SCREENS) {
+      const url = name === 'Compare' ? analysis : screen;
       await page.goto(url);
       await page.getByRole('heading', { level: 1, name }).waitFor();
       await page.waitForTimeout(500);
       const v = await vitals(page);
-      const kb = await scriptKB(page, url);
+      const kb = await scriptKB(page, screen);
       rows.push(`${name}: LCP ${Math.round(v.LCP)} ms, CLS ${v.CLS.toFixed(3)}, TBT ${Math.round(v.TBT)} ms, JS ${kb} KB`);
       worst.lcp = Math.max(worst.lcp, v.LCP); worst.cls = Math.max(worst.cls, v.CLS); worst.tbt = Math.max(worst.tbt, v.TBT); worst.scriptKB = Math.max(worst.scriptKB, kb);
     }
     // INP in the journeys' interactions: the trend's metric and filter, the A/B split.
-    await page.goto('/analysis');
-    await page.getByRole('heading', { level: 1, name: 'Analysis' }).waitFor();
+    await page.goto(analysis);
+    await page.getByRole('heading', { level: 1, name: 'Compare' }).waitFor();
     for (const m of ['Pace', 'Heart rate', 'Cadence', 'Pace']) {
       const b = page.getByRole('button', { name: m, exact: true });
       if (await b.count()) await b.click();
     }
     await page.getByRole('button', { name: 'Corrected' }).click();
     worst.inp = Math.max(worst.inp, (await vitals(page)).INP);
-    await page.goto('/analysis?tab=ab');
+    await page.goto(`${analysis}&tab=ab`);
     const abMetrics = page.getByRole('group', { name: 'Metric' });
     await abMetrics.waitFor();
     for (const m of ['Pace', 'Heart rate', 'Ground contact']) await abMetrics.getByRole('button', { name: m, exact: true }).click();
