@@ -25,7 +25,7 @@ interface Item {
 
 /** The order of the groups, and how many of each show before anything is typed. */
 const GROUPS: Group[] = ['Screens', 'Runs', 'Blocks', 'Actions'];
-const UNTYPED: Record<Group, number> = { Screens: 4, Runs: 5, Blocks: 4, Actions: 2 };
+const UNTYPED: Record<Group, number> = { Screens: 5, Runs: 5, Blocks: 4, Actions: 2 };
 const TYPED = 40;
 
 /** The icons of the palette, 24-unit strokes; several paths are separated by "|". */
@@ -98,8 +98,9 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
     (async () => {
       const go = (href: string) => () => { setOpen(false); router.push(href); };
       const all: Item[] = [
-        // The four screens first: with nothing typed, only they show.
+        // The five screens first: with nothing typed, only they show.
         { group: 'Screens', glyph: 'runs', label: 'Runs', hint: 'Calendar and list of your runs', run: go('/') },
+        { group: 'Screens', glyph: 'block', label: 'Blocks', hint: 'Every block, its segments, new ones', run: go('/blocks') },
         { group: 'Screens', glyph: 'analysis', label: 'Analysis', hint: 'Trends, segments and curves', run: go('/analysis') },
         { group: 'Screens', glyph: 'performance', label: 'Performance', hint: 'The map of the models', run: go('/performance') },
         { group: 'Screens', glyph: 'settings', label: 'Settings', hint: 'Zones, gear, tags, display', run: go('/settings') },
@@ -111,6 +112,7 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
         { group: 'Screens', glyph: 'tags', label: 'Tags', hint: 'Settings', run: go('/settings?tab=tags') },
         { group: 'Screens', glyph: 'display', label: 'Display', hint: 'Settings · theme and map background', run: go('/settings?tab=display') },
         { group: 'Actions', glyph: 'import', label: 'Import folder', hint: 'Read the new FIT files of the folder', run: go('/folder?action=import') },
+        { group: 'Actions', glyph: 'block', label: 'New block', hint: 'Blocks · which runs, which stretch, which conditions', run: go('/blocks?new=1') },
         { group: 'Actions', glyph: 'theme', label: 'Switch theme', hint: 'Light, dark, system', run: () => { onTheme(); } },
       ];
       const runs = (await readJson<RunsIndex>(state.folder, PATHS.runsIndex))?.runs ?? [];

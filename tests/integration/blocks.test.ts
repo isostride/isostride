@@ -9,6 +9,7 @@ import { importFolder, recomputeEverything } from '@/lib/pipeline';
 import { type RunFile, type RunsIndex } from '@/lib/kernel';
 import { parseFit } from '@/lib/ingest';
 import { addFile, fitFixtures, makeDataFolder, recordMeasure, TEST_DATA } from '../support/fixtures';
+import { shapeOf } from '../support/synthetic';
 import type { NodeFolder } from '../support/nodeFolder';
 
 /** Runs since 3 Aug 2026 (the spec's acceptance data) and the files with a 25-minute tempo lap. */
@@ -41,9 +42,9 @@ const runIdOf = async (folder: NodeFolder, day: string) => (await readJson<RunsI
 const recs = async (folder: NodeFolder) => (await readJson<{ recommendations: Recommendation[] }>(folder, RECOMMENDATIONS_PATH))!.recommendations;
 const instances = async (folder: NodeFolder) => (await readJson<BlockInstancesFile>(folder, PATHS.blockInstances))!.instances;
 const isPromenade = (r: Recommendation) =>
-  r.params.type === 'route' && r.params.length >= 900 && r.params.length <= 1300 &&
-  r.params.track.every((p) => p.lat > 41.385 && p.lat < 41.412 && p.lon > 2.19 && p.lon < 2.225);
-const isTempo = (r: Recommendation) => r.params.type === 'structure' && r.params.kind === 'time' && r.params.target === 1500;
+  ((s) => s.type === 'route' && s.length >= 900 && s.length <= 1300 &&
+  s.track.every((p) => p.lat > 41.385 && p.lat < 41.412 && p.lon > 2.19 && p.lon < 2.225))(shapeOf(r));
+const isTempo = (r: Recommendation) => ((s) => s.type === 'lap' && s.planned?.kind === 'time' && s.planned.target === 1500)(shapeOf(r));
 
 let all: NodeFolder;
 beforeAll(async () => {
@@ -65,7 +66,7 @@ describe('Recommend route segment', () => {
     // so a wait at a crossing does not push the band away from the passes it came from.
     const folder = await makeDataFolder(SINCE_AUG);
     await importFolder(folder);
-    const routes = (await recs(folder)).filter((r) => r.params.type === 'route');
+    const routes = (await recs(folder)).filter((r) => shapeOf(r).type === 'route');
     await writeDefinitions(folder, routes.map((r) => fromRecommendation(r, 'active')));
     await runBlocks(folder);
     const found = await instances(folder);
@@ -82,7 +83,7 @@ describe('Recommend route segment', () => {
   it('Suggestions have usable passes', async () => {
     // City segments: most passes include a wait at the lights; only passes that meet the
     // conditions count, so a segment passed often but never cleanly is not proposed.
-    const routes = (await recs(all)).filter((r) => r.params.type === 'route');
+    const routes = (await recs(all)).filter((r) => shapeOf(r).type === 'route');
     expect(routes.length).toBeGreaterThan(0);
     for (const r of routes) {
       expect(r.accepted, r.name).toBeGreaterThanOrEqual(5);
@@ -95,7 +96,7 @@ describe('Recommend route segment', () => {
   it('Four passes not enough', async () => {
     const folder = await makeDataFolder(SINCE_AUG.slice(-4));
     await importFolder(folder);
-    expect((await recs(folder)).filter((r) => r.params.type === 'route')).toEqual([]);
+    expect((await recs(folder)).filter((r) => shapeOf(r).type === 'route')).toEqual([]);
   });
 });
 
@@ -158,7 +159,7 @@ describe('Rejected not proposed again', () => {
     await writeDefinitions(folder, [fromRecommendation(promenade, 'rejected')]);
     for (const f of SINCE_AUG.slice(-5)) await addFile(folder, f);
     await importFolder(folder);
-    const same = (r: Recommendation) => r.params.type === 'route' && r.id === promenade.id;
+    const same = (r: Recommendation) => shapeOf(r).type === 'route' && r.id === promenade.id;
     expect((await recs(folder)).find(same)).toBeUndefined();
     await recomputeEverything(folder);
     expect((await recs(folder)).find(same)).toBeUndefined();

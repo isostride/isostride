@@ -5,6 +5,10 @@ import type { CurvePoint, CurveSource } from '@/lib/curve';
 import type { WorkerEvent, WorkerJob, WorkerRequest } from '@/workers';
 
 export type DoneEvent = Extract<WorkerEvent, { type: 'done' }>;
+/** The stretch a search for similar ones starts from, and what it finds (lib/detection, through the worker's messages). */
+export type SimilarQuery = Extract<WorkerRequest, { type: 'similar' }>['query'];
+export type SimilarResult = Extract<WorkerEvent, { type: 'similar' }>['result'];
+export type SimilarStretch = SimilarResult['route'][number];
 export interface JobState {
   job: WorkerJob;
   done: number;
@@ -67,7 +71,7 @@ function start(request: WorkerRequest, onProgress?: Progress, signal?: AbortSign
 }
 
 /** Runs one job in a fresh Processing Worker; resolves when it is done. */
-export async function runInWorker(job: Exclude<WorkerJob, 'instances' | 'curve'>, handle: FileSystemDirectoryHandle, onProgress?: Progress): Promise<DoneEvent> {
+export async function runInWorker(job: Exclude<WorkerJob, 'instances' | 'curve' | 'similar'>, handle: FileSystemDirectoryHandle, onProgress?: Progress): Promise<DoneEvent> {
   const m = await start({ type: job, handle }, onProgress);
   if (m.type !== 'done') throw new Error(`unexpected ${m.type}`);
   return m;
@@ -85,4 +89,11 @@ export async function curvesInWorker(sources: CurveSource[], handle: FileSystemD
   const m = await start({ type: 'curve', handle, sources }, onProgress, signal);
   if (m.type !== 'curves') throw new Error(`unexpected ${m.type}`);
   return m.curves;
+}
+
+/** The stretches of other runs like a selected one, found in the Processing Worker (requirement "Similar stretches of a selection"). */
+export async function similarInWorker(query: SimilarQuery, handle: FileSystemDirectoryHandle, onProgress?: Progress, signal?: AbortSignal): Promise<SimilarResult> {
+  const m = await start({ type: 'similar', handle, query }, onProgress, signal);
+  if (m.type !== 'similar') throw new Error(`unexpected ${m.type}`);
+  return m.result;
 }

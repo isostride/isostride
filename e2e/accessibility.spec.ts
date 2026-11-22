@@ -64,13 +64,17 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
         await page.getByRole('tabpanel').getByRole('region', { name: tab }).waitFor();
         found.push(...(await serious(page, `Settings · ${tab} (${scheme})`)));
       }
-      // The picker of the Analysis screen: its list, and the block builder with the segments counted.
+      // The picker of the Analysis screen: its list.
       await nav(page, 'Analysis');
       const dialog = await openPicker(page);
       found.push(...(await serious(page, `Picker list (${scheme})`)));
-      await dialog.getByRole('tab', { name: 'New block' }).click();
-      await dialog.locator('.preview-count', { hasText: /segments? in/ }).waitFor({ timeout: 30_000 });
-      found.push(...(await serious(page, `Block builder (${scheme})`)));
+      await page.keyboard.press('Escape');
+      // The Blocks screen, and the one editor of a block with the segments counted.
+      await nav(page, 'Blocks');
+      found.push(...(await serious(page, `Blocks (${scheme})`)));
+      await page.getByRole('button', { name: 'New block' }).click();
+      await page.getByRole('dialog', { name: 'New block' }).locator('.preview-count', { hasText: /segments? in/ }).waitFor({ timeout: 30_000 });
+      found.push(...(await serious(page, `Block editor (${scheme})`)));
       await page.keyboard.press('Escape');
       await nav(page, 'Runs');
       await openRun(page);

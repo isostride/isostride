@@ -1,5 +1,5 @@
 import type { IndexedRun, RunFile, WindowMetric } from '@/lib/kernel';
-import { STAT_LABEL, efficiencyOf, type BlockMetric, type Conditions, type Rule, type RuleShape, type RunFilter, type Stat } from './types';
+import { STAT_LABEL, efficiencyOf, type BlockMetric, type BlockParams, type Conditions, type Rule, type RuleShape, type RunFilter, type Stat, type Tolerances } from './types';
 
 /**
  * Rule blocks (the author's remodelling of 19 Nov 2026): the pure parts the Analysis screen and
@@ -101,11 +101,44 @@ const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec %
 const range = (min: number | null, max: number | null, f: (v: number) => string, unit: string) =>
   min !== null && max !== null ? `${f(min)}–${f(max)}${unit}` : min !== null ? `from ${f(min)}${unit}` : max !== null ? `to ${f(max)}${unit}` : null;
 
+const COMPASS = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
+const lengthName = (kind: 'time' | 'distance', target: number) => (kind === 'time' ? `${+(target / 60).toFixed(1)} min` : `${+(target / 1000).toFixed(2)} km`);
+
 export function shapeName(shape: RuleShape): string {
   if (shape.type === 'run') return 'Runs';
-  if (shape.type === 'lap') return 'Laps';
+  if (shape.type === 'lap') return shape.planned ? `Laps set up as ${lengthName(shape.planned.kind, shape.planned.target)}` : 'Laps';
   if (shape.type === 'steady') return `Steady ${+(shape.minDuration / 60).toFixed(1)} min or more`;
-  return `Fastest ${shape.kind === 'time' ? `${+(shape.target / 60).toFixed(1)} min` : `${+(shape.target / 1000).toFixed(2)} km`}`;
+  if (shape.type === 'main') return 'Main effort of the run';
+  if (shape.type === 'pattern') return `Effort laps of ${shape.laps.length}-lap workouts`;
+  if (shape.type === 'route') return `Same route: ${(shape.length / 1000).toFixed(1)} km ${COMPASS[Math.round(shape.heading / 45) % 8]}-bound`;
+  if (shape.type === 'profile') {
+    const k = shape.key;
+    const climb = k.altitude ? Math.round(k.altitude.reduce((s, a, i, xs) => s + (i && a > xs[i - 1] ? a - xs[i - 1] : 0), 0)) : null;
+    return `Same profile: ${(k.distance / 1000).toFixed(1)} km${climb === null ? '' : `, ${climb} m up`}, pace ${mmss(Math.round(k.pace))}`;
+  }
+  return `Fastest ${lengthName(shape.kind, shape.target)}${shape.effort ? ', run as an effort' : ''}`;
+}
+
+/**
+ * A block of an older kind, or a suggestion, as the one model has it: a rule. A route segment
+ * keeps its track, a workout lap is a lap set up as its length, a steady fragment a stretch whose
+ * pace stays in its band, an effort the fastest stretch run as an effort, a workout type the main
+ * effort of its runs, a lap pattern its effort laps, a profile its stretch most alike.
+ */
+export function asRule(p: BlockParams, tol: Tolerances): Rule {
+  if (p.type === 'rule') { const { type: _type, ...r } = p; return r; }
+  if (p.type === 'route') return ruleOf({ type: 'route', track: p.track, length: p.length, heading: p.heading });
+  if (p.type === 'structure') return ruleOf({ type: 'lap', planned: { kind: p.kind, target: p.target, tolerance: p.tolerance } });
+  if (p.type === 'steady') return { ...ruleOf({ type: 'steady', minDuration: p.minDuration }), conditions: { ...EMPTY_CONDITIONS, alwaysPaceMin: tol.paceMin, alwaysPaceMax: tol.paceMax } };
+  if (p.type === 'effort') return { ...ruleOf({ type: 'fastest', kind: p.kind, target: p.target, effort: true }), conditions: { ...EMPTY_CONDITIONS, start: tol.start } };
+  if (p.type === 'tag') return { ...ruleOf({ type: 'main' }), runs: { ...EMPTY_FILTER, workoutTypes: [p.workoutType] } };
+  if (p.type === 'pattern') return ruleOf({ type: 'pattern', laps: p.laps, tolerance: p.tolerance });
+  return ruleOf({ type: 'profile', key: p.key, minScore: p.minScore });
+}
+
+/** A definition in the one model: its params a rule (an older kind read as one), its tolerances kept. */
+export function asRuleDefinition<T extends { params: BlockParams; tolerances: Tolerances }>(d: T): T {
+  return d.params.type === 'rule' ? d : { ...d, params: { type: 'rule', ...asRule(d.params, d.tolerances) } };
 }
 
 /** "Fastest 5 min · HR never below 160 · since 2026-03-01": the rule in words, in a fixed order, as its name. */

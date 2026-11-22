@@ -1,6 +1,8 @@
 /** Block definitions and instances (spec sections 2, 3 and 5). */
 
-export type BlockType = 'route' | 'structure' | 'steady' | 'effort' | 'tag' | 'pattern' | 'rule';
+import type { ProfileKey } from './profile';
+
+export type BlockType = 'route' | 'structure' | 'steady' | 'effort' | 'tag' | 'pattern' | 'rule' | 'profile';
 
 /**
  * A block defined in Analysis by a rule (the author's remodelling of 19 Nov 2026: "wybieram dane
@@ -25,12 +27,26 @@ export interface RunFilter {
   lapsMax: number | null;
 }
 
-/** The shape of a segment: the whole run, each lap, the fastest stretch of a length, or a stretch that keeps the conditions for a time. */
+/**
+ * The stretch of each run a block takes (the one model of a block, the runner's request of 22 Nov
+ * 2026: "ujednolic model ... nie chce tworzyc blokow na 5 roznych sposob"): the whole run, each lap
+ * (or only the laps set up as a length), the fastest stretch of a length (or only when it was run as
+ * an effort), a stretch that keeps the conditions for a time, the main effort of the run, the effort
+ * laps of runs with one layout of laps, every pass over a stretch of route, or the stretch most like
+ * a profile of distance, terrain and pace. The last four take a reference from a run.
+ */
 export type RuleShape =
   | { type: 'run' }
-  | { type: 'lap' }
-  | { type: 'fastest'; kind: 'time' | 'distance'; /** s or m */ target: number }
-  | { type: 'steady'; /** s */ minDuration: number };
+  | { type: 'lap'; /** only the laps set up as this length (a workout's element), within the share */ planned?: { kind: 'time' | 'distance'; target: number; tolerance: number } }
+  | { type: 'fastest'; kind: 'time' | 'distance'; /** s or m */ target: number; /** only when it was run as an effort */ effort?: boolean }
+  | { type: 'steady'; /** s */ minDuration: number }
+  | { type: 'main' }
+  | { type: 'pattern'; laps: PatternLap[]; tolerance: number }
+  | { type: 'route'; track: RefPoint[]; length: number; heading: number }
+  | { type: 'profile'; key: ProfileKey; minScore: number };
+
+/** The shapes that take their reference from a run: they are made from a run, not typed in. */
+export const REFERENCE_SHAPES = ['main', 'pattern', 'route', 'profile'] as const;
 
 /**
  * What a segment must meet to be an instance; null = not checked. Pace in s/km, distance in m,
@@ -90,7 +106,9 @@ export type BlockParams =
   /** runs whose laps follow one layout; its effort laps are the instances */
   | { type: 'pattern'; laps: PatternLap[]; tolerance: number }
   /** the segments a rule selects */
-  | ({ type: 'rule' } & Rule);
+  | ({ type: 'rule' } & Rule)
+  /** in each run, the stretch of a distance most like a profile of terrain and pace, from a score (requirement "Similar stretches of a selection") */
+  | { type: 'profile'; key: ProfileKey; minScore: number };
 
 /** One lap of a lap pattern: set by time or distance, or free (a warm-up to a point, the last lap); effort laps are compared. */
 export interface PatternLap {

@@ -349,6 +349,12 @@
     "targetId": "063a771e-2d84-49e2-8c92-d15fc52a2bce"
   },
   {
+    "id": "0ccc685c-7bbd-44c6-8da8-81c04a494aff",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "53251c56-3638-4ae7-909e-759e305873ad"
+  },
+  {
     "id": "0d241330-84b1-45ee-ae95-817c18a3cb69",
     "quote": "A: Effort from a standing start: Like a time trial or test: the block starts from a stop (standing still or auto-pause just before it), not on the move. A block attribute 'start: standing / flying'; with 'standing', an instance must begin right after a stop, and every instance of the block starts the same way.",
     "relationType": "derives",
@@ -447,6 +453,12 @@
     "relationType": "verifies",
     "sourceId": "5be5bf20-53c5-492e-971d-eaa227bad0a7",
     "targetId": "9af04b42-1352-4b04-880f-a46bcd62caf2"
+  },
+  {
+    "id": "0fad078a-7216-4bce-bf8c-720cbcf2f71f",
+    "relationType": "satisfies",
+    "sourceId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1",
+    "targetId": "652fa653-b7a0-4849-a7d8-2c79eec3c3d9"
   },
   {
     "id": "0fbb382d-c04a-4081-bcb7-10fb7b3a8869",
@@ -1547,6 +1559,13 @@
     "targetId": "c9bfc538-85b3-4df2-8fa4-cf33ae76f68d"
   },
   {
+    "id": "321c5d5c-162d-4144-99dd-139150f72a07",
+    "quote": "chce miec wlasny w aplkacji",
+    "relationType": "derives",
+    "sourceId": "652fa653-b7a0-4849-a7d8-2c79eec3c3d9",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "actions": "status = rejected; record the reason for rejection (failed condition, measured value, limit)",
     "event": "638f705e-6839-4b32-ad06-bd7bc526aef3",
     "id": "333b477d-6766-4772-af57-62b48eb63f25",
@@ -1602,6 +1621,12 @@
     "relationType": "satisfies",
     "sourceId": "84b558e0-d87c-4134-8479-f01b164bcd47",
     "targetId": "dfc9fa5c-2440-4d8a-88d5-76c2d462d09a"
+  },
+  {
+    "id": "35081e36-aa07-47c2-9ffa-5a19de9ca560",
+    "relationType": "verifies",
+    "sourceId": "0cc567d0-0a83-43d8-89ee-d1b377bd057b",
+    "targetId": "652fa653-b7a0-4849-a7d8-2c79eec3c3d9"
   },
   {
     "id": "351ff5bc-313c-4d2c-928f-fd65c504f342",
@@ -1965,6 +1990,13 @@
     "relationType": "performed-by",
     "sourceId": "1ad982a1-40bd-440d-976f-54c359ab7cc3",
     "targetId": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9"
+  },
+  {
+    "id": "42ebb095-c118-4fc2-add8-5fc92268683c",
+    "quote": "otwieram wczorajszy bieg, zaznaczam fragment i klikam przycisk... mam podglad innych segmentow w innych biegach z ktorymi moge porownac",
+    "relationType": "derives",
+    "sourceId": "81c6cd6b-1573-4ed9-b51b-20dbc36e51f3",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "4396086f-1b3a-445d-94e4-9aeecece6e32",
@@ -3214,6 +3246,13 @@
     "targetId": "39491f93-4fcc-4f9c-960b-e12750deef8f"
   },
   {
+    "id": "733c903a-6eba-4b7a-a901-39fdff7587fa",
+    "quote": "dodaj tryb w ktorym podczas przegladania biegu moge powiekszych widok mapy ... i tam mam naniesione metryki kolorem .... moge wybrac 1 metryka ktora bedzie resyowana na trasie i zmieniala kolor w zaleznosci od wartosci",
+    "relationType": "derives",
+    "sourceId": "917c2241-0a24-4062-a058-0ca2df470b18",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "736ab59f-c5ca-466f-81e5-3a76311528dc",
     "relationType": "verifies",
     "sourceId": "1a7ad257-fd5a-4d25-b529-e09dd80998a7",
@@ -3301,6 +3340,12 @@
     "targetId": "da832a20-4c6e-48e6-9bce-d34a6396158a"
   },
   {
+    "id": "7784e324-fa51-4096-8882-4a8b42d6afd9",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "917c2241-0a24-4062-a058-0ca2df470b18"
+  },
+  {
     "id": "7792d83e-09d1-4fa8-be7b-bfeb54ce71cd",
     "relationType": "verifies",
     "sourceId": "b66b289b-d780-4c0d-9344-2a50ac02e340",
@@ -3329,6 +3374,12 @@
     "relationType": "satisfies",
     "sourceId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d",
     "targetId": "909a96f5-edf8-4706-9ed2-f2623dc00f62"
+  },
+  {
+    "id": "787c19d2-66e8-45ae-9c31-c711ec73e983",
+    "relationType": "verifies",
+    "sourceId": "a6ee7a7e-4d53-485f-b476-13000f2f2227",
+    "targetId": "86504ad7-c432-442d-95f2-3eb82a72fe2a"
   },
   {
     "id": "78c6f88a-1433-42e8-9ef7-4347d1b1eb43",
@@ -3711,6 +3762,12 @@
     "targetId": "398fc27a-5680-40ee-a73f-6d2fba9f980f"
   },
   {
+    "id": "8446471a-f8ac-48fb-85fc-2454016abe4d",
+    "relationType": "satisfies",
+    "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
+    "targetId": "86504ad7-c432-442d-95f2-3eb82a72fe2a"
+  },
+  {
     "id": "84771ce4-3374-463b-8790-ee936f8abadf",
     "relationType": "performed-by",
     "sourceId": "e528f79e-202e-48cc-8524-10cc11db6cb8",
@@ -3988,6 +4045,12 @@
     "targetId": "35cf3a74-f6aa-4e4e-9d29-09e491acb525"
   },
   {
+    "id": "8d877492-e069-4dc1-9912-26add261d404",
+    "relationType": "verifies",
+    "sourceId": "5e113a45-b3dc-4903-869c-0bcb5ddc1796",
+    "targetId": "81c6cd6b-1573-4ed9-b51b-20dbc36e51f3"
+  },
+  {
     "id": "8dcdd4e4-ad33-48c3-9d93-a56c1ac486a5",
     "relationType": "verifies",
     "sourceId": "4af56562-2cf3-4808-a6a5-5cd7d3dd13fd",
@@ -4004,6 +4067,12 @@
     "relationType": "satisfies",
     "sourceId": "9af04b42-1352-4b04-880f-a46bcd62caf2",
     "targetId": "a90357d6-8d79-4dd5-bb07-f49493d04b3c"
+  },
+  {
+    "id": "8e35464f-7943-4834-a1f6-7138e990de74",
+    "relationType": "verifies",
+    "sourceId": "8ee457a0-fea5-4014-981a-799594c60b47",
+    "targetId": "53251c56-3638-4ae7-909e-759e305873ad"
   },
   {
     "id": "8e6d993f-5885-4175-8d4d-0844bf7a52fa",
@@ -4562,6 +4631,12 @@
     "targetId": "62453160-130b-4517-ae25-023829dea55e"
   },
   {
+    "id": "a4c8808b-8241-436c-b440-28e0f006fc51",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "81c6cd6b-1573-4ed9-b51b-20dbc36e51f3"
+  },
+  {
     "id": "a4e78223-fba0-43f6-9b44-32c882d40be2",
     "label": "Imports, tags runs, defines blocks, reads trends and A/B results",
     "relationType": "interacts",
@@ -5102,6 +5177,12 @@
     "targetId": "9af04b42-1352-4b04-880f-a46bcd62caf2"
   },
   {
+    "id": "b5ca90c7-535f-4163-92bc-3ed3b69b655d",
+    "relationType": "verifies",
+    "sourceId": "0d40d086-746a-4574-9906-9fd84865b734",
+    "targetId": "917c2241-0a24-4062-a058-0ca2df470b18"
+  },
+  {
     "id": "b5eb362b-c278-43c4-b847-de35bc2da3bf",
     "relationType": "verifies",
     "sourceId": "a7041664-0172-4632-9168-8f1465772fe8",
@@ -5608,6 +5689,13 @@
     "targetId": "7570b76a-388d-4831-877a-56995a61903f"
   },
   {
+    "id": "c68d4501-740b-4508-a1ea-fadf46e7e05f",
+    "quote": "dodaktowo chce ekran w ktorym mam wszystkie bloki",
+    "relationType": "derives",
+    "sourceId": "53251c56-3638-4ae7-909e-759e305873ad",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "c6c89c79-64f2-43ad-9238-ab7bbe3a267c",
     "relationType": "performed-by",
     "sourceId": "f69f98d7-d004-4caa-a8db-f8bd5bfcacda",
@@ -5927,6 +6015,12 @@
     "targetId": "3569f747-de49-4feb-a212-3644eee53446"
   },
   {
+    "id": "d1afe01d-6d16-4b54-9874-e4519a401f28",
+    "relationType": "verifies",
+    "sourceId": "5e113a45-b3dc-4903-869c-0bcb5ddc1796",
+    "targetId": "86504ad7-c432-442d-95f2-3eb82a72fe2a"
+  },
+  {
     "id": "d202062f-bb1a-4165-9bd8-23420a39eb94",
     "relationType": "satisfies",
     "sourceId": "c68701bb-cda9-41a6-a434-1fb4199752aa",
@@ -6112,6 +6206,12 @@
     "relationType": "performed-by",
     "sourceId": "cd2739ac-aeb4-4002-b54b-5a8577a38f92",
     "targetId": "ca29b4d4-2e21-4bd0-8a7d-dedef3dab8b4"
+  },
+  {
+    "id": "d7970d0c-01af-490a-b3f3-c53cd297b4e7",
+    "relationType": "satisfies",
+    "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
+    "targetId": "4707069b-7d1d-4655-ab89-8a63e7841dc6"
   },
   {
     "id": "d79af981-6898-4c76-8ea0-29249fd95c4f",
@@ -6764,6 +6864,13 @@
     "targetId": "e34e41c2-1850-4479-8a3f-380d7834213d"
   },
   {
+    "id": "ee1f9030-8fca-47f6-a750-e98955e5e22c",
+    "quote": "ujedlici model",
+    "relationType": "derives",
+    "sourceId": "86504ad7-c432-442d-95f2-3eb82a72fe2a",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "ee2fd9e0-8d58-49b2-b720-c7b31ddbfaf1",
     "relationType": "constrains",
     "sourceId": "e37710fa-222e-4d09-8b8a-f8c87e99ad7b",
@@ -6957,6 +7064,12 @@
     "relationType": "verifies",
     "sourceId": "7ec54c1a-41c2-45c6-b21c-d0d8e608512c",
     "targetId": "d00107b1-a4df-4790-b933-7c13969f8952"
+  },
+  {
+    "id": "f4bf3d57-be86-42cd-acf0-01c915a4deed",
+    "relationType": "satisfies",
+    "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
+    "targetId": "81c6cd6b-1573-4ed9-b51b-20dbc36e51f3"
   },
   {
     "id": "f4c4296d-ee87-42cd-90a6-580a7278608b",

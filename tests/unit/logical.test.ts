@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_TOLERANCES, defaultTolerances, definitionFromLaps, type BlockDefinition, type BlockParams } from '@/lib/blocks';
+import { DEFAULT_TOLERANCES, defaultTolerances, type BlockDefinition, type BlockParams } from '@/lib/blocks';
 import { detectInstances, recommend } from '@/lib/detection';
 import type { RunFile } from '@/lib/kernel';
 import { rowFor, syntheticRun } from '../support/synthetic';
@@ -84,10 +84,6 @@ describe('Blocks by lap pattern', () => {
       expect(found.every((i) => i.context.block.pace === 240)).toBe(true);
     }
     expect(detectInstances(d, short, rowFor(short), [])).toEqual([]);
-    // The same pattern, defined from one run's laps on the Run screen.
-    const fromRun = definitionFromLaps(runs[0]);
-    expect(fromRun.name).toBe('2 km + 4 × 8 min');
-    expect(detectInstances(fromRun, runs[2], rowFor(runs[2]), [])).toHaveLength(4);
   });
 });
 

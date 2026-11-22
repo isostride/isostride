@@ -1,0 +1,8 @@
+---
+id: "86504ad7-c432-442d-95f2-3eb82a72fe2a"
+type: "requirement"
+label: "One way to make a block"
+action: "keep every block as one kind of thing, a rule of which runs, which stretch of each and which conditions, and make, take from a suggestion or from a run's Find similar, and change every block in one editor, no other way; every older kind of block is read as the rule it is and finds the same segments"
+ears_type: "ubiquitous"
+rationale: "The runner asked: \"ujedlici model ... nie chce tworzyc blokow na 5 roznych sposob\"; asked how the one way should look, chose \"Jeden edytor (Recommended)\" (a block = which runs + which stretch of each + conditions, made only in one editor on the Blocks screen; Find similar → Keep as block opens the same editor filled in; the chart menu's Make a block, Block from these laps and Analysis's New block tab go; suggestions stay as ready proposals in the same model). Model's choices: the stretches a block can take: the whole run, each lap (or only the laps set up as a length), the fastest stretch of a length (or only when run as an effort), a steady stretch, and, taken from a run, the same route, the same profile, the effort laps of one lap layout and the main effort of the run; a route segment, a workout lap, a steady fragment, an effort, a workout-type block, a lap pattern and a profile block of older files read as those rules, their matching checks kept and editable under Matching checks; a new block opens on the fastest 5 minutes; Analysis's picker adds kept blocks and runs and links to New block on the Blocks screen; a rule in an older Analysis link still opens there."
+---

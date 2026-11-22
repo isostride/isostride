@@ -11,14 +11,20 @@ export function Welcome() {
     <div className="welcome">
       <div className="card">
         <Logo size={56} />
-        <h1>Strideprism</h1>
+        <h1 aria-label="stride.prism">stride<i className="brand-dot" aria-hidden="true">.</i>prism</h1>
         <p className="muted">Compare blocks of your runs in the same context, and see changes the watch averages hide.</p>
         {state.status === 'unsupported' && (
           <div className="banner err" style={{ marginTop: 18, textAlign: 'left' }}>
             <span>⚠</span>
-            <span>
-              <b>Browser not supported.</b> Open Strideprism in Chrome, Edge or Opera: it needs access to a folder on your disk.
-            </span>
+            {state.insecure ? (
+              <span>
+                <b>Open this page over https.</b> Browsers give a page access to a folder only over https (or on localhost); this address is plain http.
+              </span>
+            ) : (
+              <span>
+                <b>Browser not supported.</b> Open stride.prism in Chrome, Edge or Opera: it needs access to a folder on your disk.
+              </span>
+            )}
           </div>
         )}
         {state.status === 'not-chosen' && (

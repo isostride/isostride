@@ -470,9 +470,6 @@
     { "element": "6f1b8ec1-b966-4c32-989d-1d3c4b25e97b", "name": "Runs chosen by a rule", "tests": [
       "tests/unit/rule.test.ts › Blocks defined in Analysis › Runs chosen by a rule"
     ] },
-    { "element": "a23ad5ec-41a8-4148-9fcd-a762769f05a9", "name": "Block built from a rule with a live count", "tests": [
-      "e2e/block-definition.spec.ts › Blocks defined in Analysis › Block built from a rule with a live count"
-    ] },
     { "element": "e1fb2839-eff8-4d39-a460-d51388a469d5", "name": "Rule in words and in the link", "tests": [
       "tests/unit/rule.test.ts › Blocks defined in Analysis › Rule in words and in the link"
     ] },
@@ -692,6 +689,21 @@
     { "element": "b66b289b-d780-4c0d-9344-2a50ac02e340", "name": "To do list built from the checks", "tests": [
       "tests/unit/assumptions.test.ts › To do for the models › The list says what to do",
       "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
+    ] },
+    { "element": "0d40d086-746a-4574-9906-9fd84865b734", "name": "Route coloured and read on a large map", "tests": [
+      "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
+    ] },
+    { "element": "5e113a45-b3dc-4903-869c-0bcb5ddc1796", "name": "Similar stretches found and overlaid", "tests": [
+      "e2e/block-definition.spec.ts › Definition from selection › Definition from chart selection"
+    ] },
+    { "element": "a23ad5ec-41a8-4148-9fcd-a762769f05a9", "name": "Block built from a rule with a live count", "tests": [
+      "e2e/block-definition.spec.ts › Every block on one screen › Block built from a rule with a live count"
+    ] },
+    { "element": "8ee457a0-fea5-4014-981a-799594c60b47", "name": "Every block listed and changed", "tests": [
+      "e2e/block-definition.spec.ts › Every block on one screen › Block built from a rule with a live count"
+    ] },
+    { "element": "0cc567d0-0a83-43d8-89ee-d1b377bd057b", "name": "Block deletion confirmed in the app", "tests": [
+      "e2e/block-definition.spec.ts › Every block on one screen › Block built from a rule with a live count"
     ] }
   ]
 }

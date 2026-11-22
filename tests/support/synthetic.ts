@@ -1,6 +1,6 @@
 import type { IndexedRun, RunFile, Samples, Series } from '@/lib/kernel';
 import { buildWindows } from '@/lib/prepare';
-import { DEFAULT_TOLERANCES, type BlockDefinition, type Tolerances } from '@/lib/blocks';
+import { DEFAULT_TOLERANCES, asRule, type BlockDefinition, type Tolerances } from '@/lib/blocks';
 
 type Sample = Partial<Record<Exclude<keyof Samples, 't'>, number | null>>;
 
@@ -44,4 +44,9 @@ export function steadyDef(tol: Partial<Tolerances> = {}): BlockDefinition {
     params: { type: 'steady', minDuration: 60 },
     tolerances: { ...DEFAULT_TOLERANCES, paceMin: 285, paceMax: 315, ...tol },
   };
+}
+
+/** The stretch a block or a suggestion takes, in the one model (a stored older kind read as its rule). */
+export function shapeOf(d: { params: import('@/lib/blocks').BlockParams; tolerances: Tolerances }) {
+  return asRule(d.params, d.tolerances).shape;
 }

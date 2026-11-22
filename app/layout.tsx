@@ -6,7 +6,7 @@ import { THEME_COLOR } from './theme';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Strideprism',
+  title: 'stride.prism',
   description: 'Compare blocks of runs within the same context.',
 };
 

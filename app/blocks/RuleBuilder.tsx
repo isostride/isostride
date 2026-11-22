@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { PERIOD_PRESETS, RULE_TOLERANCES, STATS, STAT_LABEL, STRETCH_PRESETS, presetDates, ruleName, ruleOf, type BlockDefinition, type BlockInstance, type BlockStart, type Conditions, type PeriodPreset, type Pick, type Rule, type RuleShape, type RunFilter, type Stat } from '@/lib/blocks';
+import { PERIOD_PRESETS, REFERENCE_SHAPES, RULE_TOLERANCES, STATS, STAT_LABEL, STRETCH_PRESETS, presetDates, ruleName, ruleOf, type BlockDefinition, type BlockInstance, type BlockStart, type Conditions, type PeriodPreset, type Pick, type Rule, type RuleShape, type RunFilter, type Stat, type Tolerances, shapeName } from '@/lib/blocks';
 import { instancesInWorker } from '@/lib/client';
 import { date, pace as fmtPace } from '@/lib/format';
 
@@ -73,11 +73,19 @@ export interface BuilderState {
  * runs it is looked for in, what it must meet on average and at every moment, how many per run
  * and the statistic; the segments the rule selects are counted and listed as it changes.
  */
-export function RuleBuilder({ initial, initialName, options, handle, footer }: {
+export function RuleBuilder({ initial, initialName, options, handle, footer, tolerances = RULE_TOLERANCES, children }: {
   initial?: Rule; initialName?: string; options: BuilderOptions; handle: FileSystemDirectoryHandle;
   footer: (s: BuilderState) => ReactNode;
+  /** the matching checks the segments are counted with */
+  tolerances?: Tolerances;
+  /** more of the form, after the rule (the matching checks) */
+  children?: ReactNode;
 }) {
   const [rule, setRule] = useState<Rule>(initial ?? ruleOf({ type: 'fastest', kind: 'time', target: 300 }));
+  /** the stretch taken from a run (a route, a profile, a lap layout, the main effort): offered beside the others */
+  const [reference] = useState(() => (initial && (REFERENCE_SHAPES as readonly string[]).includes(initial.shape.type) ? initial.shape : null));
+  /** the length of the laps a workout set up, from the block as it opened */
+  const [planned] = useState(() => (initial?.shape.type === 'lap' ? initial.shape.planned ?? null : null));
   const [name, setName] = useState(initialName ?? '');
   const [named, setNamed] = useState(!!initialName && initialName !== (initial ? ruleName(initial) : ''));
   const [preset, setPreset] = useState<PeriodPreset | null>(rule.runs.dateFrom === null && rule.runs.dateTo === null ? 'all' : null);
@@ -87,11 +95,14 @@ export function RuleBuilder({ initial, initialName, options, handle, footer }: {
   const cond = (p: Partial<Conditions>) => setRule((r) => ({ ...r, conditions: { ...r.conditions, ...p } }));
   const setShape = (type: RuleShape['type']) => setRule((r) => {
     if (r.shape.type === type) return r;
-    const shape: RuleShape = type === 'fastest' ? { type, kind: 'time', target: 300 } : type === 'steady' ? { type, minDuration: 600 } : { type };
+    const shape: RuleShape | null = reference && reference.type === type ? reference : type === 'fastest' ? { type, kind: 'time', target: 300 } : type === 'steady' ? { type, minDuration: 600 } : type === 'run' || type === 'lap' ? { type } : null;
+    if (!shape) return r;
     return { ...r, shape, pick: type === 'fastest' ? 'best' : 'all' };
   });
   const effectiveName = named ? name : ruleName(rule);
   const code = useMemo(() => JSON.stringify(rule), [rule]);
+  // The checks count by their values only.
+  const tolKey = JSON.stringify(tolerances);
 
   // The segments the rule selects, counted in the worker a moment after the last change.
   useEffect(() => {
@@ -99,14 +110,14 @@ export function RuleBuilder({ initial, initialName, options, handle, footer }: {
     const controller = new AbortController();
     setFound(null);
     setError(null);
-    const def: BlockDefinition = { id: 'preview', name: 'preview', origin: 'manual', status: 'active', createdAt: '', params: { type: 'rule', ...(JSON.parse(code) as Rule) }, tolerances: { ...RULE_TOLERANCES } };
+    const def: BlockDefinition = { id: 'preview', name: 'preview', origin: 'manual', status: 'active', createdAt: '', params: { type: 'rule', ...(JSON.parse(code) as Rule) }, tolerances: JSON.parse(tolKey) as Tolerances };
     const timer = setTimeout(() => {
       instancesInWorker([def], handle, undefined, controller.signal)
         .then((r) => live && setFound(r.preview ?? []))
         .catch((e) => live && (e as Error).name !== 'AbortError' && setError(e instanceof Error ? e.message : String(e)));
     }, 350);
     return () => { live = false; clearTimeout(timer); controller.abort(); };
-  }, [code, handle]);
+  }, [code, handle, tolKey]);
 
   const accepted = found?.filter((i) => i.status === 'accepted') ?? [];
   const leftOut = (found?.length ?? 0) - accepted.length;
@@ -120,6 +131,7 @@ export function RuleBuilder({ initial, initialName, options, handle, footer }: {
         <div className="field">
           <span>Segment</span>
           <div className="segmented" role="radiogroup" aria-label="Segment">
+            {reference && <button type="button" role="radio" aria-checked={shape.type === reference.type} className={shape.type === reference.type ? 'on' : ''} onClick={() => setShape(reference.type)} title="Taken from a run">{shapeName(reference)}</button>}
             {SHAPES.map(([t, l]) => <button key={t} type="button" role="radio" aria-checked={shape.type === t} className={shape.type === t ? 'on' : ''} onClick={() => setShape(t)}>{l}</button>)}
           </div>
         </div>
@@ -127,16 +139,28 @@ export function RuleBuilder({ initial, initialName, options, handle, footer }: {
           <div className="field picks">
             <span>Length</span>
             <span className="metric-picker" role="group" aria-label="Length">
-              {STRETCH_PRESETS.map((w) => { const on = w.kind === shape.kind && w.target === shape.target; return <button key={stretchLabel(w)} type="button" className={`pill ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => setRule((r) => ({ ...r, shape: { type: 'fastest', ...w } }))}>{stretchLabel(w)}</button>; })}
+              {STRETCH_PRESETS.map((w) => { const on = w.kind === shape.kind && w.target === shape.target; return <button key={stretchLabel(w)} type="button" className={`pill ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => setRule((r) => ({ ...r, shape: { type: 'fastest', ...w, effort: shape.effort } }))}>{stretchLabel(w)}</button>; })}
               <span className="range">
-                <input aria-label="Length value" type="number" min={1} step={1} value={shape.kind === 'time' ? shape.target / 60 : shape.target / 1000} onChange={(e) => { const n = Number(e.target.value); if (n > 0) setRule((r) => ({ ...r, shape: { type: 'fastest', kind: shape.kind, target: shape.kind === 'time' ? n * 60 : n * 1000 } })); }} style={{ width: 64 }} />
-                <select className="select small" aria-label="Length unit" value={shape.kind} onChange={(e) => setRule((r) => ({ ...r, shape: { type: 'fastest', kind: e.target.value as 'time' | 'distance', target: e.target.value === 'time' ? 300 : 5000 } }))}>
+                <input aria-label="Length value" type="number" min={1} step={1} value={shape.kind === 'time' ? shape.target / 60 : shape.target / 1000} onChange={(e) => { const n = Number(e.target.value); if (n > 0) setRule((r) => ({ ...r, shape: { type: 'fastest', kind: shape.kind, target: shape.kind === 'time' ? n * 60 : n * 1000, effort: shape.effort } })); }} style={{ width: 64 }} />
+                <select className="select small" aria-label="Length unit" value={shape.kind} onChange={(e) => setRule((r) => ({ ...r, shape: { type: 'fastest', kind: e.target.value as 'time' | 'distance', target: e.target.value === 'time' ? 300 : 5000, effort: shape.effort } }))}>
                   <option value="time">min</option>
                   <option value="distance">km</option>
                 </select>
               </span>
             </span>
           </div>
+        )}
+        {shape.type === 'fastest' && (
+          <label className="field check">
+            <input type="checkbox" checked={!!shape.effort} onChange={(e) => setRule((r) => ({ ...r, shape: { ...shape, effort: e.target.checked || undefined } }))} />
+            <span>Only when run as an effort <span className="muted small">(the run&apos;s fastest stretch of the length, run hard)</span></span>
+          </label>
+        )}
+        {shape.type === 'lap' && (reference?.type === 'lap' || shape.planned) && (
+          <label className="field check">
+            <input type="checkbox" checked={!!shape.planned} onChange={(e) => setRule((r) => ({ ...r, shape: e.target.checked && planned ? { type: 'lap', planned } : { type: 'lap' } }))} />
+            <span>Only laps set up as {planned ? (planned.kind === 'time' ? `${planned.target / 60} min` : `${planned.target / 1000} km`) : 'a length'} <span className="muted small">(a workout&apos;s laps, not auto-laps)</span></span>
+          </label>
         )}
         {shape.type === 'steady' && (
           <label className="field">
@@ -229,6 +253,7 @@ export function RuleBuilder({ initial, initialName, options, handle, footer }: {
           </ul>
         )}
       </div>
+      {children}
       <div className="builder-actions">{footer({ rule, name: effectiveName.trim() || ruleName(rule), segments: found === null ? null : accepted.length })}</div>
     </div>
   );

@@ -39,8 +39,8 @@ test.describe('Journeys', () => {
     await expect(facts).toContainText('FIT files read30');
     await expect(page.getByRole('region', { name: 'Folder' }).getByRole('button')).toHaveText(['Import folder', 'Recompute everything', 'Change folder…']);
     // Recompute everything from the FIT files.
-    page.once('dialog', (d) => d.accept());
     await page.getByRole('button', { name: 'Recompute everything' }).click();
+    await page.getByRole('alertdialog', { name: 'Recompute everything?' }).getByRole('button', { name: 'Recompute' }).click();
     await expect(page.getByText(/^Recomputed \d+ runs/)).toBeVisible({ timeout: 60_000 });
     // Back and forward through the screens seen.
     await nav(page, 'Settings');

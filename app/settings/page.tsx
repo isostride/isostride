@@ -34,7 +34,7 @@ type Tab = 'zones' | 'gear' | 'tags' | 'charts' | 'display';
 const TABS: [Tab, string][] = [['zones', 'Zones'], ['gear', 'Gear'], ['tags', 'Tags'], ['charts', 'Charts'], ['display', 'Display']];
 
 export default function SettingsPageWrapper() {
-  return <Suspense fallback={<div className="page"><div className="page-head"><h1>Settings</h1></div></div>}><SettingsPage /></Suspense>;
+  return <Suspense fallback={<div className="page wide-page"><div className="page-head"><h1>Settings</h1></div></div>}><SettingsPage /></Suspense>;
 }
 
 /** Settings: the zones of the metrics, the gear, the tags and the display, one tab at a time. */
@@ -49,7 +49,7 @@ function SettingsPage() {
     router.replace(`/settings${q.toString() ? `?${q.toString()}` : ''}`);
   };
   return (
-    <div className="page">
+    <div className="page wide-page">
       <div className="page-head">
         <div>
           <div className="eyebrow">Your settings, kept in your data folder</div>

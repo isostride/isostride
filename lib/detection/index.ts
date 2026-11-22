@@ -7,3 +7,4 @@ export * from './recommend';
 export * from './routeMatch';
 export * from './rule';
 export * from './segments';
+export * from './similar';

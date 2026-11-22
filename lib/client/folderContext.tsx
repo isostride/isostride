@@ -7,7 +7,8 @@ import { getValue, setValue } from './handleStore';
 /** The Data Folder lifecycle as the screens see it (model: Data Folder lifecycle). */
 export type FolderState =
   | { status: 'checking' }
-  | { status: 'unsupported' }
+  /** insecure: opened over plain http (not localhost), where the browser hides folder access */
+  | { status: 'unsupported'; insecure: boolean }
   | { status: 'not-chosen' }
   | { status: 'access-pending'; name: string }
   | { status: 'open'; folder: BrowserFolder; handle: FileSystemDirectoryHandle };
@@ -27,7 +28,7 @@ export function FolderProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      if (typeof window.showDirectoryPicker !== 'function') return setState({ status: 'unsupported' });
+      if (typeof window.showDirectoryPicker !== 'function') return setState({ status: 'unsupported', insecure: !window.isSecureContext });
       const handle = await getValue<FileSystemDirectoryHandle>(HANDLE_KEY).catch(() => undefined);
       if (!handle) return setState({ status: 'not-chosen' });
       setRemembered(handle);

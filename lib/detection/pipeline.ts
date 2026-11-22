@@ -2,7 +2,7 @@ import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
 import { resample, type TrackPoint } from '@/lib/geo';
 import { type IndexedRun, type RunFile, type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { detectRouteSegments } from './segments';
-import { RECOMMENDATIONS_PATH, fromRecommendation, matchesRunFilter, readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
+import { RECOMMENDATIONS_PATH, asRule, fromRecommendation, matchesRunFilter, readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
 import { detectInstances } from './detect';
 import { MIN_ROUTE_INSTANCES, MIN_STRUCTURE_WORKOUTS, recommend } from './recommend';
 
@@ -48,7 +48,8 @@ export async function runBlocks(folder: DataFolder): Promise<BlocksReport> {
     const def = fromRecommendation(rec, 'active');
     const accepted = runs.flatMap((run) => detectInstances(def, run, rows.get(run.id)!, tracks.get(run.id)!)).filter((i) => i.status === 'accepted');
     const enough = rec.params.type === 'route' ? accepted.length >= MIN_ROUTE_INSTANCES : new Set(accepted.map((i) => i.runId)).size >= MIN_STRUCTURE_WORKOUTS;
-    if (enough) recommendations.push({ ...rec, accepted: accepted.length, basis: `${rec.basis}; ${accepted.length} meet the conditions` });
+    // Kept in the one model: a rule.
+    if (enough) recommendations.push({ ...rec, params: { type: 'rule', ...asRule(rec.params, rec.tolerances) }, accepted: accepted.length, basis: `${rec.basis}; ${accepted.length} meet the conditions` });
   }
   await writeJson(folder, RECOMMENDATIONS_PATH, { algorithmVersion: ALGORITHM_VERSION, recommendations });
 
@@ -64,7 +65,7 @@ export async function instancesOf(folder: DataFolder, defs: BlockDefinition[], o
   const index = await readJson<RunsIndex>(folder, PATHS.runsIndex);
   const out: Record<string, BlockInstance[]> = Object.fromEntries(defs.map((d) => [d.id, []]));
   const rows = (index?.runs ?? []).filter((row) => defs.some((d) => d.params.type !== 'rule' || matchesRunFilter(d.params.runs, row)));
-  const needTrack = defs.some((d) => d.params.type === 'route');
+  const needTrack = defs.some((d) => asRule(d.params, d.tolerances).shape.type === 'route');
   let done = 0;
   for (const row of rows) {
     const run = await readJson<RunFile>(folder, PATHS.runFile(row.id));

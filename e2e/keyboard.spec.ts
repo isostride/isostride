@@ -33,7 +33,7 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
     await tabTo(page, 'button', 'Choose data folder');
     await page.keyboard.press('Enter');
     // The logo leads to the Data folder screen, where the import starts.
-    await tabTo(page, 'link', /^Strideprism/);
+    await tabTo(page, 'link', /^stride\.prism/);
     await page.keyboard.press('Enter');
     await page.getByRole('heading', { name: 'Data folder' }).waitFor();
     await tabTo(page, 'button', 'Import folder');

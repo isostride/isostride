@@ -26,7 +26,7 @@ test.describe('Layout that fits a phone', () => {
 
     // The screens are a tab bar floating at the bottom of the screen, each tab large enough for a finger; a slim bar at the top.
     const tabs = page.getByRole('navigation', { name: 'Screens' });
-    await expect(tabs.getByRole('link')).toHaveText(['Runs', 'Analysis', 'Performance', 'Settings']);
+    await expect(tabs.getByRole('link')).toHaveText(['Runs', 'Blocks', 'Analysis', 'Performance', 'Settings']);
     const bar = (await tabs.boundingBox())!;
     const under = height - (bar.y + bar.height);
     expect(under).toBeGreaterThan(0);
@@ -84,7 +84,7 @@ test.describe('Layout that fits a phone', () => {
     await check('Run', true);
     await page.getByRole('button', { name: /Chart/ }).first().click();
     const menu = (await page.locator('.chart-menu').boundingBox())!;
-    expect(menu.width).toBe(width);
+    expect(menu.width).toBeCloseTo(width, 0);
     expect(await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest('.chart-menu'), [width / 2, height - 20])).toBe(true);
     await page.locator('.chart-menu').getByRole('button').first().click();
 

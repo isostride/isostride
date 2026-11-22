@@ -2,6 +2,7 @@
 export * from './definitions';
 export * from './fragments';
 export * from './logical';
+export * from './profile';
 export * from './range';
 export * from './rule';
 export * from './structure';

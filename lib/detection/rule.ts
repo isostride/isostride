@@ -1,6 +1,9 @@
-import { hasAlways, lapSubject, matchesRunFilter, meetsConditions, runSubject, stretchSubject, stretches, type Conditions, type Rule } from '@/lib/blocks';
+import { DEFAULT_TOLERANCES, bestProfileMatch, hasAlways, lapKey, lapSubject, matchesRunFilter, meetsConditions, runSubject, stretchSubject, stretches, trackOf, type Conditions, type Rule, type Tolerances } from '@/lib/blocks';
+import { resample, type TrackPoint } from '@/lib/geo';
 import type { IndexedRun, RunFile } from '@/lib/kernel';
 import { startKind, stopTimes } from './instance';
+import { effortIn, followsPattern, mainEffort } from './logical';
+import { findPasses } from './routeMatch';
 
 /**
  * The segments a rule selects in one run (the author's remodelling of 19 Nov 2026: "system
@@ -14,6 +17,8 @@ export interface Segment {
   to: number;
   /** the lap it is, 1-based, for a lap rule */
   lap?: number;
+  /** the route's bearing, for a pass over a route */
+  heading?: number;
 }
 
 const WINDOW = 10;
@@ -99,7 +104,7 @@ function steady(rule: Rule, run: RunFile, acc: Int32Array | null): Segment[] {
 }
 
 /** The segments of one run a rule selects: none when the run is not one the rule draws from. */
-export function ruleSegments(rule: Rule, run: RunFile, row: IndexedRun): Segment[] {
+export function ruleSegments(rule: Rule, run: RunFile, row: IndexedRun, ctx: { track?: TrackPoint[]; tolerances?: Tolerances } = {}): Segment[] {
   if (!matchesRunFilter(rule.runs, row)) return [];
   const c = rule.conditions;
   const acc = hasAlways(c) ? brokenBefore(run, c) : null;
@@ -107,14 +112,46 @@ export function ruleSegments(rule: Rule, run: RunFile, row: IndexedRun): Segment
   const startsRight = (t: number) => c.start === 'any' || startKind(run.samples.t, run.samples.speed, t, stops) === c.start;
   const end = (run.samples.t[run.samples.t.length - 1] ?? 0) + 1;
 
-  if (rule.shape.type === 'fastest') return fastest(rule, run, acc, startsRight);
+  const shape = rule.shape;
+  if (shape.type === 'fastest' && !shape.effort) return fastest(rule, run, acc, startsRight);
+  const tol = ctx.tolerances ?? DEFAULT_TOLERANCES;
+  // The stretches a reference finds, then the conditions on each.
+  let candidates: Segment[] | null = null;
+  if (shape.type === 'fastest') {
+    // Run as an effort: the run's fastest stretch of the length, when it is one.
+    const e = effortIn(run, shape.kind, shape.target, c.start);
+    candidates = e ? [{ from: e.from, to: e.to }] : [];
+  } else if (shape.type === 'main') {
+    const m = mainEffort(run);
+    candidates = [{ from: m.from, to: m.to, ...(m.lap === null ? {} : { lap: m.lap }) }];
+  } else if (shape.type === 'pattern') {
+    candidates = followsPattern(run.laps, shape.laps, shape.tolerance) ? shape.laps.flatMap((l, i) => (l.effort ? [{ from: run.laps[i].start, to: run.laps[i].end, lap: i + 1 }] : [])) : [];
+  } else if (shape.type === 'route') {
+    // A run without GPS has no passes.
+    const pts = ctx.track ?? resample(run.samples.lat, run.samples.lon, run.samples.t, 10);
+    candidates = findPasses(shape.track, pts, tol.routeRadius, tol.routeShare).map((p) => ({ from: pts[p.from].t, to: pts[p.to].t, heading: shape.heading }));
+  } else if (shape.type === 'profile') {
+    const m = bestProfileMatch(shape.key, trackOf(run), shape.minScore);
+    candidates = m ? [{ from: m.from, to: m.to }] : [];
+  }
+  if (candidates) {
+    const kept = candidates.filter((seg) => meetsConditions(c, seg.lap ? lapSubject(run, seg.lap - 1) : stretchSubject(run, seg.from, seg.to)) && (!acc || holds(acc, seg.from, seg.to)));
+    return rule.pick === 'best' && kept.length > 1 ? [kept.reduce((a, b) => ((stretchSubject(run, b.from, b.to).pace ?? Infinity) < (stretchSubject(run, a.from, a.to).pace ?? Infinity) ? b : a))] : kept;
+  }
 
   let found: { seg: Segment; pace: number | null }[] = [];
   if (rule.shape.type === 'run') {
     const s = runSubject(row);
     if (meetsConditions(c, s) && (!acc || holds(acc, 0, end))) found = [{ seg: { from: 0, to: end }, pace: s.pace }];
   } else if (rule.shape.type === 'lap') {
+    const planned = rule.shape.planned;
     run.laps.forEach((lap, i) => {
+      // Only the laps the runner set up as this length: auto-laps and presses are no workout.
+      if (planned) {
+        const k = lapKey(lap, i, run.laps);
+        const value = planned.kind === 'time' ? lap.duration : lap.distance;
+        if (!k || k.kind !== planned.kind || Math.abs(value - planned.target) > planned.target * planned.tolerance) return;
+      }
       const s = lapSubject(run, i);
       if (meetsConditions(c, s) && (!acc || holds(acc, lap.start, lap.end)) && startsRight(lap.start)) found.push({ seg: { from: lap.start, to: lap.end, lap: i + 1 }, pace: s.pace });
     });

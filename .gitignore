@@ -14,3 +14,5 @@ playwright-report/
 .shots/
 # Vitest output written by a run with the JSON reporter
 .vitest/
+.certs/
+.next-phone/

@@ -198,12 +198,13 @@ test.describe('Run chart', () => {
     await expect(stats.getByRole('row', { name: /^Heart rate/ }).locator('.trend-cell')).toHaveText(/^[+−]\d+ bpm$/);
     await expect(page.locator('.range-stats .decoupling')).toHaveText(/^Pa:HR [+−]\d+\.\d %$/);
     await page.mouse.move(0, 0);
-    // The statistics' head holds no button (Clear selection is at the top right of the chart); the block types are in the chart menu.
-    await expect(page.locator('.range-stats').getByRole('button')).toHaveCount(0);
+    // The statistics' head holds only Find similar (Clear selection is at the top right of the chart).
+    await expect(page.locator('.range-stats').getByRole('button')).toHaveText(['Find similar']);
     await expect(page.locator('.run-board .metrics-bar').getByRole('button', { name: 'Clear selection' })).toBeVisible();
     await menuButton.click();
-    await expect(menu.getByRole('heading', { name: 'Make a block' })).toBeVisible();
-    await expect(menu.locator('.menu-actions button').first()).toBeVisible();
+    // No block is made here any more (requirement "One way to make a block"): the menu leads to the Blocks screen.
+    await expect(menu.getByRole('heading', { name: 'Blocks', exact: true })).toBeVisible();
+    await expect(menu.getByRole('link', { name: 'Blocks', exact: true })).toBeVisible();
     await page.keyboard.press('Escape');
 
     // The wheel zooms around the point under the pointer (no + and − buttons): a notch out doubles the
@@ -396,5 +397,54 @@ test.describe('Run chart', () => {
     await showList(page);
     await page.locator('tr.row').first().click();
     await sameView();
+
+    // The map made large (scenario "Route coloured by a metric"): the route coloured by the metric whose
+    // scale shows (heart rate by now), another chosen beside it; by the zones of Settings or six steps of this run, green to red, with their ranges and shares; Esc closes it.
+    await page.getByRole('button', { name: 'Expand map' }).click();
+    const big = page.getByRole('dialog', { name: 'Map of the run' });
+    const by = big.getByRole('radiogroup', { name: 'Colour the route by' });
+    await expect(by.getByRole('radio', { checked: true })).toHaveText('Heart rate');
+    const legend = big.getByRole('list', { name: 'Colours of heart rate' }).getByRole('listitem');
+    // By the zones of Settings first: Z5 (red) to Z1 (green), each with its range and share of the run.
+    await expect(big.getByRole('radiogroup', { name: 'Colours by' }).getByRole('radio', { checked: true })).toHaveText('Zones from Settings');
+    await expect(legend).toHaveCount(5);
+    await expect(legend.first()).toHaveText(/^Z5≥ \d+ bpm\s*\d+ %$/);
+    await expect(legend.last()).toHaveText(/^Z1< \d+ bpm\s*\d+ %$/);
+    const zoneShares = (await legend.locator('.route-share').allTextContents()).map((t) => parseInt(t, 10));
+    expect(Math.abs(zoneShares.reduce((a, b) => a + b, 0) - 100)).toBeLessThanOrEqual(3);
+    // By this run: six colours, two greens to two reds, each holding about a sixth of the run (an empty one left out).
+    await big.getByRole('radio', { name: 'This run' }).click();
+    expect(await legend.count()).toBeGreaterThanOrEqual(5);
+    expect(await legend.count()).toBeLessThanOrEqual(6);
+    await expect(legend.first()).toHaveText(/^\d+ bpm – \d+ bpm\s*\d+ %$/);
+    const shares = (await legend.locator('.route-share').allTextContents()).map((t) => parseInt(t, 10));
+    expect(Math.max(...shares)).toBeLessThanOrEqual(40);
+    const colours = () => big.locator('.route-part').evaluateAll((ps) => new Set(ps.map((p) => p.getAttribute('data-color'))).size);
+    expect(await colours()).toBeGreaterThanOrEqual(3);
+    await expect(big.getByLabel('Heart rate of the run')).toContainText(/Lowest\d+ bpm/);
+    await by.getByRole('radio', { name: 'Pace', exact: true }).click();
+    await expect(big.getByRole('list', { name: 'Colours of pace' }).getByRole('listitem').first()).toHaveText(/^\d:\d\d \/km – \d:\d\d \/km\s*\d+ %$/);
+    // Pace has no zones in Settings by now (cleared above): its colours are this run's, the zones not to be chosen.
+    await expect(big.getByRole('radio', { name: 'Zones from Settings' })).toBeDisabled();
+    await expect(big.getByText('Pace has no zones in Settings.')).toBeVisible();
+    // Green slow, red fast: the first row of the legend (red) is the fastest pace.
+    const strongest = (await big.getByRole('list', { name: 'Colours of pace' }).getByRole('listitem').first().textContent())!;
+    const lightest = (await big.getByRole('list', { name: 'Colours of pace' }).getByRole('listitem').last().textContent())!;
+    expect(secs(strongest.split(' /km')[0])).toBeLessThan(secs(lightest.split(' /km')[0]));
+    // Pointing at the route gives the value there; + and − zoom the large map, Fit shows the whole route again.
+    const bigRoute = big.getByRole('img', { name: 'Route' });
+    const part = (await big.locator('.route-part').nth(3).boundingBox())!;
+    await page.mouse.move(part.x + part.width / 2, part.y + part.height / 2);
+    await expect(big.locator('.route-tip')).toContainText(/^Pace \d+:\d\d \/kmat \d+:\d\d$/);
+    const z0 = Number(await bigRoute.getAttribute('data-zoom'));
+    await big.getByRole('button', { name: 'Zoom in' }).click();
+    await expect.poll(async () => Number(await bigRoute.getAttribute('data-zoom'))).toBeCloseTo(z0 + 1, 5);
+    await big.getByRole('button', { name: 'Zoom out' }).click();
+    await big.getByRole('button', { name: 'Zoom out' }).click();
+    await expect.poll(async () => Number(await bigRoute.getAttribute('data-zoom'))).toBeCloseTo(z0 - 1, 5);
+    await big.getByRole('button', { name: 'Fit' }).click();
+    await expect.poll(async () => Number(await bigRoute.getAttribute('data-zoom'))).toBeCloseTo(z0, 5);
+    await page.keyboard.press('Escape');
+    await expect(big).toHaveCount(0);
   });
 });

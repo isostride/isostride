@@ -6,6 +6,7 @@ import { rng } from '@/lib/stats';
 import { PATHS, readJson } from '@/lib/fs';
 import { importFolder } from '@/lib/pipeline';
 import { fitFixtures, makeDataFolder, recordMeasure, TEST_DATA } from '../support/fixtures';
+import { shapeOf } from '../support/synthetic';
 import { days, inst } from '../support/instances';
 
 /** 8 + 8 promenade passes: A every other week, B the weeks between (rotated). */
@@ -26,7 +27,7 @@ describe('Real data', () => {
     const recs = (await readJson<{ recommendations: Recommendation[] }>(folder, RECOMMENDATIONS_PATH))!.recommendations;
     // The two most-passed promenade segments, with a pace band wide enough for the year's runs:
     // these tests judge the verdict rule, not the matching.
-    const defs = recs.filter((r) => r.params.type === 'route').slice(0, 2).map((r) => fromRecommendation(r, 'active'));
+    const defs = recs.filter((r) => shapeOf(r).type === 'route').slice(0, 2).map((r) => fromRecommendation(r, 'active'));
     for (const d of defs) d.tolerances = { ...d.tolerances, paceMin: 240, paceMax: 390 };
     await writeDefinitions(folder, defs);
     await runBlocks(folder);

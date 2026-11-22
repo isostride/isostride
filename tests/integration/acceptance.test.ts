@@ -4,6 +4,7 @@ import { runBlocks } from '@/lib/detection';
 import { MIN_TREND_INSTANCES, computeTrend, selectInstances } from '@/lib/compare';
 import { PATHS, readJson } from '@/lib/fs';
 import { importFolder } from '@/lib/pipeline';
+import { shapeOf } from '../support/synthetic';
 import { fitFixtures, makeDataFolder, recordMeasure, TEST_DATA } from '../support/fixtures';
 
 const SINCE_AUG = (await fitFixtures()).filter((f) => f >= '2026-08-03').sort();
@@ -19,8 +20,8 @@ describe('Agreement with the preliminary analysis', () => {
     await importFolder(folder);
     const recs = (await readJson<{ recommendations: Recommendation[] }>(folder, RECOMMENDATIONS_PATH))!.recommendations;
     const promenade = recs.find(
-      (r) => r.params.type === 'route' && r.params.length >= 900 && r.params.length <= 1300 && r.params.heading < 90 &&
-        r.params.track.every((p) => p.lat > 41.385 && p.lat < 41.412 && p.lon > 2.19 && p.lon < 2.225),
+      (r) => ((s) => s.type === 'route' && s.length >= 900 && s.length <= 1300 && s.heading < 90 &&
+        s.track.every((p) => p.lat > 41.385 && p.lat < 41.412 && p.lon > 2.19 && p.lon < 2.225))(shapeOf(r)),
     );
     expect(promenade, 'promenade segment, northbound').toBeDefined();
     const def = fromRecommendation(promenade!, 'active');

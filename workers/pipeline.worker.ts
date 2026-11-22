@@ -2,14 +2,15 @@
 import { BrowserFolder } from '@/lib/fs';
 import type { BlockDefinition, BlockInstance } from '@/lib/blocks';
 import { curvesOf, type CurvePoint, type CurveSource } from '@/lib/curve';
-import { instancesOf } from '@/lib/detection';
+import { instancesOf, similarOf, type SimilarQuery, type SimilarResult } from '@/lib/detection';
 import { cached, importFolder, recomputeEverything, refreshBlocks, refreshContext } from '@/lib/pipeline';
 
 /** Messages between the Web App and the Processing Worker. */
-/** context: gear or tags changed; blocks: block definitions changed; instances: blocks not kept, computed now; curve: pace curves of stretches. */
-export type WorkerJob = 'import' | 'recompute' | 'context' | 'blocks' | 'instances' | 'curve';
+/** context: gear or tags changed; blocks: block definitions changed; instances: blocks not kept, computed now; curve: pace curves of stretches; similar: stretches like a selected one. */
+export type WorkerJob = 'import' | 'recompute' | 'context' | 'blocks' | 'instances' | 'curve' | 'similar';
 export type WorkerRequest =
-  | { type: Exclude<WorkerJob, 'instances' | 'curve'>; handle: FileSystemDirectoryHandle }
+  | { type: Exclude<WorkerJob, 'instances' | 'curve' | 'similar'>; handle: FileSystemDirectoryHandle }
+  | { type: 'similar'; handle: FileSystemDirectoryHandle; query: SimilarQuery }
   | { type: 'instances'; handle: FileSystemDirectoryHandle; defs: BlockDefinition[] }
   | { type: 'curve'; handle: FileSystemDirectoryHandle; sources: CurveSource[] };
 export type WorkerEvent =
@@ -17,6 +18,7 @@ export type WorkerEvent =
   | { type: 'done'; imported: number; duplicates: number; errors: number }
   | { type: 'instances'; instances: Record<string, BlockInstance[]> }
   | { type: 'curves'; curves: Record<string, CurvePoint[]> }
+  | { type: 'similar'; result: SimilarResult }
   | { type: 'error'; message: string };
 
 const post = (e: WorkerEvent) => (self as unknown as { postMessage(m: unknown): void }).postMessage(e);
@@ -34,6 +36,11 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
     if (e.data.type === 'curve') {
       const sources = e.data.sources;
       post({ type: 'curves', curves: (await cached(folder, 'curves', JSON.stringify(sources), () => curvesOf(folder, sources, onProgress))).value });
+      return;
+    }
+    if (e.data.type === 'similar') {
+      const query = e.data.query;
+      post({ type: 'similar', result: (await cached(folder, 'similar', JSON.stringify(query), () => similarOf(folder, query, onProgress))).value });
       return;
     }
     if (e.data.type === 'context' || e.data.type === 'blocks') {

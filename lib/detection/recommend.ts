@@ -4,8 +4,11 @@ import type { RouteSegment } from './segments';
 import { movingPart } from './instance';
 import { EFFORT_TARGETS, effortIn, effortName, patternKey, patternName, patternOf, tagName, workoutTypes } from './logical';
 import { findPasses } from './routeMatch';
-import { defaultTolerances, lapKey, structureName, DEFAULT_TOLERANCES, type BlockDefinition, type RefPoint, type Recommendation } from '@/lib/blocks';
+import { asRule, defaultTolerances, lapKey, structureName, DEFAULT_TOLERANCES, type BlockDefinition, type RefPoint, type Recommendation } from '@/lib/blocks';
 
+
+/** The blocks there are, in the one model: a suggestion the runner has (kept or dismissed) is not made again. */
+const shapesOf = (defs: BlockDefinition[]) => defs.map((d) => asRule(d.params, d.tolerances));
 /** Route segments need this many passes, workout structures this many workouts (spec F9). */
 export const MIN_ROUTE_INSTANCES = 5;
 export const MIN_STRUCTURE_WORKOUTS = 3;
@@ -52,7 +55,7 @@ export function recommend(segments: RouteSegment[], runs: RunFile[], tracks: Map
 
   for (const seg of segments) {
     if (seg.passes < MIN_ROUTE_INSTANCES) continue;
-    if (defs.some((d) => d.params.type === 'route' && sameRoute(d.params.track, seg.track))) continue;
+    if (shapesOf(defs).some((r) => r.shape.type === 'route' && sameRoute(r.shape.track, seg.track))) continue;
     const paces: number[] = [];
     for (const run of runs) {
       const t = tracks.get(run.id) ?? [];
@@ -89,7 +92,7 @@ export function recommend(segments: RouteSegment[], runs: RunFile[], tracks: Map
   }
   for (const [key, e] of [...byKey.entries()].sort((a, b) => b[1].runs.size - a[1].runs.size)) {
     if (e.runs.size < MIN_STRUCTURE_WORKOUTS) continue;
-    if (defs.some((d) => d.params.type === 'structure' && d.params.kind === e.kind && d.params.target === e.target)) continue;
+    if (shapesOf(defs).some((r) => r.shape.type === 'lap' && r.shape.planned?.kind === e.kind && r.shape.planned.target === e.target)) continue;
     out.push({
       id: `rec-structure-${key}`,
       name: structureName(e.kind, e.target),
@@ -113,13 +116,13 @@ function logicalRecommendations(runs: RunFile[], defs: BlockDefinition[], rows: 
   // No pace band and no effort-before check: an effort follows its warm-up by nature.
   const tolerances = { ...defaultTolerances('effort'), effortBeforeMax: null };
   for (const { kind, target } of EFFORT_TARGETS) {
-    if (defs.some((d) => d.params.type === 'effort' && d.params.kind === kind && d.params.target === target)) continue;
+    if (shapesOf(defs).some((r) => r.shape.type === 'fastest' && r.shape.effort && r.shape.kind === kind && r.shape.target === target)) continue;
     const found = runs.filter((r) => effortIn(r, kind, target));
     if (found.length < MIN_STRUCTURE_WORKOUTS) continue;
     out.push({ id: `rec-effort-${kind}:${target}`, name: effortName(kind, target), params: { type: 'effort', kind, target }, tolerances, runs: found.length, instances: found.length, basis: `effort found in ${found.length} runs, on any route` });
   }
   for (const [type, n] of workoutTypes(rows)) {
-    if (n < MIN_STRUCTURE_WORKOUTS || defs.some((d) => d.params.type === 'tag' && d.params.workoutType === type)) continue;
+    if (n < MIN_STRUCTURE_WORKOUTS || shapesOf(defs).some((r) => r.shape.type === 'main' && r.runs.workoutTypes.length === 1 && r.runs.workoutTypes[0] === type)) continue;
     out.push({ id: `rec-tag-${type}`, name: tagName(type), params: { type: 'tag', workoutType: type }, tolerances, runs: n, instances: n, basis: `${n} runs tagged ${type}` });
   }
   const byLayout = new Map<string, RunFile[]>();
@@ -131,7 +134,7 @@ function logicalRecommendations(runs: RunFile[], defs: BlockDefinition[], rows: 
   }
   for (const [key, group] of byLayout) {
     if (group.length < MIN_STRUCTURE_WORKOUTS) continue;
-    if (defs.some((d) => d.params.type === 'pattern' && patternKey(d.params.laps) === key)) continue;
+    if (shapesOf(defs).some((r) => r.shape.type === 'pattern' && patternKey(r.shape.laps) === key)) continue;
     // An effort lap is one faster than its run's average in most of the runs.
     const patterns = group.map((r) => patternOf(r.laps, r.distance > 0 ? r.duration / r.distance : 0));
     const laps = patterns[0].map((p, i) => ({ ...p, effort: patterns.filter((q) => q[i].effort).length * 2 > patterns.length }));

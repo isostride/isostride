@@ -53,6 +53,7 @@ function Icon({ d, size = 18 }: { d: string; size?: number }) {
 const ICONS = {
   runs: 'M3 12h4l3-8 4 16 3-8h4',
   analysis: 'M3 17l6-6 4 4 8-8|M14 7h7v7',
+  blocks: 'M4 4h7v7H4z|M13 4h7v7h-7z|M4 13h7v7H4z|M13 13h7v7h-7z',
   ask: 'M21 12a8 8 0 0 1-11.6 7.2L4 21l1.8-5.4A8 8 0 1 1 21 12z|M9.5 9.5a2.5 2.5 0 0 1 5 .5c0 1.5-2.5 2-2.5 3.5|M12 17h.01',
   performance: 'M3.5 18a9 9 0 1 1 17 0|M12 14l4-4|M12 14h.01',
   settings: 'M4 21v-7|M4 10V3|M12 21v-9|M12 8V3|M20 21v-5|M20 12V3|M1 14h6|M9 8h6|M17 16h6',
@@ -64,6 +65,7 @@ const ICONS = {
 
 const NAV = [
   { href: '/', label: 'Runs', ico: ICONS.runs },
+  { href: '/blocks', label: 'Blocks', ico: ICONS.blocks },
   { href: '/analysis', label: 'Analysis', ico: ICONS.analysis },
   { href: '/performance', label: 'Performance', ico: ICONS.performance },
   { href: '/settings', label: 'Settings', ico: ICONS.settings },
@@ -110,7 +112,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="brand-row">
           <Link className={`brand ${path.startsWith('/folder') ? 'active' : ''}`} href="/folder" title="Data folder: import, recompute, change" aria-current={path.startsWith('/folder') ? 'page' : undefined}>
             <Logo />
-            <span className="label">Strideprism</span>
+            <span className="label brand-name">stride<i className="brand-dot">.</i>prism</span>
           </Link>
           <HistoryNav />
         </div>

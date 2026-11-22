@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useConfirm } from '@/components';
 import { runInWorker, useFolder, useOpenFolder, watchJob, type JobState } from '@/lib/client';
 import { PATHS, isOutdated, readJson, readManifest, unseenFitFiles, type Manifest } from '@/lib/fs';
 import { ALGORITHM_VERSION, type RunsIndex } from '@/lib/kernel';
@@ -15,7 +16,7 @@ function said(kind: Job, m: { imported: number; duplicates: number; errors: numb
 }
 
 export default function FolderPageWrapper() {
-  return <Suspense fallback={<div className="page"><div className="page-head"><h1>Data folder</h1></div></div>}><FolderPage /></Suspense>;
+  return <Suspense fallback={<div className="page wide-page folder-screen"><div className="page-head"><h1>Data folder</h1></div></div>}><FolderPage /></Suspense>;
 }
 
 /**
@@ -54,15 +55,16 @@ function FolderPage() {
     });
   }, [read]);
 
+  const [confirmDialog, confirm] = useConfirm();
   const run = useCallback(async (kind: Job) => {
-    if (kind === 'recompute' && !confirm('Rebuild all derived data from the FIT files? Your gear, tags and block definitions stay as they are.')) return;
+    if (kind === 'recompute' && !(await confirm({ title: 'Recompute everything?', message: 'All derived data are rebuilt from the FIT files. Your gear, tags and blocks stay as they are.', confirm: 'Recompute' }))) return;
     setMessage(null);
     try {
       setMessage(said(kind, await runInWorker(kind, handle)));
     } catch (e) {
       setMessage(`${kind === 'recompute' ? 'Recompute' : 'Import'} failed: ${e instanceof Error ? e.message : String(e)}`);
     }
-  }, [handle]);
+  }, [handle, confirm]);
 
   // ⌘K → Import folder lands here with ?action=import, and imports.
   useEffect(() => {
@@ -80,7 +82,8 @@ function FolderPage() {
   const day = (t: string | null) => (t ? new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '–');
 
   return (
-    <div className="page">
+    <div className="page wide-page folder-screen">
+      {confirmDialog}
       <div className="page-head">
         <div>
           <div className="eyebrow">Where your runs come from: read in this browser, never sent anywhere</div>

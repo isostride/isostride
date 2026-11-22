@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { fitFiles, importAll, openWithFolder } from './support';
+import { addFromPicker, fitFiles, importAll, openWithFolder } from './support';
 
 test.describe('Analysis workspace', () => {
   test('Rule blocks compared, ranked and curved', async ({ page }) => {
@@ -10,18 +10,22 @@ test.describe('Analysis workspace', () => {
     const fastest = page.locator('.item-chip', { hasText: 'Fastest 10 min · since 2026-03-01' });
     await expect(fastest).toHaveCount(1, { timeout: 30_000 });
     await expect(page).toHaveURL(/\/analysis\?items=q/);
-    // A second block built here: whole runs since 1 March, each read by its maximum.
+    // A second block, made in the one editor (New block… in the picker opens it on the Blocks screen):
+    // whole runs since 1 March, each read by its maximum; then added here from the picker.
     await page.getByRole('button', { name: '+ Add block or run' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Add block or run' });
-    await dialog.getByRole('tab', { name: 'New block' }).click();
+    await page.getByRole('dialog', { name: 'Add block or run' }).getByRole('link', { name: 'New block…' }).click();
+    const dialog = page.getByRole('dialog', { name: 'New block' });
     await dialog.getByRole('radio', { name: 'Whole runs' }).click();
     await dialog.getByLabel('From', { exact: true }).fill('2026-03-01');
     await dialog.getByText('More: start, how many per run, statistic').click();
     await dialog.getByRole('radio', { name: 'maximum' }).click();
     await expect(dialog.locator('.preview-count')).toContainText('12 segments in 12 runs', { timeout: 30_000 });
-    await dialog.getByRole('button', { name: 'Use in analysis' }).click();
+    await dialog.getByRole('button', { name: 'Save block' }).click();
+    await expect(page.getByRole('region', { name: 'Blocks', exact: true }).getByRole('row', { name: /^Runs · since 2026-03-01 · maximum/ })).toBeVisible({ timeout: 30_000 });
+    await page.goBack();
+    await addFromPicker(page, 'Runs · since 2026-03-01 · maximum');
     const whole = page.locator('.item-chip', { hasText: 'Runs · since 2026-03-01 · maximum' });
-    await expect(whole).toHaveCount(1);
+    await expect(whole).toHaveCount(1, { timeout: 30_000 });
 
     // Pace and heart rate: one chart each, both blocks on them, the table of changes with a row per block.
     const metrics = page.getByRole('group', { name: 'Metrics' });

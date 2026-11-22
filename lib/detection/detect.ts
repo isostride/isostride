@@ -1,47 +1,15 @@
 import type { TrackPoint } from '@/lib/geo';
 import type { IndexedRun, RunFile } from '@/lib/kernel';
 import { buildInstance } from './instance';
-import { effortIn, followsPattern, mainEffort } from './logical';
-import { findPasses } from './routeMatch';
-import { SAMPLE_METRICS, lapKey, windowStat, type BlockDefinition, type BlockInstance, type Stat } from '@/lib/blocks';
+import { SAMPLE_METRICS, asRule, windowStat, type BlockDefinition, type BlockInstance, type Stat } from '@/lib/blocks';
 import { ruleSegments } from './rule';
 
 /** Detects the instances of one block definition in one run (spec F10). */
 export function detectInstances(def: BlockDefinition, run: RunFile, row: IndexedRun, track: TrackPoint[]): BlockInstance[] {
-  const p = def.params;
-  if (p.type === 'route') {
-    // A run without GPS has no route passes; structure and steady blocks still work.
-    return findPasses(p.track, track, def.tolerances.routeRadius, def.tolerances.routeShare).map((pass) =>
-      buildInstance(def, run, row, track[pass.from].t, track[pass.to].t, { heading: p.heading }),
-    );
-  }
-  if (p.type === 'structure') {
-    // Only laps the runner set up as this element: auto-laps and manual presses are not workouts.
-    return run.laps.flatMap((lap, i) => {
-      const k = lapKey(lap, i, run.laps);
-      const value = p.kind === 'time' ? lap.duration : lap.distance;
-      return k && k.kind === p.kind && Math.abs(value - p.target) <= p.target * p.tolerance ? [buildInstance(def, run, row, lap.start, lap.end, { lap: i + 1 })] : [];
-    });
-  }
-  if (p.type === 'effort') {
-    // On any route: the run's fastest fragment of this length, when it is an effort.
-    const e = effortIn(run, p.kind, p.target, def.tolerances.start);
-    return e ? [buildInstance(def, run, row, e.from, e.to)] : [];
-  }
-  if (p.type === 'tag') {
-    if (row.workoutType !== p.workoutType) return [];
-    const m = mainEffort(run);
-    return [buildInstance(def, run, row, m.from, m.to, { lap: m.lap })];
-  }
-  if (p.type === 'pattern') {
-    if (!followsPattern(run.laps, p.laps, p.tolerance)) return [];
-    return p.laps.flatMap((lap, i) => (lap.effort ? [buildInstance(def, run, row, run.laps[i].start, run.laps[i].end, { lap: i + 1 })] : []));
-  }
-  if (p.type === 'rule') {
-    // A rule of the Analysis screen: its segments, each read by the rule's statistic.
-    return ruleSegments(p, run, row).map((s) => withStat(buildInstance(def, run, row, s.from, s.to, { lap: s.lap }), run, p.stat));
-  }
-  return steadyFragments(def, run).map(([from, to]) => buildInstance(def, run, row, from, to));
+  // One model: every block is a rule (an older kind read as one); its segments, each read by its statistic.
+  const rule = asRule(def.params, def.tolerances);
+  const segs = ruleSegments(rule, run, row, { track: rule.shape.type === 'route' ? track : undefined, tolerances: def.tolerances });
+  return segs.map((s) => withStat(buildInstance(def, run, row, s.from, s.to, { lap: s.lap ?? null, ...(s.heading === undefined ? {} : { heading: s.heading }) }), run, rule.stat));
 }
 
 /**
@@ -59,30 +27,3 @@ function withStat(i: BlockInstance, run: RunFile, stat: Stat): BlockInstance {
   return { ...i, metrics };
 }
 
-/** Maximal stretches of unflagged 10 s windows whose pace stays in the band, at least minDuration long. */
-function steadyFragments(def: BlockDefinition, run: RunFile): [number, number][] {
-  if (def.params.type !== 'steady') return [];
-  const { paceMin, paceMax } = def.tolerances;
-  if (paceMin === null || paceMax === null) return [];
-  const w = run.windows;
-  const step = w.start.length > 1 ? w.start[1] - w.start[0] : 10;
-  const ok = w.start.map((_, i) => {
-    const v = w.speed[i];
-    if (v === null || v <= 0 || w.flags.stopped[i] || w.flags.missingSignal[i]) return false;
-    const pace = 1000 / v;
-    return pace >= paceMin && pace <= paceMax;
-  });
-  const out: [number, number][] = [];
-  let i0 = -1;
-  for (let i = 0; i <= ok.length; i++) {
-    if (i < ok.length && ok[i]) {
-      if (i0 < 0) i0 = i;
-    } else if (i0 >= 0) {
-      const from = w.start[i0];
-      const to = w.start[i - 1] + step;
-      if (to - from >= def.params.minDuration) out.push([from, to]);
-      i0 = -1;
-    }
-  }
-  return out;
-}

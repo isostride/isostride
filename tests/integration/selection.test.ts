@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { definitionFromSelection, readDefinitions, selectionOptions, writeDefinitions } from '@/lib/blocks';
-import { detectInstances, runBlocks } from '@/lib/detection';
+import { asRuleDefinition, definitionFromRoute, definitionFromRule, readDefinitions, ruleName, ruleOf, writeDefinitions, type BlockInstancesFile } from '@/lib/blocks';
+import { detectInstances, runBlocks, trackOfStretch } from '@/lib/detection';
 import { PATHS, readJson } from '@/lib/fs';
 import { resample } from '@/lib/geo';
 import { importFolder } from '@/lib/pipeline';
@@ -17,32 +17,33 @@ async function nov9() {
 
 describe('Definition from selection', () => {
   it('Definition from map selection', async () => {
-    // A stretch of about 1 km selected on the map, minutes 20–24 of the 9 Nov run.
+    // A stretch of about 1 km selected on the map, minutes 20–24 of the 9 Nov run, kept as its route.
     const { folder, run, row } = await nov9();
-    expect(selectionOptions(run, 1200, 1440)).toContain('route');
-    const def = definitionFromSelection(run, 1200, 1440, 'route');
+    const def = definitionFromRoute(trackOfStretch(run, 1200, 1440));
     expect(def).toMatchObject({ origin: 'manual', status: 'active' });
-    expect(def.params.type).toBe('route');
-    if (def.params.type !== 'route') return;
-    expect(def.params.length).toBeGreaterThan(800);
-    expect(def.name).toMatch(/^\d\.\d km \w+-bound, pace \d:\d\d–\d:\d\d$/);
-    expect(def.tolerances.paceMax! - def.tolerances.paceMin!).toBe(30);
-    // The run's own pass over the selection is an instance of it.
+    expect(def.params.type).toBe('rule');
+    if (def.params.type !== 'rule' || def.params.shape.type !== 'route') throw new Error('not a route rule');
+    expect(def.params.shape.length).toBeGreaterThan(800);
+    expect(def.name).toMatch(/^\d\.\d km \w+-bound, any pace$/);
+    // The run's own pass over the selection is a segment of it.
     expect(detectInstances(def, run, row, resample(run.samples.lat, run.samples.lon, run.samples.t)).length).toBe(1);
     await writeDefinitions(folder, [def]);
     await runBlocks(folder);
     expect((await readDefinitions(folder))[0].id).toBe(def.id);
+    expect((await readJson<BlockInstancesFile>(folder, PATHS.blockInstances))!.instances.filter((i) => i.definitionId === def.id)).toHaveLength(1);
   });
 
   it('Definition from chart selection', async () => {
-    // The 25-minute tempo lap selected on the pace chart (lap 2: 744 s to about 31 min).
-    const { run } = await nov9();
+    // The 25-minute tempo lap (lap 2) as the one model has it: laps set up as 25 minutes.
+    const { run, row } = await nov9();
     const lap = run.laps[1];
-    expect(selectionOptions(run, lap.start + 5, lap.end - 5)).toContain('structure');
-    const def = definitionFromSelection(run, lap.start + 5, lap.end - 5, 'structure');
-    expect(def.params).toEqual({ type: 'structure', kind: 'time', target: 1500, tolerance: 0.03 });
-    expect(def.name).toBe('25-minute lap');
-    const steady = definitionFromSelection(run, lap.start + 60, lap.start + 360, 'steady');
-    expect(steady.params).toEqual({ type: 'steady', minDuration: 300 });
+    const rule = ruleOf({ type: 'lap', planned: { kind: 'time', target: 1500, tolerance: 0.03 } });
+    expect(ruleName(rule)).toBe('Laps set up as 25 min');
+    const def = definitionFromRule('', rule);
+    const found = detectInstances(def, run, row, []);
+    expect(found.map((i) => [i.start, i.end])).toEqual([[lap.start, lap.end]]);
+    // An older workout-lap block reads as that rule and finds the same lap.
+    const older = asRuleDefinition({ ...def, params: { type: 'structure', kind: 'time', target: 1500, tolerance: 0.03 } as const });
+    expect(older.params).toEqual({ type: 'rule', ...rule });
   });
 });

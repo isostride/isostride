@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
@@ -7,9 +8,18 @@ import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergePar
 import { readChartSettings, runInWorker, useChartSettings, useOpenFolder } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
-import { canDefineFromLaps, definitionFromLaps, efficiencyOf, definitionFromSelection, rangeStats, readDefinitions, selectionOptions, zoneShares, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockType } from '@/lib/blocks';
+import { efficiencyOf, rangeStats, readDefinitions, zoneShares, writeDefinitions, type BlockDefinition, type BlockInstance } from '@/lib/blocks';
+import { builderOptions } from '../blocks/options';
+import type { BuilderOptions } from '../blocks/RuleBuilder';
 import { date, duration, km, pace, time } from '@/lib/format';
 import { LOAD_MODELS, readSettings, zoneOf, zoneShade } from '@/lib/settings';
+
+/** The map made large, coloured by a metric: loaded when it opens. */
+const RouteExpanded = dynamic(() => import('./RouteExpanded').then((m) => m.RouteExpanded), { ssr: false });
+/** The stretches like the selection in other runs: loaded when it is asked for. */
+const SimilarPanel = dynamic(() => import('./SimilarPanel').then((m) => m.SimilarPanel), { ssr: false });
+/** The one editor of a block, for a block kept from Find similar: loaded when it opens. */
+const BlockSheet = dynamic(() => import('../blocks/BlockSheet').then((m) => m.BlockSheet), { ssr: false });
 
 type WindowKey = 'speed' | 'efficiency' | 'effortPace' | 'heartRate' | 'cadence' | 'groundContactTime' | 'verticalOscillation' | 'stepLength' | 'power' | 'altitude' | 'legSpringStiffness';
 const round0 = (unit: string) => (v: number) => `${Math.round(v)} ${unit}`;
@@ -110,6 +120,15 @@ function RunPage() {
   useEffect(() => { setBack(backTarget(window.sessionStorage)); }, []);
   const goBack = (e: MouseEvent) => { if (back.viaHistory && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); router.back(); } };
   const [creating, setCreating] = useState(false);
+  /** the stretch searched for similar ones ("zaznaczam fragment i klikam przycisk"); null: the panel closed */
+  const [similar, setSimilar] = useState<{ from: number; to: number } | null>(null);
+  /** a block from Find similar, open in the one editor before it is kept (requirement "One way to make a block") */
+  const [keeping, setKeeping] = useState<BlockDefinition | null>(null);
+  const [options, setOptions] = useState<BuilderOptions | null>(null);
+  useEffect(() => {
+    if (!keeping || options) return;
+    readJson<RunsIndex>(folder, PATHS.runsIndex).then((ix) => builderOptions(folder, ix?.runs ?? [])).then(setOptions).catch(() => undefined);
+  }, [keeping, options, folder]);
   const [run, setRun] = useState<RunFile | null | undefined>(undefined);
   const [title, setTitle] = useState<string | null>(null);
   const [cursor, setCursor] = useState<number | null>(null);
@@ -157,6 +176,8 @@ function RunPage() {
   const [hot, setHot] = useState<{ key: string; stat: 'min' | 'avg' | 'max' } | null>(null);
   /** the chart menu from the right ("dodatkowe menu ktore bedzie sie rozwijalo z prawej") */
   const [menu, setMenu] = useState(false);
+  /** the map made large, its route coloured by a metric ("moge powiekszyc widok mapy") */
+  const [bigMap, setBigMap] = useState(false);
   useEffect(() => {
     if (!menu) return;
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(false); };
@@ -270,7 +291,6 @@ function RunPage() {
     // The new block opens where blocks are used: on the Analysis screen.
     router.push(`/analysis?items=b:${def.id}:0`);
   };
-  const create = (type: BlockType) => run && selection && save(definitionFromSelection(run, selection.from, selection.to, type));
 
   if (run === undefined) return <div className="page muted">Loading…</div>;
   if (!run || !view) return <div className="page">Run not found. <Link href="/" className="muted">← Runs</Link></div>;
@@ -321,7 +341,6 @@ function RunPage() {
   const [slowestLap, fastestLap] = [Math.min(...lapSpeeds), Math.max(...lapSpeeds)];
   const lapBar = (v: number) => (v <= 0 ? 0 : fastestLap > slowestLap ? 25 + (75 * (v - slowestLap)) / (fastestLap - slowestLap) : 100);
 
-  const blockName = (t: BlockType) => (t === 'route' ? 'Route segment' : t === 'structure' ? 'Workout structure (lap)' : t === 'effort' ? 'Effort (time trial)' : 'Steady fragment');
   const shownStats = stats ? lines.flatMap((l) => { const v = stats.metrics[l.key as WindowKey]; return v ? [{ line: l, v }] : []; }) : [];
   // The key figures of the range ("popraw widget selection ... malo tam informacji").
   const covered = stats ? run.laps.flatMap((l, i) => (Math.min(l.end, stats.to) - Math.max(l.start, stats.from) > 1 ? [i + 1] : [])) : [];
@@ -403,7 +422,7 @@ function RunPage() {
             </div>
           </div>
           <div className="run-side">
-            <RouteMap lat={run.samples.lat} lon={run.samples.lon} t={run.samples.t} cursor={cursor} selection={null} onSelect={select} view={zoom ? { from: zoom[0], to: zoom[1] } : null} follow={!mapLed} onView={fromMap} onFit={() => setMapLed(false)} camera={start.map} onCamera={setMapCam} />
+            <RouteMap lat={run.samples.lat} lon={run.samples.lon} t={run.samples.t} cursor={cursor} selection={null} onSelect={select} view={zoom ? { from: zoom[0], to: zoom[1] } : null} follow={!mapLed} onView={fromMap} onFit={() => setMapLed(false)} camera={start.map} onCamera={setMapCam} onExpand={() => setBigMap(true)} />
             <div className="laps-panel">
               <div className="laps-head"><h3>Laps</h3><span className="muted tnum">{run.laps.length}</span><span className="muted small laps-hint">click one to show it</span></div>
               <div className="run-list" role="region" aria-label="Laps of the run" tabIndex={0}>
@@ -442,6 +461,11 @@ function RunPage() {
               </span>
             )}
             <span className="spacer" />
+            {selection && (
+              <button type="button" className="btn sm primary" title="Find stretches like this one in your other runs: the same route, or the same distance, terrain and pace" onClick={() => setSimilar({ ...selection })}>
+                Find similar
+              </button>
+            )}
             {!selection && <span className="muted small">Select a stretch on the chart, the map or a lap to see its statistics.</span>}
           </div>
           <div className="range-body">
@@ -497,6 +521,18 @@ function RunPage() {
           </div>
         </div>
       )}
+      {similar && handle && (
+        <SimilarPanel runId={id} from={similar.from} to={similar.to} handle={handle} selection={selection} keeping={creating}
+          onSearch={() => selection && setSimilar({ ...selection })} onKeep={(d) => setKeeping(d)} onClose={() => setSimilar(null)} />
+      )}
+      {keeping && options && (
+        <BlockSheet def={keeping} kept={false} title="New block" options={options} handle={handle} onClose={() => setKeeping(null)} onSave={(d) => { setKeeping(null); save(d); }} />
+      )}
+      {bigMap && (
+        <RouteExpanded lat={run.samples.lat} lon={run.samples.lon} t={run.samples.t} start={view.w.start[0] ?? 0} step={view.w.start.length > 1 ? view.w.start[1] - view.w.start[0] : 10}
+          metrics={METRICS.filter((m) => has(m.key)).map((m) => ({ key: m.key, title: m.title, format: m.format, invert: m.invert, values: rollingMean(x, series[m.key], 30), zones: zones[m.key] }))}
+          initial={focus ?? slots.find((k) => k !== null) ?? 'speed'} onClose={() => setBigMap(false)} />
+      )}
       {menu && (
         <aside id="chart-menu" className="chart-menu" role="dialog" aria-modal="false" aria-label="Chart menu">
           <div className="chart-menu-head">
@@ -526,22 +562,9 @@ function RunPage() {
             )}
           </section>
           <section>
-            <h3>Make a block</h3>
-            {selection ? (
-              <>
-                <div className="menu-actions" role="group" aria-label="Make a block of the selection">
-                  {selectionOptions(run, selection.from, selection.to).map((t) => (
-                    <button key={t} className="btn sm primary" disabled={creating} onClick={() => create(t)}>{blockName(t)}</button>
-                  ))}
-                </div>
-              </>
-            ) : <p className="muted small">Select a stretch on the chart, the map or a lap to make a block of it.</p>}
-            {canDefineFromLaps(run) && (
-              <>
-                <p className="muted small">A test or a planned workout? Find the runs with the same laps.</p>
-                <button className="btn sm" disabled={creating} onClick={() => save(definitionFromLaps(run))}>Block from these laps</button>
-              </>
-            )}
+            <h3>Blocks</h3>
+            <p className="muted small">Select a stretch and press Find similar to compare it with your other runs and keep it as a block; every block is on the Blocks screen.</p>
+            <Link className="btn sm" href="/blocks">Blocks</Link>
           </section>
           <section>
             <h3>Zones</h3>

@@ -160,11 +160,11 @@ export async function clearAnalysis(page: Page): Promise<void> {
   await page.locator('.item-chip').first().waitFor({ state: 'detached' });
 }
 
-/** Opens the picker of the Analysis screen on its list of blocks and runs. */
+/** Opens the picker of the Analysis screen: its list of blocks and runs (a block is made on the Blocks screen). */
 export async function openPicker(page: Page) {
   await page.getByRole('button', { name: '+ Add block or run' }).click();
   const dialog = page.getByRole('dialog', { name: 'Add block or run' });
-  await dialog.getByRole('tab', { name: 'Blocks and runs' }).click();
+  await dialog.waitFor();
   return dialog;
 }
 

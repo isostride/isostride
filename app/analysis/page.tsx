@@ -5,23 +5,24 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ItemKey, METRIC_VIEW, useDataVersion, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup } from '@/components';
-import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule, ruleOf } from '@/lib/blocks';
+import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, asRule, shapeName, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule, ruleOf } from '@/lib/blocks';
 import { curvesInWorker, instancesInWorker, runInWorker, useOpenFolder } from '@/lib/client';
 import { MAX_ITEMS, addItem, changesByMetric, computeTrend, describeDelta, describeTrend, formatAmount, percentChange, firstUsableMetric, formatItems, instancesCsv, parseItems, reasonSummary, runMean, selectInstances, valueOf, type AnalysisItem } from '@/lib/compare';
 import type { CurveMetric, CurvePoint, CurveSource } from '@/lib/curve';
 import { PATHS, isOutdated, readJson, readManifest } from '@/lib/fs';
 import { date } from '@/lib/format';
-import { readGear, readRunTags, type Gear } from '@/lib/gear';
+import { readGear, type Gear } from '@/lib/gear';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { TYPE_LABEL, runName } from './names';
 import { mmss, runHref } from './links';
-import type { BuilderOptions } from './RuleBuilder';
+import type { BuilderOptions } from '../blocks/RuleBuilder';
+import { builderOptions } from '../blocks/options';
 
 // The curve tab's chart, figures and table load when the tab is first opened (ADR "Built with React": 200 KB of script per route).
 const AbTab = dynamic(() => import('./AbTab').then((m) => m.AbTab), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>Loading the A/B comparison…</div> });
 /** The picker and the sheet that edits a block, loaded when they open. */
 const AddDialog = dynamic(() => import('./AddDialog').then((m) => m.AddDialog), { ssr: false });
-const BlockSheet = dynamic(() => import('./BlockSheet').then((m) => m.BlockSheet), { ssr: false });
+const BlockSheet = dynamic(() => import('../blocks/BlockSheet').then((m) => m.BlockSheet), { ssr: false });
 const SegmentsTable = dynamic(() => import('./SegmentsTable').then((m) => m.SegmentsTable), { ssr: false, loading: () => <div className="muted small" style={{ padding: 18 }}>Loading the segments…</div> });
 const CurveTab = dynamic(() => import('./CurveTab').then((m) => m.CurveTab), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>Loading the curve…</div> });
 
@@ -40,7 +41,7 @@ function attributes(d: BlockDefinition | null): string[] {
   if (!d) return [];
   const start = d.params.type === 'rule' ? d.params.conditions.start : d.tolerances.start;
   return [
-    TYPE_LABEL[d.params.type],
+    shapeName(asRule(d.params, d.tolerances).shape),
     ...(start !== 'any' ? [`${start} start`] : []),
     ...(d.tolerances.hrSkip !== null ? [`heart rate from minute ${d.tolerances.hrSkip / 60}`] : []),
   ];
@@ -94,17 +95,8 @@ function AnalysisPage() {
     setRecs((await readJson<{ recommendations: Recommendation[] }>(folder, RECOMMENDATIONS_PATH))?.recommendations ?? []);
     const rows = (await readJson<RunsIndex>(folder, PATHS.runsIndex))?.runs ?? [];
     setRuns(rows);
-    const g = await readGear(folder);
-    setGear(g);
-    const tags = await readRunTags(folder);
-    const uniq = (xs: (string | null | undefined)[]) => [...new Set(xs.filter((x): x is string => !!x))];
-    setOptions({
-      workoutTypes: uniq([...tags.dictionary.workoutTypes, ...rows.map((r) => r.workoutType)]),
-      techniqueCues: uniq([...tags.dictionary.techniqueCues, ...rows.map((r) => r.techniqueCue)]),
-      shoes: uniq([...g.filter((x) => x.type === 'shoes').map((x) => x.name), ...rows.map((r) => r.shoes)]),
-      heartRateSources: uniq(rows.map((r) => r.heartRateSource)),
-      devices: uniq(rows.map((r) => r.device)),
-    });
+    setGear(await readGear(folder));
+    setOptions(await builderOptions(folder, rows));
     setOutdated(isOutdated(await readManifest(folder)));
     setLoaded(true);
   }, [folder]);
@@ -302,13 +294,6 @@ function AnalysisPage() {
     setItems(addItem(latest.current, 'block', def.id));
   };
   const dismissSuggestion = (rec: Recommendation) => keep(`Dismissing ${rec.name}`, (d) => [...d, fromRecommendation(rec, 'rejected')]);
-  const addRule = async (rule: Rule, name: string, save: boolean) => {
-    setAdding(false);
-    if (!save) return setItems(addItem(latest.current, 'rule', encodeRule(rule)));
-    const def = definitionFromRule(name, rule);
-    await keep(`Saving ${def.name}`, (d) => [...d, def]);
-    setItems(addItem(latest.current, 'block', def.id));
-  };
   /** A rule that lives in the link kept in the folder: it stays in the list and can be compared A/B. */
   const saveItem = async (i: AnalysisItem) => {
     const rule = decodeRule(i.id);
@@ -526,8 +511,8 @@ function AnalysisPage() {
         </div>
       </>
 
-      {adding && <AddDialog defs={defs} recs={recs} runs={runs} items={items} options={options} handle={handle}
-        onAdd={(kind, id) => { setItems(addItem(items, kind, id)); setAdding(false); }} onAccept={acceptSuggestion} onDismiss={dismissSuggestion} onRule={addRule} onClose={() => setAdding(false)} />}
+      {adding && <AddDialog defs={defs} recs={recs} runs={runs} items={items}
+        onAdd={(kind, id) => { setItems(addItem(items, kind, id)); setAdding(false); }} onAccept={acceptSuggestion} onDismiss={dismissSuggestion} onClose={() => setAdding(false)} />}
       {editing && editingDef && <BlockSheet def={editingDef} kept={editing.kind === 'block'} options={options} handle={handle} onClose={() => setEditing(null)} onSave={(d) => saveEdited(editing, d)} onDelete={(d) => deleteBlock(editing, d)} />}
     </div>
   );
