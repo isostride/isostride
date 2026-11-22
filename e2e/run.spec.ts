@@ -195,6 +195,9 @@ test.describe('Run chart', () => {
     await setChart(page, 'Smooth');
     await page.locator('.stat-cell[data-metric="heartRate"][data-stat="max"]').hover();
     await expect(chart.locator('.mark-max text')).toHaveText(/^max \d+ bpm$/);
+    // Every label of a lowest or highest value inside the chart, none cut by its top (one at the top of its band goes under its point).
+    const cbox = (await chart.boundingBox())!;
+    for (const t of await chart.locator('.mark-max text, .mark-min text').all()) expect((await t.boundingBox())!.y).toBeGreaterThanOrEqual(cbox.y);
     await expect(stats.getByRole('row', { name: /^Heart rate/ }).locator('.trend-cell')).toHaveText(/^[+−]\d+ bpm$/);
     await expect(page.locator('.range-stats .decoupling')).toHaveText(/^Pa:HR [+−]\d+\.\d %$/);
     await page.mouse.move(0, 0);
@@ -325,6 +328,10 @@ test.describe('Run chart', () => {
     // Moved by hand, the map offers Fit route, which hands it back to the chart.
     const fit = page.getByRole('button', { name: 'Fit route' });
     await expect(fit).toBeVisible();
+    // Over the map, at its top: Expand at the left, Fit route at the right, neither on the other.
+    const [mb, eb, fb] = [(await route.boundingBox())!, (await page.getByRole('button', { name: 'Expand map' }).boundingBox())!, (await fit.boundingBox())!];
+    for (const b of [eb, fb]) expect(b.y - mb.y).toBeLessThan(20);
+    expect(eb.x + eb.width).toBeLessThan(fb.x);
     await fit.click();
     await expect(fit).toHaveCount(0);
     await expect(route).toHaveAttribute('data-zoom', wholeZoom.toFixed(2));
@@ -393,10 +400,18 @@ test.describe('Run chart', () => {
     };
     await page.reload();
     await sameView();
-    // Opened again from the list, with nothing but its id in the link: the run's memory.
+    // Opened again from the list, with nothing but its id in the link: afresh, no selection, lap or scale
+    // from before ("przy otwarciu runa ... chce abys wyczyscil poprzednie parametry"); the chart's settings stay.
     await nav(page, 'Runs');
     await showList(page);
     await page.locator('tr.row').first().click();
+    await chart.waitFor();
+    await expect(page.locator('.range-stats h3')).toHaveText('Whole run');
+    await expect(page.getByRole('group', { name: 'Laps' }).getByRole('button', { pressed: true })).toHaveCount(0);
+    await expect(chart.locator('.band-name')).toHaveCount(0); // still overlaid, as Settings say
+    // Back through the history: the view its link holds.
+    await page.goBack();
+    await page.goBack();
     await sameView();
 
     // The map made large (scenario "Route coloured by a metric"): the route coloured by the metric whose

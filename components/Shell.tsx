@@ -112,7 +112,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="brand-row">
           <Link className={`brand ${path.startsWith('/folder') ? 'active' : ''}`} href="/folder" title="Data folder: import, recompute, change" aria-current={path.startsWith('/folder') ? 'page' : undefined}>
             <Logo />
-            <span className="label brand-name">stride<i className="brand-dot">.</i>prism</span>
+            <span className="label brand-name">Stride<i className="brand-dot">Prism</i></span>
           </Link>
           <HistoryNav />
         </div>

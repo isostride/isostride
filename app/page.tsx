@@ -123,7 +123,7 @@ function RunsPage() {
 
       {isOutdated(manifest) && (
         <div className="banner warn">
-          ⚠ Data in this folder was built with algorithm v{manifest!.algorithmVersion}; this app is v{ALGORITHM_VERSION}: recompute it on the <Link href="/folder">Data folder</Link> screen, under the stride.prism logo.
+          ⚠ Data in this folder was built with algorithm v{manifest!.algorithmVersion}; this app is v{ALGORITHM_VERSION}: recompute it on the <Link href="/folder">Data folder</Link> screen, under the StridePrism logo.
         </div>
       )}
       {progress && (
@@ -142,7 +142,7 @@ function RunsPage() {
       {runs.length > 0 && view === 'calendar' ? <Calendar weeks={weeks} match={match} searching={isSearching(search)} loadUnit={loadUnit} /> : (
       <div className="card">
         {runs.length === 0 ? (
-          <div className="empty">{index ? 'No runs yet.' : 'Nothing imported yet.'} Put your COROS FIT files in this folder (or its fit/ subfolder), then open the <Link href="/folder">Data folder</Link> screen (the stride.prism logo) and press <b>Import folder</b>.</div>
+          <div className="empty">{index ? 'No runs yet.' : 'Nothing imported yet.'} Put your COROS FIT files in this folder (or its fit/ subfolder), then open the <Link href="/folder">Data folder</Link> screen (the StridePrism logo) and press <b>Import folder</b>.</div>
         ) : (
           <table className="data">
             <thead>

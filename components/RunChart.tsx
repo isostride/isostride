@@ -365,7 +365,8 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
             const label = (x: number, y: number, text: string, cls: string, lit: boolean) => (
               <g className={`run-mark ${cls} ${lit ? 'mark-hot' : ''}`}>
                 <circle cx={x} cy={y} r={lit ? 6 : 4} fill="var(--surface)" stroke={d.line.color} strokeWidth={lit ? 3 : 2} />
-                <text x={x > width - 120 ? x - 8 : x + 8} y={y - 6} fontSize="10" textAnchor={x > width - 120 ? 'end' : 'start'} fill="var(--text)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke" fontWeight={lit ? 700 : 500}>{text}</text>
+                {/* Above the point, or under it when the band's top leaves no room (a highest value at the top of its band). */}
+                <text x={x > width - 120 ? x - 8 : x + 8} y={y - 16 < d.b0 + 2 ? y + 15 : y - 6} fontSize="10" textAnchor={x > width - 120 ? 'end' : 'start'} fill="var(--text)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke" fontWeight={lit ? 700 : 500}>{text}</text>
               </g>
             );
             const inX = (t: number) => t >= d0 && t <= d1;

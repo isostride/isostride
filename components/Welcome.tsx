@@ -11,7 +11,7 @@ export function Welcome() {
     <div className="welcome">
       <div className="card">
         <Logo size={56} />
-        <h1 aria-label="stride.prism">stride<i className="brand-dot" aria-hidden="true">.</i>prism</h1>
+        <h1>Stride<i className="brand-dot">Prism</i></h1>
         <p className="muted">Compare the same segments of your runs in the same context, and see changes the watch averages hide.</p>
         {state.status === 'unsupported' && (
           <div className="banner err" style={{ marginTop: 18, textAlign: 'left' }}>
@@ -22,7 +22,7 @@ export function Welcome() {
               </span>
             ) : (
               <span>
-                <b>Browser not supported.</b> Open stride.prism in Chrome, Edge or Opera: it needs access to a folder on your disk.
+                <b>Browser not supported.</b> Open StridePrism in Chrome, Edge or Opera: it needs access to a folder on your disk.
               </span>
             )}
           </div>

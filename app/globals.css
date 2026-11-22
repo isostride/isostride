@@ -1234,10 +1234,12 @@ a.crumbs:hover b { color: var(--text); }
 .clear-selection { gap: 6px; background: color-mix(in srgb, var(--accent) 10%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); }
 .clear-selection:hover { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); }
 
-/* The name, stride.prism: lower case, its dot in the accent (the light accent on the rail), readable at 4.5:1. */
+/* The name, StridePrism: "Prism" in the accent (the light accent on the rail), readable at 4.5:1. */
 .brand-name { letter-spacing: -0.03em; }
 .brand-dot { font-style: normal; color: var(--accent); }
 @media (min-width: 821px) { .sidebar .brand-dot { color: var(--rail-accent); } }
+/* On the brand's highlight (hovered, or the Data folder open) "Prism" takes the text's colour: the accent on it is too faint to read. */
+.brand:hover .brand-dot, .brand.active .brand-dot { color: inherit; }
 .welcome h1 { letter-spacing: -0.04em; }
 
 /* The run's map made large: the route over the window's height, coloured by one metric chosen beside it. */
@@ -1494,7 +1496,8 @@ a.crumbs:hover b { color: var(--text); }
 /* ---------- larger hit areas (the runner's request: "przyciski po prawej stronie zwieksz obszar czulosci") ----------
    Small buttons and the links of table rows catch a click about 40 px high, beyond what they draw;
    the row links look like buttons at rest, not only under the pointer. */
-.btn.sm, table.data a.row-open { position: relative; }
+/* At no weight (:where), so a button placed on its own (the map's Expand and Fit route) keeps its position. */
+:where(.btn.sm, table.data a.row-open) { position: relative; }
 .btn.sm::after, table.data a.row-open::after { content: ''; position: absolute; inset: -7px -4px; border-radius: 12px; }
 table.data a.row-open { height: 30px; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
 table.data tr:hover a.row-open, table.data a.row-open:focus-visible { border-color: var(--line-strong); }

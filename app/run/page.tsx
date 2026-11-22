@@ -78,6 +78,13 @@ const viewKey = (id: string) => `strideprism.runView.${id}`;
 /** The key of the view a run was left with before its link was written: the link it was left at, and the view. */
 const leftKey = (id: string) => `strideprism.runViewLeft.${id}`;
 
+/**
+ * The browser's own key of the history entry shown (the Navigation API of the Chromium browsers the
+ * app runs in): the view a run was left with belongs to its entry, so going back to it finds the view,
+ * and opening the run anew (a new entry) does not. Null without the API.
+ */
+const entryKey = (): string | null => (window as unknown as { navigation?: { currentEntry?: { key?: string } } }).navigation?.currentEntry?.key ?? null;
+
 /** The last choices made on any run: the base of a run opened with nothing in its link nor memory. */
 function lastChoices(): RunView {
   const v: RunView = { range: null, slots: DEFAULT_SLOTS, focus: null, layout: 'bands', axis: 'time', smooth: true, blocks: false, map: null };
@@ -122,17 +129,25 @@ function RunPage() {
   // The run's load by the model of Settings, and the form that morning (requirement "Load model chosen in Settings").
   const [effort, setEffort] = useState<{ load: number; estimated: boolean; unit: string; model: string; form: number } | null>(null);
   // The view the page opens with ("chce aby wszystko bylo endkodowane w url"): the link's, then the
-  // run's memory, then the last choices made on any run.
+  // run's memory, then the last choices made on any run. A run opened afresh, its link naming nothing
+  // but the run (from the list, the calendar, the palette), starts clean: no selection, zoom, scale or
+  // map from before ("przy otwarciu runa ... chce abys wyczyscil poprzednie parametry .. tzn selection");
+  // the metrics shown and the chart's settings are the last chosen. A link with a view (a reload, the
+  // history, a link from Compare) opens as it says.
   const [start] = useState<RunView>(() => {
     let memory: URLSearchParams | null = null;
     let link = new URLSearchParams(params.toString());
+    const afresh = [...link.keys()].every((k) => k === 'id');
     try {
-      const m = localStorage.getItem(viewKey(id));
+      const m = afresh ? null : localStorage.getItem(viewKey(id));
       if (m) memory = new URLSearchParams(m);
-      // Back at the very link the run was left at, before its last change reached it: that change wins.
-      const left = JSON.parse(localStorage.getItem(leftKey(id)) ?? 'null') as { link: string; view: string } | null;
+      // Back at the very link the run was left at, before its last change reached it: that change wins;
+      // never for a run opened afresh (its link naming only the run), which starts clean.
+      // The entry of the history it was left in, when the browser tells it; else its link, not for a run opened afresh.
+      const left = JSON.parse(localStorage.getItem(leftKey(id)) ?? 'null') as { link: string; entry?: string | null; view: string } | null;
       localStorage.removeItem(leftKey(id));
-      if (left && left.link === params.toString()) link = new URLSearchParams(left.view);
+      const same = left && (left.entry ? left.entry === entryKey() : !afresh && left.link === params.toString());
+      if (left && same) link = new URLSearchParams(left.view);
     } catch { /* none */ }
     return viewFromParams(mergeParams(link, memory), lastChoices(), KEYS);
   });
@@ -194,6 +209,9 @@ function RunPage() {
   const unsaved = useRef<string | null>(null);
   /** the query of the link as last written (or as opened) */
   const written = useRef(params.toString());
+  /** the history entry the run is shown in, read as it opens (at its close the browser is in the next one) */
+  const entry = useRef<string | null>(null);
+  useEffect(() => { entry.current = entryKey(); }, []);
   useEffect(() => {
     const view: RunView = { range: zoom, slots, focus, layout, axis, smooth, blocks: showBlocks, map: mapLed ? mapCam : null };
     const query = viewToParams(id, view).toString();
@@ -213,7 +231,7 @@ function RunPage() {
     if (!unsaved.current) return;
     try {
       localStorage.setItem(viewKey(id), unsaved.current);
-      localStorage.setItem(leftKey(id), JSON.stringify({ link: written.current, view: unsaved.current }));
+      localStorage.setItem(leftKey(id), JSON.stringify({ link: written.current, entry: entry.current, view: unsaved.current }));
     } catch { /* not kept */ }
   }, [id]);
 

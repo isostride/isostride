@@ -1,6 +1,6 @@
-# stride.prism
+# StridePrism
 
-stride.prism analyses your running metrics: pace, heart rate, cadence, ground contact time, vertical oscillation, step length, power and leg spring stiffness. It compares like with like. You choose a **block**: a rule such as "the fastest 5 minutes with the heart rate above 160", "laps of 3 to 5 km" or "the runs since March", or a stretch of route or a workout lap the app found in your runs. The app selects every segment the block describes in your history and checks two things:
+StridePrism analyses your running metrics: pace, heart rate, cadence, ground contact time, vertical oscillation, step length, power and leg spring stiffness. It compares like with like. You choose a **block**: a rule such as "the fastest 5 minutes with the heart rate above 160", "laps of 3 to 5 km" or "the runs since March", or a stretch of route or a workout lap the app found in your runs. The app selects every segment the block describes in your history and checks two things:
 
 - **Analysis:** whether a metric changes over time within that block.
 - **A/B comparison** (a tab of Analysis, on the items chosen there): whether two groups of instances differ, for example two pairs of shoes, two watches or a technique cue. The answer comes with a 95% interval and the noise level of your own data.
