@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { CheckStatus, ModelKey, ModelReport, Trust } from '@/lib/load';
 import { READING } from './reading';
 import { performanceHref } from './structure';
@@ -64,7 +65,7 @@ function RestsOn({ m, by }: { m: ModelReport; by: Models }) {
  */
 export function WhyButton({ m, open, onToggle }: { m: ModelReport; open: boolean; onToggle: () => void }) {
   return (
-    <button type="button" className={`why-btn ${open ? 'on' : ''}`} aria-expanded={open} aria-controls={open ? `why-${m.key}` : undefined} onClick={onToggle}>
+    <button type="button" className={`why-btn ${open ? 'on' : ''}`} aria-haspopup="dialog" aria-expanded={open} onClick={onToggle}>
       Why?<span className="sr-only"> {m.name}: {TRUST_LABEL[m.trust]}</span>
     </button>
   );
@@ -93,7 +94,40 @@ export function WhyPanel({ m, by }: { m: ModelReport; by: Models }) {
   );
 }
 
-/** Above a view: its models in a line, each with its trust and a "Why?"; one opens at a time. */
+/**
+ * A model's "Why?" in a window over the screen (the runner's request of 22 Nov 2026: "w performance
+ * why wyswietlaj jako popup"): its name and trust, then all its "Why?" holds; closed by its button,
+ * Esc or a click beside it, the focus going back where it was.
+ */
+export function WhyDialog({ m, by, onClose }: { m: ModelReport; by: Models; onClose: () => void }) {
+  const close = useRef<HTMLButtonElement>(null);
+  const done = useRef(onClose);
+  useEffect(() => { done.current = onClose; }, [onClose]);
+  useEffect(() => {
+    const before = document.activeElement as HTMLElement | null;
+    close.current?.focus();
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); done.current(); } };
+    window.addEventListener('keydown', esc, true);
+    return () => { window.removeEventListener('keydown', esc, true); before?.focus?.(); };
+  }, []);
+  // Over the whole page, not inside the map or the bar it opens from (their styles stay theirs).
+  return createPortal(
+    <div className="why-backdrop" onClick={onClose}>
+      <div className="why-dialog" role="dialog" aria-modal="true" aria-label={`Why: ${m.name}`} onClick={(e) => e.stopPropagation()}>
+        <div className="why-dialog-head">
+          <h2>{m.name}</h2>
+          <TrustChip trust={m.trust} />
+          <span className="spacer" />
+          <button ref={close} type="button" className="btn sm icon" aria-label="Close" onClick={onClose}>✕</button>
+        </div>
+        <WhyPanel m={m} by={by} />
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/** Above a view: its models in a line, each with its trust and a "Why?", which opens in a window. */
 export function WhyBar({ models, by }: { models: ModelKey[]; by: Models }) {
   const [open, setOpen] = useState<ModelKey | null>(null);
   const shown = open && models.includes(open) ? open : null;
@@ -108,7 +142,7 @@ export function WhyBar({ models, by }: { models: ModelKey[]; by: Models }) {
           </span>
         ))}
       </div>
-      {shown && <div className="card why-card"><WhyPanel m={by[shown]} by={by} /></div>}
+      {shown && <WhyDialog m={by[shown]} by={by} onClose={() => setOpen(null)} />}
     </div>
   );
 }

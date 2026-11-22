@@ -689,3 +689,14 @@ Q: (użytkownik) problem z przyciskami: [screenshot: on a narrow screen the run 
 A: (model) The cause was mine: the larger hit areas gave every small button position: relative, stronger than the map's own placing, so Expand and Fit route fell under the map onto each other (on a computer too). The rule now has no weight (:where); Expand is at the map's top left again, Fit route at its top right, and the run test checks it.
 Q: (użytkownik) [screenshot: the run chart's mark label "max 11.0 kN/m" cut by the band above] NA WYKRESACH :
 A: (model) Done: a label of a lowest or highest value on the run chart stands above its point, or under it when its band's top leaves no room, so none is cut; the run test checks every label lies inside the chart.
+Q: (użytkownik) w performance why wyswietlaj jako popup
+Q: (użytkownik) czy te rzeczy w why sa hardcodowane? mam na mysli: [screenshot: "The heart rate comes from a strap · in doubt — a registered sensor in 20 % of the runs, the watch's wrist sensor in the rest: the two read differently, most at high intensity"]
+A: (model) Done: every "Why?" of Performance (on the map of the models and above each view) opens in a window over the screen, the model's name and trust at its top; ✕, Esc or a click beside it closes it; on a phone it rises from the bottom.
+A: (model) Of the "Why?" contents: the checks and their sentences are written in the model's code (lib/load/assumptions.ts), with fixed thresholds (the model's choices, e.g. a strap in 80 % of the runs or more to hold); the numbers and the verdicts come from the data each time: "20 %" is the share of your runs with a heart rate whose source is a sensor registered in Settings → Gear for that date, "in doubt" because it is above 0 and below 80 %, "132 of 132" counted from the runs index.
+A: (użytkownik) tak [to: the thresholds of the models' assumptions set in Settings]
+A: (model) Done: Settings has a Models tab with every threshold of the models' checks (a strap in at least 80 % of the runs, the runs' coverage, the runs needed, the best efforts, the agreement, the fitted response), each in its unit with its default beside it; empty is the default, a value out of range cannot be saved; saved in the data folder, every "Why?" of Performance judges by them.
+Q: (użytkownik) moment co oznacz przy pasie w 20% biegow?
+A: (użytkownik) tak [to: reading from the FIT files whether a strap was worn]
+A: (model) It cannot be read: in all 134 FIT files of the export the only device is the watch (PACE 3 or PACE 4), COROS's own fields are Effort Pace, Form Power, Leg Spring Stiffness and Air Power, and the session holds only the average, lowest and highest heart rate; the source of the heart rate stays the runner's to say in Settings → Gear. Offered: a strap or wrist choice on a run, as its shoes can be changed.
+Q: (model) Zrobić punkt 1 (pas/nadgarstek przy biegu), najlepiej razem z 2?
+A: (użytkownik) narazie zostaw

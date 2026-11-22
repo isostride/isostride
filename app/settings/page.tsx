@@ -4,7 +4,11 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { runInWorker, useChartSettings, useMapTiles, useNarrowMenu, useOpenFolder, useTheme, type ChartSettings, type Theme } from '@/lib/client';
+import dynamic from 'next/dynamic';
 import { GearTags } from './GearTags';
+
+/** The thresholds of the models' checks: loaded with their tab. */
+const ModelsCard = dynamic(() => import('./ModelsCard').then((m) => m.ModelsCard), { ssr: false });
 import { DEFAULT_ZONES, ZONE_METRICS, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneRanges, zoneShade, zonesFromMaxHr, type ZoneMetric } from '@/lib/settings';
 
 /** A value of a metric as the runner reads it: pace as m:ss, others as they are. */
@@ -30,8 +34,8 @@ function ZoneChips({ m, boundaries }: { m: ZoneMetric; boundaries: number[] }) {
 }
 
 /** The Settings tabs (requirement "Settings in tabs"), kept in the link (tab=zones, gear, tags, charts, display). */
-type Tab = 'zones' | 'gear' | 'tags' | 'charts' | 'display';
-const TABS: [Tab, string][] = [['zones', 'Zones'], ['gear', 'Gear'], ['tags', 'Tags'], ['charts', 'Charts'], ['display', 'Display']];
+type Tab = 'zones' | 'gear' | 'tags' | 'charts' | 'models' | 'display';
+const TABS: [Tab, string][] = [['zones', 'Zones'], ['gear', 'Gear'], ['tags', 'Tags'], ['charts', 'Charts'], ['models', 'Models'], ['display', 'Display']];
 
 export default function SettingsPageWrapper() {
   return <Suspense fallback={<div className="page wide-page"><div className="page-head"><h1>Settings</h1></div></div>}><SettingsPage /></Suspense>;
@@ -65,6 +69,7 @@ function SettingsPage() {
         {tab === 'zones' && <ZonesCard />}
         {(tab === 'gear' || tab === 'tags') && <GearTags part={tab} />}
         {tab === 'charts' && <ChartsCard />}
+        {tab === 'models' && <ModelsCard />}
         {tab === 'display' && <DisplayCard />}
       </div>
     </div>

@@ -43,6 +43,7 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       await page.locator('.map-node[data-model="efforts"]').getByRole('button', { name: /^Why\?/ }).click();
       await page.getByRole('region', { name: /^Why:/ }).waitFor();
       found.push(...(await serious(page, `Performance · Why (${scheme})`)));
+      await page.keyboard.press('Escape');
       for (const [tab, views] of [['Load', ['Form', 'Weekly load', 'Intensity']], ['Capacity', ['Best efforts', 'Critical speed and power', 'Predictions and VDOT']], ['Aerobic', ['Efficiency', 'Decoupling', 'VO2max from heart rate']], ['Response', ['On VO2max from heart rate', 'On VDOT']]] as const) {
         await page.getByRole('tab', { name: tab, exact: true }).click();
         for (const view of views) {
@@ -60,7 +61,7 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       found.push(...(await serious(page, `Performance · Model (${scheme})`)));
       await nav(page, 'Settings');
       // The tabs of Settings: zones, gear, tags.
-      for (const tab of ['Zones', 'Gear', 'Tags', 'Charts', 'Display']) {
+      for (const tab of ['Zones', 'Gear', 'Tags', 'Charts', 'Models', 'Display']) {
         await page.getByRole('tab', { name: tab, exact: true }).click();
         await page.getByRole('tabpanel').getByRole('region', { name: tab }).waitFor();
         found.push(...(await serious(page, `Settings · ${tab} (${scheme})`)));

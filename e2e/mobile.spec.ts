@@ -109,6 +109,7 @@ test.describe('Layout that fits a phone', () => {
     await page.locator('.map-node[data-model]').first().waitFor({ timeout: 60_000 });
     await page.locator('.map-node[data-model="efforts"]').getByRole('button', { name: /^Why\?/ }).click();
     await check('Performance · Overview', true);
+    await page.keyboard.press('Escape');
     for (const [tab, views] of [['Load', ['Form', 'Weekly load', 'Intensity']], ['Capacity', ['Best efforts', 'Critical speed and power', 'Predictions and VDOT']], ['Aerobic', ['Efficiency', 'Decoupling', 'VO2max from heart rate']], ['Response', ['On VO2max from heart rate', 'On VDOT']]] as const) {
       await page.getByRole('tab', { name: tab, exact: true }).click();
       for (const view of views) {
@@ -125,7 +126,7 @@ test.describe('Layout that fits a phone', () => {
 
     // Settings: its tabs.
     await nav(page, 'Settings');
-    for (const tab of ['Zones', 'Gear', 'Tags', 'Charts', 'Display']) {
+    for (const tab of ['Zones', 'Gear', 'Tags', 'Charts', 'Models', 'Display']) {
       await page.getByRole('tab', { name: tab, exact: true }).click();
       await page.getByRole('region', { name: tab }).waitFor();
       await check(`Settings · ${tab}`, tab !== 'Tags');

@@ -6,6 +6,13 @@
     "targetId": "d366613a-126e-4c7f-859e-3e075bf3a0b7"
   },
   {
+    "id": "002eeed6-f4da-4a26-ac55-3880d7af6dbb",
+    "quote": "czy te rzeczy w why sa hardcodowane?",
+    "relationType": "derives",
+    "sourceId": "1671bc8b-68a5-4128-89a5-690b8a0989a5",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "event": "91dffe7a-a202-4302-9438-c0c3055367ed",
     "id": "00716dc5-ecf0-4dca-ab65-15e489eaa5ec",
     "relationType": "transition",
@@ -1552,6 +1559,12 @@
     "targetId": "1c0393ae-a54a-472b-b742-26baaae5415d"
   },
   {
+    "id": "318a99bb-cc39-42da-994d-e60b4e8a6c72",
+    "relationType": "satisfies",
+    "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
+    "targetId": "1671bc8b-68a5-4128-89a5-690b8a0989a5"
+  },
+  {
     "id": "3198ff7e-f56a-45bf-ad50-c25d354ea0dc",
     "relationType": "satisfies",
     "sourceId": "20773fe3-dac4-43a8-b0a4-5098326b5d59",
@@ -2264,6 +2277,12 @@
     "relationType": "derives",
     "sourceId": "8690d92b-9be0-4782-8993-56acf708796a",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "4c2c4632-5667-40d0-b2c3-c57467377af5",
+    "relationType": "verifies",
+    "sourceId": "5e16f935-da21-49c6-b592-220447275732",
+    "targetId": "1671bc8b-68a5-4128-89a5-690b8a0989a5"
   },
   {
     "id": "4c308118-9fb2-4752-bc3c-8be3adacd835",

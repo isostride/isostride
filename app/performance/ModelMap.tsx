@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ModelGroup, ModelKey, ModelReport, Trust } from '@/lib/load';
-import { TRUST_LABEL, WhyButton, WhyPanel, shortName, type Models } from './Assumptions';
+import { TRUST_LABEL, WhyButton, WhyDialog, shortName, type Models } from './Assumptions';
 import { TABS, performanceHref } from './structure';
 
 /** A box of a node, relative to the map. */
@@ -73,7 +73,7 @@ function place(models: ModelReport[]) {
  * to what is built on it and what is fitted to both; a line from each model to every model resting
  * on it, coloured where the model holds the trust of the one resting on it. Each model wears its
  * trust (a bar and a dot in the status colour, and the word), says what it gives now, links to its
- * view, and has its "Why?": the rest about it opens under the map, one at a time (requirement
+ * view, and has its "Why?": the rest about it opens in a window over the screen (requirement
  * "Performance kept simple"). Under the pointer or the focus a model's chain lights up and the rest recede.
  */
 export function ModelMap({ models, by: models_, says }: { models: ModelReport[]; by: Models; says: (m: ModelReport) => string }) {
@@ -84,7 +84,6 @@ export function ModelMap({ models, by: models_, says }: { models: ModelReport[];
   const nodes = useRef(new Map<ModelKey, HTMLDivElement>());
   const [open, setOpen] = useState<ModelKey | null>(null);
   // The reasons opened come into view under the map.
-  useEffect(() => { if (open) document.getElementById(`why-${open}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, [open]);
   const [boxes, setBoxes] = useState<Map<ModelKey, Box> | null>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [active, setActive] = useState<ModelKey | null>(null);
@@ -222,7 +221,7 @@ export function ModelMap({ models, by: models_, says }: { models: ModelReport[];
           })}
         </div>
       </div>
-      {open && by.get(open) && <WhyPanel m={by.get(open)!} by={models_} />}
+      {open && by.get(open) && <WhyDialog m={by.get(open)!} by={models_} onClose={() => setOpen(null)} />}
     </section>
   );
 }

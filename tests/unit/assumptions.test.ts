@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { bestEfforts, effortEvidence, effortOf, formSeries, performanceReport, summarizeLoad, todoList, type BestOfLength, type LoadSummary, type ModelKey, type ModelReport, type ReportInput } from '@/lib/load';
-import { DEFAULT_PERFORMANCE, type PerformanceSettings } from '@/lib/settings';
+import { THRESHOLDS, bestEfforts, effortEvidence, effortOf, formSeries, performanceReport, summarizeLoad, thresholdValue, thresholdsOf, todoList, type BestOfLength, type LoadSummary, type ModelKey, type ModelReport, type ReportInput } from '@/lib/load';
+import { DEFAULT_PERFORMANCE, parsePerformance, type PerformanceSettings } from '@/lib/settings';
 import { syntheticRun } from '../support/synthetic';
 
 const TODAY = '2026-11-21';
@@ -129,6 +129,14 @@ describe('Model assumptions', () => {
     const wrist = report({ rows: ALL_OUT.rows.map((r) => ({ ...r, heartRateSource: 'wrist (COROS PACE 4)' })), summaries: ALL_OUT.summaries }, SET);
     expect(status(wrist.by.intensity, 'sensor')).toBe('unknown');
     expect(wrist.by.intensity.trust).toBe('ok');
+    // A strap in half the runs: in doubt by the default (80 %); holds once the runner sets 40 % in Settings, Models.
+    const half = { rows: ALL_OUT.rows.map((r, i) => (i % 2 ? { ...r, heartRateSource: 'wrist (COROS PACE 4)' } : r)), summaries: ALL_OUT.summaries };
+    expect(status(report(half, SET).by.intensity, 'sensor')).toBe('doubt');
+    expect(status(report(half, { ...SET, thresholds: { strapShare: 0.4 } }).by.intensity, 'sensor')).toBe('met');
+    // A threshold out of its range keeps its default; a pair's ends are set one by one.
+    expect(thresholdsOf({ strapShare: 2, 'coverage.1': 0.5, lengths: 0 })).toMatchObject({ strapShare: 0.8, coverage: [0.9, 0.5], lengths: 3 });
+    expect(thresholdValue(THRESHOLDS, 'dPrime.1')).toBe(500);
+    expect(parsePerformance({ thresholds: { strapShare: 0.5, bad: 'x' } }).thresholds).toEqual({ strapShare: 0.5 });
     // Every model says what it rests on and where it is shown.
     for (const m of good.models) { expect(m.inputs.length + m.parents.length, m.key).toBeGreaterThan(0); expect(m.where.tab, m.key).toBeTruthy(); }
   });

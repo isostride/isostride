@@ -716,6 +716,10 @@
     ] },
     { "element": "ec1c74f4-8d5f-43b3-81f5-f53a068d8a64", "name": "Run screen compares nothing", "tests": [
       "tests/unit/screens.test.ts › Screens and their parts › The Run screen compares nothing itself"
+    ] },
+    { "element": "5e16f935-da21-49c6-b592-220447275732", "name": "Strap threshold set in Settings", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn",
+      "tests/unit/assumptions.test.ts › Model assumptions › Assumptions checked against the data"
     ] }
   ]
 }

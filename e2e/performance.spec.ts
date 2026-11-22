@@ -12,7 +12,20 @@ test.describe('Performance model', () => {
     await expect(page.locator('.sidebar nav').getByRole('link')).toHaveText(['Runs', 'Segments', 'Compare', 'Performance', 'Settings']);
     // Settings in tabs, zones first; gear and tags are tabs of it, not a screen of the navigation.
     await nav(page, 'Settings');
-    await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Zones', 'Gear', 'Tags', 'Charts', 'Display']);
+    await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Zones', 'Gear', 'Tags', 'Charts', 'Models', 'Display']);
+    // Models (requirement "Thresholds of the models"): each threshold of the checks with its default; one out of
+    // its range cannot be saved; set, it is kept in the data folder with the performance model.
+    await page.getByRole('tab', { name: 'Models' }).click();
+    const thresholds = page.getByRole('region', { name: 'Models' });
+    const strap = thresholds.getByLabel('A heart rate strap in at least');
+    await expect(strap).toHaveAttribute('placeholder', '80');
+    await strap.fill('150');
+    await expect(thresholds.getByRole('alert')).toContainText('A heart rate strap in at least (0–100)');
+    await expect(thresholds.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await strap.fill('50');
+    await thresholds.getByRole('button', { name: 'Save' }).click();
+    await expect(thresholds.getByRole('status')).toContainText('Saved');
+    expect(JSON.parse(await readText(page, 'strideprism/user/settings.json')).performance.thresholds).toEqual({ strapShare: 0.5 });
     await page.getByRole('tab', { name: 'Tags' }).click();
     await expect(page).toHaveURL(/\/settings\?tab=tags/);
     await expect(page.getByRole('region', { name: 'Tags' })).toContainText('Workout type');
@@ -55,11 +68,17 @@ test.describe('Performance model', () => {
     await expect(panel('Load of a run')).toContainText('Rough. Your resting heart rate is set: in doubt.');
     await expect(panel('Load of a run').getByRole('list', { name: /^Assumptions of Load of a run/ }).getByRole('listitem').first()).toContainText(/Every run has what the model needs · holds\d+ of \d+ runs measured/);
     for (const part of ['Assumptions', 'Rests on', 'What it is', 'How to read it']) await expect(panel('Load of a run')).toContainText(part);
-    // One at a time: another model's "Why?" takes its place.
+    // In a window over the screen ("w performance why wyswietlaj jako popup"): its name and trust at the top; Esc closes it.
+    const window_ = page.getByRole('dialog', { name: 'Why: Load of a run' });
+    await expect(window_.getByRole('heading', { name: 'Load of a run' })).toBeVisible();
+    await expect(window_.getByRole('button', { name: 'Close' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('region', { name: /^Why:/ })).toHaveCount(0);
+    // Another model's; closed by its button.
     await why('Critical speed and D′').click();
     await expect(page.getByRole('region', { name: /^Why:/ })).toHaveCount(1);
     await expect(panel('Critical speed and D′').getByRole('link', { name: /^Best efforts of 2–20 min/ })).toBeVisible();
-    await why('Critical speed and D′').click();
+    await page.getByRole('dialog', { name: /^Why:/ }).getByRole('button', { name: 'Close' }).click();
     await expect(page.getByRole('region', { name: /^Why:/ })).toHaveCount(0);
 
     // To do: what the runner can do so the models work — nothing saved yet, so the settings come first, each saying where it is done.
@@ -102,6 +121,7 @@ test.describe('Performance model', () => {
     const bar = page.getByRole('group', { name: 'How far to trust this' });
     await bar.getByRole('button', { name: /^Why\? Load of a run · Power TSS/ }).click();
     await expect(panel('Load of a run · Power TSS').getByRole('link', { name: /^Critical power and W′/ })).toBeVisible();
+    await page.keyboard.press('Escape');
 
     // Runs: each run's load in TSS in the list, each week's in the calendar.
     await nav(page, 'Runs');
@@ -151,6 +171,7 @@ test.describe('Performance model', () => {
     await bar.getByRole('button', { name: /^Why\? Fitness, fatigue and form/ }).click();
     await expect(panel('Fitness, fatigue and form')).toContainText('All your training is here · you must judge');
     await expect(panel('Fitness, fatigue and form')).toContainText('Form is fitness minus fatigue of the day before');
+    await page.keyboard.press('Escape');
     // Weekly load: the weeks' load, monotony, strain and ramp rate.
     await page.getByRole('radio', { name: 'Weekly load' }).click();
     await expect(page).toHaveURL(/tab=load&view=weekly/);
@@ -165,6 +186,7 @@ test.describe('Performance model', () => {
     expect(Math.abs(shares.slice(0, 3).reduce((s, t) => s + Number(t.replace(/\D/g, '')), 0) - 100)).toBeLessThanOrEqual(2);
     await bar.getByRole('button', { name: /^Why\? Intensity distribution/ }).click();
     await expect(panel('Intensity distribution')).toContainText('The heart rate zones are yours · does not hold');
+    await page.keyboard.press('Escape');
 
     // Capacity, what you can do: first the best efforts themselves, each with how hard it was and the run it comes from.
     await tabs.getByRole('tab', { name: 'Capacity' }).click();
@@ -179,6 +201,7 @@ test.describe('Performance model', () => {
     await bar.getByRole('button', { name: /^Why\? Best efforts of 2–20 min/ }).click();
     await expect(panel('Best efforts of 2–20 min')).toContainText('Your maximum heart rate is known · in doubt');
     await expect(panel('Best efforts of 2–20 min')).toContainText('to make a length count, run it all-out once, on its own');
+    await page.keyboard.press('Escape');
     // Critical speed (a pace) and power over time, fitted to those efforts.
     await page.getByRole('radio', { name: 'Critical speed and power' }).click();
     const critical = page.getByLabel('Critical speed and power now');
@@ -187,6 +210,7 @@ test.describe('Performance model', () => {
     await expect(page.getByRole('img', { name: 'Critical speed over time' }).locator('.tc-line')).toHaveCount(1);
     await bar.getByRole('button', { name: /^Why\? Critical speed and D′/ }).click();
     await expect(panel('Critical speed and D′').getByRole('link', { name: /^Best efforts of 2–20 min/ })).toBeVisible();
+    await page.keyboard.press('Escape');
     // The predicted times and the VDOT the predicted 5 km implies.
     await page.getByRole('radio', { name: 'Predictions and VDOT' }).click();
     await expect(page).toHaveURL(/tab=capacity&view=predictions/);
@@ -223,6 +247,7 @@ test.describe('Performance model', () => {
     await bar.getByRole('button', { name: /^Why\? Fitted response · VDOT/ }).click();
     await expect(panel('Fitted response · VDOT').getByRole('link', { name: /^Load of a run/ })).toBeVisible();
     await expect(panel('Fitted response · VDOT').getByRole('link', { name: /^VO2max as VDOT/ })).toBeVisible();
+    await page.keyboard.press('Escape');
 
     // Fitness function "Performance views read no run file" (ADR "Performance markers from summaries").
     const opened = await page.evaluate(() => (window as any).__opened as string[]);

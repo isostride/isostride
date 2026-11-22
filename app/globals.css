@@ -1540,3 +1540,25 @@ table.data tr.reference > td { background: color-mix(in srgb, var(--accent) 9%, 
 .effort-card-label { flex-basis: 100%; font-size: 11px; }
 .effort-figures td { vertical-align: middle; }
 .effort-range { display: block; font-weight: 400; }
+
+/* ---------- a model's "Why?" in a window ("w performance why wyswietlaj jako popup") ---------- */
+.why-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: var(--scrim-strong); backdrop-filter: blur(3px); }
+.why-dialog { width: min(860px, 100%); max-height: calc(100dvh - 32px); overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow-float); padding: 16px 20px 20px; }
+.why-dialog-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.why-dialog-head h2 { margin: 0; font-size: 17px; letter-spacing: -0.01em; }
+.why-dialog-head .spacer { flex: 1; }
+.why-dialog .why-panel { border: 0; padding: 0; margin: 0; background: none; }
+@media (max-width: 760px) { .why-backdrop { padding: 0; place-items: end stretch; } .why-dialog { border-radius: 20px 20px 0 0; max-height: 88dvh; } }
+
+/* ---------- Settings, Models: the thresholds of the models' checks ---------- */
+.models-card .settings-head { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+.models-card .settings-head .spacer { flex: 1; }
+.models-status, .models-bad { margin: 0 18px 8px; }
+.models-bad { color: var(--err); }
+.models-group { padding: 4px 18px 8px; border-top: 1px solid var(--line); }
+.models-group h3 { font-size: 13px; margin: 10px 0 4px; }
+.models-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 110px; align-items: center; gap: 6px 14px; padding: 6px 0; }
+.models-input { display: inline-flex; align-items: center; gap: 8px; }
+.models-input .input { width: 84px; }
+.models-default { text-align: right; }
+@media (max-width: 760px) { .models-row { grid-template-columns: 1fr auto; } .models-default { grid-column: 1 / -1; text-align: left; } }
