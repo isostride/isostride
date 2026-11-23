@@ -99,7 +99,7 @@ function AnalysisPage() {
   const [files, setFiles] = useState<Map<string, RunFile>>(new Map());
   const [adhoc, setAdhoc] = useState<Map<string, BlockInstance[]>>(new Map());
   // The curves computed, with the metric they were computed for (a curve of the other metric is not shown).
-  const [curves, setCurves] = useState<{ metric: CurveMetric; by: Map<string, CurvePoint[]> }>({ metric: 'speed', by: new Map() });
+  const [curves, setCurves] = useState<{ metric: CurveMetric; by: Map<string, CurvePoint[]>; key?: string }>({ metric: 'speed', by: new Map() });
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [joinPoints, setJoin] = useState(true);
@@ -322,7 +322,7 @@ function AnalysisPage() {
     const controller = new AbortController();
     let live = true;
     curvesInWorker(list, handle, (p) => live && setProgress({ done: p.done, total: p.total }), controller.signal)
-      .then((got) => live && setCurves({ metric: list[0].metric ?? 'speed', by: new Map(Object.entries(got)) }))
+      .then((got) => live && setCurves({ metric: list[0].metric ?? 'speed', by: new Map(Object.entries(got)), key: sourcesKey }))
       .catch(() => undefined)
       .finally(() => live && setProgress(null));
     return () => { live = false; controller.abort(); };
@@ -426,9 +426,10 @@ function AnalysisPage() {
             ))}
           </div>
           {progress && (
-            <span className="tabs-progress" role="status">
-              <span className="muted small">Reading the runs… {progress.done} / {progress.total || '…'}</span>
+            <span className="tabs-progress" role="status" aria-label={`Reading the runs: ${progress.done} of ${progress.total || 'all'}`}>
               <span className="progress"><span style={{ width: progress.total ? `${(100 * progress.done) / progress.total}%` : '3%' }} /></span>
+              {/* No count that changes as it goes: a text that changes its width moves (layout shift 0); the bar shows how far, the label says it. */}
+              <span className="muted small" aria-hidden="true">Reading the runs…</span>
             </span>
           )}
         </div>
@@ -459,7 +460,7 @@ function AnalysisPage() {
                 <PinButton folder={folder} kind="compare" target={pinQuery} name={`Over time · ${items.map(label).join(', ')}`} />
                 <h3 className="chart-title">Over time <span className="muted">· each segment&apos;s efforts with its trend line, each run&apos;s average</span></h3>
                 {/* While a rule's segments are read, the charts' room is kept, so nothing below moves when they come. */}
-                {computing && <div className="chart-loading muted small" style={{ height: metrics.length > 1 ? metrics.length * 236 : 326 }}>Reading the runs…</div>}
+                {computing && <div className="chart-loading muted small" style={{ height: metrics.length > 1 ? metrics.length * 228 + (metrics.length - 1) * 21 : 318 }}>Reading the runs…</div>}
                 {!computing && groupsByMetric.map(({ mt, groups }, k) => (
                   <div key={mt} className="stacked">
                     <div className="metric-head" style={{ paddingLeft: 52 }}><span className="metric-title">{view(mt).short}<span className="muted"> · {view(mt).name.replace(/^.*\((.*)\)$/, '$1')}</span></span></div>
@@ -492,7 +493,8 @@ function AnalysisPage() {
                 </div>
                 <span className="muted small">{curveMetric === 'speed' ? 'The best effort of each length of time, as a pace.' : 'The highest average power of each length of time.'}</span>
               </div>
-              {curve && <CurveTab metric={curve} items={curveItems} bests={curves.by} missingPower={curve === 'power' && curves.metric === 'power' && items.some((i) => (curves.by.get(i.id)?.length ?? 0) === 0)} />}
+              {/* Drawn once its bests are read for the metric shown, not empty first and then pushed apart (layout shift 0). */}
+              {curve && curves.metric === curve && curves.key === sourcesKey && !computing && <CurveTab metric={curve} items={curveItems} bests={curves.by} missingPower={curve === 'power' && curves.metric === 'power' && items.some((i) => (curves.by.get(i.id)?.length ?? 0) === 0)} />}
 
             </>
           )}

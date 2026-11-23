@@ -209,7 +209,8 @@
 /* ---------- base ---------- */
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
-html { -webkit-text-size-adjust: 100%; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+/* The scrollbar's room kept when a page is short too: a page that grows as its data come does not narrow (layout shift 0). */
+html { -webkit-text-size-adjust: 100%; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; scrollbar-gutter: stable; }
 body {
   /* a faint two-colour wash at the top of the page, fixed behind the content */
   background: radial-gradient(1100px 520px at 8% -10%, var(--wash-1), transparent 62%), radial-gradient(900px 460px at 100% -6%, var(--wash-2), transparent 58%), var(--bg);
@@ -824,6 +825,7 @@ table.stats-grid td { white-space: nowrap; }
 .form-keys { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 6px; font-size: 12px; }
 
 /* Analysis: the progress of a computation in the row of the tabs, and the room a chart keeps while it waits. */
+/* Fixed in place while its count changes: the bar first, the text after it, the box as wide as the longest text (layout shift 0). */
 .tabs-progress { margin-left: auto; display: inline-flex; align-items: center; gap: 10px; align-self: center; }
 .tabs-progress .progress { display: block; width: 140px; margin: 0; }
 .tabs-progress .progress > span { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
@@ -1235,7 +1237,8 @@ a.crumbs:hover b { color: var(--text); }
 .link-button { border: 0; padding: 0; background: none; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .warn-text { color: var(--warn); }
 .folder-new { flex: none; padding: 4px 11px; border-radius: 999px; background: var(--grad); color: var(--on-accent); font-size: 12px; font-weight: 650; }
-.folder-facts { margin: 0; }
+/* Columns of a set width: a figure read late ("–" first, then the number) does not move the ones beside it (layout shift 0). */
+.folder-facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 .folder-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .folder-actions .btn { height: 38px; padding: 0 18px; }
 .folder-actions .btn.ghost { border-color: transparent; background: none; box-shadow: none; color: var(--text-2); }

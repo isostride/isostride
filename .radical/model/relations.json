@@ -1570,6 +1570,12 @@
     "targetId": "d90e9074-aef2-4bc6-86aa-4f791f348c64"
   },
   {
+    "id": "2e81fc3f-b8ce-484d-8f8a-5c0c60ec5eba",
+    "relationType": "verifies",
+    "sourceId": "a1792881-fbff-4b5b-80c0-6d6b718aac50",
+    "targetId": "5f000913-f470-4fb5-8bd5-8121a2631948"
+  },
+  {
     "id": "2eaee0f6-cc34-4a41-96f6-f60bf4a0ca87",
     "label": "Reads manifest.json, runs-index.json, block-instances.json; writes user/",
     "relationType": "interacts",
@@ -3398,6 +3404,13 @@
     "relationType": "transition",
     "sourceId": "c6397f85-d03a-43e2-9148-65a849432e0b",
     "targetId": "184eb349-2087-42af-9be9-8b93739464a3"
+  },
+  {
+    "id": "725d0d17-7247-4554-987a-d917715ef2b3",
+    "quote": "dodaj glowna strone i ustaw ze layout shift ma byc 0\nsprawdz na kazdej podstronie",
+    "relationType": "derives",
+    "sourceId": "5f000913-f470-4fb5-8bd5-8121a2631948",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "725f6c09-e8c4-41e5-8d24-3715a50776ad",
@@ -5668,6 +5681,12 @@
     "relationType": "constrains",
     "sourceId": "027b71b3-7b37-4e61-b765-489c9b4e9ecc",
     "targetId": "dcc9c750-4930-43ec-b29a-96d8cc3419e7"
+  },
+  {
+    "id": "bab70dcf-32ae-4379-9b36-0b478140c116",
+    "relationType": "verifies",
+    "sourceId": "b13d43a7-f50c-4968-b689-0904bc60feb1",
+    "targetId": "5f000913-f470-4fb5-8bd5-8121a2631948"
   },
   {
     "id": "baeb2ede-d306-4875-b301-e466f52052a0",

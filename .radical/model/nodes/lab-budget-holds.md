@@ -9,15 +9,19 @@ invocation: "automated"
 metrics: |
   js.route.transfer.max <= 220 KB
   e2e.lcp.max <= 2500 ms
-  e2e.cls.max <= 0.1
+  e2e.cls.max == 0
+  e2e.cls.screens.max == 0
+  site.cls.max == 0
   e2e.tbt.max <= 200 ms
   a11y.violations{impact=serious-or-critical} == 0
+  site.lcp.max <= 2500 ms
+  site.a11y.violations == 0
 scope: "atomic"
 trigger: "pull-request"
 ---
 
 Playwright opens every screen of the static export with the sample data folder in Chromium and measures LCP and CLS with the web-vitals library and Total Blocking Time (the lab stand-in for INP) from long tasks (e2e/vitals.spec.ts); the library is injected by the test only and reports through the page, never over the network. scripts/js-budget.mjs sums the gzip size of every script each screen's page loads from the export. axe-core checks every screen (e2e/accessibility.spec.ts). Lighthouse CI was the pack's tool; the local Playwright run measures the same budget (the author's decision of 19 Nov 2026: local only).
 
-Threshold: for each screen: script transfer size at most 220 KB, LCP within 2500 ms, CLS at most 0.1, Total Blocking Time within 200 ms, 0 serious or critical accessibility violations
+Threshold: for each screen: script transfer size at most 220 KB, LCP within 2500 ms, no layout shift (CLS 0), Total Blocking Time within 200 ms, 0 serious or critical accessibility violations
 
 Tool: Playwright with web-vitals, scripts/js-budget.mjs, @axe-core/playwright

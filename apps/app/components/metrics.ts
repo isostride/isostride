@@ -71,6 +71,8 @@ export interface Metrics {
   view: (key: string) => MetricView;
   /** the metrics of blocks the folder holds, in the order of the pickers */
   blockKeys: string[];
+  /** the folder's catalog is read (until then the known metrics stand in) */
+  ready: boolean;
 }
 
 /**
@@ -83,7 +85,7 @@ export function useMetrics(): Metrics {
   const { folder } = useOpenFolder();
   const version = useDataVersion();
   // Until the folder's catalog is read, the known metrics: no screen starts with none.
-  const [state, setState] = useState<{ catalog: MetricInfo[]; directions: Record<string, Direction> }>(() => ({ catalog: BLOCK_ORDER.map((k) => KNOWN_METRICS[k]), directions: {} }));
+  const [state, setState] = useState<{ catalog: MetricInfo[]; directions: Record<string, Direction>; ready: boolean }>(() => ({ catalog: BLOCK_ORDER.map((k) => KNOWN_METRICS[k]), directions: {}, ready: false }));
   const [changed, setChanged] = useState(0);
   useEffect(() => {
     const on = () => setChanged((c) => c + 1);
@@ -95,7 +97,7 @@ export function useMetrics(): Metrics {
     Promise.all([readJson<MetricsFile>(folder, PATHS.metrics), readSettings(folder)]).then(([file, settings]) => {
       if (!live) return;
       const catalog = file?.metrics?.length ? file.metrics : BLOCK_ORDER.map((k) => KNOWN_METRICS[k]);
-      setState({ catalog, directions: settings.directions ?? {} });
+      setState({ catalog, directions: settings.directions ?? {}, ready: true });
     }).catch(() => undefined);
     return () => { live = false; };
   }, [folder, version, changed]);
@@ -104,5 +106,6 @@ export function useMetrics(): Metrics {
     directions: state.directions,
     view: (key: string) => metricView(key, state.catalog, state.directions),
     blockKeys: blockKeysOf(state.catalog),
+    ready: state.ready,
   }), [state]);
 }

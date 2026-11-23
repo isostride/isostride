@@ -901,3 +901,8 @@ Q: (użytkownik) usun ta ikonke folderu ... w ekranie data folder .. daj path do
 Q: (model) Przeglądarka nie podaje stronie pełnej ścieżki wybranego folderu, tylko jego nazwę (np. „isostride”). Co pokazać na ekranie Data folder?
 A: (użytkownik) Ścieżka wpisana raz
 A: (model) Done on the branch folder-path: the folder's line out of the side menu; on the Data folder screen the path, typed once, kept in this browser, forgotten when another folder is chosen (requirement "Folder path typed once").
+Q: (użytkownik) czy w modelu radical jest webvitals ? chodzi mi o layout shift ?
+A: (model) Yes: requirement "Core Web Vitals met" (CLS at most 0.1 in the lab on every pull request), fitness functions "Lab budget holds" and "Interaction latency in lab", measured by e2e/vitals.spec.ts on 4 screens of the app; the site not measured; last CLS 0.003.
+A: (użytkownik) dodaj glowna strone i ustaw ze layout shift ma byc 0
+A: (użytkownik) sprawdz na kazdej podstronie
+A: (model) Done: the site's home page measured (light, dark, phone: CLS, LCP, accessibility) and every screen and tab of the app (31 addresses), the budget CLS 0. On the way, what moved fixed at its cause: the lines of facts in the side menu held from the start, the run chart's width measured before its first paint, the last run's chart held on the Dashboard, the curve tab drawn once its bests are read, the setup's buttons shown with its first step, the week's load line held on the calendar, the gear's time line drawn once the runs are read, the folder's figures in columns of a set width, the A/B tab drawn once the folder's metrics are read, the scrollbar's room kept, no changing count beside the progress bar.

@@ -46,6 +46,12 @@
     { "element": "2c0b7ca7-d960-4e72-a2d3-8008da1a2549", "name": "New metric on every screen", "tests": [
       "e2e/metrics.spec.ts › Every metric offered everywhere › New metric on every screen"
     ] },
+    { "element": "b13d43a7-f50c-4968-b689-0904bc60feb1", "name": "Every screen holds still", "tests": [
+      "e2e/screens-still.spec.ts › Layout shift 0 › Every screen holds still"
+    ] },
+    { "element": "a1792881-fbff-4b5b-80c0-6d6b718aac50", "name": "Site home page holds still", "tests": [
+      "e2e/site.spec.ts › Site without layout shift › Site home page holds still"
+    ] },
     { "element": "1c415b5d-bd8f-4b36-9264-5bab7844f9fe", "name": "Folder path typed once", "tests": [
       "e2e/folder-path.spec.ts › Folder path shown › Folder path typed once"
     ] },

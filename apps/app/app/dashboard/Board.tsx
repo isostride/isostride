@@ -291,6 +291,8 @@ function RunTile({ folder, run, named = false }: { folder: DataFolder; run: Inde
         <div><dt>Heart rate</dt><dd className="tnum">{run.avgHeartRate ? `${Math.round(run.avgHeartRate)} bpm` : '–'}</dd></div>
         {typeof run.load === 'number' && <div><dt>Load</dt><dd className="tnum">{Math.round(run.load)}</dd></div>}
       </dl>
+      {/* The chart's room held while the run's file is read, so the row of tiles never moves (layout shift 0). */}
+      {!shown && <svg viewBox="0 0 100 48" preserveAspectRatio="none" className="dash-spark dash-run-pace" aria-hidden="true" />}
       {shown && (
         <svg viewBox="0 0 100 48" preserveAspectRatio="none" className="dash-spark dash-run-pace" role="img" aria-label={`Pace along the run, from ${mmss(shown[0])} to ${mmss(shown[shown.length - 1])} /km, fastest ${mmss(sorted[0])} /km`}>
           <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
