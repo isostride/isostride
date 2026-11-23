@@ -21,6 +21,8 @@ interface FolderApi {
 
 const Ctx = createContext<FolderApi | null>(null);
 const HANDLE_KEY = 'folderHandle';
+/** The path of the data folder on the disk, as the runner typed it (a browser gives only its name). */
+export const FOLDER_PATH_KEY = 'folderPath';
 
 /** The folder opened, its data moved first from strideprism/ to .isostride/ when an earlier version left it there. */
 async function opened(handle: FileSystemDirectoryHandle): Promise<FolderState> {
@@ -49,6 +51,8 @@ export function FolderProvider({ children }: { children: ReactNode }) {
   const pick = useCallback(async () => {
     const handle = await window.showDirectoryPicker!({ id: 'strideprism-data', mode: 'readwrite' });
     await setValue(HANDLE_KEY, handle);
+    // Another folder: the path typed for the one before is no longer its.
+    await setValue(FOLDER_PATH_KEY, null);
     setRemembered(handle);
     setState(await opened(handle));
   }, []);

@@ -1227,6 +1227,13 @@ a.crumbs:hover b { color: var(--text); }
 .folder-icon { display: grid; place-items: center; flex: none; width: 46px; height: 46px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 13%, var(--surface)); color: var(--accent); }
 .folder-name { display: grid; flex: 1; min-width: 0; }
 .folder-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; font-weight: 720; letter-spacing: -0.02em; }
+/* The folder's path as the runner typed it: the start cut off when it is long, the folder's end kept. */
+.folder-name .folder-path { direction: rtl; text-align: left; font: 600 15px var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); letter-spacing: 0; }
+.folder-path-form { display: grid; gap: 6px; margin-top: 8px; max-width: 640px; }
+.folder-path-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.folder-path-row .input { flex: 1 1 280px; min-width: 0; font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); }
+.link-button { border: 0; padding: 0; background: none; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.warn-text { color: var(--warn); }
 .folder-new { flex: none; padding: 4px 11px; border-radius: 999px; background: var(--grad); color: var(--on-accent); font-size: 12px; font-weight: 650; }
 .folder-facts { margin: 0; }
 .folder-actions { display: flex; flex-wrap: wrap; gap: 8px; }

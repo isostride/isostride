@@ -6,6 +6,7 @@ import { useConfirm } from '@/components';
 import { runInWorker, useFolder, useOpenFolder, watchJob, type JobState } from '@/lib/client';
 import { PATHS, isOutdated, readJson, readManifest, unseenFitFiles, type Manifest } from '@/lib/fs';
 import { ALGORITHM_VERSION, type RunsIndex } from '@/lib/kernel';
+import { FolderPath } from './FolderPath';
 
 type Job = 'import' | 'recompute';
 
@@ -101,8 +102,7 @@ function FolderPage() {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
           </span>
           <div className="folder-name">
-            <b>{folder.name}</b>
-            <span className="muted small">FIT files in this folder or its fit/ subfolder</span>
+            <FolderPath name={folder.name} />
           </div>
           {facts && facts.unseen > 0 && <span className="folder-new tnum">{facts.unseen} new file{facts.unseen === 1 ? '' : 's'}</span>}
         </div>

@@ -93,7 +93,7 @@ test.describe('Reopen same folder', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Choose data folder' })).toHaveCount(0);
-    await expect(page.locator('.crumbs')).toContainText('data');
+    await expect(page.locator('.sidebar .brand')).toHaveAttribute('href', '/folder');
     // A folder set up before the wizard came (its settings saved, the wizard never gone through): it opens once there too.
     await putText(page, '.isostride/user/settings.json', JSON.stringify({ schemaVersion: 1, performance: { load: 'rtss', restHr: 55 } }));
     await page.evaluate(async () => {

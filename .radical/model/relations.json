@@ -4447,6 +4447,12 @@
     "targetId": "abf40e24-6f3f-4f08-aadc-ec6a4a6f5368"
   },
   {
+    "id": "936ef9a1-dccf-49b1-9d0c-dd73cf2ead14",
+    "relationType": "satisfies",
+    "sourceId": "d0291cd1-bdf1-4c49-8333-4b658a02f95d",
+    "targetId": "419eeee3-6616-4030-a71a-481278d2141b"
+  },
+  {
     "id": "93caf066-5097-4192-9e09-becb82e1ed08",
     "relationType": "verifies",
     "sourceId": "fb4d09da-7dc0-4127-9813-c478e3638ca5",
@@ -7372,6 +7378,12 @@
     "targetId": "8690d92b-9be0-4782-8993-56acf708796a"
   },
   {
+    "id": "f2eb9c17-cd3e-482c-89cb-98dee7ab7dc5",
+    "relationType": "verifies",
+    "sourceId": "1c415b5d-bd8f-4b36-9264-5bab7844f9fe",
+    "targetId": "419eeee3-6616-4030-a71a-481278d2141b"
+  },
+  {
     "id": "f2fd4ac6-4cee-4770-bbca-ee84ad3381e3",
     "relationType": "satisfies",
     "sourceId": "3614e7f4-9407-407b-a23b-56e0b424d992",
@@ -7772,6 +7784,13 @@
     "relationType": "verifies",
     "sourceId": "695baba5-904e-49a7-9043-1a856d257987",
     "targetId": "0e952c97-92a0-4037-846e-9154619a2261"
+  },
+  {
+    "id": "fed8e3d6-6e10-4b66-9f0b-9e5fe23eb68b",
+    "quote": "usun ta ikonke folderu ... w ekranie data folder .. daj path do folderu\n(użytkownik) Ścieżka wpisana raz",
+    "relationType": "derives",
+    "sourceId": "419eeee3-6616-4030-a71a-481278d2141b",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "fee24e5a-bc2f-4d41-ac2b-2255146ffd23",

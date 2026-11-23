@@ -124,10 +124,6 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
           <HistoryNav />
         </div>
-        <Link className="crumbs" href="/folder" title={`Data folder: ${state.folder.name}`}>
-          <Icon d={ICONS.folder} size={15} />
-          <b className="label">{state.folder.name}</b>
-        </Link>
         <button className="search" onClick={() => window.dispatchEvent(new Event('open-palette'))} title="Search runs, segments, screens (⌘K)">
           <Icon d={ICONS.search} size={15} />
           <span className="label">Search…</span><span className="kbd label">⌘K</span>
