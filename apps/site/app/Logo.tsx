@@ -1,4 +1,4 @@
-/** The mark of Isostride, as the app draws it: a faceted prism heading forward, three lines of speed behind it. */
+/** The mark of IsoStride, as the app draws it: a faceted prism heading forward, three lines of speed behind it. */
 export function Logo({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">

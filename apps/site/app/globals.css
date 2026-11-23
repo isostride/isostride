@@ -1,66 +1,141 @@
-/* The site of Isostride: the app's look (Geist, its tokens, light and dark), on one column. */
+/*
+ * The site of IsoStride: a page that reads like a lab notebook, not an advert. The app's colours (its
+ * tokens, the brand's gradient, light and dark), the accent as the signal that stands out of the noise, rules instead of cards, a serif for the
+ * headings (the system's own: no font to download), Geist for the text, numbers in tabular figures.
+ */
 @font-face { font-family: 'Geist'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/geist-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 @font-face { font-family: 'Geist'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/geist-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 
 :root {
-  --bg: #f4f5f7; --surface: #ffffff; --line: rgba(15, 23, 42, 0.09);
-  --text: #0f1217; --text-2: #3d4350; --muted: #626a78;
-  --accent: #4f5fe6; --on-accent: #ffffff;
+  --paper: #f4f5f7; --surface: #ffffff; --ink: #0f1217; --ink-2: #3d4350; --muted: #626a78; --rule: rgba(15, 23, 42, 0.1);
+  --signal: #4f5fe6; --signal-soft: rgba(79, 95, 230, 0.14); --noise: #a3a9b4;
   --brand-1: #4f46e5; --brand-2: #7c3aed; --brand-3: #db2777;
-  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --head-1: #312e81; --head-2: #5b21b6; --bar-1: #4f46e5; --bar-2: #db2777;
+  --serif: 'Iowan Old Style', 'Charter', 'Bitstream Charter', 'Sitka Text', Cambria, Georgia, serif;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #1d1f23; --surface: #26292e; --line: rgba(255, 255, 255, 0.08); --text: #e9ebef; --text-2: #c7ccd5; --muted: #a0a7b3; --accent: #9aa5ff; --on-accent: #111318; --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25); }
+  :root { --paper: #1d1f23; --surface: #26292e; --ink: #e9ebef; --ink-2: #c7ccd5; --muted: #a0a7b3; --rule: rgba(255, 255, 255, 0.1); --signal: #9aa5ff; --signal-soft: rgba(154, 165, 255, 0.16); --noise: #6c727d; --head-1: #a5b0ff; --head-2: #d0a8ff; --bar-1: #a5b0ff; --bar-2: #f0a3c8; }
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-body { background: radial-gradient(900px 520px at 15% -10%, color-mix(in srgb, var(--brand-1) 14%, transparent), transparent 60%), radial-gradient(800px 480px at 95% 0%, color-mix(in srgb, var(--brand-3) 10%, transparent), transparent 55%), var(--bg); color: var(--text); font: 16px/1.6 'Geist', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
-a { color: inherit; }
-main, .top, .foot { width: min(1080px, 100% - 32px); margin: 0 auto; }
-
-.top { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
-.brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 750; font-size: 19px; letter-spacing: -0.02em; text-decoration: none; }
-.brand i { font-style: normal; color: var(--accent); }
-
-.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; font-size: 15px; text-decoration: none; box-shadow: var(--shadow); }
-.btn.primary { border: 0; color: #fff; background: linear-gradient(120deg, var(--brand-1), var(--brand-2)); }
-.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-
-.hero { padding: 72px 0 56px; max-width: 760px; }
-.eyebrow { margin: 0 0 10px; font-size: 13px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
-.hero h1 { margin: 0; font-size: clamp(38px, 6vw, 64px); line-height: 1.04; letter-spacing: -0.045em; }
-.lead { margin: 20px 0 0; font-size: 19px; color: var(--text-2); max-width: 640px; }
-.cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; margin-top: 30px; }
-.muted { color: var(--muted); font-size: 14px; }
-
-h2 { font-size: 28px; letter-spacing: -0.03em; margin: 0 0 18px; }
-h3 { font-size: 17px; margin: 0 0 6px; letter-spacing: -0.01em; }
+html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+body { background: radial-gradient(900px 520px at 15% -10%, color-mix(in srgb, var(--brand-1) 14%, transparent), transparent 60%), radial-gradient(800px 480px at 95% 0%, color-mix(in srgb, var(--brand-3) 10%, transparent), transparent 55%), var(--paper); color: var(--ink); font: 17px/1.6 'Geist', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+a { color: inherit; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--signal); }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+main, .foot { width: min(1040px, 100% - 32px); margin: 0 auto; }
 p { margin: 0; }
 
-.steps { padding: 24px 0 40px; }
-.steps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-.steps li { padding: 4px 0; }
-.steps li p { color: var(--text-2); font-size: 15px; }
-.num { display: grid; place-items: center; width: 32px; height: 32px; margin-bottom: 12px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--text); font-weight: 700; font-size: 14px; }
+/* The top bar stays in view, so the way to the app (the page's one button) is always at hand. */
+.top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 28px; padding: 14px max(16px, calc((100% - 1040px) / 2)); border-bottom: 1px solid var(--rule); background: color-mix(in srgb, var(--paper) 86%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 650; font-size: 18px; letter-spacing: -0.01em; text-decoration: none; }
+.top nav { display: flex; gap: 22px; margin-right: auto; font-size: 15px; color: var(--ink-2); }
+.top nav a { text-decoration: none; }
+.top nav a:hover { color: var(--ink); }
+/* The source on GitHub: its mark, after the button to the app. */
+.gh { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-left: -14px; border-radius: 8px; color: var(--ink-2); }
+.gh:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
 
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
-.features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding-bottom: 40px; }
-.features .card { padding: 24px; }
-.features p { color: var(--text-2); font-size: 15px; }
+.btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid var(--ink); border-radius: 6px; font-weight: 600; font-size: 15px; text-decoration: none; white-space: nowrap; }
+.btn:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.btn.primary { border: 0; color: #fff; background: linear-gradient(120deg, var(--brand-1), var(--brand-2)); }
+.btn.primary:hover { background: linear-gradient(120deg, color-mix(in srgb, var(--brand-1) 88%, #000), color-mix(in srgb, var(--brand-2) 88%, #000)); }
 
-.privacy { padding: 36px; margin-bottom: 56px; display: grid; gap: 14px; justify-items: start; }
-.privacy p { color: var(--text-2); max-width: 680px; }
+h1, h2 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.01em; }
+.hero { padding: 72px 0 44px; }
+.hero h1 { text-wrap: balance; margin: 0; max-width: 24ch; font-size: clamp(38px, 5.6vw, 64px); line-height: 1.06; }
+.lead { margin-top: 24px; max-width: 62ch; font-size: 19px; color: var(--ink-2); }
+.lead.small { font-size: 17px; margin-top: 0; }
+.cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; margin-top: 32px; }
+.facts { margin-top: 24px; font-size: 15px; color: var(--muted); }
 
-.foot { display: flex; justify-content: space-between; gap: 12px; padding: 22px 0 40px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+.section { padding: 64px 0 8px; }
+/* A section's title stands out: the brand's colours on the words, a short bar of them above. */
+.section h2 { margin: 0 0 28px; width: fit-content; font-size: clamp(28px, 3.4vw, 38px); line-height: 1.15; color: var(--head-1); background: linear-gradient(100deg, var(--head-1), var(--head-2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.section h2::before { content: ''; display: block; width: 44px; height: 4px; margin-bottom: 18px; border-radius: 2px; background: linear-gradient(90deg, var(--bar-1), var(--bar-2)); }
+.intro { margin: -12px 0 28px; max-width: 72ch; }
+.rows { margin: 0; }
+.rows div { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 9fr); gap: 24px; padding: 16px 0; border-top: 1px solid var(--rule); }
+.rows dt { font-weight: 650; }
+.rows dd { margin: 0; color: var(--ink-2); }
+.open-rows { margin-top: 28px; }
+/* The invitation to take part, at the end of the open platform: a ruled row, its two links beside the text. */
+.invite { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px 40px; align-items: center; margin-top: 8px; padding: 26px 0 0; border-top: 1px solid var(--rule); }
+.invite h3 { margin: 0 0 8px; font-size: 20px; font-weight: 650; }
+.invite p { max-width: 62ch; color: var(--ink-2); }
+.invite-links { display: grid; gap: 10px; }
+.invite-links .btn { justify-content: center; }
+
+/* Screenshots of the app, each in a window frame, with a caption; a click opens it full size. */
+.shots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 28px; margin-top: 40px; }
+.shot { margin: 0; }
+.shot.wide { grid-column: 1 / -1; }
+.shot a { display: block; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; background: #ffffff; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 32px rgba(15, 23, 42, 0.1); }
+.shot a::before { content: ''; display: block; height: 28px; border-bottom: 1px solid rgba(15, 23, 42, 0.1); background: radial-gradient(circle at 16px 14px, var(--noise) 4px, transparent 4.5px), radial-gradient(circle at 32px 14px, var(--noise) 4px, transparent 4.5px), radial-gradient(circle at 48px 14px, var(--noise) 4px, transparent 4.5px), #eef0f3; }
+.shot img { display: block; width: 100%; height: auto; }
+.shot figcaption { margin-top: 12px; font-size: 14px; color: var(--muted); }
+.hero-shot { margin-top: 8px; }
+.demo-note { margin-top: 14px; font-size: 14px; color: var(--muted); }
+
+.models { width: 100%; border-collapse: collapse; }
+.models th, .models td { padding: 14px 0; border-top: 1px solid var(--rule); text-align: left; vertical-align: top; }
+.models thead th { border-top: 0; padding-top: 0; font-size: 13px; font-weight: 600; color: var(--muted); }
+.models tbody th { width: 40%; padding-right: 24px; font-weight: 650; }
+.models td { color: var(--ink-2); }
+
+.prose { max-width: 68ch; display: grid; gap: 14px; color: var(--ink-2); font-size: 18px; }
+.start { margin: 0; padding-left: 22px; max-width: 72ch; color: var(--ink-2); }
+.start li { padding: 6px 0 6px 4px; }
+code { white-space: nowrap; font: 0.92em ui-monospace, SFMono-Regular, Menlo, monospace; padding: 1px 5px; border: 1px solid var(--rule); border-radius: 4px; }
+
+.data { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px; align-items: start; }
+.data h2 { margin-bottom: 20px; }
+.data dl { margin: 0; }
+/* The diagram of where the data is: the watch, the folder and the browser as drawn icons, no server. */
+.diag { display: block; width: 100%; max-width: 460px; height: auto; margin-top: 28px; }
+.diag-frame { fill: color-mix(in srgb, var(--surface) 55%, transparent); stroke: var(--rule); stroke-width: 1.5; }
+.diag-tab { fill: var(--paper); }
+.diag-icon { fill: var(--surface); stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; }
+.diag-line { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.diag-accent { fill: none; stroke: var(--signal); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.diag-dot { fill: var(--muted); }
+.diag-none { fill: none; stroke: var(--muted); stroke-width: 1.4; stroke-dasharray: 4 4; stroke-linejoin: round; }
+.diag-knock { fill: none; stroke: var(--paper); stroke-width: 7; stroke-linecap: round; }
+.diag-cross { fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; }
+.diag-title { font-size: 13px; font-weight: 650; fill: var(--ink); }
+.diag-small { font-size: 11.5px; fill: var(--muted); }
+.diag-mono { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--muted); }
+.data dl div { padding: 16px 0; border-top: 1px solid var(--rule); }
+.data dt { font-weight: 650; }
+.data dd { margin: 4px 0 0; color: var(--ink-2); }
+
+.closing { padding-bottom: 72px; }
+.closing h2 { margin-bottom: 16px; }
+
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 22px 0 40px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 14px; }
 
 .missing { min-height: 70vh; display: grid; place-content: center; justify-items: start; gap: 12px; }
-.missing h1 { margin: 0; font-size: 40px; letter-spacing: -0.03em; }
+.missing h1 { margin: 0; font-size: 40px; }
 
-@media (max-width: 760px) {
-  .hero { padding: 40px 0 36px; }
-  .steps ol, .features { grid-template-columns: 1fr; }
-  .privacy { padding: 24px; }
-  .top .btn { min-height: 40px; padding: 0 14px; font-size: 14px; }
+@media (max-width: 860px) {
+  .top nav { display: none; }
+  .top { justify-content: flex-end; gap: 14px; }
+  .top .brand { margin-right: auto; }
+  .gh { margin-left: -6px; }
+  .hero { padding: 44px 0 32px; }
+  .data, .rows div, .shots, .invite { grid-template-columns: 1fr; }
+  .invite-links { grid-auto-flow: column; justify-content: start; }
+  .rows div { gap: 4px; }
+  .models tbody th { width: 45%; }
+  .data { gap: 16px; }
+  .section { padding-top: 48px; }
+}
+@media (max-width: 560px) {
+  .models thead { display: none; }
+  .models tr { display: block; padding: 14px 0; border-top: 1px solid var(--rule); }
+  .models th, .models td { display: block; width: auto; padding: 0; border: 0; }
+  .models tbody th { width: auto; margin-bottom: 4px; }
+  .invite-links { grid-auto-flow: row; }
 }

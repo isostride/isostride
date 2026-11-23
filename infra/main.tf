@@ -1,4 +1,4 @@
-# Isostride on AWS (the runner's request of 23 Nov 2026: "route 53 z domena, cloudfront i pozniej s3
+# IsoStride on AWS (the runner's request of 23 Nov 2026: "route 53 z domena, cloudfront i pozniej s3
 # bucket", then "aplikacja bedzie wystawiona jako app.isostride.com a strona na isostride.com" and
 # "strona ma byc w tym samym repo ... ma byc to monorepo"): the app (apps/app) at app.<domain>, the site
 # (apps/site) at <domain> with www sent to it, one certificate for both; both deployed by the workflow

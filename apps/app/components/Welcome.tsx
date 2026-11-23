@@ -17,7 +17,7 @@ export function Welcome() {
       <div className="card welcome-card">
         <aside className="welcome-brand">
           <Logo size={56} />
-          <h1>Iso<i className="brand-dot">stride</i></h1>
+          <h1>Iso<i className="brand-dot">Stride</i></h1>
           <p>Compare the same segments of your runs in the same context, and see changes the watch averages hide.</p>
           <ul className="welcome-points">
             <li>Your runs from your watch&apos;s FIT files</li>
@@ -36,7 +36,7 @@ export function Welcome() {
                 </span>
               ) : (
                 <span>
-                  <b>Browser not supported.</b> Open Isostride in Chrome, Edge or Opera: it needs access to a folder on your disk.
+                  <b>Browser not supported.</b> Open IsoStride in Chrome, Edge or Opera: it needs access to a folder on your disk.
                 </span>
               )}
             </div>
@@ -48,7 +48,7 @@ export function Welcome() {
                 <SetupSteps at={0} compact />
               </div>
               <h2>Choose your data folder</h2>
-              <p>The folder with your watch&apos;s FIT files, or an empty one to put them in. Isostride reads it here, in your browser, and keeps its own files beside them.</p>
+              <p>The folder with your watch&apos;s FIT files, or an empty one to put them in. IsoStride reads it here, in your browser, and keeps its own files beside them.</p>
               <p className="muted small">Your browser asks you to pick it: a web page cannot open a folder by itself.</p>
               <button className="btn primary" onClick={() => { try { sessionStorage.setItem(SETUP_CONTINUE, '1'); } catch { /* the wizard opens by its own rule */ } pick().catch(() => undefined); }}>
                 Choose data folder
