@@ -23,6 +23,22 @@ async function shown(page: Page): Promise<[number, number] | null> {
 }
 
 test.describe('Run chart', () => {
+  test('Run left right after a change', async ({ page }) => {
+    // The next screen slow to load (its prefetch too): the link of the run, written a quarter of a second
+    // after the change, does not keep the browser on the run.
+    await page.route((url) => url.pathname.startsWith('/settings'), async (route) => {
+      await new Promise((r) => setTimeout(r, 1500));
+      await route.continue();
+    });
+    await openRun(page);
+    await page.getByRole('group', { name: 'Scale shown' }).getByRole('button', { name: /^Heart rate/ }).click();
+    await nav(page, 'Settings');
+    await expect(page.getByRole('tab', { name: 'Charts', exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/settings/);
+    // Back on the run: the view as it was left.
+    await page.goBack();
+    await expect(page.getByRole('group', { name: 'Scale shown' }).getByRole('button', { pressed: true })).toContainText('Heart rate');
+  });
   test('Metrics laid over one chart, zoomed in and out', async ({ page }) => {
     const chart = await openRun(page);
     // Four metrics by default, one line each, laid over one chart.

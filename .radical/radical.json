@@ -591,6 +591,9 @@
     { "element": "135d0fbc-2a7b-4ebf-ad0d-d1cf0333cefb", "name": "Run view survives a reload", "tests": [
       "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
     ] },
+    { "element": "29f50ece-2ad0-4c25-89e6-6e8a9a02f783", "name": "Run left right after a change", "tests": [
+      "e2e/run.spec.ts › Run chart › Run left right after a change"
+    ] },
     { "element": "abaf99b7-b15f-4bde-87dc-cbcbd3a1d124", "name": "Runs grouped into weeks", "tests": [
       "tests/unit/weeks.test.ts › Calendar of runs by week › Runs grouped into weeks"
     ] },
