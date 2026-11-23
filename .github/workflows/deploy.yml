@@ -187,7 +187,7 @@ jobs:
           fs.writeFileSync("reports/measures-e2e.json", JSON.stringify(Object.assign({}, ...dirs.map((d) => read(path.join(d, "measures-e2e.json"))))));
           fs.writeFileSync("reports/timing-e2e.json", JSON.stringify({ e2eSeconds: Math.max(0, ...dirs.map((d) => read(path.join(d, "timing-e2e.json")).e2eSeconds ?? 0)) }));
           '
-          PLAYWRIGHT_JSON_OUTPUT_NAME=reports/playwright.json npx playwright merge-reports --reporter=json reports/blob
+          PLAYWRIGHT_JSON_OUTPUT_NAME=reports/playwright.json npx playwright merge-reports --config playwright.merge.config.ts --reporter=json reports/blob
           tar -xzf ci/build/app.tgz -C ../..
           rm -rf ci
       - name: Verdict
