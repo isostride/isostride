@@ -128,7 +128,7 @@ export function WhyDialog({ m, by, onClose }: { m: ModelReport; by: Models; onCl
 }
 
 /** Above a view: its models in a line, each with its trust and a "Why?", which opens in a window. */
-export function WhyBar({ models, by }: { models: ModelKey[]; by: Models }) {
+export function WhyBar({ models, by, byLoad }: { models: ModelKey[]; by: Models; /** the models the chosen load model changes, and its name */ byLoad?: { set: Set<ModelKey>; name: string } }) {
   const [open, setOpen] = useState<ModelKey | null>(null);
   const shown = open && models.includes(open) ? open : null;
   return (
@@ -137,6 +137,7 @@ export function WhyBar({ models, by }: { models: ModelKey[]; by: Models }) {
         {models.map((k) => (
           <span key={k} className="why-item" data-model={k} data-trust={by[k].trust}>
             <span className="why-name">{shortName(by[k])}</span>
+            {byLoad?.set.has(k) && <span className="by-load" title="Changes with the load model chosen at the top of Load">by {byLoad.name}</span>}
             <TrustChip trust={by[k].trust} />
             <WhyButton m={by[k]} open={shown === k} onToggle={() => setOpen(shown === k ? null : k)} />
           </span>

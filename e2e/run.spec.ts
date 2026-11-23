@@ -42,21 +42,10 @@ test.describe('Run chart', () => {
     await expect(scale.getByRole('button', { pressed: true })).toContainText('Heart rate');
     await expect(chart.locator('.run-line').last()).toHaveAttribute('data-metric', 'heartRate');
     // By default each line in its own band, top to bottom, its name in the gutter; overlaid, they share the height.
-    // The chart menu (scenario "Chart set up in the side menu"): what concerns this run (its blocks, a block
-    // to make, the zones); how every chart draws is set in Settings, Charts, which it links to. The metrics
-    // stay above the chart. It slides in from the right and the chart redraws while it stays open.
-    const menuButton = page.getByRole('button', { name: 'Chart', exact: true });
-    const menu = page.getByRole('dialog', { name: 'Chart menu' });
-    await menuButton.click();
-    await expect(menuButton).toHaveAttribute('aria-expanded', 'true');
-    await expect(menu).toBeVisible();
-    const box2 = (await menu.boundingBox())!;
-    expect(box2.x + box2.width).toBeGreaterThanOrEqual(1439);
-    await expect(menu.getByRole('group', { name: 'Metrics shown' })).toHaveCount(0);
-    await expect(menu.getByRole('radio')).toHaveCount(0);
-    await expect(menu.getByRole('link', { name: 'Chart settings in Settings' })).toHaveAttribute('href', '/settings?tab=charts');
-    await page.keyboard.press('Escape');
-    await expect(menu).toHaveCount(0);
+    // No chart menu any more ("przycisk chart w runs ... czy ma sens jeszcze"): how every chart draws is set in
+    // Settings, Charts, which a small icon on the chart leads to; the metrics stay above the chart.
+    await expect(page.getByRole('button', { name: 'Chart', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Chart settings' })).toHaveAttribute('href', '/settings?tab=charts');
     await expect(chart.locator('.band-name')).toHaveText(['Pace', 'HR', 'Cadence', 'GCT']);
     const tops = await chart.locator('.band-name rect').evaluateAll((rs) => rs.map((r) => Number(r.getAttribute('y'))));
     expect(tops).toEqual([...tops].sort((a, b) => a - b));
@@ -205,11 +194,6 @@ test.describe('Run chart', () => {
     await expect(page.locator('.range-stats').getByRole('button')).toHaveCount(0);
     await expect(page.locator('.range-stats').getByRole('link', { name: 'Compare similar' })).toHaveAttribute('href', /^\/compare\?similar=/);
     await expect(page.locator('.run-board .metrics-bar').getByRole('button', { name: 'Clear selection' })).toBeVisible();
-    await menuButton.click();
-    // No block is made here any more (requirement "One way to make a block"): the menu leads to the Blocks screen.
-    await expect(menu.getByRole('heading', { name: 'Segments', exact: true })).toBeVisible();
-    await expect(menu.getByRole('link', { name: 'Segments', exact: true })).toBeVisible();
-    await page.keyboard.press('Escape');
 
     // The wheel zooms around the point under the pointer (no + and − buttons): a notch out doubles the
     // range shown, a notch in halves it back; the overview's window grows and shrinks with it.
@@ -366,6 +350,10 @@ test.describe('Run chart', () => {
     await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
     await page.getByRole('textbox', { name: /^Pace/ }).fill('');
     await page.getByRole('textbox', { name: /^Cadence/ }).fill('');
+    // The running form's defaults too (ground contact and vertical oscillation, the bands of Garmin's running dynamics).
+    await expect(page.getByRole('textbox', { name: /^Ground contact time/ })).toHaveValue('218, 249, 278, 309');
+    await page.getByRole('textbox', { name: /^Ground contact time/ }).fill('');
+    await page.getByRole('textbox', { name: /^Vertical oscillation/ }).fill('');
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText(/^These are the default zones/)).toHaveCount(0);
     await expect(page.getByRole('status')).toHaveText('Saved');

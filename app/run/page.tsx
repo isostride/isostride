@@ -11,59 +11,12 @@ import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { efficiencyOf, rangeStats, readDefinitions, zoneShares, type BlockInstance } from '@/lib/blocks';
 import { date, duration, km, pace, time } from '@/lib/format';
 import { LOAD_MODELS, readSettings, zoneOf, zoneShade } from '@/lib/settings';
+import { PinButton } from '../dashboard/PinButton';
+import { METRICS, seriesOf, type WindowKey } from './metrics';
 
 /** The map made large, coloured by a metric: loaded when it opens. */
 const RouteExpanded = dynamic(() => import('./RouteExpanded').then((m) => m.RouteExpanded), { ssr: false });
 
-type WindowKey = 'speed' | 'efficiency' | 'effortPace' | 'heartRate' | 'cadence' | 'groundContactTime' | 'verticalOscillation' | 'stepLength' | 'power' | 'altitude' | 'legSpringStiffness';
-const round0 = (unit: string) => (v: number) => `${Math.round(v)} ${unit}`;
-/** The metrics a run can show, in the order of the picker; the first four show by default. */
-const int = (v: number, d = 0) => v.toFixed(d);
-/** Pace in s/km as m:ss. */
-/** Round steps of a pace axis, s/km: 0:05 up to 5:00. */
-const PACE_STEPS = [5, 10, 15, 30, 60, 120, 300];
-const mmss = (v: number) => { const r = Math.round(v); return `${Math.floor(r / 60)}:${String(r % 60).padStart(2, '0')}`; };
-const METRICS: { key: WindowKey; title: string; short: string; unit: string; format: (v: number) => string; tick: (v: number, d?: number) => string; minSpan: number; invert?: boolean; steps?: number[] }[] = [
-  { key: 'speed', title: 'Pace', short: 'Pace', unit: 'min/km', format: (v) => `${mmss(v)} /km`, tick: mmss, minSpan: 20, invert: true, steps: PACE_STEPS },
-  { key: 'heartRate', title: 'Heart rate', short: 'HR', unit: 'bpm', format: round0('bpm'), tick: int, minSpan: 10 },
-  { key: 'cadence', title: 'Cadence', short: 'Cadence', unit: 'spm', format: round0('spm'), tick: int, minSpan: 6 },
-  { key: 'groundContactTime', title: 'Ground contact time', short: 'GCT', unit: 'ms', format: round0('ms'), tick: int, minSpan: 20 },
-  { key: 'efficiency', title: 'Efficiency', short: 'Effic.', unit: 'm per heartbeat, 1 min means', format: (v) => `${v.toFixed(2)} m/beat`, tick: (v, d = 2) => v.toFixed(Math.max(2, d)), minSpan: 0.1 },
-  { key: 'effortPace', title: 'Effort pace', short: 'Effort', unit: 'min/km, grade-adjusted', format: (v) => `${mmss(v)} /km`, tick: mmss, minSpan: 20, invert: true, steps: PACE_STEPS },
-  { key: 'verticalOscillation', title: 'Vertical oscillation', short: 'Vert. osc.', unit: 'mm', format: round0('mm'), tick: int, minSpan: 10 },
-  { key: 'stepLength', title: 'Step length', short: 'Step', unit: 'mm', format: round0('mm'), tick: int, minSpan: 60 },
-  { key: 'power', title: 'Power', short: 'Power', unit: 'W', format: round0('W'), tick: int, minSpan: 20 },
-  { key: 'legSpringStiffness', title: 'Leg spring stiffness', short: 'LSS', unit: 'kN/m', format: (v) => `${v.toFixed(1)} kN/m`, tick: (v, d = 1) => v.toFixed(Math.max(1, d)), minSpan: 1 },
-  { key: 'altitude', title: 'Elevation', short: 'Elev.', unit: 'm', format: round0('m'), tick: int, minSpan: 10 },
-];
-
-/**
- * Efficiency for drawing: the means of speed and of heart rate over a minute around each window
- * (stops left out), then their ratio, metres per beat. Heart rate follows the pace with a lag,
- * so the ratio of single 10 s windows jumps at every change of pace; over a minute it does not.
- */
-function efficiencySeries(speed: (number | null)[], heartRate: (number | null)[], stopped: boolean[]): (number | null)[] {
-  const mean = (v: (number | null)[], i: number) => {
-    const xs: number[] = [];
-    for (let k = Math.max(0, i - 3); k <= Math.min(v.length - 1, i + 3); k++) { const x = v[k]; if (x !== null && !stopped[k]) xs.push(x); }
-    return xs.length >= 3 ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
-  };
-  return speed.map((_, i) => efficiencyOf(mean(speed, i), mean(heartRate, i)));
-}
-
-/**
- * A metric for drawing: nothing at a stop or the windows on either side of it (slowing down,
- * speeding up), then the median of each window and its neighbours, so one odd window does not spike.
- */
-function forDrawing(v: (number | null)[], stopped: boolean[]): (number | null)[] {
-  const near = (i: number) => stopped[i] || stopped[i - 1] || stopped[i + 1];
-  const kept = v.map((x, i) => (near(i) ? null : x));
-  return kept.map((x, i) => {
-    if (x === null) return null;
-    const n = [kept[i - 1], x, kept[i + 1]].filter((y): y is number => y !== null && y !== undefined).sort((a, b) => a - b);
-    return n[Math.floor(n.length / 2)];
-  });
-}
 /** The metrics shown, at most 4: a slot each, the slot giving the colour, so a metric keeps its colour while shown. */
 const SLOTS_KEY = 'strideprism.runChart';
 const SLOT_COUNT = 4;
@@ -173,16 +126,8 @@ function RunPage() {
   const { layout, axis, smooth, blocks: showBlocks } = chartSettings;
   /** a statistic pointed at in the table, lit on the chart */
   const [hot, setHot] = useState<{ key: string; stat: 'min' | 'avg' | 'max' } | null>(null);
-  /** the chart menu from the right ("dodatkowe menu ktore bedzie sie rozwijalo z prawej") */
-  const [menu, setMenu] = useState(false);
   /** the map made large, its route coloured by a metric ("moge powiekszyc widok mapy") */
   const [bigMap, setBigMap] = useState(false);
-  useEffect(() => {
-    if (!menu) return;
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(false); };
-    addEventListener('keydown', esc);
-    return () => removeEventListener('keydown', esc);
-  }, [menu]);
   const [pointed, setPointed] = useState<string | null>(null);
   // The chart takes the height the rest of the screen leaves it, so the screen needs no scrolling:
   // the room left under the page (or missing) is given to (or taken from) the chart.
@@ -261,13 +206,7 @@ function RunPage() {
       if (w.flags.stopped[i] || w.flags.grade[i] || w.flags.missingSignal[i]) flagged.push({ from: s, to: s + WINDOW_SECONDS });
     });
     const laps = run.laps.map((l, i) => ({ from: l.start, to: l.end, label: `Lap ${i + 1} · ${km(l.distance)} km · ${duration(l.duration)}`, short: `Lap ${i + 1} · ${km(l.distance)} km` }));
-    // The line breaks where the runner stood: a stop is no value of pace, cadence or heart rate.
-    // Pace is drawn in s/km (its ticks are round in pace, not in m/s).
-    const asPace = (v: (number | null)[]) => v.map((s) => (s !== null && s > 0 ? 1000 / s : null));
-    const series = Object.fromEntries(METRICS.map((m) => {
-      const raw = m.key === 'efficiency' ? efficiencySeries(w.speed, w.heartRate, w.flags.stopped) : (w[m.key] as (number | null)[]);
-      return [m.key, forDrawing(m.key === 'speed' || m.key === 'effortPace' ? asPace(raw) : raw, w.flags.stopped)];
-    })) as Record<WindowKey, (number | null)[]>;
+    const series = seriesOf(run);
     const hr = run.samples.heartRate.filter((v): v is number => v !== null);
     const avgHr = hr.length ? Math.round(hr.reduce((a, b) => a + b, 0) / hr.length) : null;
     // Elevation gain from the 10 s windows (smoothed by them), climbs of at least 1 m.
@@ -376,7 +315,8 @@ function RunPage() {
         {run.temperature !== null && <span className="chip">{run.temperature} °C</span>}
         <Link className="btn" href={`/compare?items=r:${run.id}:0`} title="Open this run in Compare, beside your segments and other runs">Compare this run</Link>
       </div>
-      <div className="card run-board">
+      <div className="card run-board pin-host">
+        <PinButton folder={folder} kind="run" target={run.id} name={title ?? `${date(run.startTime)} ${time(run.startTime)}`} opts={slots.filter((k) => k !== null).join(',')} />
         <div className="metrics-bar">
           <div className="metric-picker" role="group" aria-label="Metrics shown">
             {METRICS.filter((m) => has(m.key)).map((m) => {
@@ -399,10 +339,10 @@ function RunPage() {
               Clear selection
             </button>
           )}
-          <button className={`btn sm chart-menu-btn ${menu ? 'on' : ''}`} aria-expanded={menu} aria-controls="chart-menu" onClick={() => setMenu(!menu)}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
-            Chart
-          </button>
+          {/* How every chart draws is set in Settings (the runner's "tak" to "przycisk chart w runs ... czy ma sens jeszcze"): a small way there. */}
+          <Link className="btn sm icon chart-settings-link" href="/settings?tab=charts" aria-label="Chart settings" title="How the chart draws: bands or overlaid, smoothing, the x axis — Settings › Charts">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /></svg>
+          </Link>
         </div>
         <div className="run-top">
           <div className="run-chart-col">
@@ -410,6 +350,19 @@ function RunPage() {
               blocks={blocks.filter((b) => showBlocks || b.id === pointed).map((b) => ({ from: b.start, to: b.end, ok: b.status === 'accepted', name: b.name }))}
               cursor={cursor} onCursor={setCursor} selection={null} onSelect={select} head={head} height={chartHeight} layout={layout} axis={xAxis} dmap={dmap}
               marks={Object.fromEntries(shownStats.map(({ line, v }) => [line.key, v]))} hot={hot} />
+            {/* The efforts of the runner's segments in this run, under the chart: pointed at, lit on it; clicked, selected. */}
+            {blocks.length > 0 && (
+              <div className="run-efforts" role="group" aria-label="Efforts of your segments in this run">
+                <span className="muted small">Your segments here</span>
+                {blocks.map((b) => (
+                  <button key={b.id} type="button" className={`run-block${b.status === 'accepted' ? '' : ' rejected'}`} title={b.reasons.length ? `Not counted: ${b.reasons.join(' · ')}` : 'Select it on the chart'}
+                    onMouseEnter={() => setPointed(b.id)} onMouseLeave={() => setPointed(null)} onFocus={() => setPointed(b.id)} onBlur={() => setPointed(null)} onClick={() => select({ from: b.start, to: b.end })}>
+                    <span className="dot" style={{ background: b.status === 'accepted' ? 'var(--ok)' : 'var(--muted)' }} />
+                    <b>{b.name}</b><span className="muted"> · min {Math.floor(b.start / 60)}–{Math.ceil(b.end / 60)} · {pace(b.metrics.speed)} /km</span>
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="legend chart-foot">
               <span><i style={{ background: 'var(--surface-2)' }} />alternate laps</span>
               {(showBlocks || pointed) && <span><i style={{ background: 'var(--band)', borderTop: '2px solid var(--series-1)' }} />effort of a segment (top line: accepted)</span>}
@@ -520,46 +473,6 @@ function RunPage() {
         <RouteExpanded lat={run.samples.lat} lon={run.samples.lon} t={run.samples.t} start={view.w.start[0] ?? 0} step={view.w.start.length > 1 ? view.w.start[1] - view.w.start[0] : 10}
           metrics={METRICS.filter((m) => has(m.key)).map((m) => ({ key: m.key, title: m.title, format: m.format, invert: m.invert, values: rollingMean(x, series[m.key], 30), zones: zones[m.key] }))}
           initial={focus ?? slots.find((k) => k !== null) ?? 'speed'} onClose={() => setBigMap(false)} />
-      )}
-      {menu && (
-        <aside id="chart-menu" className="chart-menu" role="dialog" aria-modal="false" aria-label="Chart menu">
-          <div className="chart-menu-head">
-            <h2>Chart</h2>
-            <button className="btn sm icon" aria-label="Close the chart menu" onClick={() => setMenu(false)}>✕</button>
-          </div>
-          <section>
-            <h3>Drawing <span className="muted">· {layout === 'bands' ? 'bands' : 'overlaid'}, {smooth ? 'smoothed' : 'raw'}, by {xAxis}</span></h3>
-            <p className="muted small">The lines, their smoothing, the x axis and the segments drawn are set for every chart in Settings.</p>
-            <Link className="btn sm" href="/settings?tab=charts">Chart settings in Settings</Link>
-          </section>
-          <section>
-            <h3>Segments in this run <span className="muted">· {blocks.length}</span></h3>
-            {blocks.length === 0 ? <p className="muted small">None of your segments has an effort in this run.</p> : (
-              <>
-                <p className="muted small">{showBlocks ? 'Drawn on the chart (Settings, Charts).' : 'Point at one to see it on the chart; Settings, Charts draws them all.'}</p>
-                <div className="run-blocks">
-                  {blocks.map((b) => (
-                    <button key={b.id} type="button" className="run-block" onMouseEnter={() => setPointed(b.id)} onMouseLeave={() => setPointed(null)} onFocus={() => setPointed(b.id)} onBlur={() => setPointed(null)} onClick={() => select({ from: b.start, to: b.end })}>
-                      <span className="dot" style={{ background: b.status === 'accepted' ? 'var(--ok)' : 'var(--muted)' }} />
-                      <b>{b.name}</b> <span className="muted">min {Math.floor(b.start / 60)}–{Math.ceil(b.end / 60)} · {pace(b.metrics.speed)} /km{b.metrics.heartRate ? ` · ${Math.round(b.metrics.heartRate)} bpm` : ''}</span>
-                      {b.reasons.length > 0 && <span className="muted run-block-why">✗ {b.reasons.join(' · ')}</span>}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </section>
-          <section>
-            <h3>Segments</h3>
-            <p className="muted small">Select a part of the run and press Compare similar to compare it with your other runs and save it as a segment; every segment is on the Segments screen.</p>
-            <Link className="btn sm" href="/segments">Segments</Link>
-          </section>
-          <section>
-            <h3>Zones</h3>
-            <p className="muted small">{lines.filter((l) => l.zones?.length).map((l) => l.title).join(', ') || 'No metric shown has zones'}{lines.some((l) => l.zones?.length) ? ' coloured by their zones.' : '.'}</p>
-            <Link className="btn sm" href="/settings">Set the zones in Settings</Link>
-          </section>
-        </aside>
       )}
     </div>
   );

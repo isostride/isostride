@@ -10,7 +10,7 @@ const pct = (v: number) => `${Math.round(v * 100)} %`;
 const RACE: Record<number, string> = { 5000: '5 km', 10000: '10 km', 21097.5: 'half', 42195: 'marathon' };
 
 /** What a model says now, in a line. */
-function saysNow(key: ModelKey, now: PerformanceNow): string {
+export function saysNow(key: ModelKey, now: PerformanceNow): string {
   const m = now.marker;
   const fit = (f: PerformanceNow['fitted']['hr']) => (f ? `R² ${f.r2.toFixed(2)} · τ1 ${f.tau1} d, τ2 ${f.tau2} d` : '–');
   const bests = (e: PerformanceNow['evidence']) => (e.lengths ? `${e.allOut.length} of ${e.lengths} all-out` : '–');
@@ -40,6 +40,6 @@ function saysNow(key: ModelKey, now: PerformanceNow): string {
  * assumptions checked", "Performance kept simple" and "Map of the models"): the map of the models,
  * each with what it says now, its trust and its "Why?". The map is the overview: no list repeats it.
  */
-export function OverviewTab({ models, by, now }: { models: ModelReport[]; by: Models; now: PerformanceNow }) {
-  return <ModelMap models={models} by={by} says={(m) => saysNow(m.key, now)} />;
+export function OverviewTab({ models, by, now, byLoad }: { models: ModelReport[]; by: Models; now: PerformanceNow; byLoad?: { set: Set<ModelKey>; name: string; unit: string } }) {
+  return <ModelMap models={models} by={by} says={(m) => saysNow(m.key, now)} byLoad={byLoad} />;
 }

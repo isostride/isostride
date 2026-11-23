@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addFromPicker, fitFiles, importAll, openWithFolder } from './support';
+import { addFromPicker, fitFiles, importAll, nav, openWithFolder } from './support';
 
 test.describe('Analysis workspace', () => {
   test('Rule blocks compared, ranked and curved', async ({ page }) => {
@@ -52,6 +52,15 @@ test.describe('Analysis workspace', () => {
       await expect(page.locator('.item-chip')).toHaveCount(2);
     };
     await clickPoint(hr);
+
+    // The Over time chart is a widget: Pin in its corner puts it on the Dashboard, the same charts there ("Pin na kazdej karcie-widgecie").
+    await page.getByRole('button', { name: /^Pin Over time · .+ to the dashboard$/ }).click();
+    await expect(page.getByRole('button', { name: /^Pin Over time · / })).toHaveAttribute('aria-pressed', 'true');
+    await nav(page, 'Dashboard');
+    const widget = page.getByRole('region', { name: /^Over time · / });
+    await expect(widget.getByRole('img', { name: 'Over time · Heart rate (bpm)' }).locator('.trend-line')).toHaveCount(2, { timeout: 30_000 });
+    await page.goBack();
+    await expect(page.locator('.item-chip')).toHaveCount(2);
 
     // The sections are tabs, kept in the link: Trends first, then Segments, A/B and the curve; one at a time.
     const tabs = page.getByRole('tablist', { name: 'Compare sections' });

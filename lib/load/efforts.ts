@@ -115,3 +115,31 @@ export function effortEvidence(efforts: (BestEffort | null)[], today: string): E
     newestAllOut: allOutTimes.length ? Math.floor((end - Math.max(...allOutTimes)) / DAY) : null,
   };
 }
+
+/** A length's best pace and best power side by side, and whether they are one stretch of one run. */
+export interface EffortPair {
+  /** s */
+  duration: number;
+  pace: BestEffort | null;
+  power: BestEffort | null;
+  /** both from the same run, their stretches overlapping: one effort, read two ways */
+  same: boolean;
+}
+
+/**
+ * The best pace and the best power of each length in one list (the runner's "tak" to one table:
+ * "w capacity best efforts mam osobny graf na pace i power ... czy to nie to samo"): uphill, into the
+ * wind or on soft ground the power is high and the pace slow, so a length's two bests can be two
+ * runs; on the flat they are one stretch. A length with neither is left out.
+ */
+export function pairEfforts(pace: (BestEffort | null)[], power: (BestEffort | null)[]): EffortPair[] {
+  const out: EffortPair[] = [];
+  for (let k = 0; k < Math.max(pace.length, power.length); k++) {
+    const a = pace[k] ?? null;
+    const b = power[k] ?? null;
+    if (!a && !b) continue;
+    const overlap = !!a && !!b && a.runId === b.runId && (!a.at || !b.at || (a.at[0] < b.at[1] && b.at[0] < a.at[1]));
+    out.push({ duration: (a ?? b)!.duration, pace: a, power: b, same: overlap });
+  }
+  return out;
+}

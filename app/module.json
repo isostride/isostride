@@ -6,6 +6,7 @@
     "lib/client",
     "lib/compare",
     "lib/curve",
+    "lib/dashboard",
     "lib/format",
     "lib/fs",
     "lib/gear",

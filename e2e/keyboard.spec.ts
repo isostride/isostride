@@ -32,6 +32,11 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
     // Import.
     await tabTo(page, 'button', 'Choose data folder');
     await page.keyboard.press('Enter');
+    // The setup wizard goes on from the folder; skipped by keyboard too.
+    await page.waitForURL(/\/setup$/);
+    await tabTo(page, 'button', 'Skip setup');
+    await page.keyboard.press('Enter');
+    await page.waitForURL(/\/dashboard$/);
     // The logo leads to the Data folder screen, where the import starts.
     await tabTo(page, 'link', /^StridePrism/);
     await page.keyboard.press('Enter');

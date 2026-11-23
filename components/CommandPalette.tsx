@@ -25,7 +25,7 @@ interface Item {
 
 /** The order of the groups, and how many of each show before anything is typed. */
 const GROUPS: Group[] = ['Screens', 'Runs', 'Segments', 'Actions'];
-const UNTYPED: Record<Group, number> = { Screens: 5, Runs: 5, Segments: 4, Actions: 2 };
+const UNTYPED: Record<Group, number> = { Screens: 6, Runs: 5, Segments: 4, Actions: 2 };
 const TYPED = 40;
 
 /** The icons of the palette, 24-unit strokes; several paths are separated by "|". */
@@ -98,7 +98,8 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
     (async () => {
       const go = (href: string) => () => { setOpen(false); router.push(href); };
       const all: Item[] = [
-        // The five screens first: with nothing typed, only they show.
+        // The six screens first: with nothing typed, only they show.
+        { group: 'Screens', glyph: 'performance', label: 'Dashboard', hint: 'What matters to you, at a glance', run: go('/dashboard') },
         { group: 'Screens', glyph: 'runs', label: 'Runs', hint: 'Calendar and list of your runs', run: go('/') },
         { group: 'Screens', glyph: 'block', label: 'Segments', hint: 'Every segment, its efforts, new ones', run: go('/segments') },
         { group: 'Screens', glyph: 'analysis', label: 'Compare', hint: 'Trends, efforts, A/B and curves', run: go('/compare') },
@@ -106,7 +107,8 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
         { group: 'Screens', glyph: 'settings', label: 'Settings', hint: 'Zones, gear, tags, display', run: go('/settings') },
         { group: 'Screens', glyph: 'import', label: 'Data folder', hint: 'Import, recompute, another folder', run: go('/folder') },
         { group: 'Screens', glyph: 'ab', label: 'A/B comparison', hint: 'Compare', run: go('/compare?tab=ab') },
-        { group: 'Screens', glyph: 'model', label: 'Load model', hint: 'Performance', run: go('/performance?tab=model') },
+        { group: 'Screens', glyph: 'model', label: 'Load model', hint: 'Settings › Models', run: go('/settings?tab=models') },
+        { group: 'Screens', glyph: 'settings', label: 'Setup wizard', hint: 'Settings', run: go('/setup') },
         { group: 'Screens', glyph: 'tags', label: 'To do for the models', hint: 'Performance', run: go('/performance?tab=todo') },
         { group: 'Screens', glyph: 'gear', label: 'Gear', hint: 'Settings', run: go('/settings?tab=gear') },
         { group: 'Screens', glyph: 'tags', label: 'Tags', hint: 'Settings', run: go('/settings?tab=tags') },

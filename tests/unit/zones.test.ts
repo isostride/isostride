@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { PATHS, readJson, writeJson } from '@/lib/fs';
-import { DEFAULT_ZONES, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneOf, zoneRanges, zonesFromMaxHr, DEFAULT_PERFORMANCE } from '@/lib/settings';
+import { DEFAULT_ZONES, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneOf, zoneRanges, zonesFromMaxHr, zonesFromPace, zonesFromPower, DEFAULT_PERFORMANCE } from '@/lib/settings';
 import { NodeFolder } from '../support/nodeFolder';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zones-'));
@@ -40,6 +40,12 @@ describe('Metric zones in settings', () => {
     expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: DEFAULT_ZONES, performance: DEFAULT_PERFORMANCE, defaults: true });
     expect(formatBoundaries('speed', DEFAULT_ZONES.speed)).toBe('6:00, 5:15, 4:45, 4:15');
     expect(DEFAULT_ZONES.heartRate).toEqual(zonesFromMaxHr(190));
+    // Ground contact and vertical oscillation in the bands of Garmin's running dynamics.
+    expect(DEFAULT_ZONES.groundContactTime).toEqual([218, 249, 278, 309]);
+    expect(DEFAULT_ZONES.verticalOscillation).toEqual([64, 82, 98, 116]);
+    // Pace from the threshold pace (Friel), power from the critical power (Stryd).
+    expect(formatBoundaries('speed', zonesFromPace(250))).toBe('5:23, 4:45, 4:25, 4:08');
+    expect(zonesFromPower(250)).toEqual([200, 225, 250, 288]);
     // Kept in user/settings.json; metrics with no zones are left out; saved, only what was entered applies.
     await writeSettings(folder, { schemaVersion: 1, zones: { heartRate: [171, 114, 152, 133], cadence: [] }, defaults: true });
     expect(await readJson(folder, PATHS.settings)).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] }, performance: DEFAULT_PERFORMANCE });

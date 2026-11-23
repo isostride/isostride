@@ -13,7 +13,7 @@ const KINDS: { kind: TodoKind; title: string; hint: string }[] = [
   { kind: 'wait', title: 'With time', hint: 'they come as you keep running' },
 ];
 const PLACE: Record<Exclude<TodoPlace, null>, [string, string]> = {
-  model: ['/performance?tab=model', 'Open the Model tab'],
+  model: ['/settings?tab=models', 'Open Settings › Models'],
   zones: ['/settings', 'Open the zones in Settings'],
   gear: ['/settings?tab=gear', 'Open Gear in Settings'],
   folder: ['/folder', 'Open the Data folder'],

@@ -21,7 +21,8 @@ export default function PerformancePageWrapper() {
 function PerformancePage() {
   const params = useSearchParams();
   const router = useRouter();
-  const tabParam = params.get('tab');
+  // The Model tab of before: its choice is at the top of Load now.
+  const tabParam = params.get('tab') === 'model' ? 'load' : params.get('tab');
   const tab: Tab = TABS.some((t) => t.key === tabParam) ? (tabParam as Tab) : 'overview';
   const def = TABS.find((t) => t.key === tab)!;
   const view = def.views.find((v) => v.key === params.get('view'))?.key ?? def.views[0]?.key ?? '';

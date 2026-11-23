@@ -44,12 +44,18 @@ export interface SettingsFile {
 
 /**
  * The zones that apply until the runner saves their own, for trying the app ("dodaj domyslne
- * strefy ... do testow"): heart rate at 60–90 % of a maximum of 190, common pace and cadence zones.
+ * strefy ... do testow"): heart rate at 60–90 % of a maximum of 190, common pace and cadence zones;
+ * then ("chodzi mi tez o strefy ... np. vertical oscillation, ground contact", "dodaj domyslne") the
+ * ground contact time and the vertical oscillation in the five bands of Garmin's running dynamics,
+ * drawn from many runners (ground contact under 218, 218–248, 249–277, 278–308, over 308 ms; vertical
+ * oscillation under 6.4, 6.4–8.1, 8.2–9.7, 9.8–11.5, over 11.5 cm).
  */
 export const DEFAULT_ZONES: Record<string, number[]> = {
   heartRate: [114, 133, 152, 171],
   speed: [360, 315, 285, 255],
   cadence: [160, 170, 180],
+  groundContactTime: [218, 249, 278, 309],
+  verticalOscillation: [64, 82, 98, 116],
 };
 
 /** Boundaries in zone order: finite and distinct, ascending, or descending for a pace (Z1 the slowest). */
@@ -72,6 +78,19 @@ export function zoneRanges(metric: string, boundaries: number[]): { lo: number |
 
 /** The opacity of the wash of zone i of n, as the run chart and the settings draw it: deeper for a higher zone. */
 export const zoneShade = (i: number, n: number) => (n <= 1 ? 0.1 : 0.06 + (0.22 * i) / (n - 1));
+
+/**
+ * Pace zones from the threshold pace (the critical speed, s/km), as Friel's run zones: Z1 slower than
+ * 129 % of it, Z2 to 114 %, Z3 to 106 %, Z4 to 99 %, Z5 faster; boundaries as paces, the slowest first.
+ */
+export function zonesFromPace(threshold: number): number[] {
+  return [1.29, 1.14, 1.06, 0.99].map((f) => Math.round(threshold * f));
+}
+
+/** Power zones from the critical power, as Stryd's: easy under 80 %, moderate to 90 %, threshold to 100 %, interval to 115 %, repetition above. */
+export function zonesFromPower(cp: number): number[] {
+  return [0.8, 0.9, 1, 1.15].map((f) => Math.round(cp * f));
+}
 
 /** Heart rate zones from the maximum heart rate: boundaries at 60, 70, 80 and 90 % of it. */
 export function zonesFromMaxHr(max: number): number[] {

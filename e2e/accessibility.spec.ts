@@ -19,7 +19,7 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       await page.emulateMedia({ colorScheme: scheme });
       if (scheme === 'light') await setUpWithBlock(page);
       else await page.reload();
-      for (const screen of ['Runs', 'Compare', 'Performance', 'Settings']) {
+      for (const screen of ['Dashboard', 'Runs', 'Compare', 'Performance', 'Settings']) {
         await nav(page, screen);
         await page.getByRole('heading', { level: 1, name: screen }).waitFor();
         await page.waitForTimeout(200);
@@ -56,9 +56,6 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       await page.getByRole('tab', { name: 'To do', exact: true }).click();
       await page.locator('.todo-item').first().waitFor();
       found.push(...(await serious(page, `Performance · To do (${scheme})`)));
-      await page.getByRole('tab', { name: 'Model', exact: true }).click();
-      await page.getByRole('region', { name: 'Performance model' }).waitFor();
-      found.push(...(await serious(page, `Performance · Model (${scheme})`)));
       await nav(page, 'Settings');
       // The tabs of Settings: zones, gear, tags.
       for (const tab of ['Zones', 'Gear', 'Tags', 'Charts', 'Models', 'Display']) {

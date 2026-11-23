@@ -12,6 +12,10 @@ import { recordAddress } from './screenTrail';
 
 /** The automatic import, loaded after the screen: it waits for the folder anyway (requirement "New runs imported by themselves"). */
 const AutoImport = dynamic(() => import('./AutoImport').then((m) => m.AutoImport), { ssr: false });
+/** The facts of the side menu and this week's running: loaded after the screen. */
+const SidebarFacts = dynamic(() => import('./SidebarFacts').then((m) => m.SidebarFacts), { ssr: false });
+/** Whether the setup wizard opens by itself: looked at after the screen shows, so no screen's script grows. */
+const SetupGate = dynamic(() => import('./SetupGate').then((m) => m.SetupGate), { ssr: false });
 
 /**
  * Back and forward through the screens seen in this tab (the runner's request: "dodaj back/forward
@@ -51,6 +55,7 @@ function Icon({ d, size = 18 }: { d: string; size?: number }) {
 }
 
 const ICONS = {
+  dashboard: 'M3 3h8v10H3z|M13 3h8v6h-8z|M13 11h8v10h-8z|M3 15h8v6H3z',
   runs: 'M3 12h4l3-8 4 16 3-8h4',
   analysis: 'M3 17l6-6 4 4 8-8|M14 7h7v7',
   blocks: 'M4 4h7v7H4z|M13 4h7v7h-7z|M4 13h7v7H4z|M13 13h7v7h-7z',
@@ -64,6 +69,7 @@ const ICONS = {
 };
 
 const NAV = [
+  { href: '/dashboard', label: 'Dashboard', ico: ICONS.dashboard },
   { href: '/', label: 'Runs', ico: ICONS.runs },
   { href: '/segments', label: 'Segments', ico: ICONS.blocks },
   { href: '/compare', label: 'Compare', ico: ICONS.analysis },
@@ -99,6 +105,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const [collapsed] = useNarrowMenu();
   const [theme, setTheme] = useTheme();
+  /** a line of facts under each screen of the menu, by its link */
+  const [facts, setFacts] = useState<Record<string, string>>({});
 
   const cycleTheme = useCallback(() => setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light'), [theme, setTheme]);
 
@@ -111,7 +119,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <aside className="sidebar">
         <div className="brand-row">
           <Link className={`brand ${path.startsWith('/folder') ? 'active' : ''}`} href="/folder" title="Data folder: import, recompute, change" aria-current={path.startsWith('/folder') ? 'page' : undefined}>
-            <Logo />
+            <Logo size={36} />
             <span className="label brand-name">Stride<i className="brand-dot">Prism</i></span>
           </Link>
           <HistoryNav />
@@ -126,14 +134,20 @@ export function Shell({ children }: { children: ReactNode }) {
         </button>
         <nav className="nav" aria-label="Screens">
           {NAV.map((n) => (
-            <Link key={n.href} href={n.href} className={`nav-item ${active(n.href) ? 'active' : ''}`} title={n.label} aria-current={active(n.href) ? 'page' : undefined}>
+            // Named by the screen alone (its facts hidden from the name); the facts describe it.
+            <Link key={n.href} href={n.href} className={`nav-item ${active(n.href) ? 'active' : ''}`} title={n.label} aria-describedby={facts[n.href] ? `nav-sub-${n.label}` : undefined} aria-current={active(n.href) ? 'page' : undefined}>
               <Icon d={n.ico} />
-              <span className="label">{n.label}</span>
+              <span className="label nav-text">
+                <span>{n.label}</span>
+                {facts[n.href] && <small className="nav-sub" id={`nav-sub-${n.label}`} aria-hidden="true">{facts[n.href]}</small>}
+              </span>
             </Link>
           ))}
         </nav>
+        <SidebarFacts folder={state.folder} path={path} onFacts={setFacts} />
       </aside>
       <div className="main">{children}</div>
+      <SetupGate folder={state.folder} />
       <AutoImport />
       <CommandPalette onTheme={cycleTheme} />
     </div>

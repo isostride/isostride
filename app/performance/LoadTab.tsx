@@ -10,7 +10,7 @@ const time = (d: string) => new Date(`${d}T12:00:00`).getTime();
 
 /**
  * Weekly load (requirement "Weekly load, monotony and strain"): each week's load by the model of
- * the Model tab, its monotony and strain, and the ramp rate of fitness.
+ * the load model chosen at the top of Load, its monotony and strain, and the ramp rate of fitness.
  */
 export function LoadTab({ days, unit }: { days: FormDay[]; unit: string }) {
   const weeks = useMemo(() => weeklyLoad(days), [days]);

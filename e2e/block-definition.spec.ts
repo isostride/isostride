@@ -25,8 +25,8 @@ test.describe('Accept or reject recommendation', () => {
     await page.mouse.click(p.x + p.width / 2, p.y + p.height / 2);
     const chart = page.getByRole('img', { name: /^Run metrics · / });
     await chart.waitFor();
-    await page.getByRole('button', { name: 'Chart', exact: true }).click();
-    const listed = page.locator('.run-block');
+    // The efforts of the segments in this run, as chips under the chart.
+    const listed = page.getByRole('group', { name: 'Efforts of your segments in this run' }).locator('.run-block');
     await expect(listed.first()).toBeVisible({ timeout: 30_000 });
     await page.mouse.move(0, 0);
     await expect(chart.locator('.block-band')).toHaveCount(0);
@@ -36,7 +36,6 @@ test.describe('Accept or reject recommendation', () => {
     await expect(chart.locator('.block-band')).toHaveCount(0);
     // Settings, Charts draws every kept block on the chart.
     await setChart(page, 'blocks on');
-    await page.getByRole('button', { name: 'Chart', exact: true }).click();
     await expect(chart.locator('.block-band')).toHaveCount(await listed.count());
     await page.goBack();
     await expect(chip).toHaveCount(1, { timeout: 30_000 });
@@ -182,8 +181,8 @@ test.describe('Every block on one screen', () => {
 
     // Blocks, after Runs in the menu: the runner's blocks, and the one editor of a new one.
     const items = page.locator('.sidebar nav a');
-    await expect(items.nth(0)).toContainText('Runs');
-    await expect(items.nth(1)).toContainText('Segments');
+    await expect(items.nth(1)).toContainText('Runs');
+    await expect(items.nth(2)).toContainText('Segments');
     await nav(page, 'Segments');
     await expect(page.getByRole('heading', { name: 'Segments', level: 1 })).toBeVisible();
     await page.getByRole('button', { name: 'New segment' }).click();
@@ -222,8 +221,44 @@ test.describe('Every block on one screen', () => {
     await expect(sheet.locator('.preview-count')).toContainText(/^\d+ efforts in \d+ runs/, { timeout: 30_000 });
     await sheet.getByRole('button', { name: 'Save & find again' }).click();
     await expect(table.getByRole('row').nth(1).getByRole('cell').nth(1)).toHaveText('Fastest 5 min', { timeout: 30_000 });
+    // Pinned to the Dashboard (scenario "Dashboard of the runner's tiles"): first in the menu, its tiles at first this week,
+    // the form, the last run, the weekly distance and recent runs; the segment pinned joins them with its efforts' pace.
+    const segName = (await table.getByRole('row').nth(1).getByRole('cell').first().evaluate((td) => td.firstChild?.textContent ?? '')).trim();
+    await expect(page.locator('.sidebar nav').getByRole('link').first()).toHaveAccessibleName('Dashboard');
+    // Any run pinned from the corner of its chart ("Pin na kazdej karcie-widgecie"), with the metrics it shows.
+    await nav(page, 'Runs');
+    await openRun(page, 0);
+    const pinRun = page.locator('.run-board').getByRole('button', { name: 'Pin COROS test to the dashboard' });
+    await pinRun.click();
+    await expect(pinRun).toHaveAttribute('aria-pressed', 'true');
+    await nav(page, 'Dashboard');
+    const tiles = page.locator('.dash-tile');
+    await expect(tiles.locator('h2')).toHaveText(['This week', 'Form today', 'Last run', 'Weekly distance', 'Recent runs', 'COROS test'], { timeout: 30_000 });
+    // The run's chart there as on its screen: its bands, Pace first.
+    await expect(page.getByRole('region', { name: 'COROS test' }).locator('.dash-run svg').first()).toBeVisible();
+    await expect(page.getByRole('region', { name: 'COROS test' })).toContainText('Pace');
+    await expect(page.getByRole('region', { name: 'Weekly distance' }).getByRole('img', { name: /^Kilometres a week, the last 12 weeks/ })).toBeVisible();
+    // Customize: a tile added, one moved up, one removed; kept for the next visit.
+    await page.getByRole('button', { name: 'Customize' }).click();
+    await page.getByLabel('Tile', { exact: true }).selectOption({ label: 'A segment' });
+    await page.getByLabel('Which').selectOption({ label: segName });
+    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await page.getByLabel('Tile', { exact: true }).selectOption({ label: 'A model of Performance' });
+    await page.getByLabel('Which').selectOption({ label: 'VO2max as VDOT' });
+    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await page.getByRole('button', { name: 'Move Last run up' }).click();
+    await page.getByRole('button', { name: 'Remove Recent runs' }).click();
+    // Widths in thirds of the row: the weekly distance from two thirds to the whole row.
+    await page.getByRole('button', { name: 'Width of Weekly distance: two thirds' }).click();
+    await page.getByRole('button', { name: 'Done' }).click();
+    await page.reload();
+    await expect(tiles.locator('h2')).toHaveText(['This week', 'Last run', 'Form today', 'Weekly distance', 'COROS test', segName, 'VO2max as VDOT'], { timeout: 30_000 });
+    await expect(page.getByRole('region', { name: segName })).toContainText(/\d:\d\d \/km/);
+    await expect(page.getByRole('region', { name: 'Weekly distance' })).toHaveClass(/size-3/);
+    await nav(page, 'Segments');
     // Esc closes the editor; Delete in its row, once confirmed, removes the block from the screen.
     await table.getByRole('row').nth(1).getByRole('button', { name: /^Edit / }).click();
+    await expect(sheet).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(sheet).toHaveCount(0);
     // Asked in the app, not by the browser (requirement "Confirmations in the app"): Cancel (or Esc) keeps it, Delete removes it.

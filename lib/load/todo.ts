@@ -10,7 +10,7 @@ import type { CheckStatus, ModelKey, ModelReport } from './assumptions';
 
 /** set: a setting, done at once; train: something to run; record: something to record in the runs; wait: it comes with time. */
 export type TodoKind = 'set' | 'train' | 'record' | 'wait';
-/** Where it is done in the app: the Model tab of Performance, Settings (zones), Settings → Gear, the Data folder screen. */
+/** Where it is done in the app: Settings › Models (the values of the models), Settings (zones), Settings → Gear, the Data folder screen. */
 export type TodoPlace = 'model' | 'zones' | 'gear' | 'folder' | null;
 
 export interface Todo {
@@ -33,8 +33,8 @@ interface Action { key: string; kind: TodoKind; title: string; how: string; plac
 
 /** The checks the runner can act on, by their key, and what to do for each (model's choices). */
 const ACTIONS: Record<string, Action> = {
-  resthr: { key: 'resthr', kind: 'set', place: 'model', title: 'Set your resting heart rate', how: 'Measure it lying down on waking, a few mornings in a row, and save the lowest in the Model tab.' },
-  maxhr: { key: 'maxhr', kind: 'set', place: 'model', title: 'Set your maximum heart rate', how: 'Enter it in the Model tab if you know it from a test; else the highest of your runs stands in, too low unless you have gone all out.' },
+  resthr: { key: 'resthr', kind: 'set', place: 'model', title: 'Set your resting heart rate', how: 'Measure it lying down on waking, a few mornings in a row, and save the lowest in Settings › Models.' },
+  maxhr: { key: 'maxhr', kind: 'set', place: 'model', title: 'Set your maximum heart rate', how: 'Enter it in Settings › Models if you know it from a test; else the highest of your runs stands in, too low unless you have gone all out.' },
   zones: { key: 'zones', kind: 'set', place: 'zones', title: 'Save your own heart rate zones', how: 'Enter your zones in Settings, or fill them from your maximum heart rate, and save.' },
   sensor: { key: 'sensor', kind: 'set', place: 'gear', title: 'Register your heart rate strap', how: 'Add the strap in Settings → Gear, with the dates you wore it; the wrist sensor misreads most at high intensity.' },
   hr: { key: 'hr', kind: 'record', place: null, title: 'Record heart rate in every run', how: 'Wear the watch snug, or a strap, so each run has its heart rate.' },

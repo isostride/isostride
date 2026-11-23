@@ -310,10 +310,10 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
   const defs: Record<ModelKey, Def> = {
     load: {
       key: 'load', group: 'load', depth: 0, name: `Load of a run · ${model.name}`, method: model.about, tells: 'how much each run cost, in one number',
-      where: { tab: 'model' }, has: withLoad.length > 0, ...loadDef,
+      where: { tab: 'load', view: 'form' }, has: withLoad.length > 0, ...loadDef,
     },
     form: {
-      key: 'form', group: 'load', depth: 1, name: 'Fitness, fatigue and form', method: 'Banister’s fitness–fatigue model as weighted averages of the daily load (CTL, ATL, TSB)',
+      key: 'form', group: 'load', depth: 1, name: 'Fitness and fatigue (impulse–response)', method: 'Banister’s fitness–fatigue model as weighted averages of the daily load (CTL, ATL, TSB)',
       tells: 'whether training outweighs recovery now', inputs: [`time constants ${p.fitnessDays} and ${p.fatigueDays} days`], parents: ['load'], where: { tab: 'load', view: 'form' }, has: days.length > 0,
       checks: [
         check('history', 'Enough history for the averages to settle', days.length >= 3 * p.fitnessDays ? 'met' : days.length >= p.fitnessDays ? 'doubt' : 'unmet',
@@ -466,4 +466,21 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
   };
   const order: ModelKey[] = ['load', 'form', 'acwr', 'weekly', 'intensity', 'efforts', 'cs', 'predictions', 'vdot', 'powerEfforts', 'cp', 'ef', 'decoupling', 'vo2hr', 'uth', 'fittedHr', 'fittedVdot'];
   return { now, models: order.map(resolve) };
+}
+
+/**
+ * The models the chosen load model changes (the runner's "myslalem ze w zaleznosci od wybranego
+ * modelu banister etc ... inne metryki beda dostepne a inne nie"): the load of a run and every model
+ * resting on it, directly or through another; the rest (the best efforts, the aerobic ones) do not
+ * move when it is changed.
+ */
+export function onLoad(models: Pick<ModelReport, 'key' | 'parents'>[]): Set<ModelKey> {
+  const by = new Map(models.map((m) => [m.key, m]));
+  const rests = (k: ModelKey, seen: Set<ModelKey>): boolean => {
+    if (k === 'load') return true;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return (by.get(k)?.parents ?? []).some((p) => rests(p, seen));
+  };
+  return new Set(models.filter((m) => rests(m.key, new Set())).map((m) => m.key));
 }

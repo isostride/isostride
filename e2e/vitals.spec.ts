@@ -3,7 +3,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
-import { addFromPicker, fakeFolderPicker, fitFiles, importAll, openRun, putFitFiles, recordMeasure } from './support';
+import { addFromPicker, chooseFolder, fakeFolderPicker, fitFiles, importAll, openRun, putFitFiles, recordMeasure } from './support';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EXPORT = path.join(ROOT, '.next-build');
@@ -53,7 +53,7 @@ test.describe('Core Web Vitals met', () => {
     await fakeFolderPicker(page);
     await page.goto('/');
     await putFitFiles(page, await fitFiles(30, '2026-05-01'));
-    await page.getByRole('button', { name: 'Choose data folder' }).click();
+    await chooseFolder(page);
     await importAll(page);
     await page.goto('/compare');
     await addFromPicker(page, /km/);

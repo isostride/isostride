@@ -12,7 +12,25 @@ export const TEST_DATA = path.resolve(HERE, '../test_data/coros_fit_2026');
  * browser's origin private file system, which supports the same handle API. The
  * permission methods the OPFS handles lack answer "granted", like a user who allows access.
  */
-export async function fakeFolderPicker(page: Page): Promise<void> {
+export async function fakeFolderPicker(page: Page, { wizard = false } = {}): Promise<void> {
+  // The setup wizard opens by itself on a folder nothing was set in: the tests of the screens skip it,
+  // as a runner would, unless they test it (a setup.json written in the folder, as Skip writes it).
+  if (!wizard) {
+    await page.addInitScript(async () => {
+      // Once a tab: a test may take the file away later and reload.
+      if (location.protocol.startsWith('http') && sessionStorage.getItem('setup-skip-written')) return;
+      try {
+        const data = await (await navigator.storage.getDirectory()).getDirectoryHandle('data', { create: true });
+        const user = await (await data.getDirectoryHandle('strideprism', { create: true })).getDirectoryHandle('user', { create: true });
+        try { await user.getFileHandle('setup.json'); } catch {
+          const w = await (await user.getFileHandle('setup.json', { create: true })).createWritable();
+          await w.write('{"state":"skipped","at":"2026-11-23T00:00:00.000Z"}');
+          await w.close();
+        }
+        sessionStorage.setItem('setup-skip-written', '1');
+      } catch { /* not the app's origin yet */ }
+    });
+  }
   await page.addInitScript(() => {
     const proto = (globalThis as any).FileSystemHandle?.prototype;
     if (proto) {
@@ -98,12 +116,24 @@ export async function logOpenedFiles(page: Page): Promise<void> {
   });
 }
 
+/**
+ * Picks the folder on the Welcome screen, the setup's first step: the wizard goes on, and the tests of
+ * the screens skip it as a runner may, then open Runs.
+ */
+export async function chooseFolder(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Choose data folder' }).click();
+  await page.waitForURL(/\/setup$/);
+  await page.getByRole('button', { name: 'Skip setup' }).click();
+  await page.waitForURL(/\/dashboard$/);
+  await page.locator('.sidebar').getByRole('link', { name: /Runs$/ }).click();
+}
+
 /** Opens the app with the fake picker, picks the folder and returns once the Runs screen shows. */
 export async function openWithFolder(page: Page, files: string[]): Promise<void> {
   await fakeFolderPicker(page);
   await page.goto('/');
   await putFitFiles(page, files);
-  await page.getByRole('button', { name: 'Choose data folder' }).click();
+  await chooseFolder(page);
   await page.getByRole('heading', { name: 'Runs' }).waitFor();
 }
 
@@ -185,7 +215,7 @@ export async function setUpWithBlock(page: Page, { files = fitFiles(30, '2026-05
   await page.goto('/');
   await putFitFiles(page, await files);
   await putText(page, 'strideprism/user/gear.json', JSON.stringify(gear));
-  await page.getByRole('button', { name: 'Choose data folder' }).click();
+  await chooseFolder(page);
   await page.getByRole('heading', { name: 'Runs' }).waitFor();
   await importAll(page);
   await nav(page, 'Compare');

@@ -781,6 +781,33 @@ table.stats-grid td { white-space: nowrap; }
 .perf-input .input { width: 96px; }
 .perf-note { margin: 0; }
 @media (max-width: 900px) { .perf-body { grid-template-columns: 1fr; } .perf-models { grid-template-columns: 1fr; } }
+/* The load model, chosen in Settings › Models: four choices, each with what it needs and how much the runs have; on Load and Response a line names it. */
+.perf-choice { padding: 14px 18px 0; display: grid; gap: 10px; }
+.perf-choice h3 { margin: 0; font-size: 13px; font-weight: 650; }
+.perf-choice .perf-models { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .perf-choice .perf-models { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .perf-choice .perf-models { grid-template-columns: 1fr; } }
+.load-using { margin: 0 0 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.load-picker { padding: 14px 18px 16px; margin-bottom: 12px; display: grid; gap: 12px; }
+.load-picker-head { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.load-picker-head h2 { margin: 0 0 2px; font-size: 15px; }
+.load-picker-head p { margin: 0; }
+.load-picker .perf-models { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.perf-model:disabled { opacity: 0.55; cursor: not-allowed; }
+.load-need { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--text-2); margin-top: 2px; }
+.load-need .trust-dot { margin-top: 4px; flex: none; }
+@media (max-width: 1100px) { .load-picker .perf-models { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .load-picker .perf-models { grid-template-columns: 1fr; } }
+/* What follows the load model: marked by its name (or unit), wherever it shows. */
+.by-load { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; color: var(--text); background: color-mix(in srgb, var(--accent) 13%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); white-space: nowrap; }
+.map-legend .by-load { margin-right: 6px; }
+.map-side-foot { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.map-node .by-load { font-size: 9.5px; padding: 0 5px; line-height: 14px; font-weight: 650; letter-spacing: 0.02em; }
+/* The values of the models in Settings › Models, by what uses them. */
+.perf-groups { padding: 14px 18px 18px; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.perf-group { display: grid; gap: 10px; align-content: start; }
+.perf-group h3 { margin: 0; font-size: 13px; font-weight: 650; }
+@media (max-width: 900px) { .perf-groups { grid-template-columns: 1fr; } }
 
 /* Analysis: the Form tab's figures and legend. */
 .form-figures { display: flex; flex-wrap: wrap; gap: 12px 36px; margin: 2px 0 14px; }
@@ -832,6 +859,34 @@ table.stats-grid td { white-space: nowrap; }
 .model-map > .why-panel .why-reason { padding-top: 10px; }
 .form-figures .unit { font-size: 12px; font-weight: 500; letter-spacing: 0; color: var(--muted); }
 .efforts-table .trust { font-weight: 500; }
+.effort-split { display: grid; gap: 4px; }
+.curve-head { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.curve-head .chart-title { flex: 1; min-width: 240px; }
+.effort-split small { display: inline-block; min-width: 40px; }
+/* The table of best efforts fits its card: values on one line; narrower, the heart rate's column goes, then the effort's (a dot by the run). */
+.efforts-card { container-type: inline-size; }
+.efforts-table th, .efforts-table td { white-space: nowrap; }
+.efforts-table .effort-run { display: inline-flex; align-items: center; gap: 6px; }
+.efforts-table .effort-run a { overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+.efforts-table .narrow-only { display: none; }
+.efforts-table .narrow-text { display: none; }
+@container (max-width: 680px) { .efforts-table .col-hr { display: none; } }
+@container (max-width: 480px) {
+  .efforts-table .col-effort { display: none; }
+  .efforts-table .narrow-only { display: inline-block; }
+  .efforts-table { font-size: 12.5px; }
+  table.data.efforts-table thead th, table.data.efforts-table td { padding-left: 5px; padding-right: 5px; }
+  table.data.efforts-table thead th:first-child, table.data.efforts-table td:first-child { padding-left: 8px; }
+  table.data.efforts-table thead th:last-child, table.data.efforts-table td:last-child { padding-right: 8px; }
+  table.data.efforts-table thead th { font-size: 9.5px; letter-spacing: 0.03em; }
+  /* The units go to the heads (Pace /km, Power W); the arrow and a run's title give way. */
+  .efforts-table .unit, .efforts-table .run-title { display: none; }
+  /* Two efforts: the pace's run first, the power's second, as their columns; the words give way. */
+  .efforts-table .effort-split small { display: none; }
+  .efforts-table .wide-text { display: none; }
+  .efforts-table .narrow-text { display: inline; }
+  .efforts-table .effort-run { gap: 4px; }
+}
 
 /* ---------- polish (21 Nov 2026: "super nowoczesny, zgodny z trendami") ---------- */
 /* Motion: quick, eased, and off for those who ask for less. */
@@ -1562,3 +1617,206 @@ table.data tr.reference > td { background: color-mix(in srgb, var(--accent) 9%, 
 .models-input .input { width: 84px; }
 .models-default { text-align: right; }
 @media (max-width: 760px) { .models-row { grid-template-columns: 1fr auto; } .models-default { grid-column: 1 / -1; text-align: left; } }
+
+/* ---------- the side menu with the data ("menu ... chce je wizualnie rozszerzyc ... bo pusto w menu jest") ---------- */
+@media (min-width: 821px) {
+  .sidebar .nav-item { height: auto; min-height: 40px; padding: 7px 10px; align-items: center; }
+  .nav-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .nav-sub { font-size: 11px; font-weight: 450; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0; }
+  .nav-item.active .nav-sub { color: var(--text-2); }
+  .side-week { margin-top: auto; padding: 12px 12px 10px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); display: grid; gap: 8px; font-size: 12px; }
+  .side-week-head { display: flex; align-items: baseline; justify-content: space-between; color: var(--text-2); }
+  .side-week-head b { color: var(--text); font-size: 12.5px; }
+  .side-week-figures { display: flex; gap: 14px; color: var(--text-2); }
+  .side-week-figures b { font-size: 19px; color: var(--text); letter-spacing: -0.02em; margin-right: 2px; }
+  .side-week-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; height: 58px; align-items: end; }
+  .side-week-bars span { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
+  .side-week-bars i { width: 100%; border-radius: 4px 4px 2px 2px; background: color-mix(in srgb, var(--accent) 70%, transparent); }
+  .side-week-bars span.today i { background: var(--accent); }
+  .side-week-bars small { font-size: 9.5px; color: var(--muted); line-height: 1; }
+  .side-week-bars span.today small { color: var(--text); font-weight: 650; }
+  .side-week-last { color: var(--muted); font-size: 11px; }
+}
+@media (max-width: 820px) { .nav-sub, .side-week { display: none; } }
+
+/* The logo and the search, larger ("powieksz logo i search"). */
+@media (min-width: 821px) {
+  .sidebar .brand { font-size: 18px; gap: 12px; padding: 4px 6px; }
+  .sidebar .search { height: 44px; font-size: 14px; border-radius: 14px; padding: 0 14px; gap: 10px; }
+  .sidebar .search svg { width: 18px; height: 18px; }
+  .sidebar .search .kbd { font-size: 12px; padding: 2px 7px; }
+}
+
+/* ---------- the Dashboard of the runner's tiles ---------- */
+.dashboard-page .page-head { display: flex; align-items: flex-end; gap: 12px; }
+.dashboard-page { container-type: inline-size; }
+/* Twelve columns: a tile a third of them, a wide one two thirds; dense, so a later tile fills a gap. */
+.dash-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-flow: row dense; gap: 14px; align-items: stretch; }
+.dash-tile { grid-column: span 4; padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.dash-tile.size-2 { grid-column: span 8; }
+.dash-tile.size-3 { grid-column: span 12; }
+.dash-body { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.dash-body > * { flex: 1; }
+.dash-tile-head { display: flex; align-items: center; gap: 8px; min-height: 28px; }
+.dash-tile-head h2 { margin: 0; font-size: 14px; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-tile-tools { display: inline-flex; gap: 4px; }
+.dash-figures { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; color: var(--text-2); font-size: 13px; }
+.dash-big { font-size: 30px; font-weight: 720; letter-spacing: -0.03em; color: var(--text); }
+.dash-mid { font-size: 18px; font-weight: 680; color: var(--text); }
+.dash-tile p { margin: 0; }
+.dash-week, .dash-form, .dash-segment, .dash-model, .dash-analysis, .dash-last { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.dash-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 70px; align-items: end; align-self: stretch; margin-top: auto; }
+.dash-days span { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
+.dash-days i { width: 100%; border-radius: 5px 5px 2px 2px; background: color-mix(in srgb, var(--accent) 55%, transparent); }
+.dash-days span.today i { background: var(--accent); }
+.dash-days small { font-size: 10px; color: var(--muted); }
+.dash-days span.today small { color: var(--text); font-weight: 650; }
+.dash-weekly { position: relative; }
+.dash-weekly svg { display: block; }
+.dash-tip { top: 26px; }
+.dash-last { gap: 4px; }
+.dash-last-title { font-weight: 700; font-size: 15px; color: var(--text); }
+.dash-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 8px 0 0; align-self: stretch; }
+.dash-facts dt { font-size: 11px; color: var(--muted); }
+.dash-facts dd { margin: 2px 0 0; font-weight: 680; font-size: 15px; }
+.dash-spark { width: 100%; height: 60px; display: block; }
+.dash-run-pace { height: 48px; }
+/* Pin to the Dashboard, in the corner of a card ("tylko pin na poziomie widgetu"). */
+.pin-host { position: relative; }
+.pin-btn { position: absolute; top: 8px; right: 8px; z-index: 3; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer; }
+.pin-btn:hover { color: var(--text); background: var(--surface-2); border-color: var(--line); }
+.pin-btn.pinned { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+.pin-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pin-host > .chart-title, .run-board.pin-host > .metrics-bar { padding-right: 40px; }
+.perf-widget > .pin-btn { top: 10px; right: 10px; }
+/* The view's first card keeps the corner for the pin. */
+.perf-widget > .card:first-of-type > :first-child { padding-right: 36px; }
+/* A view of Performance on the Dashboard: its cards inside the tile, without their own frame. */
+.dash-perf { display: flex; flex-direction: column; gap: 10px; }
+.dash-perf .card { box-shadow: none; border: 0; background: transparent; padding: 0; margin: 0; }
+.dash-run, .dash-compare { display: flex; flex-direction: column; gap: 8px; }
+.dash-tile .row-open:last-child, .dash-tile .dash-more { margin-top: auto; }
+.dash-recent { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.dash-recent li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.dash-recent li:last-child { border-bottom: 0; padding-bottom: 0; }
+.dash-recent .dash-recent-what { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.dash-recent .dash-recent-what .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-recent .dash-more { display: block; padding-top: 10px; }
+.dash-todo { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
+.dash-todo li { display: grid; gap: 2px; }
+.dash-todo .dash-more { list-style: none; margin-left: -18px; }
+.dash-add { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; padding: 12px 16px; margin-bottom: 14px; }
+.dash-add .field { display: grid; gap: 4px; }
+.dash-add .spacer { flex: 1; }
+/* Narrower: two tiles a row, a wide one the whole row; on a phone, one. */
+@container (max-width: 940px) { .dash-tile { grid-column: span 6; } .dash-tile.size-2, .dash-tile.size-3 { grid-column: span 12; } }
+@container (max-width: 560px) { .dash-tile, .dash-tile.size-2, .dash-tile.size-3 { grid-column: span 12; } }
+
+
+/* Settings › Models as one readable column ("popraw settings dla modelu .. jest nieczytelny"): a card per
+   purpose, a section per group, each value a row: its name and what it is for on the left, its field and
+   unit in one aligned column on the right. */
+.models-tab { display: grid; gap: 14px; }
+.form-card { padding: 0; }
+.form-card-head { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; padding: 18px 22px 14px; border-bottom: 1px solid var(--line); }
+.form-card-head h2 { margin: 0 0 4px; font-size: 17px; }
+.form-card-head p { margin: 0; max-width: 620px; line-height: 1.5; }
+.form-card-head .spacer { flex: 1; }
+.form-section { padding: 16px 22px 6px; border-bottom: 1px solid var(--line); }
+.form-section:last-child { border-bottom: 0; padding-bottom: 12px; }
+.form-section > h3 { margin: 0 0 10px; font-size: 11px; font-weight: 650; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+/* On the page's whole width the rows fall into columns, so a value's name and its field stay near each other. */
+.form-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); column-gap: 48px; }
+.form-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px 28px; padding: 11px 0; border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.form-row { align-self: stretch; }
+.form-row-label { display: grid; gap: 3px; font-size: 14px; font-weight: 520; color: var(--text); }
+.form-row-label small { font-size: 12px; font-weight: 400; color: var(--muted); line-height: 1.4; }
+.form-row-input { display: flex; align-items: center; gap: 8px; min-width: 200px; }
+.form-row-input .input { width: 120px; }
+.form-section .load-models { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px; margin-bottom: 10px; }
+.form-section .perf-model { padding: 12px 14px; gap: 5px; }
+.form-section .perf-model b { font-size: 14px; }
+.models-card .models-status, .models-card .models-bad { margin: 12px 22px 0; }
+@media (max-width: 700px) {
+  .form-row { grid-template-columns: 1fr; gap: 8px; }
+  .form-section .load-models { grid-template-columns: 1fr; }
+  .form-card-head, .form-section { padding-left: 16px; padding-right: 16px; }
+}
+.form-row-input .small { white-space: nowrap; min-width: 118px; }
+
+/* The setup wizard ("chcialbym wizard"): the steps as a numbered line, a card per step, Back and Next under it. */
+.setup-steps { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 22px; }
+.setup-steps li { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); font-weight: 550; }
+.setup-steps li.on { color: var(--text); }
+.setup-steps li.done { color: var(--text-2); }
+.setup-num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; border: 1px solid var(--line-strong); background: var(--surface); }
+.setup-steps li.on .setup-num { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.setup-steps li.done .setup-num { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 40%, transparent); color: var(--text); }
+.setup-card { padding: 22px 24px 18px; display: grid; gap: 14px; }
+.setup-card h2 { margin: 0; font-size: 20px; }
+.setup-card > p { margin: 0; max-width: 720px; line-height: 1.55; }
+.setup-facts { display: flex; flex-wrap: wrap; gap: 10px 36px; margin: 0; }
+.setup-facts dt { font-size: 12px; color: var(--muted); }
+.setup-facts dd { margin: 2px 0 0; font-size: 22px; font-weight: 700; }
+.setup-summary dd { font-size: 16px; }
+.setup-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.setup-rows { max-width: 980px; }
+.setup-zone-input { width: 230px !important; }
+.setup-nav { display: flex; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.setup-nav .spacer { flex: 1; }
+.setup-card .load-models { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.setup-more { border-top: 1px solid var(--line); padding-top: 10px; }
+.setup-more summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-2); padding: 4px 0; }
+.setup-more[open] summary { margin-bottom: 8px; }
+.setup-gear { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-width: 760px; }
+.setup-gear li { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.setup-gear .spacer { flex: 1; }
+.setup-gear-add { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.setup-gear-add .input { width: 220px; }
+.setup-gear-add .input[type="date"] { width: 160px; }
+/* The cards of Settings › Display and Charts inside the step, without their own frame. */
+.setup-device { display: grid; gap: 4px; }
+.setup-device .card { box-shadow: none; border: 0; background: transparent; padding: 0; margin: 0; }
+.setup-device .settings-head { padding: 12px 0 6px; border: 0; }
+.setup-device .settings-head h2 { margin: 0; font-size: 11px; font-weight: 650; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.setup-device .settings-head p { display: none; }
+.setup-zone-group { border-top: 1px solid var(--line); padding-top: 12px; }
+.setup-zone-group h3 { margin: 0 0 6px; font-size: 11px; font-weight: 650; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+/* Zones need a wide field and its fill beside it: one row each, the whole width. */
+.setup-zone-group .form-rows { grid-template-columns: minmax(0, 1fr); }
+.setup-zone-group .form-row { grid-template-columns: minmax(0, 1fr) auto; }
+.setup-zone-group .form-row-input { min-width: 420px; }
+@media (max-width: 700px) { .setup-zone-group .form-row-input { min-width: 0; flex-wrap: wrap; } }
+/* The efforts of the runner's segments in a run, as chips under its chart (the chart menu of before gone). */
+.run-efforts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 6px 0 2px; }
+.run-efforts .run-block { display: inline-flex; align-items: center; gap: 0; width: auto; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 12px; white-space: nowrap; }
+.run-efforts .run-block:hover, .run-efforts .run-block:focus-visible { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.run-efforts .run-block.rejected { opacity: 0.75; }
+.chart-settings-link { display: inline-grid; place-items: center; width: 30px; height: 30px; padding: 0; }
+/* The Welcome screen ("popraw panel"): the brand on the left, the setup's first step on the right; stacked on a phone. */
+.welcome .card.welcome-card { width: min(920px, 100%); padding: 0; text-align: left; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); overflow: hidden; }
+.welcome-brand { padding: 40px 36px; display: flex; flex-direction: column; gap: 10px; background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 12%, var(--surface)), color-mix(in srgb, var(--accent) 3%, var(--surface))); border-right: 1px solid var(--line); }
+.welcome-brand h1 { margin: 8px 0 0; }
+.welcome-brand > p { margin: 0; color: var(--text-2); line-height: 1.55; }
+.welcome-points { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; font-size: 13px; color: var(--text-2); }
+.welcome-points li { display: flex; gap: 8px; align-items: baseline; }
+.welcome-points li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; transform: translateY(-2px); }
+.welcome-brand .note { margin-top: auto; padding-top: 18px; }
+.welcome-step { padding: 40px 36px; display: flex; flex-direction: column; gap: 12px; justify-content: center; }
+.welcome-step h2 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+.welcome-step p { margin: 0; line-height: 1.55; }
+.welcome-step .btn { width: 100%; margin-top: 6px; }
+.welcome-step .welcome-next { margin-top: 2px; }
+.welcome-progress { display: grid; gap: 8px; font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; }
+/* The steps as a bar of segments, the current one lit. */
+.setup-steps.compact { flex-wrap: nowrap; gap: 4px; margin: 0; }
+.setup-steps.compact li { flex: 1; height: 5px; border-radius: 999px; background: var(--line-strong); font-size: 0; gap: 0; overflow: hidden; }
+.setup-steps.compact li.on { background: var(--accent); }
+.setup-steps.compact li.done { background: color-mix(in srgb, var(--accent) 45%, var(--surface)); }
+.setup-steps.compact .setup-num { display: none; }
+@media (max-width: 760px) {
+  .welcome .card.welcome-card { grid-template-columns: 1fr; }
+  .welcome-brand { border-right: 0; border-bottom: 1px solid var(--line); padding: 28px 24px; }
+  .welcome-step { padding: 28px 24px; }
+}
+.welcome-brand .brand-mark { margin: 0; }

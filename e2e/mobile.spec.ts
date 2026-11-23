@@ -26,7 +26,9 @@ test.describe('Layout that fits a phone', () => {
 
     // The screens are a tab bar floating at the bottom of the screen, each tab large enough for a finger; a slim bar at the top.
     const tabs = page.getByRole('navigation', { name: 'Screens' });
-    await expect(tabs.getByRole('link')).toHaveText(['Runs', 'Segments', 'Compare', 'Performance', 'Settings']);
+    expect(await tabs.getByRole('link').evaluateAll((ls) => ls.map((l) => (l.querySelector('.nav-text > span') ?? l).textContent))).toEqual(['Dashboard', 'Runs', 'Segments', 'Compare', 'Performance', 'Settings']);
+    // On a phone the menu is a bar of its screens: no facts under them, no week.
+    await expect(page.locator('.nav-sub').first()).toBeHidden();
     const bar = (await tabs.boundingBox())!;
     const under = height - (bar.y + bar.height);
     expect(under).toBeGreaterThan(0);
@@ -82,11 +84,6 @@ test.describe('Layout that fits a phone', () => {
     expect((last.x + last.width - first.x) / width).toBeGreaterThan(0.85);
     await expect(page.getByRole('table', { name: /Laps/ }).or(page.locator('.laps-table')).first()).toBeVisible();
     await check('Run', true);
-    await page.getByRole('button', { name: /Chart/ }).first().click();
-    const menu = (await page.locator('.chart-menu').boundingBox())!;
-    expect(menu.width).toBeCloseTo(width, 0);
-    expect(await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest('.chart-menu'), [width / 2, height - 20])).toBe(true);
-    await page.locator('.chart-menu').getByRole('button').first().click();
 
     // Analysis: each tab; the picker is a sheet over the bars.
     await nav(page, 'Compare');
@@ -121,8 +118,6 @@ test.describe('Layout that fits a phone', () => {
     await page.getByRole('tab', { name: 'To do', exact: true }).click();
     await page.locator('.todo-item').first().waitFor();
     await check('Performance · To do', true);
-    await page.getByRole('tab', { name: 'Model', exact: true }).click();
-    await check('Performance · Model', true);
 
     // Settings: its tabs.
     await nav(page, 'Settings');

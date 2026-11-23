@@ -1,12 +1,14 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useDataVersion } from '@/components';
 import { runInWorker, useOpenFolder } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
 import type { RunsIndex } from '@/lib/kernel';
-import { LOAD_SUMMARY_VERSION, formSeries, performanceReport, type LoadSummary, type ModelKey, type ModelReport } from '@/lib/load';
+import { LOAD_SUMMARY_VERSION, formSeries, onLoad, performanceReport, type LoadSummary, type ModelKey, type ModelReport } from '@/lib/load';
 import { LOAD_MODELS, readSettings, type SettingsFile } from '@/lib/settings';
+import { PinButton } from '../dashboard/PinButton';
 import { WhyBar } from './Assumptions';
 import { EfficiencyTab } from './EfficiencyTab';
 import { EffortsTab } from './EffortsTab';
@@ -17,7 +19,6 @@ import { LoadTab } from './LoadTab';
 import { CriticalTab, PredictionsTab } from './MarkersTab';
 import { OverviewTab } from './OverviewTab';
 import { TodoTab } from './TodoTab';
-import { PerformanceCard } from './PerformanceCard';
 import { TABS, type Tab } from './structure';
 import { Vo2Tab } from './Vo2Tab';
 
@@ -30,16 +31,14 @@ interface Data {
 }
 
 /**
- * The content of the Performance screen (loaded after the page's frame, ADR "Built with React":
+ * The content of the Performance screen (and of a view pinned to the Dashboard, embedded there) (loaded after the page's frame, ADR "Built with React":
  * 200 KB of script per route): the runs' summaries read once, the models' report computed from
  * them, and for each view its models' trust with a "Why?", then its data.
  */
-export function Body({ tab, view }: { tab: Tab; view: string }) {
+export function Body({ tab, view, embedded = false }: { tab: Tab; view: string; /** on the Dashboard: the view's charts alone */ embedded?: boolean }) {
   const { folder, handle } = useOpenFolder();
   const [data, setData] = useState<Data | null>(null);
   const [preparing, setPreparing] = useState(false);
-  /** raised when the model is saved: the loads were recomputed */
-  const [version, setVersion] = useState(0);
   /** raised when an import or a recompute ends, wherever it was started */
   const dataVersion = useDataVersion();
 
@@ -59,7 +58,7 @@ export function Body({ tab, view }: { tab: Tab; view: string }) {
       if (live) { setData({ runs: fresh?.runs ?? [], summaries: file?.runs ?? {}, settings }); setPreparing(false); }
     })().catch(() => live && setPreparing(false));
     return () => { live = false; };
-  }, [folder, handle, version, dataVersion]);
+  }, [folder, handle, dataVersion]);
 
   const today = localDay(new Date());
   const days = useMemo(() => (data ? formSeries(data.runs.filter((r) => typeof r.load === 'number').map((r) => ({ startTime: r.startTime, load: r.load as number })), data.settings.performance, today) : []), [data, today]);
@@ -72,16 +71,10 @@ export function Body({ tab, view }: { tab: Tab; view: string }) {
   if (!data || !report || !by) {
     return <div className="card chart muted small" style={{ padding: 18 }} role="status">{preparing ? 'Preparing the summaries of your runs, once…' : 'Reading the runs…'}</div>;
   }
-  if (tab === 'overview') return <OverviewTab models={report.models} by={by} now={report.now} />;
+  // What the load model chosen changes, marked so wherever it shows.
+  const byLoad = { set: onLoad(report.models), name: LOAD_MODELS.find((m) => m.key === data.settings.performance.load)?.name ?? 'the load model', unit: report.now.loadUnit };
+  if (tab === 'overview') return <OverviewTab models={report.models} by={by} now={report.now} byLoad={byLoad} />;
   if (tab === 'todo') return <TodoTab models={report.models} by={by} />;
-  if (tab === 'model') {
-    return (
-      <>
-        <WhyBar models={['load']} by={by} />
-        <PerformanceCard onSaved={() => setVersion((v) => v + 1)} />
-      </>
-    );
-  }
 
   const views = TABS.find((t) => t.key === tab)!.views;
   const shown = views.find((v) => v.key === view) ?? views[0];
@@ -103,10 +96,20 @@ export function Body({ tab, view }: { tab: Tab; view: string }) {
       default: return <FittedTab criterion="vdot" runs={runs} summaries={summaries} performance={settings.performance} days={days} today={today} />;
     }
   })();
+  if (embedded) return content;
+  // The view is a widget: Pin in its corner puts it on the Dashboard as it is here.
   return (
     <>
-      <WhyBar key={`${tab}/${shown.key}`} models={shown.models} by={by} />
-      {content}
+      {(tab === 'load' || tab === 'response') && (
+        <p className="load-using muted small" role="note" aria-label="Load model in use">
+          The load of a run is counted as <span className="by-load">{byLoad.name}</span>: what is marked by it follows that choice; Capacity and Aerobic do not depend on it. <Link href="/settings?tab=models">Change it in Settings →</Link>
+        </p>
+      )}
+      <WhyBar key={`${tab}/${shown.key}`} models={shown.models} by={by} byLoad={byLoad} />
+      <div className="pin-host perf-widget">
+        <PinButton folder={folder} kind="perf" target={`${tab}/${shown.key}`} name={`${TABS.find((t) => t.key === tab)!.name} · ${shown.name}`} />
+        {content}
+      </div>
     </>
   );
 }

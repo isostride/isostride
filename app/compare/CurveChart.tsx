@@ -77,7 +77,9 @@ export function CurveChart({ label, lines, durations, format, tick, gap, higherI
           </g>
         ))}
         <line x1={M.l} x2={width - M.r} y1={H - M.b} y2={H - M.b} stroke="var(--axis)" />
-        {xTicks.map((d) => <text key={d} x={x(d)} y={H - 8} fontSize="11" fill="var(--muted)" textAnchor="middle">{durationLabel(d)}</text>)}
+        {/* Narrow, a label too near the one before gives way (the last one stays), and the last sits inside the edge. */}
+        {xTicks.reduce<number[]>((kept, d, k) => (!kept.length || x(d) - x(kept[kept.length - 1]) >= 44 ? [...kept, d] : k === xTicks.length - 1 ? [...kept.slice(0, -1), d] : kept), [])
+          .map((d) => <text key={d} x={x(d)} y={H - 8} fontSize="11" fill="var(--muted)" textAnchor={x(d) > width - M.r - 20 ? 'end' : 'middle'}>{durationLabel(d)}</text>)}
         {/* What the bests fall short of the estimate: the area between the two, in the item's colour. */}
         {lines.map((l) => {
           if (!l.estimateAt || l.points.length < 2) return null;

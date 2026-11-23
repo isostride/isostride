@@ -9,22 +9,32 @@ test.describe('Performance model', () => {
     await importAll(page);
 
     // The navigation: Runs, Analysis, Performance, Settings.
-    await expect(page.locator('.sidebar nav').getByRole('link')).toHaveText(['Runs', 'Segments', 'Compare', 'Performance', 'Settings']);
+    const screens = page.locator('.sidebar nav').getByRole('link');
+    expect(await screens.evaluateAll((ls) => ls.map((l) => (l.querySelector('.nav-text > span') ?? l).textContent))).toEqual(['Dashboard', 'Runs', 'Segments', 'Compare', 'Performance', 'Settings']);
+    // Under each screen a line of facts, read from the data; under them this week's running (requirement "Side menu with the data").
+    await expect(screens.nth(1)).toHaveAccessibleDescription(/^\d+ runs · last \w{3} \d+|^\d+ runs · last \d+ \w{3}/);
+    await expect(screens.nth(2)).toHaveAccessibleDescription(/^\d+ kept/);
+    const week = page.getByRole('region', { name: 'This week' });
+    await expect(week).toContainText(/\d+\.\d km/);
+    await expect(week.getByRole('img', { name: /^Kilometres by day: M / })).toBeVisible();
     // Settings in tabs, zones first; gear and tags are tabs of it, not a screen of the navigation.
     await nav(page, 'Settings');
     await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Zones', 'Gear', 'Tags', 'Charts', 'Models', 'Display']);
     // Models (requirement "Thresholds of the models"): each threshold of the checks with its default; one out of
     // its range cannot be saved; set, it is kept in the data folder with the performance model.
     await page.getByRole('tab', { name: 'Models' }).click();
-    const thresholds = page.getByRole('region', { name: 'Models' });
+    const thresholds = page.getByRole('region', { name: 'Thresholds of the checks' });
     const strap = thresholds.getByLabel('A heart rate strap in at least');
     await expect(strap).toHaveAttribute('placeholder', '80');
+    // Save shows only when something is changed and not saved ("powinien sie pojawic gdy cos jest zmienione ale nie zapisane").
+    await expect(thresholds.getByRole('button', { name: 'Save' })).toHaveCount(0);
     await strap.fill('150');
     await expect(thresholds.getByRole('alert')).toContainText('A heart rate strap in at least (0–100)');
     await expect(thresholds.getByRole('button', { name: 'Save' })).toBeDisabled();
     await strap.fill('50');
     await thresholds.getByRole('button', { name: 'Save' }).click();
     await expect(thresholds.getByRole('status')).toContainText('Saved');
+    await expect(thresholds.getByRole('button', { name: 'Save' })).toHaveCount(0);
     expect(JSON.parse(await readText(page, 'strideprism/user/settings.json')).performance.thresholds).toEqual({ strapShare: 0.5 });
     await page.getByRole('tab', { name: 'Tags' }).click();
     await expect(page).toHaveURL(/\/settings\?tab=tags/);
@@ -39,7 +49,8 @@ test.describe('Performance model', () => {
     // Performance is laid out by the evidence its models rest on: an overview, a tab per group, the settings.
     await nav(page, 'Performance');
     const tabs = page.getByRole('tablist', { name: 'Performance sections' });
-    await expect(tabs.getByRole('tab')).toHaveText(['Overview', 'Load', 'Capacity', 'Aerobic', 'Response', 'To do', 'Model']);
+    // No Model tab ("mam wrazenie ze wszystkie modele sa pomieszane"): the load model is chosen at the top of Load, its values set in Settings › Models.
+    await expect(tabs.getByRole('tab')).toHaveText(['Overview', 'Load', 'Capacity', 'Aerobic', 'Response', 'To do']);
     await expect(tabs.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
     await expect(page).toHaveURL(/\/performance$/);
     // The overview is the map of the models: each with its name, what it says now, its trust and a "Why?"; no list repeats it.
@@ -49,6 +60,8 @@ test.describe('Performance model', () => {
     await expect(rows).toHaveCount(17);
     for (const trust of await rows.locator('.map-trust').allTextContents()) expect(['Reliable', 'Rough', 'Not reliable', 'No data']).toContain(trust);
     await expect(rows.getByRole('button', { name: /^Why\?/ })).toHaveCount(17);
+    // The models the load model changes are marked by its unit: the load, the form, the ratio, the weekly load and the fitted responses.
+    expect((await page.locator('.map-node:has(.by-load)').evaluateAll((ns) => ns.map((n) => n.getAttribute('data-model')))).sort()).toEqual(['acwr', 'fittedHr', 'fittedVdot', 'form', 'load', 'weekly']);
     const why = (model: string) => page.getByRole('button', { name: new RegExp(`^Why\\? ${model}`) });
     const panel = (model: string) => page.getByRole('region', { name: new RegExp(`^Why: ${model}`) });
     // Critical speed is drawn beside the best efforts it is fitted to, a line between them, and is no more reliable than they are.
@@ -98,27 +111,33 @@ test.describe('Performance model', () => {
     await page.getByText(/^Done and set aside/).click();
     await page.locator(`[data-todo="${judgedKey}"]`).getByRole('button', { name: 'Bring back' }).click();
     await expect(page.locator('.todo-item:not(.done):not(.aside)')).toHaveCount(before);
-    // Where a setting is made: the Model tab.
-    await setNow.locator('[data-todo="resthr"]').getByRole('link', { name: 'Open the Model tab →' }).click();
-    await expect(page).toHaveURL(/\/performance\?tab=model/);
-
-    // Its Model tab: Banister TRIMP until chosen otherwise; Power TSS against the critical power of the curve, saved, the loads recomputed.
-    await tabs.getByRole('tab', { name: 'Model' }).click();
-    await expect(page).toHaveURL(/\/performance\?tab=model/);
+    // Where a setting is made: Settings › Models ("ok wybor modelu chce w settings"): the load model and the values of the models.
+    await setNow.locator('[data-todo="resthr"]').getByRole('link', { name: 'Open Settings › Models →' }).click();
+    await expect(page).toHaveURL(/\/settings\?tab=models/);
     const card = page.getByRole('region', { name: 'Performance model' });
+    await expect(card.getByRole('button', { name: 'Save and recompute' })).toHaveCount(0);
+    await expect(card.getByLabel('Maximum heart rate')).toHaveAttribute('placeholder', /^auto: \d{3}$/);
+    await expect(card.getByLabel('Critical power')).toHaveAttribute('placeholder', /^auto: \d+$/);
+    // Banister TRIMP until chosen otherwise, each choice saying what it needs and how much of it the runs have;
+    // Power TSS against the critical power of the curve, saved, the loads recomputed.
     const models = card.getByRole('radiogroup', { name: 'Load model' });
     await expect(models.getByRole('radio', { name: /Banister TRIMP/ })).toHaveAttribute('aria-checked', 'true');
-    await expect(card.getByLabel('Maximum heart rate')).toHaveAttribute('placeholder', /^auto: \d{3}$/);
+    await expect(models.getByRole('radio', { name: /Banister TRIMP/ })).toContainText(/Needs heart rate: \d+ of \d+ runs/, { timeout: 30_000 });
+    await expect(models.getByRole('radio', { name: /Power TSS/ })).toContainText(/Needs power: \d+ of \d+ runs/);
     await models.getByRole('radio', { name: /Power TSS/ }).click();
-    await expect(card.getByLabel('Critical power')).toHaveAttribute('placeholder', /^auto: \d+$/);
     await card.getByRole('button', { name: 'Save and recompute' }).click();
     await expect(card.getByRole('status')).toHaveText('Saved · loads recomputed', { timeout: 60_000 });
     // Saved as the runner's own; the zones were not touched, so the default zones go on applying.
     const saved = JSON.parse(await readText(page, 'strideprism/user/settings.json'));
     expect(saved.performance).toMatchObject({ load: 'powerTss', confirmed: true });
     expect(saved.zones).toBeUndefined();
-    // Above it, the load's trust; its "Why?" says what it now rests on: the critical power, and through it the best efforts.
+    // On Load, a line names the model in use and leads to Settings.
+    await nav(page, 'Performance');
+    await tabs.getByRole('tab', { name: 'Load' }).click();
+    await expect(page.getByRole('note', { name: 'Load model in use' })).toContainText('counted as Power TSS');
+    // Under it, the load's trust, marked as following the load model; its "Why?" says what it now rests on: the critical power, and through it the best efforts.
     const bar = page.getByRole('group', { name: 'How far to trust this' });
+    await expect(bar.locator('.why-item[data-model="form"] .by-load')).toHaveText('by Power TSS');
     await bar.getByRole('button', { name: /^Why\? Load of a run · Power TSS/ }).click();
     await expect(panel('Load of a run · Power TSS').getByRole('link', { name: /^Critical power and W′/ })).toBeVisible();
     await page.keyboard.press('Escape');
@@ -168,9 +187,9 @@ test.describe('Performance model', () => {
     await expect(bar.locator('.why-item')).toHaveCount(3);
     await expect(bar.locator('.why-item .trust')).toHaveCount(3);
     // What the files cannot tell is left to the runner, and how to read the chart is here too.
-    await bar.getByRole('button', { name: /^Why\? Fitness, fatigue and form/ }).click();
-    await expect(panel('Fitness, fatigue and form')).toContainText('All your training is here · you must judge');
-    await expect(panel('Fitness, fatigue and form')).toContainText('Form is fitness minus fatigue of the day before');
+    await bar.getByRole('button', { name: /^Why\? Fitness and fatigue \(impulse–response\)/ }).click();
+    await expect(panel('Fitness and fatigue \\(impulse–response\\)')).toContainText('All your training is here · you must judge');
+    await expect(panel('Fitness and fatigue \\(impulse–response\\)')).toContainText('Form is fitness minus fatigue of the day before');
     await page.keyboard.press('Escape');
     // Weekly load: the weeks' load, monotony, strain and ramp rate.
     await page.getByRole('radio', { name: 'Weekly load' }).click();
@@ -179,6 +198,18 @@ test.describe('Performance model', () => {
     await expect(page.getByLabel('Load this week')).toContainText(/Monotony(\d+\.\d+|–)/);
     await expect(page.getByRole('img', { name: 'Weekly load' }).locator('.tc-bar').first()).toBeAttached();
     expect(await page.getByRole('img', { name: 'Weekly load' }).locator('.tc-bar').count()).toBeGreaterThan(3);
+    // The view is a widget: Pin in its corner ("Pin na kazdej karcie-widgecie") puts it on the Dashboard, kept in the data folder.
+    const pin = page.getByRole('button', { name: 'Pin Load · Weekly load to the dashboard' });
+    await pin.click();
+    await expect(pin).toHaveAttribute('aria-pressed', 'true');
+    expect(JSON.parse(await readText(page, 'strideprism/user/dashboard.json')).tiles).toContainEqual({ id: 'perf:load/weekly', kind: 'perf', ref: 'load/weekly', name: 'Load · Weekly load' });
+    // The files the Dashboard opens (its Last run reads its run) are not the Performance views': left out of the measure below.
+    const openedBefore = await page.evaluate(() => [...(window as any).__opened] as string[]);
+    await nav(page, 'Dashboard');
+    await expect(page.getByRole('region', { name: 'Load · Weekly load' }).getByRole('img', { name: 'Weekly load' })).toBeVisible({ timeout: 30_000 });
+    await page.goBack();
+    await page.evaluate((list) => { (window as any).__opened = list; }, openedBefore);
+    await expect(page).toHaveURL(/tab=load&view=weekly/);
     // Intensity: the shares of low, moderate and high add up to the whole.
     await page.getByRole('radio', { name: 'Intensity' }).click();
     await expect(page.getByRole('img', { name: 'Time in the heart rate zones' }).locator('.tc-bar').first()).toBeAttached();
@@ -191,12 +222,24 @@ test.describe('Performance model', () => {
     // Capacity, what you can do: first the best efforts themselves, each with how hard it was and the run it comes from.
     await tabs.getByRole('tab', { name: 'Capacity' }).click();
     await expect(page.getByRole('radiogroup', { name: 'Capacity views' }).getByRole('radio')).toHaveText(['Best efforts', 'Critical speed and power', 'Predictions and VDOT']);
-    const efforts = page.getByRole('table', { name: 'Best pace efforts' });
+    // Your curve now above them ("czy krzywa mocy i predkosci powinna byc w performance"): the bests as points, the fitted curve and its critical speed; power on a switch.
+    const curve = page.getByRole('img', { name: 'Your pace curve' });
+    await expect(curve).toBeVisible();
+    await expect(page.locator('.chart-note').filter({ hasText: /^Critical speed [2-9]:\d\d \/km/ })).toBeVisible();
+    await page.getByRole('group', { name: 'Curve of' }).getByRole('button', { name: 'Power' }).click();
+    await expect(page.getByRole('img', { name: 'Your power curve' })).toBeVisible();
+    await expect(page.locator('.chart-note').filter({ hasText: /^Critical power \d+ W/ })).toBeVisible();
+    // Pace and power in one table ("czy to nie to samo"): a row a length with both bests; one effort said once, two efforts each.
+    const efforts = page.getByRole('table', { name: 'Best efforts' });
+    await expect(efforts.getByRole('columnheader')).toHaveText([/^length$/i, /^best pace$/i, /^best power$/i, /^effort$/i, /^of max heart rate$/i, /^run$/i], { useInnerText: true });
     expect(await efforts.locator('tbody tr').count()).toBeGreaterThanOrEqual(3);
     const first = efforts.locator('tbody tr').first();
-    await expect(first).toContainText(/2 min\d:\d\d \/km(all-out|hard, not all-out|not all-out)\d+ %/);
-    await expect(first.getByRole('link')).toHaveAttribute('href', /\/run\?id=\d{8}-\d{6}&from=\d+&to=\d+/);
-    await expect(page.getByRole('table', { name: 'Best power efforts' })).toBeVisible();
+    await expect(first).toContainText(/^2 min\d:\d\d \/km\d+ W(pace |)(all-out|hard, not all-out|not all-out)/);
+    await expect(first.getByRole('link').first()).toHaveAttribute('href', /\/run\?id=\d{8}-\d{6}&from=\d+&to=\d+/);
+    for (const row of await efforts.locator('tbody tr').all()) {
+      // One effort: one run; two: a run for the pace and one for the power.
+      await expect(row.getByRole('link')).toHaveCount((await row.getAttribute('data-same')) === 'true' ? 1 : 2);
+    }
     // The maximum heart rate comes from the runs: whether the efforts were all-out is in doubt, and the "Why?" says so.
     await bar.getByRole('button', { name: /^Why\? Best efforts of 2–20 min/ }).click();
     await expect(panel('Best efforts of 2–20 min')).toContainText('Your maximum heart rate is known · in doubt');
@@ -272,6 +315,12 @@ test.describe('Performance model', () => {
     await expect.poll(() => page.evaluate(() => innerHeight - document.querySelector('.model-map')!.getBoundingClientRect().bottom), { message: 'room under the map' }).toBeLessThanOrEqual(24);
     await page.setViewportSize({ width: 1440, height: 900 });
     await expect(map.locator('.map-lane-head a')).toHaveText(['Load', 'Response', 'Aerobic', 'Capacity']);
+    // A link to the Model tab of before opens Load, where the load model is chosen now.
+    await page.goto('/performance?tab=model');
+    await expect(page.getByRole('tab', { name: 'Load', exact: true })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('note', { name: 'Load model in use' })).toBeVisible({ timeout: 60_000 });
+    await page.goBack();
+    await expect(map.locator('.map-node')).toHaveCount(17, { timeout: 60_000 });
     await expect(map.locator('.map-col-title')).toHaveText(['From your runs', 'Built on them', 'Fitted response']);
     // Measured from the runs on the left, what is built on them to the right of it, the responses last.
     const left = async (key: string) => (await map.locator(`.map-node[data-model="${key}"]`).boundingBox())!.x;

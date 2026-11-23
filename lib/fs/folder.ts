@@ -48,7 +48,11 @@ export const PATHS = {
   blockDefinitions: 'strideprism/user/block-definitions.json',
   /** the analyses the runner saved, by name */
   analyses: 'strideprism/user/analyses.json',
+  /** the tiles of the Dashboard, in their order */
+  dashboard: 'strideprism/user/dashboard.json',
   settings: 'strideprism/user/settings.json',
+  /** whether the setup wizard was gone through or skipped in this folder */
+  setup: 'strideprism/user/setup.json',
   derived: 'strideprism/derived',
   runs: 'strideprism/derived/runs',
   runFile: (id: string) => `strideprism/derived/runs/${id}.json`,

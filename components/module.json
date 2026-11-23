@@ -6,6 +6,7 @@
     "lib/compare",
     "lib/fs",
     "lib/kernel",
+    "lib/load",
     "lib/settings"
   ],
   "runs": "main"

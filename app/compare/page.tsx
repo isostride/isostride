@@ -27,6 +27,8 @@ const TrendVerdicts = dynamic(() => import('./TrendVerdicts').then((m) => m.Tren
 const SavedAnalyses = dynamic(() => import('./SavedAnalyses').then((m) => m.SavedAnalyses), { ssr: false });
 /** The efforts chosen on the Efforts tab on one chart as rich as the run's: loaded when one is chosen. */
 const EffortsChart = dynamic(() => import('./EffortsChart').then((m) => m.EffortsChart), { ssr: false });
+/** Pin to the Dashboard, in the Over time card's corner: loaded after the screen, as the budget wants. */
+const PinButton = dynamic(() => import('../dashboard/PinButton').then((m) => m.PinButton), { ssr: false });
 const SavedList = dynamic(() => import('./SavedAnalyses').then((m) => m.SavedList), { ssr: false });
 const AddDialog = dynamic(() => import('./AddDialog').then((m) => m.AddDialog), { ssr: false });
 const BlockSheet = dynamic(() => import('../segments/BlockSheet').then((m) => m.BlockSheet), { ssr: false });
@@ -298,6 +300,8 @@ function AnalysisPage() {
     return f && v !== null ? [{ ...base, points: [{ t: Date.parse(f.startTime), v, note: 'average of the run', href: runHref(f.id) }], fits: [] }] : [];
   });
 
+  // The analysis as its Dashboard widget keeps it: its items and metrics.
+  const pinQuery = `items=${formatItems(items)}&m=${metrics.join(',')}`;
   // One time range for every Over time chart.
   const groupsByMetric = metrics.map((mt) => ({ mt, groups: groupsFor(mt) }));
   const allT = groupsByMetric.flatMap((g) => g.groups.flatMap((x) => x.points.map((p) => p.t)));
@@ -475,7 +479,8 @@ function AnalysisPage() {
                 <label className="setting inline"><input type="checkbox" checked={joinPoints} onChange={(e) => setJoin(e.target.checked)} /> Join points</label>
                 <label className="setting inline"><input type="checkbox" checked={trendLine} onChange={(e) => setTrend(e.target.checked)} /> Trend line</label>
               </div>
-              <div className="card chart">
+              <div className="card chart pin-host">
+                <PinButton folder={folder} kind="compare" target={pinQuery} name={`Over time · ${items.map(label).join(', ')}`} />
                 <h3 className="chart-title">Over time <span className="muted">· each segment&apos;s efforts with its trend line, each run&apos;s average</span></h3>
                 {/* While a rule's segments are read, the charts' room is kept, so nothing below moves when they come. */}
                 {computing && <div className="chart-loading muted small" style={{ height: metrics.length > 1 ? metrics.length * 236 : 326 }}>Reading the runs…</div>}

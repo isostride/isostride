@@ -76,7 +76,7 @@ function place(models: ModelReport[]) {
  * view, and has its "Why?": the rest about it opens in a window over the screen (requirement
  * "Performance kept simple"). Under the pointer or the focus a model's chain lights up and the rest recede.
  */
-export function ModelMap({ models, by: models_, says }: { models: ModelReport[]; by: Models; says: (m: ModelReport) => string }) {
+export function ModelMap({ models, by: models_, says, byLoad }: { models: ModelReport[]; by: Models; says: (m: ModelReport) => string; /** the models the chosen load model changes, its name and unit */ byLoad?: { set: Set<ModelKey>; name: string; unit: string } }) {
   const inner = useRef<HTMLDivElement>(null);
   const card = useRef<HTMLElement>(null);
   /** on a wide screen, the height from the top of the map to the bottom of the window: the map fills it */
@@ -178,6 +178,7 @@ export function ModelMap({ models, by: models_, says }: { models: ModelReport[];
           {TRUST_ORDER.map((t) => <span key={t}><i className={`trust-dot ${t}`} />{TRUST_LABEL[t]}</span>)}
           <span><i className="map-key-line" />rests on</span>
           <span><i className="map-key-line caps" />holds back the trust of the next</span>
+          {byLoad && <span><b className="by-load">{byLoad.unit}</b>follows the load model, {byLoad.name}</span>}
         </div>
       </div>
       <div className="model-map-scroll">
@@ -214,7 +215,10 @@ export function ModelMap({ models, by: models_, says }: { models: ModelReport[];
                 </Link>
                 <span className="map-side">
                   <span className="map-trust"><i className={`trust-dot ${m.trust}`} aria-hidden="true" />{TRUST_LABEL[m.trust]}</span>
-                  <WhyButton m={m} open={open === m.key} onToggle={() => setOpen(open === m.key ? null : m.key)} />
+                  <span className="map-side-foot">
+                    {byLoad?.set.has(m.key) && <span className="by-load" title={`Changes with the load model: ${byLoad.name}`}>{byLoad.unit}</span>}
+                    <WhyButton m={m} open={open === m.key} onToggle={() => setOpen(open === m.key ? null : m.key)} />
+                  </span>
                 </span>
               </div>
             );

@@ -234,6 +234,12 @@
     "targetId": "fbf51618-db00-4dd1-aec6-aa5cb4d17b84"
   },
   {
+    "id": "09c3e4b9-b25f-446c-8950-7b11bad8be78",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "8203dd81-c013-42ab-bdf8-4f057bac3787"
+  },
+  {
     "id": "0a154552-e615-40e5-bd88-393686ae2020",
     "label": "Reads fit/",
     "relationType": "interacts",
@@ -531,6 +537,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "11e8e43f-1336-44a9-b30a-e18a25333194",
+    "relationType": "verifies",
+    "sourceId": "b1e704af-7f00-4736-bed0-33d39aeeb0c7",
+    "targetId": "ca5872d9-75d4-48c7-a7c7-33c2f1e74e8d"
+  },
+  {
     "id": "11e91465-9dbf-41ba-9b34-1bd98e54c917",
     "relationType": "verifies",
     "sourceId": "0a1697f1-3f2b-4e08-91aa-334b85d1e5d8",
@@ -592,6 +604,13 @@
     "relationType": "verifies",
     "sourceId": "b2ecee7e-c463-4adf-9bdc-167842a010a9",
     "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
+  },
+  {
+    "id": "12eeb9db-9fa6-4781-b395-aae96894f22d",
+    "quote": "chcialbym wizard ... ktory bedzie dostepny z poziomu settings oraz tez bedzie uruchamial sie na pocatku",
+    "relationType": "derives",
+    "sourceId": "22398764-dd5b-45b9-9d1e-db0474ec13dc",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "1311b618-c327-4eb3-b284-1994f58eb3e2",
@@ -780,6 +799,12 @@
     "relationType": "derives",
     "sourceId": "8cd8c786-c600-4808-95b3-d73aac37d4b1",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "189153f5-258d-4675-96bb-a97f672ec4f0",
+    "relationType": "satisfies",
+    "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
+    "targetId": "cc5ceed4-66ea-4024-8efd-006bec16026f"
   },
   {
     "id": "1894fa7f-7e8a-4a5b-b6ce-6f59b6e02e17",
@@ -1211,6 +1236,12 @@
     "targetId": "a694fdc9-58ad-462b-a996-c49812b6da79"
   },
   {
+    "id": "24eada63-742c-4eae-ab3c-2a75493b0ab7",
+    "relationType": "satisfies",
+    "sourceId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1",
+    "targetId": "ca5872d9-75d4-48c7-a7c7-33c2f1e74e8d"
+  },
+  {
     "id": "2528e007-5ccf-49fd-b60a-5d37bca7eabe",
     "relationType": "verifies",
     "sourceId": "a23ad5ec-41a8-4148-9fcd-a762769f05a9",
@@ -1507,6 +1538,12 @@
     "targetId": "31ec5c9f-dc19-4487-a84b-67fbd381ead5"
   },
   {
+    "id": "2e81f1ba-5b2f-4945-a014-7b7ad3e56782",
+    "relationType": "verifies",
+    "sourceId": "e6e91dad-bae3-40f2-992e-007235fc15d1",
+    "targetId": "d90e9074-aef2-4bc6-86aa-4f791f348c64"
+  },
+  {
     "id": "2eaee0f6-cc34-4a41-96f6-f60bf4a0ca87",
     "label": "Reads manifest.json, runs-index.json, block-instances.json; writes user/",
     "relationType": "interacts",
@@ -1525,6 +1562,13 @@
     "relationType": "verifies",
     "sourceId": "d180eb71-c70c-4c5a-8761-65426bcce3e6",
     "targetId": "8690d92b-9be0-4782-8993-56acf708796a"
+  },
+  {
+    "id": "2f7323e4-5ca0-4df9-b2a3-9ecccb37d75e",
+    "quote": "przycisk save jest zawsze .. powinien sie pojawic gdy cos jest zmienione ale nie zapisane",
+    "relationType": "derives",
+    "sourceId": "8c0a0d30-4eae-411d-bd58-74d5cc17059c",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "2ffca083-ddb5-49b7-901a-dd38e2e39bc6",
@@ -1674,6 +1718,12 @@
     "targetId": "fcc428c5-776d-4166-abc1-8d513b3d0948"
   },
   {
+    "id": "35628b0a-c0f3-423a-9e81-ad4bf96f1dce",
+    "relationType": "verifies",
+    "sourceId": "6b40f4f5-da17-4c21-83b3-ec626b0c496c",
+    "targetId": "8203dd81-c013-42ab-bdf8-4f057bac3787"
+  },
+  {
     "id": "35d6d305-3a9b-4416-84c3-c13a9aa42202",
     "relationType": "emits",
     "sourceId": "f58f1376-76ae-401e-9a0b-97fb2c636e4f",
@@ -1722,6 +1772,13 @@
     "relationType": "performed-by",
     "sourceId": "a03d3aad-67f4-4e9d-affe-99a9d3d1de8b",
     "targetId": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9"
+  },
+  {
+    "id": "388e91f1-0b89-4a2e-8002-cd2926d09e8b",
+    "quote": "przycisk chart w runs ... czy ma sens jeszce ?",
+    "relationType": "derives",
+    "sourceId": "81ad7b9e-17ca-4f1c-9679-239bec871155",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "38b1ea5f-d350-4baf-a677-3370292e1adc",
@@ -1803,6 +1860,12 @@
     "relationType": "satisfies",
     "sourceId": "2a60339a-0a2c-4da8-b12e-4227eba8f4d1",
     "targetId": "c6b6af5b-b448-4610-b76f-9621eaef5f67"
+  },
+  {
+    "id": "3b4fe4f9-d860-40ac-9add-8e66b9b3dc5c",
+    "relationType": "verifies",
+    "sourceId": "acb761e9-0316-41ae-bd9c-b06d49ea35da",
+    "targetId": "8c0a0d30-4eae-411d-bd58-74d5cc17059c"
   },
   {
     "id": "3c79bb7c-c743-4bb8-92fc-0fac825a429c",
@@ -1946,6 +2009,12 @@
     "relationType": "verifies",
     "sourceId": "3120690b-ce09-4693-bbb1-2eafbc8a99ce",
     "targetId": "645425d9-d9a4-4adf-bae2-392cc0fdc84f"
+  },
+  {
+    "id": "40b88abc-e323-4f6f-9051-31f29456b595",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "22398764-dd5b-45b9-9d1e-db0474ec13dc"
   },
   {
     "id": "40d295bf-26dd-4843-aac3-ca0980289bf2",
@@ -2927,6 +2996,13 @@
     "targetId": "2a71cd65-f7bf-43c0-ad49-7b8a514047f3"
   },
   {
+    "id": "6606fb71-998a-415f-b97b-f6fb3108e045",
+    "quote": "przy starcie pierwszym powinien uruchamiac wizarda",
+    "relationType": "derives",
+    "sourceId": "22398764-dd5b-45b9-9d1e-db0474ec13dc",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "66ab619f-526b-4529-a666-731079c26510",
     "relationType": "satisfies",
     "sourceId": "d0291cd1-bdf1-4c49-8333-4b658a02f95d",
@@ -3000,6 +3076,12 @@
     "targetId": "9af04b42-1352-4b04-880f-a46bcd62caf2"
   },
   {
+    "id": "69136cf3-748c-4746-bdbc-7dafd5f9a08d",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "8c0a0d30-4eae-411d-bd58-74d5cc17059c"
+  },
+  {
     "id": "693eb6cf-7f7d-4c9f-8342-1ee469e21e10",
     "quote": "The block itself: pace, grade, duration, direction on the route, the profile of metrics inside the block.\nWhat came before: minute and kilometre of the run, effort in the 2 minutes before the block, position in the workout structure.\nThe run: shoes, heart rate sensor, workout type, technique cue.\nThe day: load from previous days, temperature.\ndefinition, run, start, end, four context layers, metric means, per-minute profile",
     "relationType": "derives",
@@ -3018,6 +3100,13 @@
     "relationType": "verifies",
     "sourceId": "47356775-cc89-4247-9a0a-d47fd6e79209",
     "targetId": "36038f78-a505-4196-a7a7-9dbac6a637e8"
+  },
+  {
+    "id": "69a353a3-04ae-48cb-8d57-ca2440c86337",
+    "quote": "chce je wizualnie rozszeczyc ... bo pusto w menu jest",
+    "relationType": "derives",
+    "sourceId": "ca5872d9-75d4-48c7-a7c7-33c2f1e74e8d",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "6aebc581-ac71-4dae-a003-86d8facc5117",
@@ -4057,6 +4146,13 @@
     "targetId": "f69a0da2-2a43-471f-9863-97268ea75c06"
   },
   {
+    "id": "8b96becd-db1c-4690-b444-fc281c7447c8",
+    "quote": "dodaj jeszcze jedna sekcje na sama gore - dashboard",
+    "relationType": "derives",
+    "sourceId": "8203dd81-c013-42ab-bdf8-4f057bac3787",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "8baed194-ea9c-4eab-a821-4f3de4b76b94",
     "relationType": "satisfies",
     "sourceId": "9af04b42-1352-4b04-880f-a46bcd62caf2",
@@ -4130,6 +4226,12 @@
     "relationType": "realises",
     "sourceId": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9",
     "targetId": "464b2289-1217-408d-a912-ec1e23db81d9"
+  },
+  {
+    "id": "8e1e9447-4192-4a71-8a8a-fc68529d8ca2",
+    "relationType": "verifies",
+    "sourceId": "67154087-bcdd-43be-ad6f-bd9c3fef0932",
+    "targetId": "22398764-dd5b-45b9-9d1e-db0474ec13dc"
   },
   {
     "id": "8e2611e4-5d3c-4457-8ea6-3561bf828d4f",
@@ -5264,6 +5366,12 @@
     "targetId": "917c2241-0a24-4062-a058-0ca2df470b18"
   },
   {
+    "id": "b5d98446-fce9-40e7-833f-b857007d102e",
+    "relationType": "verifies",
+    "sourceId": "b196d4ec-3025-4335-bdcf-e2235ecc44fc",
+    "targetId": "cc5ceed4-66ea-4024-8efd-006bec16026f"
+  },
+  {
     "id": "b5eb362b-c278-43c4-b847-de35bc2da3bf",
     "relationType": "verifies",
     "sourceId": "a7041664-0172-4632-9168-8f1465772fe8",
@@ -5361,6 +5469,12 @@
     "relationType": "illustrates",
     "sourceId": "c6d5b5bc-63e5-4e1d-b3e0-9f4b74617881",
     "targetId": "ae051ad4-bb7e-4998-b355-5cae616ceadd"
+  },
+  {
+    "id": "b8091b49-62d6-4fbb-affd-4bad8ddc50ae",
+    "relationType": "verifies",
+    "sourceId": "24ffd43a-9563-4c72-b114-9d74dfdbf3ab",
+    "targetId": "8203dd81-c013-42ab-bdf8-4f057bac3787"
   },
   {
     "id": "b823b1c5-3009-47c8-b105-62f9742e8e80",
@@ -5902,6 +6016,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "ca920d0e-990b-4797-80fc-f2908d38a1d5",
+    "relationType": "satisfies",
+    "sourceId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1",
+    "targetId": "22398764-dd5b-45b9-9d1e-db0474ec13dc"
+  },
+  {
     "id": "cab4041a-3301-4f8a-9d36-1c96bf6f8893",
     "relationType": "satisfies",
     "sourceId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d",
@@ -6309,6 +6429,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "d7ae5b7a-6ba3-4f27-94e2-728c7f2859da",
+    "relationType": "verifies",
+    "sourceId": "0314585b-4250-4c14-b64c-f07e032051e6",
+    "targetId": "22398764-dd5b-45b9-9d1e-db0474ec13dc"
+  },
+  {
     "id": "d7c99208-1f1c-4e87-89e5-6554bab89967",
     "relationType": "traces-to",
     "sourceId": "b4b221e2-9bf4-4166-b055-d255f8e0b444",
@@ -6393,6 +6519,13 @@
     "relationType": "traces-to",
     "sourceId": "1230372e-f376-4ce4-93b5-2dc594e9a7b2",
     "targetId": "316c4249-8e1b-4104-87de-f1cac5064fa7"
+  },
+  {
+    "id": "db5dd771-de24-46e2-8132-d67b4d01bc80",
+    "quote": "w capacity best efforts mam osobny graf na pace i power ... czy to nie to samo .. ?",
+    "relationType": "derives",
+    "sourceId": "cc5ceed4-66ea-4024-8efd-006bec16026f",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "dbb29ecd-b6a6-47b3-9e09-524b99a4840d",
@@ -6509,6 +6642,12 @@
     "relationType": "realises",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
     "targetId": "989ddea4-2268-46b9-a61d-ef102ca319a6"
+  },
+  {
+    "id": "e0433885-5397-4696-a250-08843e75400a",
+    "relationType": "satisfies",
+    "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
+    "targetId": "d90e9074-aef2-4bc6-86aa-4f791f348c64"
   },
   {
     "id": "e05192d3-8dfe-4309-a975-af9db3a31ed9",
@@ -6773,6 +6912,13 @@
     "relationType": "traces-to",
     "sourceId": "75f224bd-f1e1-4ead-8e4c-d59ae2778000",
     "targetId": "23148674-0c62-4887-a3a2-346dbfb72e3b"
+  },
+  {
+    "id": "e86626b5-01fe-48a8-beda-ec173f4a0aad",
+    "quote": "czy krzywa mocy i predkosci powinna byc w performance czy w analysis ?",
+    "relationType": "derives",
+    "sourceId": "d90e9074-aef2-4bc6-86aa-4f791f348c64",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "e8a3a297-23b4-4764-8d3d-1aabf25e9206",

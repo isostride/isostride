@@ -720,6 +720,32 @@
     { "element": "5e16f935-da21-49c6-b592-220447275732", "name": "Strap threshold set in Settings", "tests": [
       "e2e/performance.spec.ts › Performance model › Load model set and form drawn",
       "tests/unit/assumptions.test.ts › Model assumptions › Assumptions checked against the data"
+    ] },
+    { "element": "b1e704af-7f00-4736-bed0-33d39aeeb0c7", "name": "Side menu filled", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn",
+      "e2e/mobile.spec.ts › Layout that fits a phone › Screens fit a phone"
+    ] },
+    { "element": "6b40f4f5-da17-4c21-83b3-ec626b0c496c", "name": "Dashboard customized", "tests": [
+      "e2e/block-definition.spec.ts › Every block on one screen › Block built from a rule with a live count"
+    ] },
+    { "element": "24ffd43a-9563-4c72-b114-9d74dfdbf3ab", "name": "Widgets pinned from their cards", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn",
+      "e2e/analysis.spec.ts › Analysis workspace › Rule blocks compared, ranked and curved"
+    ] },
+    { "element": "b196d4ec-3025-4335-bdcf-e2235ecc44fc", "name": "Best efforts in one table", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
+    ] },
+    { "element": "e6e91dad-bae3-40f2-992e-007235fc15d1", "name": "Your curve drawn", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
+    ] },
+    { "element": "acb761e9-0316-41ae-bd9c-b06d49ea35da", "name": "Save only when changed", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
+    ] },
+    { "element": "0314585b-4250-4c14-b64c-f07e032051e6", "name": "Wizard on the first launch", "tests": [
+      "e2e/import.spec.ts › Pick data folder › First launch picks folder"
+    ] },
+    { "element": "67154087-bcdd-43be-ad6f-bd9c3fef0932", "name": "Wizard on a folder set up before", "tests": [
+      "e2e/import.spec.ts › Reopen same folder › Later launch reopens folder"
     ] }
   ]
 }

@@ -15,3 +15,4 @@ export * from './mapCamera';
 export * from './runView';
 export * from './screenTrail';
 export * from './dataVersion';
+export * from './SetupSteps';

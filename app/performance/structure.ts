@@ -2,9 +2,11 @@ import type { ModelGroup, ModelKey } from '@/lib/load';
 
 /**
  * The Performance screen by the evidence its models rest on (requirement "Performance structured
- * by evidence"): an overview, a tab per group with its views, and the settings.
+ * by evidence"): an overview, a tab per group with its views, and what to do. The load model is
+ * chosen at the top of Load, its values set in Settings › Models (the runner's "tak" to it: "mam
+ * wrazenie ze wszystkie modele sa pomieszane").
  */
-export type Tab = 'overview' | ModelGroup | 'todo' | 'model';
+export type Tab = 'overview' | ModelGroup | 'todo';
 
 export interface View {
   key: string;
@@ -43,7 +45,6 @@ export const TABS: { key: Tab; name: string; /** the evidence a group's models r
     ],
   },
   { key: 'todo', name: 'To do', views: [] },
-  { key: 'model', name: 'Model', views: [] },
 ];
 
 /** The link of a tab and view of the Performance screen. */

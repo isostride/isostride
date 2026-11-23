@@ -1,14 +1,79 @@
-import { expect, test } from '@playwright/test';
-import { fakeFolderPicker, fitFiles, importAll, openWithFolder, putFitFiles, recordMeasure } from './support';
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test, type Page } from '@playwright/test';
+import { fakeFolderPicker, fitFiles, importAll, openWithFolder, putFitFiles, putText, readText, recordMeasure } from './support';
+
+/** The serious or critical WCAG 2.2 AA violations axe finds on the page. */
+const violations = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze()).violations
+  .filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id}: ${v.nodes[0]?.target.join(' ')}`);
 
 test.describe('Pick data folder', () => {
   test('First launch picks folder', async ({ page }) => {
-    await fakeFolderPicker(page);
+    await fakeFolderPicker(page, { wizard: true });
     await page.goto('/');
     await putFitFiles(page, await fitFiles(1));
     await expect(page.getByRole('button', { name: 'Choose data folder' })).toBeVisible();
+    // The folder is the wizard's first step ("uruchomilem w incognito i dalej pyta o folder"): its steps ahead.
+    await expect(page.getByRole('list', { name: 'Steps' }).getByRole('listitem')).toHaveText(['1Data folder', '2Your runs', '3You', '4Zones', '5Gear', '6Load model', '7Display', '8Done']);
+    await expect(page.getByRole('heading', { name: 'Choose your data folder' })).toBeVisible();
+    expect(await violations(page)).toEqual([]);
     await page.getByRole('button', { name: 'Choose data folder' }).click();
-    await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible();
+    // The setup wizard opens by itself on a folder nothing was set in (requirement "Setup wizard"): the runs
+    // imported, the heart rates, the zones, the load model, then all saved at once.
+    await expect(page).toHaveURL(/\/setup$/);
+    await expect(page.getByRole('list', { name: 'Steps' }).getByRole('listitem')).toHaveText(['✓Data folder', '2Your runs', '3You', '4Zones', '5Gear', '6Load model', '7Display', '8Done']);
+    const step = (name: string) => page.getByRole('region', { name, exact: true });
+    await expect(step('Your runs')).toContainText(/FIT files\s*1\s*Runs imported\s*0/);
+    expect(await violations(page)).toEqual([]);
+    await step('Your runs').getByRole('button', { name: 'Import 1 file' }).click();
+    await expect(step('Your runs').getByRole('status')).toHaveText(/^Imported 1 run/, { timeout: 60_000 });
+    await page.getByRole('button', { name: 'Next' }).click();
+    await step('You').getByLabel('Resting heart rate').fill('52');
+    await step('You').getByLabel('Maximum heart rate').fill('188');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(step('Zones')).toContainText('These are the defaults');
+    await step('Zones').getByRole('button', { name: 'From max HR' }).click();
+    await expect(step('Zones').getByLabel('Heart rate zones')).toHaveValue('113, 132, 150, 169');
+    // Every metric's zones, in groups; the running form's with their defaults, the bands of Garmin's running dynamics.
+    await expect(step('Zones').getByRole('group')).toHaveText([/^Heart rate and pace/, /^Power/, /^Running form/, /^Other/]);
+    await expect(step('Zones').getByLabel('Ground contact time zones')).toHaveValue('218, 249, 278, 309');
+    await expect(step('Zones').getByLabel('Vertical oscillation zones')).toHaveValue('64, 82, 98, 116');
+    await step('Zones').getByRole('button', { name: 'From critical power: Power' }).click();
+    await expect(step('Zones').getByLabel('Power zones')).toHaveValue(/^\d+, \d+, \d+, \d+$/);
+    await page.getByRole('button', { name: 'Next' }).click();
+    // Gear: a pair of shoes, from the first run's day.
+    await step('Gear').getByLabel('Name').fill('Test shoes');
+    await step('Gear').getByRole('button', { name: 'Add', exact: true }).click();
+    await expect(step('Gear').getByRole('list', { name: 'Your gear' })).toContainText('Test shoes');
+    await page.getByRole('button', { name: 'Next' }).click();
+    const models = step('Load model').getByRole('radiogroup', { name: 'Load model' });
+    await expect(models.getByRole('radio', { name: /Banister TRIMP/ })).toHaveAttribute('aria-checked', 'true');
+    await expect(models.getByRole('radio', { name: /Banister TRIMP/ })).toContainText('Needs heart rate: 1 of 1 runs');
+    await models.getByRole('radio', { name: /rTSS/ }).click();
+    // Its values with it: the threshold pace (here a wrong one holds the step), the time constants under Fitness and fatigue.
+    await step('Load model').getByLabel('Threshold pace').fill('4:1');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await step('Load model').getByLabel('Threshold pace').fill('4:10');
+    await page.getByRole('button', { name: 'Next' }).click();
+    // Display: the theme, the map, the menu and the run chart, as in Settings.
+    await expect(step('Display').getByRole('radiogroup', { name: 'Theme' })).toBeVisible();
+    await expect(step('Display').getByRole('group', { name: 'Lines' }).or(step('Display').getByText('Lines', { exact: true }))).toBeVisible();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(step('Done').getByRole('definition')).toHaveText(['1', '52 bpm', '188 bpm', '113, 132, 150, 169', '1 shoes · 0 straps', 'rTSS']);
+    await page.getByRole('button', { name: 'Save and finish' }).click();
+    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 60_000 });
+    const saved = JSON.parse(await readText(page, 'strideprism/user/settings.json'));
+    expect(saved.performance).toMatchObject({ load: 'rtss', restHr: 52, maxHr: 188, thresholdPace: 250, confirmed: true });
+    expect(JSON.parse(await readText(page, 'strideprism/user/gear.json')).gear).toMatchObject([{ name: 'Test shoes', type: 'shoes', to: null }]);
+    expect(saved.zones.heartRate).toEqual([113, 132, 150, 169]);
+    expect(JSON.parse(await readText(page, 'strideprism/user/setup.json')).state).toBe('done');
+    // From Settings at any time, filled with what is saved; Skip leaves it as it is.
+    await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
+    await page.getByRole('link', { name: 'Setup wizard' }).click();
+    await expect(page).toHaveURL(/\/setup$/);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(step('You').getByLabel('Resting heart rate')).toHaveValue('52');
+    await page.getByRole('button', { name: 'Skip setup' }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
     // The handle is remembered in IndexedDB.
     const kept = await page.evaluate(() => new Promise<boolean>((resolve) => {
       const req = indexedDB.open('strideprism');
@@ -29,6 +94,14 @@ test.describe('Reopen same folder', () => {
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Choose data folder' })).toHaveCount(0);
     await expect(page.locator('.crumbs')).toContainText('data');
+    // A folder set up before the wizard came (its settings saved, the wizard never gone through): it opens once there too.
+    await putText(page, 'strideprism/user/settings.json', JSON.stringify({ schemaVersion: 1, performance: { load: 'rtss', restHr: 55 } }));
+    await page.evaluate(async () => {
+      const user = await (await (await (await navigator.storage.getDirectory()).getDirectoryHandle('data')).getDirectoryHandle('strideprism')).getDirectoryHandle('user');
+      await user.removeEntry('setup.json');
+    });
+    await page.reload();
+    await expect(page).toHaveURL(/\/setup$/);
   });
 });
 
