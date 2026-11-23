@@ -1,55 +1,103 @@
-# The app (apps/app) to app.isostride.com and the site (apps/site) to isostride.com, on each push to
-# master: checked, built, copied to their S3 buckets, the CloudFront caches cleared. AWS is reached with
-# OIDC (the role of infra/github.tf); the full check with the end-to-end tests runs locally (npm run check),
-# for it needs the runner's own FIT files, which stay out of git.
-name: Deploy
+# CI/CD (the runner's request of 23 Nov 2026: "chce przeniesc wszystko na pipleline i miec poprawne
+# ci/cd"): on each push and pull request the whole check of the app (npm run check: unit, integration
+# and end-to-end tests, boundaries, budgets, radical check against the model), the runner's FIT files
+# fetched from a private S3 bucket; on master, once the check passes, the very build it checked goes to
+# app.isostride.com and the site to isostride.com. AWS is reached with OIDC (infra/github.tf, infra/ci.tf):
+# no keys in GitHub. The repository and its logs are public: no reports, traces or screenshots of the
+# runner's data are published from here.
+name: CI/CD
 
 on:
   push:
     branches: [master]
+  pull_request:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
 
-concurrency:
-  group: deploy
-  cancel-in-progress: false
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'eu-central-1' }}
 
 jobs:
-  deploy:
+  check:
     runs-on: ubuntu-latest
-    env:
-      AWS_REGION: ${{ vars.AWS_REGION || 'eu-central-1' }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: check-${{ github.ref }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     steps:
-      - uses: actions/checkout@v4
+      # Two commits: the coverage of new code compares the commit with the one before it.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: npm
 
       - run: npm ci
 
+      - name: Browsers for the end-to-end tests
+        working-directory: apps/app
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Sign in to AWS (test data, read only)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_CI_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: The runner's FIT files
+        run: aws s3 sync "s3://${{ vars.TEST_DATA_BUCKET }}" apps/app/test_data --only-show-errors
+
+      # Builds the app (the end-to-end tests run against its static export) and judges everything
+      # against the model; fails on any error of radical check or any step that failed.
       - name: Check the app
         working-directory: apps/app
+        run: npm run check
+
+      - name: Check and build the site
         run: |
-          npx tsc --noEmit
-          npx eslint lib app components workers
-          # The unit tests that read the runner's own FIT files (not in git) are left to the local check.
-          npx vitest run --project unit --exclude tests/unit/ab.test.ts --exclude tests/unit/recompute.test.ts --exclude tests/unit/trend.test.ts
+          (cd apps/site && npx tsc --noEmit)
+          npm run build:site
 
-      - name: Check the site
-        working-directory: apps/site
-        run: npx tsc --noEmit
+      - name: Keep the builds for the deploy
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@v7
+        with:
+          name: builds
+          path: |
+            apps/app/.next-build
+            apps/site/.next-build
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
 
-      - name: Build
-        run: npm run build
+  deploy:
+    needs: check
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    steps:
+      # The artifact holds app/.next-build and site/.next-build (paths below apps/, their common folder).
+      - uses: actions/download-artifact@v8
+        with:
+          name: builds
+          path: apps
 
-      - name: Sign in to AWS
-        if: ${{ vars.AWS_DEPLOY_ROLE_ARN != '' }}
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Sign in to AWS (deploy)
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
@@ -57,14 +105,12 @@ jobs:
       # The hashed files kept a year (a new build has new names), the rest checked on every visit;
       # old hashed files stay, so a page open during a deploy still finds its scripts.
       - name: Deploy the app
-        if: ${{ vars.APP_BUCKET != '' }}
         run: |
           aws s3 sync apps/app/.next-build/_next/static "s3://${{ vars.APP_BUCKET }}/_next/static" --cache-control "public,max-age=31536000,immutable"
           aws s3 sync apps/app/.next-build "s3://${{ vars.APP_BUCKET }}" --delete --exclude "_next/static/*" --cache-control "no-cache"
           aws cloudfront create-invalidation --distribution-id "${{ vars.APP_DISTRIBUTION_ID }}" --paths "/*"
 
       - name: Deploy the site
-        if: ${{ vars.SITE_BUCKET != '' }}
         run: |
           aws s3 sync apps/site/.next-build/_next/static "s3://${{ vars.SITE_BUCKET }}/_next/static" --cache-control "public,max-age=31536000,immutable"
           aws s3 sync apps/site/.next-build "s3://${{ vars.SITE_BUCKET }}" --delete --exclude "_next/static/*" --cache-control "no-cache"

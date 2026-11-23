@@ -797,3 +797,12 @@ Q: (użytkownik) zrob poprawki
 A: (model) Done: the infra fixes committed and pushed to master, deployed by the workflow.
 Q: (użytkownik) katalog tworzony na podsstawie plikow gdzie trzymasz stan nazywa sie strideprism ... zmien nazwe na .isostride ?
 A: (model) Done: the app's data in the data folder is in .isostride/ (requirement Data folder layout); data left in strideprism/ by an earlier version is moved there when the folder is opened (copied, then strideprism/ removed). The browser's keys (strideprism.*, the IndexedDB database strideprism) kept, as the runner does not see them.
+Q: (użytkownik) jesli chodzi o pipeline ... to czy podlazasz dobrymi praktykami radical check ? uruchamiach radical check, robisz testy itp ?
+A: (model) Locally yes (npm run check: every test, boundaries, budgets, then radical check); the pipeline only ran tsc, eslint and the unit tests that need no FIT files, as the runner's FIT files are not in git.
+A: (użytkownik) tak
+A: (model) Done: committed and pushed; deployed by the workflow.
+Q: (użytkownik) ok ... czy cloudfront jest inwalidowany 1 req ?
+A: (model) Yes: one invalidation of /* for each distribution on each deploy (1 path each; 1000 paths a month are free).
+Q: (użytkownik) ok chce przeniesc wszystko na pipleline i miec poprawne ci/cd
+Q: (model) Pełny check (testy integracyjne, E2E, radical check) potrzebuje twoich plików FIT z apps/app/test_data: 280 plików, 43 MB, z danymi GPS i tętnem. Repo jest publiczne, więc tych plików nie może w nim być. Skąd CI ma je brać?
+A: (użytkownik) Prywatny bucket S3

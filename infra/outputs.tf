@@ -35,3 +35,13 @@ output "name_servers" {
   description = "For a domain registered outside Route 53: the name servers to set at its registrar"
   value       = local.name_servers
 }
+
+output "ci_role_arn" {
+  description = "GitHub variable AWS_CI_ROLE_ARN"
+  value       = aws_iam_role.ci.arn
+}
+
+output "test_data_bucket" {
+  description = "GitHub variable TEST_DATA_BUCKET; filled from apps/app/test_data (infra/README.md)"
+  value       = aws_s3_bucket.test_data.bucket
+}

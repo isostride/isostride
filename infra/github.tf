@@ -11,8 +11,10 @@ data "aws_iam_openid_connect_provider" "github" {
 }
 
 locals {
-  github_owner    = split("/", var.github_repository)[0]
-  github_name     = split("/", var.github_repository)[1]
+  github_owner = split("/", var.github_repository)[0]
+  github_name  = split("/", var.github_repository)[1]
+  # The repository as GitHub names it in the OIDC subject: with the ids of the owner and of the repository.
+  github_subject  = "repo:${local.github_owner}@${var.github_repository_ids.owner}/${local.github_name}@${var.github_repository_ids.repository}"
   github_oidc_arn = var.create_github_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : data.aws_iam_openid_connect_provider.github[0].arn
 }
 
@@ -34,7 +36,7 @@ data "aws_iam_policy_document" "deploy_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${local.github_owner}@${var.github_repository_ids.owner}/${local.github_name}@${var.github_repository_ids.repository}:ref:refs/heads/${var.github_branch}"]
+      values   = ["${local.github_subject}:ref:refs/heads/${var.github_branch}"]
     }
   }
 }
