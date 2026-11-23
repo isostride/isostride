@@ -62,21 +62,34 @@ describe('Blocks defined in Analysis', () => {
     expect(old.tolerances).toEqual(RULE_TOLERANCES);
   });
 
-  it('Runs chosen by a rule', () => {
-    // Three runs: a 4 km test at 4:00/km titled "COROS test", an easy 8 km, and an easy 4 km.
+  // Three runs: a 4 km test at 4:00/km titled "COROS test", an easy 8 km, and an easy 4 km. Each test
+  // below runs a few detections only, so it stays well under the 100 ms of a unit test.
+  const threeRuns = () => {
     const runs = [run('t', '2026-10-01', [[960, 240]]), run('e', '2026-10-03', [[2880, 360]]), run('f', '2026-10-05', [[1440, 360]])];
     const extras = [{ title: 'COROS test 4 km', workoutType: 'race' }, { workoutType: 'easy' }, { workoutType: 'easy', title: 'easy loop' }];
     const ids = (rule: Rule) => runs.flatMap((r, k) => found(rule, r, extras[k])).map((i) => i.runId);
-    const cond = (c: Partial<Rule['conditions']>): Rule => ({ ...WHOLE, conditions: { ...EMPTY_CONDITIONS, ...c } });
-    const from = (f: Partial<Rule['runs']>): Rule => ({ ...WHOLE, runs: { ...EMPTY_FILTER, ...f } });
-    // Distance 3–5 km: the two 4 km runs; with pace 3:55–4:05 too: the test alone; by the title; combined.
+    return { runs, extras, ids };
+  };
+  const cond = (c: Partial<Rule['conditions']>): Rule => ({ ...WHOLE, conditions: { ...EMPTY_CONDITIONS, ...c } });
+  const from = (f: Partial<Rule['runs']>): Rule => ({ ...WHOLE, runs: { ...EMPTY_FILTER, ...f } });
+
+  it('Runs chosen by a rule', () => {
+    const { ids } = threeRuns();
+    // Distance 3–5 km: the two 4 km runs; with pace 3:55–4:05 too: the test alone.
     expect(ids(cond({ distanceMin: 3000, distanceMax: 5000 }))).toEqual(['t', 'f']);
     expect(ids(cond({ distanceMin: 3000, distanceMax: 5000, paceMin: 235, paceMax: 245 }))).toEqual(['t']);
+    expect(ids(cond({ hrMin: 100 }))).toEqual([]); // the rows carry no average heart rate
+  });
+
+  it('Runs chosen by their title, type and date', () => {
+    const { ids } = threeRuns();
     expect(ids(from({ title: 'coros' }))).toEqual(['t']);
     expect(ids(from({ title: 'coros', workoutTypes: ['easy'] }))).toEqual([]);
     expect(ids(from({ workoutTypes: ['easy', 'race'], dateFrom: '2026-10-02' }))).toEqual(['e', 'f']);
-    expect(ids(cond({ hrMin: 100 }))).toEqual([]); // the rows carry no average heart rate
-    // No condition at all: every run, whole, and accepted.
+  });
+
+  it('No condition takes every run whole', () => {
+    const { runs, extras } = threeRuns();
     const every = runs.flatMap((r, k) => found(WHOLE, r, extras[k]));
     expect(every.map((i) => [i.runId, i.start, i.status])).toEqual([['t', 0, 'accepted'], ['e', 0, 'accepted'], ['f', 0, 'accepted']]);
     expect(every[0].duration).toBe(960);

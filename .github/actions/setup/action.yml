@@ -1,0 +1,53 @@
+# The start of every job of CI/CD: Node and the packages, AWS through OIDC (the CI role of
+# infra/ci.tf: the test data read, the reports of the run handed on), and the runner's FIT files.
+name: Set up
+description: Node, packages, AWS and the test FIT files
+inputs:
+  fit-files:
+    description: Fetch the runner's FIT files into apps/app/test_data
+    default: 'true'
+  browsers:
+    description: Install the end-to-end tests' browsers (cached by Playwright's version)
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version-file: .node-version
+        cache: npm
+
+    - run: npm ci
+      shell: bash
+
+    - name: Sign in to AWS (test data, read only; the run's reports)
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        role-to-assume: ${{ env.AWS_CI_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: The runner's FIT files
+      if: inputs.fit-files == 'true'
+      run: aws s3 sync "s3://${TEST_DATA_BUCKET}" apps/app/test_data --exclude "ci/*" --only-show-errors
+      shell: bash
+
+    - name: Playwright's version
+      if: inputs.browsers == 'true'
+      id: pw
+      run: echo "version=$(node -p 'require("./node_modules/@playwright/test/package.json").version')" >> "$GITHUB_OUTPUT"
+      shell: bash
+
+    - name: Browsers from the cache
+      if: inputs.browsers == 'true'
+      id: browsers
+      uses: actions/cache@v6
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+    - name: Browsers for the end-to-end tests
+      if: inputs.browsers == 'true'
+      working-directory: apps/app
+      run: |
+        if [ "${{ steps.browsers.outputs.cache-hit }}" = "true" ]; then npx playwright install-deps chromium webkit; else npx playwright install --with-deps chromium webkit; fi
+      shell: bash
