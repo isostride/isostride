@@ -1,4 +1,4 @@
-# Isostride on AWS
+# IsoStride on AWS
 
 Terraform for the two static sites of the monorepo and for their pipeline, each site served from a private S3 bucket through CloudFront over HTTPS:
 

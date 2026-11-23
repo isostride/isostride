@@ -184,7 +184,7 @@ export function Wizard() {
     <div className="page wide-page setup-page">
       <div className="page-head">
         <div>
-          <div className="eyebrow">Set up Isostride · a few steps, all can be changed later in Settings</div>
+          <div className="eyebrow">Set up IsoStride · a few steps, all can be changed later in Settings</div>
           <h1>Setup</h1>
         </div>
         <span className="spacer" />
@@ -197,7 +197,7 @@ export function Wizard() {
         {step === 0 && (
           <>
             <h2>Your runs</h2>
-            <p className="muted">Isostride reads the FIT files your watch saves, in the folder <b>{folder.name}</b> or its fit/ subfolder. Nothing leaves this computer.</p>
+            <p className="muted">IsoStride reads the FIT files your watch saves, in the folder <b>{folder.name}</b> or its fit/ subfolder. Nothing leaves this computer.</p>
             {!have ? <p className="muted small" role="status">Looking at the folder…</p> : (
               <dl className="setup-facts">
                 <div><dt>FIT files</dt><dd className="tnum">{have.fitFiles}</dd></div>

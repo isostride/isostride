@@ -6,7 +6,7 @@ import { THEME_COLOR } from './theme';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Isostride',
+  title: 'IsoStride',
   description: 'Compare the same segments of your runs within the same context.',
 };
 

@@ -830,3 +830,60 @@ Q: (użytkownik) uruchom wersje lokalna do testow
 A: (model) The app runs at http://localhost:3000 (npm run dev) from the branch.
 Q: (model) Budżet JS (ADR "Built with React": 200 KB gzip na trasę) jest przekroczony: compare 204,1 KB, run 200,5 KB. Przed zmianą compare miała 199,9 KB, wspólna część wszystkich tras to teraz ~190 KB. Co robimy?
 A: (użytkownik) Podnieść budżet do 220 KB
+Q: (użytkownik) w miedzyczasie popracuj nad strona ... wyglada jak wygenerowana przez AI
+A: (model) The site on the branch site-redesign: no washes and gradients, no eyebrow, no three numbered circles and three alike cards; a serif for the headings, rules for cards, Figure 1 (every run's average pace beside one segment's), four concrete points with examples, a verdict in the app's words, the data in questions and answers, what it is not, the source.
+A: (użytkownik) akurat kolory poprzednio byly dobre
+A: (model) The colours of before back (the app's tokens, the brand's gradient on the logo and the main button, the washes behind the page), on the new layout.
+A: (użytkownik) aha .. nazwa zmien ja na z Isostride na IsoStride
+A: (model) Done: IsoStride wherever the name is read (the site, the app's menu, welcome, setup and title, the READMEs, the model's system); the lowercase names stay (isostride.com, the repository and packages, the .isostride folder).
+A: (użytkownik) A verdict, in its own words - do bullshit AI-a
+A: (model) Done: the section with the example verdict taken out of the site.
+A: (użytkownik) jakie kurwa stretches ???????
+A: (model) "stretches" out of the site: routes, efforts, segments, the app's own words.
+Q: (użytkownik) ok ... przepisz mi strone glowna - kolory i typografia sa ok, zalozenia: - nie brzmij jak AI, glupie wydumane slogany sa bezsensu - skup sie na tym ze to opensource, nie trzyma danych w chmureze, wszysyko jest lokalne - umozliwia doglebna analize metryk i modelowania performance bazujac na znanych modelach ...... - nie jest to narzedzie ktore ma zastapic dzienniki treningiwoe ,ale narzedzie do analizy metryk
+A: (model) The home page rewritten in plain statements, colours and typography kept: what it is (open-source analysis of running metrics, on your own computer); Local and open source (where the data is, that nothing is sent, the MIT code, the watches); Analysis of metrics (every field of the file, a run, segments, change over time, A/B, CSV) with the example figure; Performance models as a table of what and method (Banister and Edwards TRIMP, rTSS, power TSS; Banister's impulse-response; Monod and Scherrer; Riegel; VO2max from heart rate and VDOT; Seiler; efficiency and decoupling); Not a training log; Getting started.
+A: (użytkownik) ok napisz wprost ze to narzedzia do analizy biegu
+A: (model) The heading says it: "IsoStride is a tool for analysing your runs."
+A: (użytkownik) tu by sie jakas grafika przypala???
+A: (model) A diagram under "Local and open source": the folder on your disk and your browser inside "Your computer", IsoStride reading the FIT files and writing its results back, a crossed dashed line to a dashed cloud: nothing is uploaded, no server.
+A: (użytkownik) mam 3 przyciski open the app ... slyszales o UX?
+A: (model) One button "Open the app" left, under the heading; the ones in the top bar and at the end taken out (the steps at the end and the footer link to the app in their text).
+A: (użytkownik) to moze zostaw w prawym gornym rogu
+A: (model) The one button "Open the app" is in the top right corner; under the heading only "Source on GitHub".
+A: (użytkownik) slabo ten diagram wyglada
+A: (model) The diagram drawn again: the watch, the folder and the browser as icons in a row, the folder and the browser inside "your computer", the line to a server crossed out.
+A: (użytkownik) daj wiecej przykladaow diagramow .... i jakies screenshoty z aplikacji?
+Q: (model) Zrzuty ekranu z aplikacji trafią na publiczną stronę isostride.com. Z jakich danych mam je zrobić?
+A: (użytkownik) Twoje biegi, bez mapy
+Q: (model) Które ekrany aplikacji pokazać na stronie?
+A: (użytkownik) Wykres biegu, Compare: trend, Compare: A/B, Modele performance
+A: (użytkownik) kiepsko wygladaja te screeensoty
+A: (użytkownik) inaczej przygotuj fakeowe dane ..... chce aby modelem byl biegcz z temper krytycznym ok 3:15 .... chce dashboard, performance itp
+A: (użytkownik) chce screesnhoty calej aplikacji ... a nie widgetow
+A: (model) Done: scripts/make-demo.mjs writes a demo folder (24 weeks of a made-up runner, critical speed about 3:15 /km as the app fits it, gear, tags, segments, a dashboard); the site shows the whole window of the app on it (Dashboard, a run, Compare trends and A/B, Performance: critical speed, form, predictions), each in a window frame, taken by site-shots/shots.spec.ts; none of the runner's own data is on the site. On the way: the metric buttons of a toolbar keep a row of their own (they shrank to a narrow column on the A/B tab with every metric of the folder).
+A: (użytkownik) ok przegladnij dane ... np. 6 x 1m wygladaja syntetycznie .... idealnie rowne tempo i inne metryki
+A: (model) The demo runs are written second by second as a watch records: the pace wanders, a repetition starts too fast and ends with a push, each one a little different, recoveries start with a walk, easy runs start slowly and may stop at a crossing; the heart rate lags (faster up than down) and drifts; cadence, ground contact and oscillation scatter and follow tiredness; a week off sick, a run missed now and then.
+A: (użytkownik) doloz tez motywacje - wiekszosc aplikacji do dzienniczki treningowe, w ktorych modul analizy i porowywania danych jest ograniczone ...
+A: (model) A section "Why it exists" after the first screenshot: most running apps are training logs whose tools for analysing and comparing the data are limited; IsoStride is for that part only, and does not replace the log (the section "Not a training log" merged into it).
+A: (użytkownik) wyroznij jakosc sekcje ... ma na mysli tytuly w stylu Why it exists.... moze uzyj kolow ?
+A: (model) The titles of the sections in the colours of the brand (indigo to violet on the words), a short bar of the gradient above each.
+A: (użytkownik) troche za jasne
+A: (model) The titles darker: deep indigo to deep violet.
+
+A: (użytkownik) umiesc gdzies dodaktowo informacje zwiazane z opensource - ze idea jest taka ze jest to platforma otwarta i mozna dodawac wlasne modele, analkzy itp
+A: (model) A section "An open platform" after the models: the code is MIT, the models and analyses are TypeScript modules with tests, where a model and an analysis of one's own go, that metrics come from the file by themselves, and that it can be kept in a copy or sent as a pull request.
+A: (użytkownik) wzimiane o open platform dodaj do glowne motto na gorze
+A: (model) The heading: "IsoStride is an open platform for analysing your runs."; under it, that it is open source, so one can add models and analyses of one's own.
+A: (użytkownik) An open platform - tutaj zapros do kontrybucji ... kodu albo pomyslow jak mozna rozszeczyc
+A: (model) An invitation at the end of "An open platform": code or ideas, a pull request or an issue (a model missing, a comparison wanted, a watch whose files read badly), with the two links.
+A: (użytkownik) w why exist - tez wspomnij o braku otwartych rozwiazan tego typu
+A: (model) In "Why it exists": the tools that go deeper are mostly closed services (the runs uploaded, the computing not shown, no model of one's own); open tools of this kind for running are hard to find.
+A: (użytkownik) ok przegladnij cala strone i zobacz czy jest ok
+A: (model) Read whole and checked (four sizes, both themes: no overflow, every image, no accessibility violation, the production build): the watches said as tested (COROS, Garmin), a new model said as added, link preview data added. Two things left to the runner: MIT said four times; the one button to the app less in view than the link to the code.
+A: (użytkownik) ok popraw te 2 rzeczy
+A: (model) MIT under the heading and in the footer only; the top bar stays in view while scrolling, with the one button "Open the app", and the link to the code under the heading is a plain link, no button.
+A: (użytkownik) jesli chodzi o aplikacje ... ciagle tam jest nazwa Isostride ... zmien na IsoStride
+A: (model) The app of this branch says IsoStride everywhere (menu, welcome, setup, title; no "Isostride" left in its sources); app.isostride.com still shows the old name until this change is merged and deployed.
+A: (użytkownik) jesli chodzi o githyb to daj ikone nie tekst ... i to za open the app a nie przed
+A: (model) In the top bar: the mark of GitHub as an icon after the button "Open the app", in place of the word in the navigation.
+A: (model) After a visual review of the page: the demo runs rougher (slower heart, economy of the day, smaller gains), the screenshots taken with the app's today on the demo's last Sunday (a full week on the Dashboard), the run, the trend and the A/B each full width, critical speed and form as a pair, predictions left out; the frames of the screenshots light in both themes; the invitation a ruled row with its links beside it; the models' table stacked on a phone; the diagram's cloud larger and centred under the computer; the titles' bar lighter in the dark theme.

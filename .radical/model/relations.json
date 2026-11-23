@@ -4160,6 +4160,13 @@
     "targetId": "3a807173-78c6-4e65-a07c-6d1aed8a072b"
   },
   {
+    "id": "8aa47f51-f3d6-49ad-b308-161c06812f94",
+    "quote": "nie brzmij jak AI, glupie wydumane slogany sa bezsensu\nskup sie na tym ze to opensource, nie trzyma danych w chmureze, wszysyko jest lokalne\numozliwia doglebna analize metryk i modelowania performance bazujac na znanych modelach\nnie jest to narzedzie ktore ma zastapic dzienniki treningiwoe ,ale narzedzie do analizy metryk\nwiekszosc aplikacji do dzienniczki treningowe, w ktorych modul analizy i porowywania danych jest ograniczone\ntez wspomnij o braku otwartych rozwiazan tego typu\njest to platforma otwarta i mozna dodawac wlasne modele, analkzy itp\nzapros do kontrybucji ... kodu albo pomyslow jak mozna rozszeczyc\nchce aby modelem byl biegcz z temper krytycznym ok 3:15\nchce screesnhoty calej aplikacji ... a nie widgetow\nmam 3 przyciski open the app\nto moze zostaw w prawym gornym rogu",
+    "relationType": "derives",
+    "sourceId": "94c0358a-e500-4a46-915b-1c5bc0b2dd38",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "8aac7ec8-6e7c-4c31-90c1-53f9113ca9ed",
     "relationType": "satisfies",
     "sourceId": "a694fdc9-58ad-462b-a996-c49812b6da79",
@@ -4482,6 +4489,12 @@
     "relationType": "satisfies",
     "sourceId": "9d407d6d-646e-46ac-bfb9-f310b0c8fa75",
     "targetId": "66c08f28-2ad0-47c0-be7c-2854c56e3145"
+  },
+  {
+    "id": "9582d257-beb0-4aac-8f1b-ecee678e0915",
+    "relationType": "verifies",
+    "sourceId": "a025de2c-5474-4895-8005-020e88ecb052",
+    "targetId": "94c0358a-e500-4a46-915b-1c5bc0b2dd38"
   },
   {
     "id": "9589564d-b53d-4f2c-ab32-fcb07e01d8c2",
@@ -5222,6 +5235,12 @@
     "relationType": "illustrates",
     "sourceId": "be79318f-f4cc-475f-8b33-08c6727c3691",
     "targetId": "35cf3a74-f6aa-4e4e-9d29-09e491acb525"
+  },
+  {
+    "id": "b01fa187-f424-444f-8550-a074649efc24",
+    "relationType": "satisfies",
+    "sourceId": "c72b5772-c80f-4e76-95de-c7ed8a022f88",
+    "targetId": "94c0358a-e500-4a46-915b-1c5bc0b2dd38"
   },
   {
     "cardinality": "many",
