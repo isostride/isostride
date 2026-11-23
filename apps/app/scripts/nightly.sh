@@ -1,5 +1,6 @@
 #!/bin/sh
-# Nightly run (FFs "Tests pass in any order" and "Flaky tests enter quarantine"): the suite
+# The shuffled run (FFs "Tests pass in any order" and "Flaky tests enter quarantine"), in the pipeline
+# before npm run check on every push and pull request: the suite
 # three times in random order with a different seed each, a failed test retried once to tell
 # a flake from a failure. Writes reports/measures-nightly.json for scripts/metrics.sh.
 mkdir -p reports
