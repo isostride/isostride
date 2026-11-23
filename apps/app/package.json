@@ -2,6 +2,7 @@
   "name": "@isostride/app",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "NEXT_DIST_DIR=.next-dev next dev -p 3000",

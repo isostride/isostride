@@ -774,3 +774,6 @@ A: (model) Done: the name Isostride everywhere the runner sees it (the app: menu
 Q: (użytkownik) pamietaj o organizacji na github ... tam ciagle jest strideprism
 A: (użytkownik) zrobione ... widze ze repo to ciagle strideprism
 A: (model) Done: the repository renamed to isostride/isostride (private), the git remote set to it; the deploy role of Terraform trusts isostride/isostride.
+Q: (użytkownik) zrob to repo publiczne ... nie chce placic za akcje
+A: (użytkownik) Tak, upublicznij; licencja: MIT
+A: (model) Done: LICENSE (MIT) at the root, "license": "MIT" in the three packages, a License section in the README; the repository isostride/isostride made public, so its Actions are free.

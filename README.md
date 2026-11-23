@@ -108,3 +108,7 @@ Code layout:
 | `lib/curve` | pace curve and its estimate |
 
 All heavy processing runs in the worker. An architecture test fails if main-thread code imports the processing modules.
+
+## License
+
+[MIT](LICENSE). The geist fonts in `apps/*/public/fonts` are under the SIL Open Font License (`LICENSE.txt` beside them).

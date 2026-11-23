@@ -2,6 +2,7 @@
   "name": "isostride",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Isostride: the app (apps/app), the site (apps/site) and their infrastructure on AWS (infra)",
   "workspaces": [
     "apps/*"
