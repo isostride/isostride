@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
-import { METRIC_VIEW } from '@/components';
+import { useMetrics } from '@/components';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 import { reasonSummary, selectInstances, valueOf } from '@/lib/compare';
 import type { DataFolder } from '@/lib/fs';
@@ -10,7 +10,6 @@ import type { DataFolder } from '@/lib/fs';
 const EffortsChart = dynamic(() => import('./EffortsChart').then((m) => m.EffortsChart), { ssr: false });
 const SegmentsTable = dynamic(() => import('./SegmentsTable').then((m) => m.SegmentsTable), { ssr: false, loading: () => <div className="muted small" style={{ padding: 18 }}>Loading the efforts…</div> });
 
-const view = (mt: BlockMetric) => METRIC_VIEW.find((x) => x.key === mt)!;
 const keyOfEffort = (e: BlockInstance) => `${e.runId}:${e.start}`;
 
 /**
@@ -33,6 +32,7 @@ export function EffortsPanel({ blocks, item, onItem, all, metric, reference, tit
   handle: FileSystemDirectoryHandle;
   folder: DataFolder;
 }) {
+  const { view, blockKeys } = useMetrics();
   const [tableMetric, setTableMetric] = useState<BlockMetric | null>(null);
   const [sort, setSort] = useState<'date' | 'best' | 'worst'>('date');
   const [picked, setPicked] = useState<Record<string, string[]>>({});
@@ -45,7 +45,9 @@ export function EffortsPanel({ blocks, item, onItem, all, metric, reference, tit
   const tableKey = tableMetric ?? metric;
   const tableView = view(tableKey);
   const selection = selectInstances(all, tableFor.defId, tableKey);
-  const lowerBetter = tableView.invert === true || ['heartRate', 'groundContactTime', 'verticalOscillation'].includes(tableKey);
+  // Best first by the metric's direction (requirement "Metric direction set by the runner"); with none, highest first.
+  const ranked = tableView.direction !== 'neutral';
+  const lowerBetter = tableView.direction === 'lower';
   const segments = selection.included.map((i) => ({ i, v: valueOf(i, tableKey)! }));
   // Drawn on the overlay: the efforts chosen; at first the part compared from with the two newest others.
   const byKey = new Map(segments.map(({ i }) => [keyOfEffort(i), i]));
@@ -69,10 +71,10 @@ export function EffortsPanel({ blocks, item, onItem, all, metric, reference, tit
           </select>
         )}
         <select className="select small" aria-label="Table metric" value={tableKey} onChange={(e) => setTableMetric(e.target.value as BlockMetric)}>
-          {METRIC_VIEW.map((x) => <option key={x.key} value={x.key}>{x.short}</option>)}
+          {blockKeys.map((k) => <option key={k} value={k}>{view(k).short}</option>)}
         </select>
         <div className="segmented" role="radiogroup" aria-label="Order">
-          {([['date', 'By date'], ['best', 'Best first'], ['worst', 'Worst first']] as const).map(([k, l]) => <button key={k} type="button" role="radio" aria-checked={sort === k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>{l}</button>)}
+          {([['date', 'By date'], ['best', ranked ? 'Best first' : 'Highest first'], ['worst', ranked ? 'Worst first' : 'Lowest first']] as const).map(([k, l]) => <button key={k} type="button" role="radio" aria-checked={sort === k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>{l}</button>)}
         </div>
         {sort !== 'date' && (
           <select className="select small" aria-label="Top" value={top} onChange={(e) => setTop(Number(e.target.value))}>

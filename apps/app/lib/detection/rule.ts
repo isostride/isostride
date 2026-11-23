@@ -1,6 +1,6 @@
 import { DEFAULT_TOLERANCES, bestProfileMatch, hasAlways, lapKey, lapSubject, matchesRunFilter, meetsConditions, runSubject, stretchSubject, stretches, trackOf, type Conditions, type Rule, type Tolerances } from '@/lib/blocks';
 import { resample, type TrackPoint } from '@/lib/geo';
-import type { IndexedRun, RunFile } from '@/lib/kernel';
+import { metricSeries, type IndexedRun, type RunFile } from '@/lib/kernel';
 import { startKind, stopTimes } from './instance';
 import { effortIn, followsPattern, mainEffort } from './logical';
 import { findPasses } from './routeMatch';
@@ -35,8 +35,8 @@ function brokenBefore(run: RunFile, c: Conditions): Int32Array {
   const hrSet = c.alwaysHrMin !== null || c.alwaysHrMax !== null;
   const paceSet = c.alwaysPaceMin !== null || c.alwaysPaceMax !== null;
   for (let k = 0; k < w.start.length; k++) {
-    const hr = w.heartRate[k];
-    const sp = w.speed[k];
+    const hr = (w.values.heartRate?.[k] ?? null);
+    const sp = (w.values.speed?.[k] ?? null);
     const pace = sp !== null && sp > 0 ? 1000 / sp : null;
     const hrBad = hrSet && (hr === null || (c.alwaysHrMin !== null && hr < c.alwaysHrMin) || (c.alwaysHrMax !== null && hr > c.alwaysHrMax));
     const paceBad = paceSet && !w.flags.stopped[k] && (pace === null || (c.alwaysPaceMin !== null && pace < c.alwaysPaceMin) || (c.alwaysPaceMax !== null && pace > c.alwaysPaceMax));
@@ -59,7 +59,7 @@ function fastest(rule: Rule, run: RunFile, acc: Int32Array | null, startsRight: 
   const c = rule.conditions;
   const { idx, list } = stretches(run, rule.shape.kind, rule.shape.target);
   // Heart rate summed up to each sample with a distance, for the mean of any stretch.
-  const hr = run.samples.heartRate;
+  const hr = metricSeries(run.samples, 'heartRate');
   const sum = new Float64Array(idx.length + 1);
   const cnt = new Int32Array(idx.length + 1);
   for (let k = 0; k < idx.length; k++) { const h = hr[idx[k]]; sum[k + 1] = sum[k] + (h ?? 0); cnt[k + 1] = cnt[k] + (h === null ? 0 : 1); }
@@ -91,7 +91,7 @@ function steady(rule: Rule, run: RunFile, acc: Int32Array | null): Segment[] {
   const out: Segment[] = [];
   let k0 = -1;
   for (let k = 0; k <= w.start.length; k++) {
-    const good = k < w.start.length && !w.flags.stopped[k] && w.speed[k] !== null && (!acc || acc[k + 1] - acc[k] === 0);
+    const good = k < w.start.length && !w.flags.stopped[k] && (w.values.speed?.[k] ?? null) !== null && (!acc || acc[k + 1] - acc[k] === 0);
     if (good) { if (k0 < 0) k0 = k; continue; }
     if (k0 >= 0) {
       const from = w.start[k0];
@@ -108,8 +108,9 @@ export function ruleSegments(rule: Rule, run: RunFile, row: IndexedRun, ctx: { t
   if (!matchesRunFilter(rule.runs, row)) return [];
   const c = rule.conditions;
   const acc = hasAlways(c) ? brokenBefore(run, c) : null;
-  const stops = c.start === 'any' ? [] : stopTimes(run.samples.t, run.samples.speed);
-  const startsRight = (t: number) => c.start === 'any' || startKind(run.samples.t, run.samples.speed, t, stops) === c.start;
+  const speed = metricSeries(run.samples, 'speed');
+  const stops = c.start === 'any' ? [] : stopTimes(run.samples.t, speed);
+  const startsRight = (t: number) => c.start === 'any' || startKind(run.samples.t, speed, t, stops) === c.start;
   const end = (run.samples.t[run.samples.t.length - 1] ?? 0) + 1;
 
   const shape = rule.shape;
@@ -136,13 +137,13 @@ export function ruleSegments(rule: Rule, run: RunFile, row: IndexedRun, ctx: { t
     candidates = m ? [{ from: m.from, to: m.to }] : [];
   }
   if (candidates) {
-    const kept = candidates.filter((seg) => meetsConditions(c, seg.lap ? lapSubject(run, seg.lap - 1) : stretchSubject(run, seg.from, seg.to)) && (!acc || holds(acc, seg.from, seg.to)));
+    const kept = candidates.filter((seg) => meetsConditions(c, seg.lap ? lapSubject(run, seg.lap - 1, c.metric) : stretchSubject(run, seg.from, seg.to, c.metric)) && (!acc || holds(acc, seg.from, seg.to)));
     return rule.pick === 'best' && kept.length > 1 ? [kept.reduce((a, b) => ((stretchSubject(run, b.from, b.to).pace ?? Infinity) < (stretchSubject(run, a.from, a.to).pace ?? Infinity) ? b : a))] : kept;
   }
 
   let found: { seg: Segment; pace: number | null }[] = [];
   if (rule.shape.type === 'run') {
-    const s = runSubject(row);
+    const s = c.metric ? { ...runSubject(row), metric: stretchSubject(run, 0, end, c.metric).metric } : runSubject(row);
     if (meetsConditions(c, s) && (!acc || holds(acc, 0, end))) found = [{ seg: { from: 0, to: end }, pace: s.pace }];
   } else if (rule.shape.type === 'lap') {
     const planned = rule.shape.planned;
@@ -153,12 +154,12 @@ export function ruleSegments(rule: Rule, run: RunFile, row: IndexedRun, ctx: { t
         const value = planned.kind === 'time' ? lap.duration : lap.distance;
         if (!k || k.kind !== planned.kind || Math.abs(value - planned.target) > planned.target * planned.tolerance) return;
       }
-      const s = lapSubject(run, i);
+      const s = lapSubject(run, i, c.metric);
       if (meetsConditions(c, s) && (!acc || holds(acc, lap.start, lap.end)) && startsRight(lap.start)) found.push({ seg: { from: lap.start, to: lap.end, lap: i + 1 }, pace: s.pace });
     });
   } else {
     for (const seg of steady(rule, run, acc)) {
-      const s = stretchSubject(run, seg.from, seg.to);
+      const s = stretchSubject(run, seg.from, seg.to, c.metric);
       if (meetsConditions(c, s) && startsRight(seg.from)) found.push({ seg, pace: s.pace });
     }
   }

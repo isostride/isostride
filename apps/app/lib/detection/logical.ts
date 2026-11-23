@@ -1,5 +1,5 @@
 import type { BlockStart } from '@/lib/blocks';
-import type { IndexedRun, Lap, RunFile } from '@/lib/kernel';
+import { metricSeries, type IndexedRun, type Lap, type RunFile } from '@/lib/kernel';
 import { fastestFragment } from '@/lib/blocks';
 import { startKind, stopTimes } from './instance';
 export { effortName, fastestFragment, followsPattern, patternKey, patternName, patternOf, tagName } from '@/lib/blocks';
@@ -21,7 +21,8 @@ const STOPPED_SPEED = 0.5;
 
 /** How much faster a fragment is than the moving rest of its run (0.1 = 10 %); null when the run has no rest to speak of. */
 export function effortGain(run: RunFile, from: number, to: number, fragmentDistance: number): number | null {
-  const { t, speed } = run.samples;
+  const { t } = run.samples;
+  const speed = metricSeries(run.samples, 'speed');
   let restSeconds = 0;
   for (let i = 0; i < t.length; i++) {
     const v = speed[i];
@@ -38,7 +39,8 @@ export function effortGain(run: RunFile, from: number, to: number, fragmentDista
  * than the rest of the run.
  */
 export function effortIn(run: RunFile, kind: 'time' | 'distance', target: number, start: BlockStart = 'any'): { from: number; to: number; gain: number } | null {
-  const { t, speed } = run.samples;
+  const { t } = run.samples;
+  const speed = metricSeries(run.samples, 'speed');
   const stops = stopTimes(t, speed);
   const allow = start === 'any' ? undefined : (time: number) => startKind(t, speed, time, stops) === start;
   const f = fastestFragment(run, kind, target, allow);

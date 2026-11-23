@@ -38,7 +38,7 @@ test.describe('Pick data folder', () => {
     await expect(step('Zones').getByLabel('Ground contact time zones')).toHaveValue('218, 249, 278, 309');
     await expect(step('Zones').getByLabel('Vertical oscillation zones')).toHaveValue('64, 82, 98, 116');
     await step('Zones').getByRole('button', { name: 'From critical power: Power' }).click();
-    await expect(step('Zones').getByLabel('Power zones')).toHaveValue(/^\d+, \d+, \d+, \d+$/);
+    await expect(step('Zones').getByLabel('Power zones', { exact: true })).toHaveValue(/^\d+, \d+, \d+, \d+$/);
     await page.getByRole('button', { name: 'Next' }).click();
     // Gear: a pair of shoes, from the first run's day.
     await step('Gear').getByLabel('Name').fill('Test shoes');

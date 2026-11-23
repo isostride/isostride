@@ -71,14 +71,14 @@ export function trackOf(run: RunFile): Track {
     const n = out.t.length;
     if (n) {
       const dt = s.t[i] - out.t[n - 1];
-      const sp = s.speed[i];
+      const sp = (s.values.speed?.[i] ?? null);
       if (dt > 0 && dt <= MOVING_GAP && (sp === null || sp >= MOVING_SPEED)) moving += dt;
       // The distance never goes back.
       if (d < out.d[n - 1]) continue;
     }
-    const alt: number | null = s.altitude[i] ?? lastAlt;
+    const alt: number | null = s.values.altitude?.[i] ?? lastAlt;
     lastAlt = alt;
-    out.d.push(d); out.t.push(s.t[i]); out.moving.push(moving); out.altitude.push(alt); out.heartRate.push(s.heartRate[i]);
+    out.d.push(d); out.t.push(s.t[i]); out.moving.push(moving); out.altitude.push(alt); out.heartRate.push((s.values.heartRate?.[i] ?? null));
   }
   // The elevation before the first value takes the first value.
   const first = out.altitude.find((a) => a !== null) ?? null;

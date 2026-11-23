@@ -28,7 +28,7 @@ describe('Strict condition matching', () => {
     // A steady 5:00/km block 12 minutes in; the watch paused for 40 s at a crossing (no samples).
     const paused = syntheticRun(1500, () => ({ speed: PACE_5_00, heartRate: 150 }));
     const keep = paused.samples.t.map((t) => t < 850 || t >= 890);
-    for (const k of Object.keys(paused.samples) as (keyof typeof paused.samples)[]) (paused.samples as any)[k] = (paused.samples[k] as unknown[]).filter((_, i) => keep[i]);
+    paused.samples = { t: paused.samples.t.filter((_, i) => keep[i]), distance: paused.samples.distance.filter((_, i) => keep[i]), lat: paused.samples.lat.filter((_, i) => keep[i]), lon: paused.samples.lon.filter((_, i) => keep[i]), values: Object.fromEntries(Object.entries(paused.samples.values).map(([k, v]) => [k, v!.filter((_, i) => keep[i])])) };
     const inst = buildInstance(steadyDef(), paused, rowFor(paused), 720, 1020);
     // Accepted, pace 5:00/km and heart rate from the moving samples; the stop of 40 s recorded.
     expect(inst.status).toBe('accepted');

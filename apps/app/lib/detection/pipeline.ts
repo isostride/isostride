@@ -1,4 +1,4 @@
-import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
+import { PATHS, readJson, writeJson, type DataFolder, readRunFile } from '@/lib/fs';
 import { resample, type TrackPoint } from '@/lib/geo';
 import { type IndexedRun, type RunFile, type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { detectRouteSegments } from './segments';
@@ -25,7 +25,7 @@ export async function runBlocks(folder: DataFolder): Promise<BlocksReport> {
   const runs: RunFile[] = [];
   const tracks = new Map<string, TrackPoint[]>();
   for (const row of index?.runs ?? []) {
-    const run = await readJson<RunFile>(folder, PATHS.runFile(row.id));
+    const run = await readRunFile(folder, row.id);
     if (!run) continue;
     runs.push(run);
     tracks.set(run.id, resample(run.samples.lat, run.samples.lon, run.samples.t, 10));
@@ -68,7 +68,7 @@ export async function instancesOf(folder: DataFolder, defs: BlockDefinition[], o
   const needTrack = defs.some((d) => asRule(d.params, d.tolerances).shape.type === 'route');
   let done = 0;
   for (const row of rows) {
-    const run = await readJson<RunFile>(folder, PATHS.runFile(row.id));
+    const run = await readRunFile(folder, row.id);
     onProgress?.({ done: ++done, total: rows.length, file: row.file });
     if (!run) continue;
     const track = needTrack ? resample(run.samples.lat, run.samples.lon, run.samples.t, 10) : [];

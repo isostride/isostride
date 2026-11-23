@@ -1,6 +1,6 @@
-import { PATHS, readJson, type DataFolder } from '@/lib/fs';
+import { PATHS, readJson, type DataFolder, readRunFile } from '@/lib/fs';
 import { resample } from '@/lib/geo';
-import { WINDOW_METRICS, type RunFile, type RunsIndex } from '@/lib/kernel';
+import { isPace, secondsPerKm, type RunFile, type RunsIndex } from '@/lib/kernel';
 import { PROFILE_MIN_SCORE, SIMILAR_PACE_WITHIN, bestProfileMatch, efficiencyOf, distanceAtTime, profileOfStretch, stretchFigures, trackOf, type ProfileKey, type ProfileParts, type RefPoint, type StretchFigures, type Track } from '@/lib/blocks';
 import { findPasses } from './routeMatch';
 
@@ -92,7 +92,7 @@ export function trackOfStretch(run: RunFile, from: number, to: number): RefPoint
 export async function similarOf(folder: DataFolder, q: SimilarQuery, onProgress?: (p: { done: number; total: number; file: string }) => void): Promise<SimilarResult> {
   const index = await readJson<RunsIndex>(folder, PATHS.runsIndex);
   const rows = index?.runs ?? [];
-  const own = await readJson<RunFile>(folder, PATHS.runFile(q.runId));
+  const own = await readRunFile(folder, q.runId);
   const empty: SimilarResult = { reference: null, key: null, track: [], route: [], profile: [], why: null };
   if (!own) return { ...empty, why: 'The run is not in the data folder.' };
   const ownRow = rows.find((r) => r.id === q.runId);
@@ -107,7 +107,7 @@ export async function similarOf(folder: DataFolder, q: SimilarQuery, onProgress?
   const others = rows.filter((r) => r.id !== q.runId);
   let done = 0;
   for (const row of others) {
-    const run = await readJson<RunFile>(folder, PATHS.runFile(row.id));
+    const run = await readRunFile(folder, row.id);
     onProgress?.({ done: ++done, total: others.length, file: row.file });
     if (!run) continue;
     const found = similarIn(ref, run, row.title ?? null);
@@ -132,7 +132,7 @@ export async function figuresOf(folder: DataFolder, stretches: SimilarQuery[], o
   const out: Record<string, EffortFigures> = {};
   let done = 0;
   for (const [runId, list] of byRun) {
-    const run = await readJson<RunFile>(folder, PATHS.runFile(runId));
+    const run = await readRunFile(folder, runId);
     onProgress?.({ done: ++done, total: byRun.size, file: runId });
     if (!run) continue;
     const tr = trackOf(run);
@@ -144,15 +144,14 @@ export async function figuresOf(folder: DataFolder, stretches: SimilarQuery[], o
   return out;
 }
 
-/** The metrics of an effort's chart, as the run chart has them; pace and effort pace in s/km. */
-export const EFFORT_METRICS = [...WINDOW_METRICS, 'efficiency'] as const;
-export type EffortMetric = (typeof EFFORT_METRICS)[number];
+/** A metric of an effort's chart: any of its run's, and efficiency; a pace in s/km. */
+export type EffortMetric = string;
 
 /** An effort's 10 s windows: where each lies in it (m and s from its start), and each metric's value (null when stopped or not recorded). */
 export interface EffortSeries {
   d: number[];
   t: number[];
-  values: Record<EffortMetric, (number | null)[]>;
+  values: Partial<Record<EffortMetric, (number | null)[]>>;
 }
 
 /** The figures of an effort and its windows, for the chart of the Efforts tab. */
@@ -163,19 +162,21 @@ export function seriesOf(run: RunFile, tr: Track, from: number, to: number): Eff
   const w = run.windows;
   const step = w.start.length > 1 ? w.start[1] - w.start[0] : 10;
   const d0 = distanceAtTime(tr, from) ?? 0;
-  const out: EffortSeries = { d: [], t: [], values: Object.fromEntries(EFFORT_METRICS.map((m) => [m, []])) as unknown as EffortSeries['values'] };
+  const metrics = Object.keys(w.values);
+  if (w.values.speed && w.values.heartRate) metrics.push('efficiency');
+  const out: EffortSeries = { d: [], t: [], values: Object.fromEntries(metrics.map((m) => [m, []])) };
   for (let i = 0; i < w.start.length; i++) {
     const c = w.start[i] + step / 2;
     if (c < from || c >= to) continue;
     out.d.push((distanceAtTime(tr, c) ?? d0) - d0);
     out.t.push(c - from);
     const stopped = w.flags.stopped[i];
-    for (const m of EFFORT_METRICS) {
+    for (const m of metrics) {
       let v: number | null;
-      if (m === 'efficiency') v = efficiencyOf(w.speed[i], w.heartRate[i]);
-      else if (m === 'speed' || m === 'effortPace') { const sp = w[m][i]; v = sp !== null && sp > 0 ? 1000 / sp : null; }
-      else v = w[m][i];
-      out.values[m].push(stopped && m !== 'altitude' ? null : v);
+      if (m === 'efficiency') v = efficiencyOf((w.values.speed?.[i] ?? null), (w.values.heartRate?.[i] ?? null));
+      else if (isPace(m)) v = secondsPerKm(w.values[m]?.[i] ?? null);
+      else v = w.values[m]?.[i] ?? null;
+      out.values[m]!.push(stopped && m !== 'altitude' ? null : v);
     }
   }
   return out;

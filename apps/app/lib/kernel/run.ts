@@ -3,48 +3,28 @@
  * samples, laps and windows and of the files derived/ holds for runs, which ingest writes
  * and context, detection, compare and the pages read. Types only, no I/O.
  */
+import type { MetricInfo } from './metrics';
 
 /** One metric series of a run, one value per sample; null where the watch recorded nothing. */
 export type Series = (number | null)[];
 
-/** The 1 s samples of a run, columnar: one array per field, all of the same length. */
+/**
+ * The samples of a run, columnar: one array per field, all of the same length, one value per record
+ * of the file (every 1 s, or every few seconds on a watch that records smart). The metrics are every
+ * numeric field the file holds, by their keys (lib/kernel/metrics.ts; ADR "Metrics from the file").
+ */
 export interface Samples {
   /** Seconds since the start of the run (elapsed time, pauses included). */
   t: number[];
-  /** m/s */
-  speed: Series;
-  /** bpm */
-  heartRate: Series;
-  /** steps per minute (both feet) */
-  cadence: Series;
-  /** ground contact time, ms */
-  groundContactTime: Series;
-  /** vertical oscillation, mm */
-  verticalOscillation: Series;
-  /** step length, mm */
-  stepLength: Series;
-  /** W */
-  power: Series;
-  /** m */
-  altitude: Series;
+  /** m, cumulative */
+  distance: Series;
   /** degrees */
   lat: Series;
   /** degrees */
   lon: Series;
-  /** °C */
-  temperature: Series;
-  /** COROS developer field "Effort Pace", m/s */
-  effortPace: Series;
-  /** COROS developer field "Leg Spring Stiffness", kN/m */
-  legSpringStiffness: Series;
-  /** m, cumulative */
-  distance: Series;
+  /** every metric of the run, e.g. speed (m/s), heartRate (bpm), cadence (steps per minute, both feet) */
+  values: Partial<Record<string, Series>>;
 }
-
-export const SAMPLE_FIELDS = [
-  't', 'speed', 'heartRate', 'cadence', 'groundContactTime', 'verticalOscillation', 'stepLength',
-  'power', 'altitude', 'lat', 'lon', 'temperature', 'effortPace', 'legSpringStiffness', 'distance',
-] as const satisfies readonly (keyof Samples)[];
 
 export interface Lap {
   /** seconds since the start of the run */
@@ -56,15 +36,8 @@ export interface Lap {
   distance: number;
 }
 
-/** Metrics averaged per window. */
-export const WINDOW_METRICS = [
-  'speed', 'heartRate', 'cadence', 'groundContactTime', 'verticalOscillation', 'stepLength',
-  'power', 'altitude', 'effortPace', 'legSpringStiffness',
-] as const;
-export type WindowMetric = (typeof WINDOW_METRICS)[number];
-
 /** 10 s windows of a run, columnar. */
-export type Windows = {
+export interface Windows {
   /** window start, s since the start of the run */
   start: number[];
   /** number of samples in the window */
@@ -76,7 +49,9 @@ export type Windows = {
     /** the signal metrics missing in the window, or null */
     missingSignal: (string[] | null)[];
   };
-} & Record<WindowMetric, Series>;
+  /** the mean of each metric of the run in each window */
+  values: Partial<Record<string, Series>>;
+}
 
 /** The run layer and day layer of the context, as runs-index.json carries them (denormalized). */
 export interface RunContext {
@@ -117,6 +92,8 @@ export interface RunIndexRow {
   temperature: number | null;
   hasGps: boolean;
   laps: number;
+  /** the keys of the metrics the run holds */
+  metrics: string[];
   algorithmVersion: number;
 }
 
@@ -142,7 +119,14 @@ export interface RunFile {
   elapsed: number;
   temperature: number | null;
   sources: Record<string, string>;
+  /** the run's metrics, with their names and units as its file gives them */
+  metrics: MetricInfo[];
   laps: Lap[];
   samples: Samples;
   windows: Windows;
+}
+
+/** A metric's series in a run's samples or windows; all null when the run holds no such metric. */
+export function metricSeries(x: Samples | Windows, key: string): Series {
+  return x.values[key] ?? new Array<number | null>('t' in x ? x.t.length : x.start.length).fill(null);
 }

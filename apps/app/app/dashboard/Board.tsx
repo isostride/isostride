@@ -9,7 +9,7 @@ import { useOpenFolder } from '@/lib/client';
 import type { SavedAnalysesFile, SavedAnalysis } from '@/lib/compare';
 import { TILE_KINDS, addTile, moveTile, paceProfile, readDashboard, removeTile, resizeTile, sizeOf, weekFigures, weeklyDistance, writeDashboard, type Tile, type TileKind } from '@/lib/dashboard';
 import { date, km, pace } from '@/lib/format';
-import { PATHS, readJson, type DataFolder } from '@/lib/fs';
+import { PATHS, readJson, type DataFolder, readRunFile } from '@/lib/fs';
 import type { IndexedRun, RunFile, RunsIndex } from '@/lib/kernel';
 import { formSeries, type ModelKey } from '@/lib/load';
 import { TABS, performanceHref, type Tab } from '../performance/structure';
@@ -272,7 +272,7 @@ function RunTile({ folder, run, named = false }: { folder: DataFolder; run: Inde
   const [profile, setProfile] = useState<number[] | null>(null);
   useEffect(() => {
     let live = true;
-    readJson<RunFile>(folder, PATHS.runFile(run.id)).then((f) => { if (live) setProfile(f ? paceProfile(f.samples.speed) : []); }).catch(() => undefined);
+    readRunFile(folder, run.id).then((f) => { if (live) setProfile(f ? paceProfile(f.samples.values.speed ?? []) : []); }).catch(() => undefined);
     return () => { live = false; };
   }, [folder, run.id]);
   const shown = profile && profile.length > 1 ? profile : null;

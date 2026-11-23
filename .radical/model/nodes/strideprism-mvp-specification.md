@@ -810,6 +810,23 @@ A: (użytkownik) tak
 A: (model) First run of the pipeline: every test passed on GitHub (unit, integration, 28 end-to-end), the check failed on the Lab budget (Compare 200.2 KB on Linux) and on the two fitness functions of the shuffled run, measured nowhere in the pipeline (locally an old reports/measures-nightly.json of 19 Nov was read again on each check). Fixed: the Efforts tab of Compare loaded with the tab (EffortsPanel), 199.1 KB; scripts/nightly.sh run in the pipeline before npm run check, the two fitness functions triggered on each pull request.
 Q: (użytkownik) nie widze PR-ow ...
 A: (użytkownik) tak zrob to gdy pipeline sie skonczy
-Q: (użytkownik) testwy trwaja dlugo ... mozesz je zrownoleglic na github ?
-A: (model) The check took about 14.5 min in one job: the browsers 80 s, the shuffled run 223 s, unit and integration tests 140 s, the build and the end-to-end tests 378 s. Proposed: its stages as jobs side by side (tests, shuffled run, three shards of the end-to-end tests, static checks), their reports handed to the verdict through the private bucket (ci/<run>/, gone after 3 days), the browsers cached.
-A: (użytkownik) tak
+Q: (użytkownik) pytanie ... czy aplikacja zadziala z inymi zegarkami ? garmin itp ?
+A: (model) Partly: the import reads the standard FIT messages through the Garmin FIT SDK, so a run from Garmin, Suunto or Wahoo imports; the COROS developer fields (Effort Pace, Leg Spring Stiffness) stay empty, and Garmin's default Smart recording (a sample every 1–7 s) would make most 10 s windows count as stopped (fewer than 5 samples).
+Q: (użytkownik) czy gdy metryk bedzie mniej lub wiecej w plikach to aplikacja sie dostosuje ? czy metryki sa zahardkodowane?
+A: (model) The metrics are a fixed list: fewer is handled (a missing one is empty and hidden on the run screen), more is dropped at the import. Proposed: 1. keep the list, hide empty metrics in Compare; 2. every numeric field of the file a metric, with its name and unit from the file.
+A: (użytkownik) pr 1 zmergowalem .... chce zrobic 2 ....
+Q: (model) Które pola z pliku FIT mają się stać metrykami?
+A: (użytkownik) Wszystkie liczbowe
+Q: (model) Dla metryki, której aplikacja nie zna (np. oddech, temperatura ciała ze Stryda), nie wiadomo, czy wyżej znaczy lepiej. Jak ją traktować w porównaniach i werdyktach?
+A: (użytkownik) Neutralnie + ustawienie
+Q: (model) Gdzie mają być dostępne nowe metryki?
+A: (użytkownik) Wszędzie
+Q: (model) Poprawka dla Garmina "Smart recording" (postój wykrywany po liczbie próbek w oknie 10 s): kiedy?
+A: (użytkownik) W tym samym PR
+A: (model) Done on the branch metrics-from-the-file: every numeric field of a record a metric, named and measured as the file names it (COROS' Vertical Ratio, Form Power and Air Power read now), the folder's catalog of metrics (derived/metrics.json), Settings → Metrics with which way is better, a metric condition in the rules, stops found by time (Garmin's Smart recording), two Garmin runs from python-fitparse and fitdecode (MIT) among the test files.
+Q: (użytkownik) poszukaj testowych plikow garmina w sieci ? github?
+A: (model) Found in python-fitparse and fitdecode (MIT): a fenix 2 run of 9 km, a fenix 5 run in Smart recording, a Forerunner 935 swim with developer fields; kept in tests/fixtures/garmin with their source and licence.
+Q: (użytkownik) uruchom wersje lokalna do testow
+A: (model) The app runs at http://localhost:3000 (npm run dev) from the branch.
+Q: (model) Budżet JS (ADR "Built with React": 200 KB gzip na trasę) jest przekroczony: compare 204,1 KB, run 200,5 KB. Przed zmianą compare miała 199,9 KB, wspólna część wszystkich tras to teraz ~190 KB. Co robimy?
+A: (użytkownik) Podnieść budżet do 220 KB

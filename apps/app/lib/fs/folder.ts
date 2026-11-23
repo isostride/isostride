@@ -1,3 +1,4 @@
+import { metricInfo, type RunFile, type Samples, type Series } from '@/lib/kernel';
 /**
  * The runner's data folder, seen through one small interface so that the same
  * import and storage code runs in the browser (File System Access API) and in
@@ -60,6 +61,8 @@ export const PATHS = {
   runs: '.isostride/derived/runs',
   runFile: (id: string) => `.isostride/derived/runs/${id}.json`,
   runsIndex: '.isostride/derived/runs-index.json',
+  /** every metric the folder's runs hold, with its name and unit (ADR "Metrics from the file") */
+  metrics: '.isostride/derived/metrics.json',
   segments: '.isostride/derived/segments.json',
   blockInstances: '.isostride/derived/block-instances.json',
   dayState: '.isostride/derived/day-state.json',
@@ -88,4 +91,31 @@ export async function listFitFiles(folder: DataFolder): Promise<string[]> {
     .filter((e) => e.kind === 'file' && e.name.toLowerCase().endsWith('.fit'))
     .map((e) => joinPath(dir, e.name))
     .sort();
+}
+
+/** The metrics' keys of the run files before the metrics came from the file (schema 1). */
+const SCHEMA_1_METRICS = ['speed', 'heartRate', 'cadence', 'groundContactTime', 'verticalOscillation', 'stepLength', 'power', 'altitude', 'temperature', 'effortPace', 'legSpringStiffness'];
+
+/**
+ * A run's file, derived/runs/<id>.json; one written before the metrics came from the file (schema 1,
+ * each metric a field of its own) read in today's shape, so the screens work until the runner
+ * recomputes. Null when there is none.
+ */
+export async function readRunFile(folder: DataFolder, id: string): Promise<RunFile | null> {
+  const file = await readJson<RunFile>(folder, PATHS.runFile(id));
+  if (!file || file.samples.values) return file;
+  const old = file as unknown as { samples: Record<string, Series>; windows: Record<string, unknown> };
+  const values: Record<string, Series> = {};
+  const windows: Record<string, Series> = {};
+  for (const k of SCHEMA_1_METRICS) {
+    if (old.samples[k]?.some((v) => v !== null)) values[k] = old.samples[k];
+    if (Array.isArray(old.windows[k]) && values[k]) windows[k] = old.windows[k] as Series;
+  }
+  const { t, distance, lat, lon } = old.samples as unknown as Samples;
+  return {
+    ...file,
+    metrics: Object.keys(values).map((k) => metricInfo(k)),
+    samples: { t, distance, lat, lon, values },
+    windows: { start: file.windows.start, n: file.windows.n, flags: file.windows.flags, values: windows },
+  };
 }

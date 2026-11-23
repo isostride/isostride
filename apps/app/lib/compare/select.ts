@@ -1,18 +1,9 @@
 import { mean, sd, linearFit } from '@/lib/stats';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
+import { isPace, metricInfo, secondsPerKm, type MetricInfo } from '@/lib/kernel';
 
-export const METRIC_LABEL: Record<BlockMetric, string> = {
-  speed: 'Pace',
-  heartRate: 'Heart rate',
-  cadence: 'Cadence',
-  groundContactTime: 'Ground contact time',
-  verticalOscillation: 'Vertical oscillation',
-  stepLength: 'Step length',
-  power: 'Power',
-  effortPace: 'Effort pace',
-  legSpringStiffness: 'Leg spring stiffness',
-  efficiency: 'Efficiency',
-};
+/** A metric's name, from the catalog of metrics (ADR "Metrics from the file"). */
+export const metricLabel = (metric: BlockMetric, catalog?: readonly MetricInfo[] | null): string => metricInfo(metric, catalog).name;
 
 
 /** Context fields a trend can be filtered by and an A/B comparison split by. */
@@ -31,7 +22,7 @@ export function valueOf(i: BlockInstance, metric: BlockMetric): number | null {
   const v = i.metrics[metric];
   // A metric an older algorithm did not compute (missing from the file) is no value either.
   if (v === null || v === undefined || !Number.isFinite(v)) return null;
-  return metric === 'speed' || metric === 'effortPace' ? (v > 0 ? 1000 / v : null) : v;
+  return isPace(metric) ? secondsPerKm(v) : v;
 }
 
 /** The device behind a metric: a new device starts a new series (spec section 3, provenance). */
@@ -60,7 +51,7 @@ export function selectInstances(all: BlockInstance[], definitionId: string, metr
   const mine = all.filter((i) => i.definitionId === definitionId).sort((a, b) => a.runStart.localeCompare(b.runStart) || a.start - b.start);
   for (const i of mine) {
     const reasons = [...i.reasons];
-    if (valueOf(i, metric) === null) reasons.push(`${METRIC_LABEL[metric].toLowerCase()}: not recorded`);
+    if (valueOf(i, metric) === null) reasons.push(`${metricLabel(metric).toLowerCase()}: not recorded`);
     for (const [field, want] of Object.entries(filter) as [ContextField, string | null | undefined][]) {
       if (want === undefined) continue;
       const have = CONTEXT_FIELDS[field].get(i);

@@ -47,22 +47,32 @@ describe('Effort blocks on any route', () => {
 });
 
 describe('Blocks by workout type', () => {
+  // One with a warm-up lap, a 20-minute lap at 4:10/km and a cool-down lap; two without laps. Each test
+  // below runs a few detections only, so it stays well under the 100 ms of a unit test on CI too.
+  const lapped = () => run('t1', '2026-10-01', [[600, EASY], [1200, 1000 / 250], [300, EASY]], true);
+  const unlapped = () => [run('t2', '2026-10-08', [[1800, 1000 / 250]]), run('t3', '2026-10-15', [[1500, 1000 / 250]])];
+  const test = def({ type: 'tag', workoutType: 'test' });
+
   it('Tagged test runs compared', () => {
-    // One with a warm-up lap, a 20-minute lap at 4:10/km and a cool-down lap; two without laps.
-    const laps = run('t1', '2026-10-01', [[600, EASY], [1200, 1000 / 250], [300, EASY]], true);
-    const plain = [run('t2', '2026-10-08', [[1800, 1000 / 250]]), run('t3', '2026-10-15', [[1500, 1000 / 250]])];
-    const test = def({ type: 'tag', workoutType: 'test' });
+    const laps = lapped();
     const [i1] = detectInstances(test, laps, rowFor(laps, { workoutType: 'test' }), []);
     expect([i1.start, i1.end, i1.context.before.lap]).toEqual([600, 1800, 2]);
-    for (const r of plain) {
+    for (const r of unlapped()) {
       const [i] = detectInstances(test, r, rowFor(r, { workoutType: 'test' }), []);
       expect([i.start, i.end]).toEqual([150, r.samples.t[r.samples.t.length - 1] - 60]);
     }
-    // An untagged run gives nothing.
+  });
+
+  it('Untagged run gives nothing', () => {
+    const laps = lapped();
     expect(detectInstances(test, laps, rowFor(laps, { workoutType: 'easy' }), [])).toEqual([]);
+  });
+
+  it('Tagged runs proposed as a block', () => {
     // Once 3 runs carry the tag, the block is proposed.
-    const rows = [laps, ...plain].map((r) => rowFor(r, { workoutType: 'test' }));
-    expect(recommend([], [laps, ...plain], new Map(), [], rows).map((r) => r.name)).toContain('Workout: test');
+    const runs = [lapped(), ...unlapped()];
+    const rows = runs.map((r) => rowFor(r, { workoutType: 'test' }));
+    expect(recommend([], runs, new Map(), [], rows).map((r) => r.name)).toContain('Workout: test');
   });
 });
 
@@ -93,7 +103,7 @@ describe('Heart rate window per block', () => {
     // first 5 minutes, 170 after.
     const effortRun = (id: string, warmUp: number) => {
       const r = run(id, '2026-10-01', [[warmUp, EASY], [1800, FAST], [300, EASY]]);
-      r.samples.heartRate = r.samples.t.map((t) => (t < warmUp ? 130 : t < warmUp + 300 ? 150 : t < warmUp + 1800 ? 170 : 140));
+      r.samples.values.heartRate = r.samples.t.map((t) => (t < warmUp ? 130 : t < warmUp + 300 ? 150 : t < warmUp + 1800 ? 170 : 140));
       return r;
     };
     const thirty = { ...def({ type: 'effort', kind: 'time', target: 1800 }), tolerances: { ...defaultTolerances('effort'), effortBeforeMax: null } };

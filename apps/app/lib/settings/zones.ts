@@ -1,4 +1,5 @@
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
+import { isPace, metricInfo, type Direction, type MetricInfo } from '@/lib/kernel';
 import { DEFAULT_PERFORMANCE, parsePerformance, type PerformanceSettings } from './performance';
 
 /**
@@ -16,21 +17,24 @@ export interface ZoneMetric {
   pace?: boolean;
 }
 
-export const ZONE_METRICS: ZoneMetric[] = [
-  { key: 'heartRate', title: 'Heart rate', unit: 'bpm' },
-  { key: 'speed', title: 'Pace', unit: 'min/km', pace: true },
-  { key: 'cadence', title: 'Cadence', unit: 'spm' },
-  { key: 'power', title: 'Power', unit: 'W' },
-  { key: 'groundContactTime', title: 'Ground contact time', unit: 'ms' },
-  { key: 'verticalOscillation', title: 'Vertical oscillation', unit: 'mm' },
-  { key: 'stepLength', title: 'Step length', unit: 'mm' },
-  { key: 'efficiency', title: 'Efficiency', unit: 'm/beat' },
-  { key: 'effortPace', title: 'Effort pace', unit: 'min/km', pace: true },
-  { key: 'legSpringStiffness', title: 'Leg spring stiffness', unit: 'kN/m' },
-  { key: 'altitude', title: 'Elevation', unit: 'm' },
-];
+/** The order of the known metrics in Settings; the folder's other metrics follow by name. */
+const ZONE_ORDER = ['heartRate', 'speed', 'cadence', 'power', 'groundContactTime', 'verticalOscillation', 'stepLength', 'efficiency', 'effortPace', 'legSpringStiffness', 'altitude'];
 
-const PACES = new Set(ZONE_METRICS.filter((m) => m.pace).map((m) => m.key));
+/**
+ * The metrics that can have zones: every metric of the folder's runs but the temperature
+ * (requirement "Every metric offered everywhere"), the known ones first.
+ */
+export function zoneMetricsOf(catalog: readonly MetricInfo[]): ZoneMetric[] {
+  const keys = catalog.map((m) => m.key).filter((k) => k !== 'temperature');
+  const known = ZONE_ORDER.filter((k) => keys.includes(k));
+  const others = keys.filter((k) => !known.includes(k)).sort((a, b) => metricInfo(a, catalog).name.localeCompare(metricInfo(b, catalog).name));
+  return [...known, ...others].map((key) => {
+    const m = metricInfo(key, catalog);
+    return { key, title: m.name, unit: m.unit, ...(m.display === 'pace' ? { pace: true } : {}) };
+  });
+}
+
+const PACES = { has: (metric: string) => isPace(metric) };
 
 export interface SettingsFile {
   schemaVersion: 1;
@@ -38,6 +42,8 @@ export interface SettingsFile {
   zones: Record<string, number[]>;
   /** the performance model: how a run's load is computed and how fitness and fatigue follow it */
   performance: PerformanceSettings;
+  /** by metric key: which way is better, where the runner set it (requirement "Metric direction set by the runner") */
+  directions?: Record<string, Exclude<Direction, 'neutral'>>;
   /** true when no settings were saved and the default zones apply (not written) */
   defaults?: boolean;
 }
@@ -124,19 +130,28 @@ export function formatBoundaries(metric: string, boundaries: number[]): string {
 export async function readSettings(folder: DataFolder): Promise<SettingsFile> {
   const file = await readJson<Partial<SettingsFile>>(folder, PATHS.settings);
   // No file, or one that holds only the performance model: the default zones apply.
-  if (file === null || file.zones === undefined) return { schemaVersion: 1, zones: structuredClone(DEFAULT_ZONES), performance: file ? parsePerformance(file.performance) : { ...DEFAULT_PERFORMANCE }, defaults: true };
+  const directions = parseDirections(file?.directions);
+  if (file === null || file.zones === undefined) return { schemaVersion: 1, zones: structuredClone(DEFAULT_ZONES), performance: file ? parsePerformance(file.performance) : { ...DEFAULT_PERFORMANCE }, directions, defaults: true };
   const zones: Record<string, number[]> = {};
   for (const [k, v] of Object.entries(file?.zones ?? {})) {
     if (!Array.isArray(v)) continue;
     const b = sortBoundaries(k, v.map(Number));
     if (b.length) zones[k] = b;
   }
-  return { schemaVersion: 1, zones, performance: parsePerformance(file.performance) };
+  return { schemaVersion: 1, zones, performance: parsePerformance(file.performance), directions };
+}
+
+/** The directions the runner set: only higher or lower, by metric key. */
+function parseDirections(v: unknown): Record<string, 'higher' | 'lower'> {
+  if (!v || typeof v !== 'object') return {};
+  return Object.fromEntries(Object.entries(v).filter(([, d]) => d === 'higher' || d === 'lower')) as Record<string, 'higher' | 'lower'>;
 }
 
 /** Writes the settings; without `zones` the file holds no zones of the runner's, and the defaults go on applying. */
 export async function writeSettings(folder: DataFolder, file: Omit<SettingsFile, 'performance' | 'zones'> & { zones?: Record<string, number[]>; performance?: PerformanceSettings }): Promise<void> {
+  // The directions kept as they are when the caller does not give them (the zones or the model saved alone).
+  const directions = parseDirections(file.directions ?? (await readJson<Partial<SettingsFile>>(folder, PATHS.settings))?.directions);
   // Metrics with no zones are dropped, so the file holds only what the runner entered.
   const zones = file.zones && Object.fromEntries(Object.entries(file.zones).map(([k, v]) => [k, sortBoundaries(k, v)] as const).filter(([, v]) => v.length));
-  await writeJson(folder, PATHS.settings, { schemaVersion: 1, ...(zones ? { zones } : {}), performance: parsePerformance(file.performance) });
+  await writeJson(folder, PATHS.settings, { schemaVersion: 1, ...(zones ? { zones } : {}), performance: parsePerformance(file.performance), ...(Object.keys(directions).length ? { directions } : {}) });
 }

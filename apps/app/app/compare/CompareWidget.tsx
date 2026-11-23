@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { METRIC_VIEW, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type OverTimeGroup } from '@/components';
+import { OverTimeChart, useMetrics, SLOT_COLORS, SLOT_SHAPES, type OverTimeGroup } from '@/components';
 import { RULE_TOLERANCES, decodeRule, readDefinitions, ruleName, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric } from '@/lib/blocks';
 import { instancesInWorker, useOpenFolder } from '@/lib/client';
 import { computeTrend, parseItems, runMean, type AnalysisItem } from '@/lib/compare';
-import { PATHS, readJson } from '@/lib/fs';
+import { PATHS, readJson, readRunFile } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { runHref } from './links';
 import { runName } from './names';
@@ -24,11 +24,12 @@ export function CompareWidget({ query }: { query: string }) {
   const { folder, handle } = useOpenFolder();
   const params = useMemo(() => new URLSearchParams(query), [query]);
   const items = useMemo(() => parseItems(params.get('items')), [params]);
+  const known = useMetrics();
   const metrics = useMemo(() => {
     const given = (params.get('m') ?? '').split(',');
-    const out = METRIC_VIEW.map((x) => x.key).filter((k) => given.includes(k));
+    const out = known.blockKeys.filter((k) => given.includes(k));
     return out.length ? out : (['speed'] as BlockMetric[]);
-  }, [params]);
+  }, [params, known]);
   const [data, setData] = useState<{ defs: BlockDefinition[]; kept: BlockInstance[]; runs: RunsIndex['runs']; files: Map<string, RunFile> } | null>(null);
   const [adhoc, setAdhoc] = useState<Map<string, BlockInstance[]>>(new Map());
 
@@ -37,7 +38,7 @@ export function CompareWidget({ query }: { query: string }) {
     (async () => {
       const [defs, inst, index] = await Promise.all([readDefinitions(folder), readJson<BlockInstancesFile>(folder, PATHS.blockInstances), readJson<RunsIndex>(folder, PATHS.runsIndex)]);
       const files = new Map<string, RunFile>();
-      for (const i of items.filter((x) => x.kind === 'run')) { const f = await readJson<RunFile>(folder, PATHS.runFile(i.id)); if (f) files.set(i.id, f); }
+      for (const i of items.filter((x) => x.kind === 'run')) { const f = await readRunFile(folder, i.id); if (f) files.set(i.id, f); }
       if (live) setData({ defs, kept: inst?.instances ?? [], runs: index?.runs ?? [], files });
     })().catch(() => undefined);
     return () => { live = false; };
@@ -88,7 +89,7 @@ export function CompareWidget({ query }: { query: string }) {
     const v = f ? runMean(f, metric) : null;
     return f && v !== null ? [{ ...base, points: [{ t: Date.parse(f.startTime), v, note: 'average of the run', href: runHref(f.id) }], fits: [] }] : [];
   });
-  const byMetric = metrics.map((mt) => ({ mt, view: METRIC_VIEW.find((x) => x.key === mt)!, groups: groupsFor(mt) }));
+  const byMetric = metrics.map((mt) => ({ mt, view: known.view(mt), groups: groupsFor(mt) }));
   const allT = byMetric.flatMap((g) => g.groups.flatMap((x) => x.points.map((p) => p.t)));
   const domain: [number, number] | undefined = allT.length ? [Math.min(...allT) - 4 * DAY, Math.max(...allT) + 4 * DAY] : undefined;
   const missing = items.filter((i) => i.kind !== 'run' && !defOf(i)).length;

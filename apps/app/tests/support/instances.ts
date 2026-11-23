@@ -1,4 +1,7 @@
-import { BLOCK_METRICS, type BlockInstance, type BlockMetric } from '@/lib/blocks';
+import { blockMetricsOf, type BlockInstance, type BlockMetric } from '@/lib/blocks';
+
+/** The metrics of a COROS run's blocks. */
+const BLOCK_METRICS = blockMetricsOf(['speed', 'heartRate', 'cadence', 'groundContactTime', 'verticalOscillation', 'stepLength', 'power', 'effortPace', 'legSpringStiffness']);
 
 let n = 0;
 type Over = Partial<Omit<BlockInstance, 'metrics' | 'context'>> & {

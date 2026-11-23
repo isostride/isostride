@@ -19,7 +19,7 @@ test.describe('Performance model', () => {
     await expect(week.getByRole('img', { name: /^Kilometres by day: M / })).toBeVisible();
     // Settings in tabs, zones first; gear and tags are tabs of it, not a screen of the navigation.
     await nav(page, 'Settings');
-    await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Zones', 'Gear', 'Tags', 'Charts', 'Models', 'Display']);
+    await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Zones', 'Metrics', 'Gear', 'Tags', 'Charts', 'Models', 'Display']);
     // Models (requirement "Thresholds of the models"): each threshold of the checks with its default; one out of
     // its range cannot be saved; set, it is kept in the data folder with the performance model.
     await page.getByRole('tab', { name: 'Models' }).click();

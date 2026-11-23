@@ -4,8 +4,10 @@ import { describe, expect, it } from 'vitest';
 import { PATHS, listFitFiles, readJson, readManifest, unseenFitFiles } from '@/lib/fs';
 import { importFolder } from '@/lib/pipeline';
 import { type RunFile, type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
-import { parseFit } from '@/lib/ingest';
-import { FILES, TEST_DATA, addFile, checksums, makeDataFolder, recordMeasure } from '../support/fixtures';
+import { metricKeyOfField, parseFit } from '@/lib/ingest';
+import { Decoder, Stream } from '@garmin/fitsdk';
+import { FILES, TEST_DATA, addFile, checksums, fitFixtures, makeDataFolder, recordMeasure } from '../support/fixtures';
+import { buildWindows } from '@/lib/prepare';
 
 const runs = async (folder: Awaited<ReturnType<typeof makeDataFolder>>) =>
   (await readJson<RunsIndex>(folder, PATHS.runsIndex))!.runs;
@@ -96,26 +98,36 @@ describe('Read all FIT fields', () => {
     const i = 500;
     const s = r.samples;
     expect(s.t[i]).toBe(510);
-    expect(s.speed[i]).toBeCloseTo(3.142, 3);
-    expect(s.heartRate[i]).toBe(126);
-    expect(s.cadence[i]).toBe(162);
-    expect(s.groundContactTime[i]).toBe(262);
-    expect(s.verticalOscillation[i]).toBe(82);
-    expect(s.stepLength[i]).toBe(1030);
-    expect(s.power[i]).toBe(193);
-    expect(s.altitude[i]).toBe(4);
+    expect((s.values.speed?.[i] ?? null)).toBeCloseTo(3.142, 3);
+    expect((s.values.heartRate?.[i] ?? null)).toBe(126);
+    expect((s.values.cadence?.[i] ?? null)).toBe(162);
+    expect((s.values.groundContactTime?.[i] ?? null)).toBe(262);
+    expect((s.values.verticalOscillation?.[i] ?? null)).toBe(82);
+    expect((s.values.stepLength?.[i] ?? null)).toBe(1030);
+    expect((s.values.power?.[i] ?? null)).toBe(193);
+    expect((s.values.altitude?.[i] ?? null)).toBe(4);
     expect(s.lat[i]).toBeCloseTo(41.395052, 5);
     expect(s.lon[i]).toBeCloseTo(2.206598, 5);
     expect(r.laps).toHaveLength(3);
     expect(r.laps[0]).toMatchObject({ start: 0, distance: 2000 });
     expect(r.laps[0].duration).toBeCloseTo(682.39, 2);
+    // The file's other numeric fields are metrics too, named and measured as the FIT profile has them.
+    expect(r.metrics.find((m) => m.key === 'verticalRatio')).toMatchObject({ name: 'Vertical ratio', unit: '%', origin: 'standard', direction: 'neutral' });
+    expect(s.values.verticalRatio?.filter((v) => v !== null).length).toBeGreaterThan(2000);
+    // Running totals and the bookkeeping are not.
+    expect(Object.keys(s.values)).not.toContain('accumulatedPower');
+    expect(Object.keys(s.values)).not.toContain('enhancedSpeed');
   });
 
-  it('COROS developer fields read', async () => {
+  it('Developer fields read', async () => {
     const r = await run();
-    expect(r.samples.effortPace[500]).toBeCloseTo(3.141, 3);
-    expect(r.samples.legSpringStiffness[500]).toBeCloseTo(9.3, 3);
-    expect(r.samples.effortPace.filter((v) => v !== null).length).toBeGreaterThan(2000);
+    expect((r.samples.values.effortPace?.[500] ?? null)).toBeCloseTo(3.141, 3);
+    expect((r.samples.values.legSpringStiffness?.[500] ?? null)).toBeCloseTo(9.3, 3);
+    expect((r.samples.values.effortPace ?? []).filter((v) => v !== null).length).toBeGreaterThan(2000);
+    // COROS' Form Power and Air Power, left out before: metrics in watts, named by the file.
+    expect(r.metrics.find((m) => m.key === 'dev.formPower')).toMatchObject({ name: 'Form Power', unit: 'W', origin: 'developer', direction: 'neutral' });
+    expect(r.metrics.find((m) => m.key === 'dev.airPower')).toMatchObject({ name: 'Air Power', unit: 'W', origin: 'developer' });
+    expect((r.samples.values['dev.formPower'] ?? []).filter((v) => v !== null).length).toBeGreaterThan(2000);
   });
 
   it('Heart rate source recorded', async () => {
@@ -192,9 +204,68 @@ describe('Columnar JSON format', () => {
     const file = path.join(folder.root, PATHS.runFile('20261109-190552'));
     const run = JSON.parse(await fs.readFile(file, 'utf8')) as RunFile;
     const n = run.samples.t.length;
-    for (const [name, col] of Object.entries(run.samples)) expect(col, name).toHaveLength(n);
+    const { values, ...fixed } = run.samples;
+    for (const [name, col] of [...Object.entries(fixed), ...Object.entries(values)]) expect(col, name).toHaveLength(n);
+    for (const [name, col] of Object.entries(run.windows.values)) expect(col, name).toHaveLength(run.windows.start.length);
     const size = (await fs.stat(file)).size;
     await recordMeasure('runFileMaxKB', Math.round((size / 1024) * 10) / 10);
     expect(size).toBeLessThanOrEqual(300 * 1024);
+  });
+});
+
+const GARMIN = path.resolve(__dirname, '../fixtures/garmin');
+const garmin = async (f: string) => parseFit(new Uint8Array(await fs.readFile(path.join(GARMIN, f))));
+
+/** The numeric fields of a FIT file's records. */
+async function recordFields(file: string): Promise<Set<string>> {
+  const d = new Decoder(Stream.fromByteArray(Array.from(await fs.readFile(file))));
+  const { messages } = d.read({ applyScaleAndOffset: true, expandSubFields: true, expandComponents: true, convertTypesToStrings: true, convertDateTimesToDates: true });
+  const out = new Set<string>();
+  for (const r of messages.recordMesgs ?? []) for (const [k, v] of Object.entries(r)) if (typeof v === 'number') out.add(k);
+  return out;
+}
+
+describe('Watches other than COROS', () => {
+  it('Garmin runs read', async () => {
+    // A fenix 2 run: running dynamics as Garmin writes them, under the app's names.
+    const f2 = await garmin('fenix2-run.fit');
+    expect(f2.device).toMatch(/fenix2/i);
+    for (const k of ['speed', 'heartRate', 'cadence', 'groundContactTime', 'verticalOscillation', 'altitude', 'temperature']) expect(f2.samples.values[k], k).toBeDefined();
+    expect(f2.metrics.some((m) => m.origin === 'developer')).toBe(false);
+    // A fenix 5 run holds fields the COROS files do not: each one a metric with its unit.
+    const f5 = await garmin('fenix5-smart-recording-run.fit');
+    expect(f5.metrics.find((m) => m.key === 'stanceTimeBalance')).toMatchObject({ name: 'Stance time balance', unit: '%' });
+    expect(f5.metrics.find((m) => m.key === 'stanceTimePercent')).toMatchObject({ unit: '%' });
+    expect(f5.samples.values.verticalRatio).toBeDefined();
+    // A swim with developer fields is no run.
+    await expect(garmin('fr935-swim.fit')).rejects.toThrow(/not a run/);
+  });
+
+  it('Smart recording keeps its moving windows', async () => {
+    // Garmin's Smart recording: a record every 1 to 9 s. Every window of the running is moving.
+    const f5 = await garmin('fenix5-smart-recording-run.fit');
+    const gaps = f5.samples.t.slice(1).map((t, i) => t - f5.samples.t[i]);
+    expect(Math.max(...gaps)).toBeGreaterThanOrEqual(5);
+    const w = buildWindows(f5.samples);
+    const moving = w.start.map((_, i) => i).filter((i) => (w.values.speed?.[i] ?? 0) >= 0.5 && w.n[i] > 0 && i < w.start.length - 1);
+    expect(moving.length).toBeGreaterThan(2);
+    for (const i of moving) expect(w.flags.stopped[i], `window ${i}: ${w.n[i]} samples`).toBe(false);
+  });
+
+  it('Every numeric field read', async () => {
+    // Every numeric field of the records of the test files is a metric of the run, but the time,
+    // the position, the distance, the running totals and the watch's bookkeeping.
+    const files = [...(await fitFixtures()).filter((f) => f.includes('_run_')).slice(0, 12).map((f) => path.join(TEST_DATA, f)), path.join(GARMIN, 'fenix2-run.fit'), path.join(GARMIN, 'fenix5-smart-recording-run.fit')];
+    let dropped = 0;
+    for (const file of files) {
+      const run = parseFit(new Uint8Array(await fs.readFile(file)));
+      const keys = new Set(run.metrics.map((m) => m.key));
+      for (const field of await recordFields(file)) {
+        const key = metricKeyOfField(field);
+        if (key !== null && !keys.has(key)) { dropped++; console.error(`${path.basename(file)}: ${field} not read`); }
+      }
+    }
+    await recordMeasure('ingestFieldsDropped', dropped);
+    expect(dropped).toBe(0);
   });
 });

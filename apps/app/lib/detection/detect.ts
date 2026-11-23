@@ -1,7 +1,7 @@
 import type { TrackPoint } from '@/lib/geo';
-import type { IndexedRun, RunFile } from '@/lib/kernel';
+import { isPace, type IndexedRun, type RunFile } from '@/lib/kernel';
 import { buildInstance } from './instance';
-import { SAMPLE_METRICS, asRule, windowStat, type BlockDefinition, type BlockInstance, type Stat } from '@/lib/blocks';
+import { blockMetricsOf, asRule, windowStat, type BlockDefinition, type BlockInstance, type Stat } from '@/lib/blocks';
 import { ruleSegments } from './rule';
 
 /** Detects the instances of one block definition in one run (spec F10). */
@@ -20,9 +20,9 @@ export function detectInstances(def: BlockDefinition, run: RunFile, row: Indexed
 function withStat(i: BlockInstance, run: RunFile, stat: Stat): BlockInstance {
   if (stat === 'avg') return i;
   const metrics = { ...i.metrics };
-  for (const m of [...SAMPLE_METRICS, 'efficiency'] as const) {
+  for (const m of blockMetricsOf(run.metrics.map((x) => x.key))) {
     const v = windowStat(run, m, stat, i.start, i.end);
-    metrics[m] = v === null ? null : m === 'speed' || m === 'effortPace' ? Math.round((1000 / v) * 1000) / 1000 : Math.round(v * 10000) / 10000;
+    metrics[m] = v === null ? null : isPace(m) ? Math.round((1000 / v) * 1000) / 1000 : Math.round(v * 10000) / 10000;
   }
   return { ...i, metrics };
 }

@@ -1,11 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { ItemKey, METRIC_VIEW } from '@/components';
-import { changesByMetric, describeDelta, describeTrend, formatAmount, percentChange, type TrendResult } from '@/lib/compare';
+import { ItemKey, useMetrics } from '@/components';
+import { changesByMetric, describeDelta, describeTrend, formatAmount, percentChange, wordsOf, type TrendResult } from '@/lib/compare';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 
-const view = (mt: BlockMetric) => METRIC_VIEW.find((x) => x.key === mt)!;
 
 /** A segment of the comparison as the verdicts show it. */
 export interface VerdictRow {
@@ -34,6 +33,7 @@ export function TrendVerdicts({ rows, metrics, all, corrected, trendsBy }: {
   corrected: boolean;
   trendsBy: Map<BlockMetric, Map<string, TrendResult>>;
 }) {
+  const { view, catalog, directions } = useMetrics();
   return (
     <>
       {rows.length > 0 && (
@@ -60,8 +60,8 @@ export function TrendVerdicts({ rows, metrics, all, corrected, trendsBy }: {
                           <span className="muted small">{c.n ? `${c.n} efforts, too few` : 'no efforts'}</span>
                         ) : (
                           <div className="kpi">
-                            <div className={`kpi-v ${c.verdict === 'change' ? 'change-yes' : ''}`}>{describeDelta(c.metric, c.change)}{c.start ? <span className="kpi-pct">{percentChange(c.change, c.start)}</span> : null}</div>
-                            <div className="kpi-sub muted small"><span className={`verdict-chip ${c.verdict === 'change' ? 'yes' : 'no'}`}>{c.verdict === 'change' ? 'change' : 'no detectable change'}</span> · noise ±{formatAmount(c.metric, c.noise!)} · {c.n} efforts</div>
+                            <div className={`kpi-v ${c.verdict === 'change' ? 'change-yes' : ''}`}>{describeDelta(c.metric, c.change, wordsOf(c.metric, catalog, directions))}{c.start ? <span className="kpi-pct">{percentChange(c.change, c.start)}</span> : null}</div>
+                            <div className="kpi-sub muted small"><span className={`verdict-chip ${c.verdict === 'change' ? 'yes' : 'no'}`}>{c.verdict === 'change' ? 'change' : 'no detectable change'}</span> · noise ±{formatAmount(c.metric, c.noise!, wordsOf(c.metric, catalog, directions))} · {c.n} efforts</div>
                           </div>
                         )}
                       </td>
@@ -78,7 +78,7 @@ export function TrendVerdicts({ rows, metrics, all, corrected, trendsBy }: {
         <details key={i.id} className="card result" style={{ marginTop: 12 }}>
           <summary><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ItemKey shape={i.shape} color={i.color} />{i.label}: the verdicts in words</span></summary>
           {metrics.flatMap((mt) => (trendsBy.get(mt)?.get(i.id)?.series ?? []).map((s) => {
-            const d = describeTrend(s, mt, view(mt).fmt);
+            const d = describeTrend(s, mt, view(mt).fmt, wordsOf(mt, catalog, directions));
             return (
               <div key={mt + s.source} className="result-row">
                 <div className="muted small">{view(mt).name}{(trendsBy.get(mt)?.get(i.id)?.series.length ?? 0) > 1 ? ` · ${s.source}` : ''}</div>

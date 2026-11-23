@@ -6,13 +6,13 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget } from '@/components';
 import { readChartSettings, useChartSettings, useOpenFolder } from '@/lib/client';
-import { PATHS, readJson } from '@/lib/fs';
+import { PATHS, readJson, readRunFile } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { efficiencyOf, rangeStats, readDefinitions, zoneShares, type BlockInstance } from '@/lib/blocks';
 import { date, duration, km, pace, time } from '@/lib/format';
 import { LOAD_MODELS, readSettings, zoneOf, zoneShade } from '@/lib/settings';
 import { PinButton } from '../dashboard/PinButton';
-import { METRICS, seriesOf, type WindowKey } from './metrics';
+import { runMetricsOf, seriesOf, type WindowKey } from './metrics';
 
 /** The map made large, coloured by a metric: loaded when it opens. */
 const RouteExpanded = dynamic(() => import('./RouteExpanded').then((m) => m.RouteExpanded), { ssr: false });
@@ -21,7 +21,8 @@ const RouteExpanded = dynamic(() => import('./RouteExpanded').then((m) => m.Rout
 const SLOTS_KEY = 'strideprism.runChart';
 const SLOT_COUNT = 4;
 const DEFAULT_SLOTS: (WindowKey | null)[] = ['speed', 'heartRate', 'cadence', 'groundContactTime'];
-const KEYS = new Set<string>(METRICS.map((m) => m.key));
+/** A metric's key in a link or a saved view: any metric's (ADR "Metrics from the file"); a run without it shows none. */
+const KEYS = { has: (k: string) => /^[A-Za-z][\w.]*$/.test(k) };
 /** The least and the most height of the chart's plot, px. */
 const MIN_CHART = 180;
 const MAX_CHART = 560;
@@ -181,7 +182,7 @@ function RunPage() {
   }, [id]);
 
   useEffect(() => {
-    readJson<RunFile>(folder, PATHS.runFile(id)).then(setRun).catch(() => setRun(null));
+    readRunFile(folder, id).then(setRun).catch(() => setRun(null));
     Promise.all([readSettings(folder), readJson<RunsIndex>(folder, PATHS.runsIndex)]).then(([s, idx]) => {
       setZones(s.zones);
       const row = idx?.runs.find((r) => r.id === id);
@@ -207,11 +208,11 @@ function RunPage() {
     });
     const laps = run.laps.map((l, i) => ({ from: l.start, to: l.end, label: `Lap ${i + 1} · ${km(l.distance)} km · ${duration(l.duration)}`, short: `Lap ${i + 1} · ${km(l.distance)} km` }));
     const series = seriesOf(run);
-    const hr = run.samples.heartRate.filter((v): v is number => v !== null);
+    const hr = (run.samples.values.heartRate ?? []).filter((v): v is number => v !== null);
     const avgHr = hr.length ? Math.round(hr.reduce((a, b) => a + b, 0) / hr.length) : null;
     // Elevation gain from the 10 s windows (smoothed by them), climbs of at least 1 m.
     let gain = 0;
-    const alt = w.altitude.filter((v): v is number => v !== null);
+    const alt = (w.values.altitude ?? []).filter((v): v is number => v !== null);
     for (let i = 1; i < alt.length; i++) if (alt[i] - alt[i - 1] > 0) gain += alt[i] - alt[i - 1];
     const total = w.start.length ? w.start[w.start.length - 1] + WINDOW_SECONDS : 1;
     const dmap = distanceMap(run.samples.t, run.samples.distance);
@@ -234,7 +235,8 @@ function RunPage() {
   // A stretch chosen anyhow becomes the range shown, exactly: the selection is the range.
   const select = (b: { from: number; to: number }) => setDomain(clampDomain([b.from, b.to], total));
   const clear = () => { setZoom(null); setMapLed(false); };
-  const has = (k: WindowKey) => series[k].some((v) => v !== null);
+  const has = (k: WindowKey) => !!series[k]?.some((v) => v !== null);
+  const METRICS = runMetricsOf(run);
   const domain: Domain = zoom ?? [0, total];
   const setDomain = (d: Domain) => { setMapLed(false); setZoom(d[0] <= 0 && d[1] >= total ? null : d); };
   // The map zoomed or panned by hand: the chart shows the range of time of the route in view.

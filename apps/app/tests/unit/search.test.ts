@@ -5,7 +5,7 @@ import type { IndexedRun } from '@/lib/kernel';
 const run = (day: string, km: number, extra: Partial<IndexedRun> = {}): IndexedRun => ({
   id: day, startTime: new Date(`${day}T07:00:00`).toISOString(), file: `${day}.fit`, device: 'COROS PACE 4',
   distance: km * 1000, duration: km * 300, avgSpeed: 1000 / 300, avgHeartRate: 150, temperature: null,
-  hasGps: true, laps: 1, algorithmVersion: 1, ...extra,
+  hasGps: true, laps: 1, metrics: ['speed', 'heartRate'], algorithmVersion: 1, ...extra,
 });
 
 describe('Search runs', () => {

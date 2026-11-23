@@ -1,5 +1,5 @@
 import { efficiencyOf, type BlockInstance, type BlockMetric } from '@/lib/blocks';
-import type { RunFile } from '@/lib/kernel';
+import { metricSeries, type RunFile } from '@/lib/kernel';
 import { computeTrend } from './trend';
 
 /**
@@ -19,18 +19,18 @@ export function runMean(run: RunFile, metric: BlockMetric): number | null {
     let hr = 0;
     let n = 0;
     for (let i = 0; i < s.t.length; i++) {
-      const v = s.speed[i];
-      const h = s.heartRate[i];
+      const v = (s.values.speed?.[i] ?? null);
+      const h = (s.values.heartRate?.[i] ?? null);
       if (v !== null && h !== null && v >= STOPPED_SPEED) { sp += v; hr += h; n++; }
     }
     return n ? efficiencyOf(sp / n, hr / n) : null;
   }
   const s = run.samples;
-  const series = s[metric] as (number | null)[];
+  const series = metricSeries(s, metric);
   const vals: number[] = [];
   for (let i = 0; i < s.t.length; i++) {
     const v = series[i];
-    const sp = s.speed[i];
+    const sp = (s.values.speed?.[i] ?? null);
     if (v !== null && (sp === null || sp >= STOPPED_SPEED)) vals.push(v);
   }
   if (!vals.length) return null;

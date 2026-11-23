@@ -1,9 +1,14 @@
-import type { RunFile, WindowMetric } from '@/lib/kernel';
-import { BLOCK_METRICS, efficiencyOf, type BlockMetric } from './types';
+import { isPace, secondsPerKm, type RunFile } from '@/lib/kernel';
+import { blockMetricsOf, efficiencyOf } from './types';
 
-/** The metrics of a stretch: those of a block, and the elevation. */
-export const RANGE_METRICS = [...BLOCK_METRICS, 'altitude'] as const satisfies readonly (BlockMetric | WindowMetric)[];
-export type RangeMetric = (typeof RANGE_METRICS)[number];
+/** A metric of a stretch: any of a block's, and the elevation. */
+export type RangeMetric = string;
+
+/** The metrics of a stretch of a run: those of its blocks, and the elevation. */
+export function rangeMetricsOf(run: RunFile): RangeMetric[] {
+  const own = blockMetricsOf(Object.keys(run.windows.values));
+  return run.windows.values.altitude ? [...own, 'altitude'] : own;
+}
 
 /** Min, avg and max of a metric over a stretch of a run, where its min and max occur, and its trend. */
 export interface RangeStat {
@@ -52,9 +57,9 @@ function windowValues(run: RunFile, m: RangeMetric, from: number, to: number): {
     const c = w.start[i] + WINDOW / 2;
     if (c < from || c >= to || w.flags.stopped[i]) continue;
     let x: number | null;
-    if (m === 'efficiency') x = efficiencyOf(w.speed[i], w.heartRate[i]);
-    else if (m === 'speed' || m === 'effortPace') { const sp = w[m][i]; x = sp !== null && sp > 0 ? 1000 / sp : null; }
-    else x = w[m][i];
+    if (m === 'efficiency') x = efficiencyOf((w.values.speed?.[i] ?? null), (w.values.heartRate?.[i] ?? null));
+    else if (isPace(m)) x = secondsPerKm(w.values[m]?.[i] ?? null);
+    else x = w.values[m]?.[i] ?? null;
     if (x !== null) { t.push(c); v.push(x); }
   }
   return { t, v };
@@ -82,8 +87,8 @@ export function decouplingOf(run: RunFile, from: number, to: number): number | n
   const halves = [{ s: 0, h: 0, n: 0 }, { s: 0, h: 0, n: 0 }];
   for (let i = 0; i < w.start.length; i++) {
     const c = w.start[i] + WINDOW / 2;
-    const sp = w.speed[i];
-    const hr = w.heartRate[i];
+    const sp = (w.values.speed?.[i] ?? null);
+    const hr = (w.values.heartRate?.[i] ?? null);
     if (c < from || c >= to || w.flags.stopped[i] || sp === null || sp <= 0 || hr === null || hr <= 0) continue;
     const half = halves[c < mid ? 0 : 1];
     half.s += sp; half.h += hr; half.n++;
@@ -111,7 +116,7 @@ function distanceAt(run: RunFile, at: number): number | null {
  */
 export function rangeStats(run: RunFile, from: number, to: number): RangeStats {
   const metrics: Partial<Record<RangeMetric, RangeStat>> = {};
-  for (const m of RANGE_METRICS) {
+  for (const m of rangeMetricsOf(run)) {
     const { t, v } = windowValues(run, m, from, to);
     if (!v.length) continue;
     let lo = 0;
@@ -119,14 +124,14 @@ export function rangeStats(run: RunFile, from: number, to: number): RangeStats {
     for (let i = 1; i < v.length; i++) { if (v[i] < v[lo]) lo = i; if (v[i] > v[hi]) hi = i; }
     const [min, max] = [v[lo], v[hi]];
     let avg: number | null;
-    if (m === 'speed' || m === 'effortPace') {
+    if (isPace(m)) {
       // The mean speed of the windows, as a pace.
       const w = run.windows;
       let sum = 0;
       let n = 0;
       for (let i = 0; i < w.start.length; i++) {
         const c = w.start[i] + 5;
-        const v = w[m][i];
+        const v = w.values[m]?.[i] ?? null;
         if (c >= from && c < to && !w.flags.stopped[i] && v !== null && v > 0) { sum += v; n++; }
       }
       avg = n ? 1000 / (sum / n) : null;
@@ -144,7 +149,7 @@ export function rangeStats(run: RunFile, from: number, to: number): RangeStats {
     const c = w.start[i] + WINDOW / 2;
     if (c < from || c >= to) continue;
     if (!w.flags.stopped[i]) moving += WINDOW;
-    const alt = w.altitude[i];
+    const alt = (w.values.altitude?.[i] ?? null);
     if (alt === null) continue;
     if (last !== null) { if (alt > last) ascent += alt - last; else descent += last - alt; }
     last = alt;

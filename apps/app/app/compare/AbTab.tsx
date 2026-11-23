@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { InstancePanel, Key, METRIC_VIEW, ProfileChart, ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useWidth } from '@/components';
+import { InstancePanel, Key, ProfileChart, useMetrics, ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useWidth } from '@/components';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
-import { METRIC_UNIT, MIN_AB_INSTANCES, abCsv, byField, computeAb, describeAb, firstUsableMetric, meanProfile, type AbResult, instancesCsv, CONTEXT_FIELDS, valueOf, type ContextField } from '@/lib/compare';
+import { unitOf, wordsOf, MIN_AB_INSTANCES, abCsv, byField, computeAb, describeAb, firstUsableMetric, meanProfile, type AbResult, instancesCsv, CONTEXT_FIELDS, valueOf, type ContextField } from '@/lib/compare';
 
 /** Ground contact time first: the A/B screen's usual question is a change of shoes or technique. */
-const METRICS = [...METRIC_VIEW].sort((a, b) => (a.key === 'groundContactTime' ? -1 : b.key === 'groundContactTime' ? 1 : 0));
 
 /** An item of Analysis the A/B tab can split: its id in the link, the definition of its instances, its name. */
 export interface AbItem {
@@ -30,6 +29,9 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
   /** a rule's segments are still being computed */
   computing: boolean;
 }) {
+  const known = useMetrics();
+  // The folder's metrics, ground contact time first ("A/B butow": the shoes show in it).
+  const METRICS = useMemo(() => [...known.blockKeys].sort((a, b) => (a === 'groundContactTime' ? -1 : b === 'groundContactTime' ? 1 : 0)).map(known.view), [known]);
   const [chosen, setMetric] = useState<BlockMetric | null>(null);
   const [corrected, setCorrected] = useState(true);
   const [field, setField] = useState<ContextField>('shoes');
@@ -40,7 +42,7 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
   const item = items.find((i) => i.id === chosenItem) ?? items[0];
   const defId = item?.defId ?? '';
   // Opens on ground contact time, or the first metric with accepted instances.
-  const metric = useMemo(() => chosen ?? firstUsableMetric(all, defId, METRICS.map((x) => x.key), 2 * MIN_AB_INSTANCES), [chosen, all, defId]);
+  const metric = useMemo(() => chosen ?? firstUsableMetric(all, defId, METRICS.map((x) => x.key), 2 * MIN_AB_INSTANCES), [chosen, all, defId, METRICS]);
   useEffect(() => setMetric(null), [defId]);
   const m = METRICS.find((x) => x.key === metric)!;
   const mine = useMemo(() => all.filter((i) => i.definitionId === defId && i.status === 'accepted'), [all, defId]);
@@ -114,7 +116,7 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
         <>
           {result.warnings.map((w) => <div key={w} className="banner warn">⚠ {w}</div>)}
           {(() => {
-            const d = describeAb(result, metric, MIN_AB_INSTANCES);
+            const d = describeAb(result, metric, MIN_AB_INSTANCES, wordsOf(metric, known.catalog, known.directions));
             return (
               <div className="card result">
                 <div className="muted small">{m.name}{corrected ? ' · corrected for pace' : ''} · {result.b.label} against {result.a.label}</div>
@@ -164,8 +166,8 @@ function DifferencePlot({ r, metric }: { r: AbResult; metric: BlockMetric }) {
   const hi = Math.max(ticks[ticks.length - 1], reach);
   const L = 16, R = 16, H = 96, mid = 40;
   const x = (v: number) => L + ((v - lo) / (hi - lo)) * (width - L - R);
-  const pace = metric === 'speed' || metric === 'effortPace';
-  const unit = METRIC_UNIT[metric];
+  const unit = unitOf(metric);
+  const pace = unit === 's/km';
   return (
     <div ref={box} style={{ marginTop: 10 }}>
       <svg width={width} height={H} role="img" aria-label="Difference and interval" style={{ display: 'block' }}>
