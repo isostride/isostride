@@ -830,6 +830,12 @@ Q: (użytkownik) uruchom wersje lokalna do testow
 A: (model) The app runs at http://localhost:3000 (npm run dev) from the branch.
 Q: (model) Budżet JS (ADR "Built with React": 200 KB gzip na trasę) jest przekroczony: compare 204,1 KB, run 200,5 KB. Przed zmianą compare miała 199,9 KB, wspólna część wszystkich tras to teraz ~190 KB. Co robimy?
 A: (użytkownik) Podnieść budżet do 220 KB
+A: (model) Done on master (PR #4): the stages side by side, about 6.7 min against 14.5. A later run took 11.5 min: installing WebKit's system libraries took up to 7 min on a shard, for the one test that runs in WebKit.
+A: (użytkownik) ok
+A: (model) On the branch ci-faster-e2e: the shards install and run Chromium only; WebKit's one test runs in Playwright's image (its libraries there already), its report an ordinary artifact as it reads none of the runner's files; the unit tests that came near 100 ms on GitHub's runner build their runs once per file (beforeAll).
+A: (model) A unit test's time swings with the load of the machine (30 or 48 ms for one test locally, 3 to 5 times as long on GitHub's runner): a fixed 100 ms on CI will now and then block a merge for no real cause. Proposed: the limit scaled by the speed of the machine the tests run on.
+A: (użytkownik) skaluj limit do szybksoci maszyny
+A: (model) Done: scripts/machine-speed.mjs times a fixed piece of work like a unit test's before the unit tests and compares it with the same on the reference machine (the author's Mac, 17 ms); the 100 ms are scaled by that factor, never below 1.
 Q: (użytkownik) w miedzyczasie popracuj nad strona ... wyglada jak wygenerowana przez AI
 A: (model) The site on the branch site-redesign: no washes and gradients, no eyebrow, no three numbered circles and three alike cards; a serif for the headings, rules for cards, Figure 1 (every run's average pace beside one segment's), four concrete points with examples, a verdict in the app's words, the data in questions and answers, what it is not, the source.
 A: (użytkownik) akurat kolory poprzednio byly dobre

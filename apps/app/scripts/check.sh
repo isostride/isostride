@@ -8,7 +8,8 @@
 # Locally it runs every stage one after the other. The pipeline runs the stages as jobs side by side
 # (.github/workflows/deploy.yml) and gathers their reports for the verdict:
 #   sh scripts/check.sh tests      unit and integration tests (with coverage)
-#   sh scripts/check.sh e2e [i/n]  the end-to-end tests, or shard i of n of them
+#   sh scripts/check.sh e2e [i/n] [project]  the end-to-end tests, or shard i of n of them, of one
+#                                  browser project (chromium, webkit) or all
 #   sh scripts/check.sh static     boundaries, frameworks and their support, lint
 #   sh scripts/check.sh verdict    the script budget, the coverage of new code, the test metrics,
 #                                  the model's metrics, and radical check
@@ -19,6 +20,8 @@ run() { "$@" || { echo "check: $* failed"; failed=1; }; }
 
 if [ "$stage" = all ] || [ "$stage" = tests ]; then
   rm -rf reports/measures.d reports/coverage
+  # The speed of this machine against the reference one: the 100 ms rule scaled by it.
+  run node scripts/machine-speed.mjs
   # Unit tests alone, without coverage instrumentation: their times for the 100 ms rule.
   run npx vitest run --project unit --reporter=dot --reporter=json --outputFile=reports/vitest-unit.json
   t0=$(date +%s)
@@ -32,7 +35,7 @@ if [ "$stage" = all ] || [ "$stage" = e2e ]; then
   if [ -n "${2:-}" ]; then
     # A shard: its report as a blob, merged with the others' by the verdict.
     rm -rf reports/blob
-    PLAYWRIGHT_BLOB_OUTPUT_DIR=reports/blob run npx playwright test --shard="$2" --reporter=list,blob
+    PLAYWRIGHT_BLOB_OUTPUT_DIR=reports/blob run npx playwright test --shard="$2" ${3:+--project="$3"} --reporter=list,blob
   else
     run npx playwright test
   fi

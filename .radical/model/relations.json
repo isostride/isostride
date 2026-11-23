@@ -2725,6 +2725,13 @@
     "targetId": "aec32856-5ea5-4f0e-8316-178aff6a9838"
   },
   {
+    "id": "5b4779eb-2769-4282-8360-dad92c25a2b8",
+    "quote": "(użytkownik) skaluj limit do szybksoci maszyny",
+    "relationType": "derives",
+    "sourceId": "21175535-2832-4a69-9b60-984a3f99b920",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "5ba15766-1053-4d99-a2cd-a2d4ef2aaa68",
     "relationType": "traces-to",
     "sourceId": "b0289efc-ad5a-46b3-b57d-9abbb703ae9a",
