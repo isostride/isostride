@@ -810,3 +810,6 @@ A: (użytkownik) tak
 A: (model) First run of the pipeline: every test passed on GitHub (unit, integration, 28 end-to-end), the check failed on the Lab budget (Compare 200.2 KB on Linux) and on the two fitness functions of the shuffled run, measured nowhere in the pipeline (locally an old reports/measures-nightly.json of 19 Nov was read again on each check). Fixed: the Efforts tab of Compare loaded with the tab (EffortsPanel), 199.1 KB; scripts/nightly.sh run in the pipeline before npm run check, the two fitness functions triggered on each pull request.
 Q: (użytkownik) nie widze PR-ow ...
 A: (użytkownik) tak zrob to gdy pipeline sie skonczy
+Q: (użytkownik) testwy trwaja dlugo ... mozesz je zrownoleglic na github ?
+A: (model) The check took about 14.5 min in one job: the browsers 80 s, the shuffled run 223 s, unit and integration tests 140 s, the build and the end-to-end tests 378 s. Proposed: its stages as jobs side by side (tests, shuffled run, three shards of the end-to-end tests, static checks), their reports handed to the verdict through the private bucket (ci/<run>/, gone after 3 days), the browsers cached.
+A: (użytkownik) tak

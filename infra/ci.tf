@@ -29,7 +29,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "test_data" {
 }
 
 # Taken by the check job: on the deploy branch and on pull requests of this repository (a fork's pull
-# request gets no OIDC token), only able to read the test data.
+# request gets no OIDC token), only able to read the test data and to hand reports between the jobs of a run.
 data "aws_iam_policy_document" "ci_trust" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -67,6 +67,23 @@ data "aws_iam_policy_document" "ci" {
   statement {
     actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.test_data.arn}/*"]
+  }
+  # The reports the parallel jobs of a run hand to its verdict (ci/<run>/...): kept out of the public
+  # logs and artifacts, as they may hold values of the runner's runs.
+  statement {
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.test_data.arn}/ci/*"]
+  }
+}
+
+# The reports of the runs, gone after 3 days.
+resource "aws_s3_bucket_lifecycle_configuration" "test_data" {
+  bucket = aws_s3_bucket.test_data.id
+  rule {
+    id     = "ci-reports"
+    status = "Enabled"
+    filter { prefix = "ci/" }
+    expiration { days = 3 }
   }
 }
 

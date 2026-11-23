@@ -38,7 +38,7 @@ One certificate (ACM, us-east-1) covers `<domain>` and `*.<domain>`. A CloudFron
 6. **GitHub.** In the repository → Settings → Secrets and variables → Actions → Variables, add the values of `terraform output`:
    `AWS_DEPLOY_ROLE_ARN`, `AWS_CI_ROLE_ARN`, `TEST_DATA_BUCKET`, `APP_BUCKET`, `APP_DISTRIBUTION_ID`, `SITE_BUCKET`, `SITE_DISTRIBUTION_ID` (and `AWS_REGION` if not `eu-central-1`).
 
-From then on every push and pull request runs the whole check (`npm run check`: every test, boundaries, budgets, `radical check`) on GitHub, and a push to `master` that passes it deploys the build it checked (`.github/workflows/deploy.yml`, CI/CD). The workflow can also be started by hand (Actions → CI/CD → Run workflow). The logs of a public repository are public: no reports, traces or screenshots are published from it.
+From then on every push and pull request runs the whole check (`npm run check`: every test, boundaries, budgets, `radical check`) on GitHub, and a push to `master` that passes it deploys the build it checked (`.github/workflows/deploy.yml`, CI/CD). The workflow can also be started by hand (Actions → CI/CD → Run workflow). The check's stages run as jobs side by side (unit and integration tests, the shuffled run, three shards of the end-to-end tests, the static checks); their reports reach the verdict through the same private bucket (`ci/<run>/`, deleted after 3 days). The logs of a public repository are public: no reports, traces or screenshots are published from it.
 
 ## Costs
 
