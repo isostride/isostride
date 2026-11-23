@@ -40,7 +40,10 @@ export function measure() {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const ms = measure();
+  // Measured again after the unit tests: the slower of the two stands, as the machine's speed may
+  // change while they run (a shared runner).
+  const before = fs.existsSync('reports/machine.json') && process.argv[2] === 'again' ? JSON.parse(fs.readFileSync('reports/machine.json', 'utf8')).workMs : 0;
+  const ms = Math.max(measure(), before);
   const reference = REFERENCE_MS;
   const factor = Math.max(1, Math.round((ms / reference) * 100) / 100);
   fs.mkdirSync('reports', { recursive: true });

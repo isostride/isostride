@@ -24,6 +24,7 @@ if [ "$stage" = all ] || [ "$stage" = tests ]; then
   run node scripts/machine-speed.mjs
   # Unit tests alone, without coverage instrumentation: their times for the 100 ms rule.
   run npx vitest run --project unit --reporter=dot --reporter=json --outputFile=reports/vitest-unit.json
+  run node scripts/machine-speed.mjs again
   t0=$(date +%s)
   run npx vitest run --coverage --reporter=default --reporter=json --outputFile=reports/vitest.json
   printf '{ "testsSeconds": %s }\n' $(($(date +%s) - t0)) > reports/timing-tests.json
