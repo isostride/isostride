@@ -594,6 +594,18 @@
     { "element": "29f50ece-2ad0-4c25-89e6-6e8a9a02f783", "name": "Run left right after a change", "tests": [
       "e2e/run.spec.ts › Run chart › Run left right after a change"
     ] },
+    { "element": "774e1ae5-e486-4ebb-b7db-2ff200621e5c", "name": "Line kept beside the first and last window", "tests": [
+      "tests/unit/runLine.test.ts › Run line drawn to its ends › Line kept beside the first and last window"
+    ] },
+    { "element": "5d2d1e69-624f-4af4-a484-22231459420d", "name": "Run drawn second by second", "tests": [
+      "tests/unit/runLine.test.ts › Run line drawn to its ends › Run drawn second by second"
+    ] },
+    { "element": "02a8e752-e87c-4e6f-adb0-9e12f5bc0a22", "name": "Line thinned to its pixels", "tests": [
+      "tests/unit/runLine.test.ts › Run line drawn to its ends › Line thinned to its pixels"
+    ] },
+    { "element": "d4170178-0675-49e2-9e92-0767eb151f2f", "name": "Zones coloured green to red", "tests": [
+      "tests/unit/zones.test.ts › Zones coloured on the chart › Zones coloured green to red"
+    ] },
     { "element": "abaf99b7-b15f-4bde-87dc-cbcbd3a1d124", "name": "Runs grouped into weeks", "tests": [
       "tests/unit/weeks.test.ts › Calendar of runs by week › Runs grouped into weeks"
     ] },

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RouteMap } from '@/components';
-import { zoneOf, zoneRanges } from '@/lib/settings';
+import { zoneOf, zoneRanges, zoneStep } from '@/lib/settings';
 
 /** A metric the route can be coloured by: its values per window of the run. */
 export interface RouteMetric {
@@ -20,9 +20,6 @@ export interface RouteMetric {
 
 /** The steps of the ramp, in its own tokens: two greens, a yellow, an orange, two reds ("zacznij od zielonego i przejdz do czerwonego", "2 zielone kolory chce"). */
 const STEPS = 6;
-/** The colours of n zones on the six steps, Z1 green: five zones end on red, six on dark red. */
-const ZONE_STEPS: Record<number, number[]> = { 1: [0], 2: [0, 4], 3: [0, 2, 4], 4: [0, 2, 3, 4], 5: [0, 1, 2, 3, 4], 6: [0, 1, 2, 3, 4, 5] };
-const zoneStep = (z: number, n: number) => (ZONE_STEPS[n] ?? ZONE_STEPS[6])[Math.min(z, Math.min(n, 6) - 1)];
 
 /**
  * The map of a run made large (the runner's request of 21 Nov 2026: "tryb w ktorym podczas

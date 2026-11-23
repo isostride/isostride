@@ -82,8 +82,18 @@ export function zoneRanges(metric: string, boundaries: number[]): { lo: number |
   return PACES.has(metric) ? ranges.reverse() : ranges;
 }
 
-/** The opacity of the wash of zone i of n, as the run chart and the settings draw it: deeper for a higher zone. */
-export const zoneShade = (i: number, n: number) => (n <= 1 ? 0.1 : 0.06 + (0.22 * i) / (n - 1));
+/**
+ * The colour of zone i of n, wherever zones are drawn (the runner's request of 23 Nov 2026: "kolory stref
+ * ... chce aby byly od czerwonego do zielonego"): the ramp of the route's map (tokens --heat-1 to
+ * --heat-6), Z1 green, five zones ending on red, six on dark red.
+ */
+const ZONE_STEPS: Record<number, number[]> = { 1: [0], 2: [0, 4], 3: [0, 2, 4], 4: [0, 2, 3, 4], 5: [0, 1, 2, 3, 4], 6: [0, 1, 2, 3, 4, 5] };
+/** The step of the ramp (0 green to 5 dark red) of zone i of n. */
+export const zoneStep = (i: number, n: number): number => (ZONE_STEPS[Math.min(Math.max(n, 1), 6)])[Math.max(0, Math.min(i, Math.min(n, 6) - 1))];
+/** The colour of zone i of n, a CSS value. */
+export const zoneColor = (i: number, n: number): string => `var(--heat-${zoneStep(i, n) + 1})`;
+/** The colour of zone i of n mixed with the surface, `percent` of it: a wash under a chart, a chip, a bar. */
+export const zoneTint = (i: number, n: number, percent: number): string => `color-mix(in srgb, ${zoneColor(i, n)} ${percent}%, var(--surface))`;
 
 /**
  * Pace zones from the threshold pace (the critical speed, s/km), as Friel's run zones: Z1 slower than

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { RunsIndex } from '@/lib/kernel';
 import { intensityShares, zonesByWeek, type LoadSummary } from '@/lib/load';
-import { zoneRanges } from '@/lib/settings';
+import { zoneColor, zoneRanges } from '@/lib/settings';
 import { TimeChart } from './TimeChart';
 
 const PERIODS: [string, number | null][] = [['12 weeks', 12], ['1 year', 52], ['All', null]];
@@ -41,14 +41,14 @@ export function IntensityTab({ runs, summaries, hrZones }: { runs: RunsIndex['ru
           <div><dt>Time with heart rate</dt><dd className="tnum">{Math.round(shares.seconds / 3600)} <span className="unit">h</span></dd></div>
         </dl>
         <div className="intensity-bar" role="img" aria-label={`Low ${pct(shares.low)}, moderate ${pct(shares.moderate)}, high ${pct(shares.high)}; reference 80 % low`}>
-          <span style={{ width: width(shares.low), background: 'color-mix(in srgb, var(--series-1) 35%, var(--surface))' }} />
-          <span style={{ width: width(shares.moderate), background: 'color-mix(in srgb, var(--series-1) 65%, var(--surface))' }} />
-          <span style={{ width: width(shares.high), background: 'var(--series-1)' }} />
+          <span style={{ width: width(shares.low), background: zoneColor(0, 3) }} />
+          <span style={{ width: width(shares.moderate), background: zoneColor(1, 3) }} />
+          <span style={{ width: width(shares.high), background: zoneColor(2, 3) }} />
           <i className="intensity-ref" style={{ left: '80%' }} title="80/20: about 80 % of the time at low intensity" />
         </div>
         <h3 className="chart-title" style={{ marginTop: 16 }}>Time in the heart rate zones</h3>
         <TimeChart label="Time in the heart rate zones" times={weeks.map((w) => time(w.start))} height={240}
-          series={Array.from({ length: n }, (_, k) => ({ key: `z${k + 1}`, label: zoneName(k), stack: 'zones', kind: 'bar' as const, color: `color-mix(in srgb, var(--series-1) ${Math.round(25 + (75 * k) / Math.max(1, n - 1))}%, var(--surface))`, values: weeks.map((w) => (w.seconds[k] ?? 0) / 3600) }))}
+          series={Array.from({ length: n }, (_, k) => ({ key: `z${k + 1}`, label: zoneName(k), stack: 'zones', kind: 'bar' as const, color: zoneColor(k, n), values: weeks.map((w) => (w.seconds[k] ?? 0) / 3600) }))}
           format={(v) => `${v.toFixed(1)} h`} tick={(v) => `${v} h`} />
       </div>
     </>

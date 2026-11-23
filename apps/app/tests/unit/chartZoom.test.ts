@@ -92,11 +92,11 @@ describe('Smoothing that follows the zoom', () => {
     // Over a minute the alternation evens out to about 150; the stop stays a break.
     for (const i of [4, 8, 22, 26]) expect(Math.abs(smooth[i]! - 150)).toBeLessThanOrEqual(3.5);
     expect(smooth.slice(14, 17)).toEqual([null, null, null]);
-    // The span follows the range shown: 1/30 of it, 10 s (no smoothing) to 2 min.
+    // The span follows the range shown: 1/30 of it, 10 s to 2 min; a second or less, none.
     expect(smoothSpan(1800)).toBe(60);
     expect(smoothSpan(300)).toBe(10);
     expect(smoothSpan(36000)).toBe(120);
-    expect(rollingMean(x, y, 10)).toBe(y);
+    expect(rollingMean(x, y, 1)).toBe(y);
     expect(rollingMean([], [], 60)).toEqual([]);
   });
 });

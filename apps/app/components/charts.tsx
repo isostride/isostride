@@ -11,6 +11,37 @@ type Band = { from: number; to: number };
 export const LANE = { l: 10, r: 12 };
 
 /**
+ * Points thinned to the pixels they fall on: in each column of a pixel the lowest and the highest
+ * point, in their order, so a line of many more points than pixels (a run second by second) keeps
+ * its shape and its peaks; a break (null) stays a break. Fewer points than two a pixel are kept as they are.
+ */
+export function thinPoints(pts: ([number, number] | null)[]): ([number, number] | null)[] {
+  let first = Infinity;
+  let last = -Infinity;
+  for (const p of pts) if (p) { first = Math.min(first, p[0]); last = Math.max(last, p[0]); }
+  if (!(last > first) || pts.length <= 2 * (last - first)) return pts;
+  const out: ([number, number] | null)[] = [];
+  let col = NaN;
+  let lo: [number, number] | null = null;
+  let hi: [number, number] | null = null;
+  let loAt = 0;
+  let hiAt = 0;
+  const flush = () => {
+    if (lo && hi) { if (lo === hi) out.push(lo); else out.push(...(loAt < hiAt ? [lo, hi] : [hi, lo])); }
+    lo = hi = null;
+  };
+  pts.forEach((p, i) => {
+    if (!p) { flush(); col = NaN; if (out.length && out[out.length - 1] !== null) out.push(null); return; }
+    const c = Math.floor(p[0]);
+    if (c !== col) { flush(); col = c; }
+    if (!lo || p[1] < lo[1]) { lo = p; loAt = i; }
+    if (!hi || p[1] > hi[1]) { hi = p; hiAt = i; }
+  });
+  flush();
+  return out;
+}
+
+/**
  * A smooth path through points (monotone cubic: no overshoot past the data), one 'M' per
  * unbroken stretch, and the wash under each stretch down to `base`.
  */

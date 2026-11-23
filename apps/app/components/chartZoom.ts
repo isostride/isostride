@@ -113,7 +113,7 @@ export function wheelFactor(deltaY: number, deltaMode = 0): number {
   return 2 ** (Math.sign(px) * step);
 }
 
-/** The span of the smoothing for a range shown, s: 1/30 of it, from 10 s (one window, none) to 2 min. */
+/** The span of the smoothing for a range shown, s: 1/30 of it, from 10 s to 2 min. */
 export function smoothSpan(rangeSeconds: number): number {
   return Math.min(120, Math.max(10, rangeSeconds / 30));
 }
@@ -124,7 +124,7 @@ export function smoothSpan(rangeSeconds: number): number {
  * missing, so the line still breaks there, and the values on either side are left out of means.
  */
 export function rollingMean(x: number[], y: (number | null)[], seconds: number): (number | null)[] {
-  if (seconds <= 10 || !x.length) return y;
+  if (seconds <= 1 || !x.length) return y;
   const half = seconds / 2;
   const out: (number | null)[] = new Array(y.length).fill(null);
   let a = 0;
