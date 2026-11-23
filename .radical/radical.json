@@ -469,7 +469,9 @@
       "tests/unit/rule.test.ts › Blocks defined in Analysis › Laps and steady stretches by a rule"
     ] },
     { "element": "6f1b8ec1-b966-4c32-989d-1d3c4b25e97b", "name": "Runs chosen by a rule", "tests": [
-      "tests/unit/rule.test.ts › Blocks defined in Analysis › Runs chosen by a rule"
+      "tests/unit/rule.test.ts › Blocks defined in Analysis › Runs chosen by a rule",
+      "tests/unit/rule.test.ts › Blocks defined in Analysis › Runs chosen by their title, type and date",
+      "tests/unit/rule.test.ts › Blocks defined in Analysis › No condition takes every run whole"
     ] },
     { "element": "e1fb2839-eff8-4d39-a460-d51388a469d5", "name": "Rule in words and in the link", "tests": [
       "tests/unit/rule.test.ts › Blocks defined in Analysis › Rule in words and in the link"
