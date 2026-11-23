@@ -75,11 +75,12 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
-          browsers: 'true'
-      # Builds the app (the tests run against its static export) and runs a third of the tests.
+          browsers: chromium
+      # Builds the app (the tests run against its static export) and runs a third of Chromium's tests;
+      # WebKit's own test runs in its own job, so only Chromium's few system libraries are installed here.
       - name: End-to-end tests
         working-directory: apps/app
-        run: sh scripts/check.sh e2e ${{ matrix.shard }}/3
+        run: sh scripts/check.sh e2e ${{ matrix.shard }}/3 chromium
       - name: Reports for the verdict
         if: ${{ !cancelled() }}
         working-directory: apps/app
@@ -91,6 +92,37 @@ jobs:
       - name: The build for the verdict
         if: matrix.shard == 1
         run: tar -czf - apps/app/.next-build | aws s3 cp - "$REPORTS/build/app.tgz" --only-show-errors
+
+  # WebKit (Safari) gets the not-supported message: in Playwright's image, whose system libraries are
+  # there already (installing WebKit's took up to 7 minutes). It reads none of the runner's files, so
+  # its report goes as an ordinary artifact.
+  e2e-webkit:
+    name: end-to-end tests in WebKit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container: mcr.microsoft.com/playwright:v1.65.1-noble
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: End-to-end tests in WebKit
+        working-directory: apps/app
+        env:
+          HOME: /root
+        run: sh scripts/check.sh e2e 1/1 webkit
+      - name: Report for the verdict
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-webkit
+          path: |
+            apps/app/reports/blob
+            apps/app/reports/measures-e2e.json
+            apps/app/reports/timing-e2e.json
+          retention-days: 1
 
   static:
     name: boundaries, frameworks, lint, site
@@ -120,7 +152,7 @@ jobs:
   # against the model (radical check); it runs when a job before it failed too, so its report is whole.
   check:
     name: check
-    needs: [tests, shuffled, e2e, static]
+    needs: [tests, shuffled, e2e, e2e-webkit, static]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -132,6 +164,11 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           fit-files: 'false'
+      - name: WebKit's report
+        uses: actions/download-artifact@v8
+        with:
+          name: e2e-webkit
+          path: apps/app/ci/e2e-webkit
       - name: The run's reports
         working-directory: apps/app
         run: |
@@ -140,7 +177,8 @@ jobs:
           cp -R ci/tests/. reports/ 2>/dev/null || true
           cp -R ci/static/. reports/ 2>/dev/null || true
           cp ci/shuffled/measures-nightly.json reports/ 2>/dev/null || true
-          cp ci/e2e-*/blob/*.zip reports/blob/ 2>/dev/null || true
+          # Each shard's blob under its job's name: two shards may name theirs alike (report-1.zip).
+          for d in ci/e2e-*; do for f in "$d"/blob/*.zip; do [ -f "$f" ] && cp "$f" "reports/blob/$(basename "$d")-$(basename "$f")"; done; done
           # The end-to-end shards' measures and times as one run's: the longest shard is the wall time.
           node -e '
           const fs = require("fs"), path = require("path");
@@ -170,7 +208,7 @@ jobs:
           if-no-files-found: error
 
   deploy:
-    needs: [tests, shuffled, e2e, static, check]
+    needs: [tests, shuffled, e2e, e2e-webkit, static, check]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     timeout-minutes: 15

@@ -7,8 +7,8 @@ inputs:
     description: Fetch the runner's FIT files into apps/app/test_data
     default: 'true'
   browsers:
-    description: Install the end-to-end tests' browsers (cached by Playwright's version)
-    default: 'false'
+    description: The end-to-end tests' browsers to install, e.g. chromium (cached by Playwright's version); none when empty
+    default: ''
 runs:
   using: composite
   steps:
@@ -32,22 +32,22 @@ runs:
       shell: bash
 
     - name: Playwright's version
-      if: inputs.browsers == 'true'
+      if: inputs.browsers != ''
       id: pw
       run: echo "version=$(node -p 'require("./node_modules/@playwright/test/package.json").version')" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Browsers from the cache
-      if: inputs.browsers == 'true'
+      if: inputs.browsers != ''
       id: browsers
       uses: actions/cache@v6
       with:
         path: ~/.cache/ms-playwright
-        key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+        key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-${{ inputs.browsers }}
 
     - name: Browsers for the end-to-end tests
-      if: inputs.browsers == 'true'
+      if: inputs.browsers != ''
       working-directory: apps/app
       run: |
-        if [ "${{ steps.browsers.outputs.cache-hit }}" = "true" ]; then npx playwright install-deps chromium webkit; else npx playwright install --with-deps chromium webkit; fi
+        if [ "${{ steps.browsers.outputs.cache-hit }}" = "true" ]; then npx playwright install-deps ${{ inputs.browsers }}; else npx playwright install --with-deps ${{ inputs.browsers }}; fi
       shell: bash

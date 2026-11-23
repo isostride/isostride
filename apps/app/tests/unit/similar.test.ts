@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { bestProfileMatch, definitionFromProfile, definitionFromRoute, profileAt, profileOfStretch, profileParts, profileScore, stretchFigures, trackOf } from '@/lib/blocks';
 import { detectInstances, similarIn, trackOfStretch } from '@/lib/detection';
 import { resample } from '@/lib/geo';
@@ -43,14 +43,28 @@ describe('Similar stretches', () => {
     expect(f.curves.pace).toHaveLength(20);
   });
 
+  // The runs of the two tests below, built once (their building is no part of what a test checks).
+  const runs: Record<string, ReturnType<typeof runNorth>> = {};
+  beforeAll(() => {
+    runs.flat = runNorth('a', 1800, () => PACE(300));
+    runs.hill = runNorth('b', 1800, () => PACE(300), { alt: hillAt(1000) });
+    runs.intervals = runNorth('c', 1800, (t) => PACE(Math.floor(t / 60) % 2 ? 240 : 360));
+    runs.faster = runNorth('d', 1800, () => PACE(255));
+    runs.own = runNorth('own', 1800, () => PACE(300), { alt: hillAt(2000) });
+    runs.again = runNorth('again', 1800, () => PACE(285), { alt: hillAt(2000) });
+    runs.easy = runNorth('easy', 2400, () => PACE(360), { alt: hillAt(2000) });
+    runs.elsewhere = runNorth('elsewhere', 1800, () => PACE(300), { lon: 2.3, alt: hillAt(1000) });
+    runs.flatIntervals = runNorth('flat', 1800, (t) => PACE(Math.floor(t / 60) % 2 ? 240 : 360), { lon: 2.3 });
+  });
+
   it('Profiles scored by terrain, pace shape and level', () => {
-    const flat = trackOf(runNorth('a', 1800, () => PACE(300)));
+    const flat = trackOf(runs.flat);
     const key = profileAt(flat, 1000, 2000)!;
     expect(profileScore(profileParts(key, key))).toBeCloseTo(1, 5);
     // A hill costs terrain, intervals the pace's shape, a faster pace its level.
-    const hill = profileAt(trackOf(runNorth('b', 1800, () => PACE(300), { alt: hillAt(1000) })), 1000, 2000)!;
-    const intervals = profileAt(trackOf(runNorth('c', 1800, (t) => PACE(Math.floor(t / 60) % 2 ? 240 : 360))), 1000, 2000)!;
-    const faster = profileAt(trackOf(runNorth('d', 1800, () => PACE(255))), 1000, 2000)!;
+    const hill = profileAt(trackOf(runs.hill), 1000, 2000)!;
+    const intervals = profileAt(trackOf(runs.intervals), 1000, 2000)!;
+    const faster = profileAt(trackOf(runs.faster), 1000, 2000)!;
     expect(profileParts(key, hill).terrain!).toBeLessThan(0.2);
     expect(profileParts(key, intervals).shape).toBeLessThan(0.5);
     expect(profileParts(key, faster).level).toBeLessThan(0.3);
@@ -60,25 +74,25 @@ describe('Similar stretches', () => {
   });
 
   it('Same route at another pace, same profile elsewhere', () => {
-    const own = runNorth('own', 1800, () => PACE(300), { alt: hillAt(2000) });
+    const own = runs.own;
     const ref = { track: trackOfStretch(own, 600, 1200), key: profileOfStretch(trackOf(own), 600, 1200) };
     expect(ref.track.length).toBeGreaterThan(150);
     // The same line run a little faster: a pass over the stretch, at its own pace; no profile asked of it.
-    const again = similarIn(ref, runNorth('again', 1800, () => PACE(285), { alt: hillAt(2000) }), 'Tempo');
+    const again = similarIn(ref, runs.again, 'Tempo');
     expect(again.route).toHaveLength(1);
     expect(again.route[0].pace).toBeCloseTo(285, -1);
     // The same line run easy, 20 % slower: no like effort ("mnostwo biegow np po 5:23" for one at 4:12).
-    expect(similarIn(ref, runNorth('easy', 2400, () => PACE(360), { alt: hillAt(2000) }), null).route).toHaveLength(0);
+    expect(similarIn(ref, runs.easy, null).route).toHaveLength(0);
     expect(again.route[0].title).toBe('Tempo');
     expect(again.profile).toBeNull();
     // 8 km east, the hill a kilometre earlier: no pass, its stretch of the same profile found at the hill.
-    const elsewhere = similarIn(ref, runNorth('elsewhere', 1800, () => PACE(300), { lon: 2.3, alt: hillAt(1000) }), null);
+    const elsewhere = similarIn(ref, runs.elsewhere, null);
     expect(elsewhere.route).toHaveLength(0);
     expect(elsewhere.profile!.from).toBeGreaterThan(280);
     expect(elsewhere.profile!.from).toBeLessThan(320);
     expect(elsewhere.profile!.score).toBeGreaterThan(0.9);
     // Flat and at intervals: not alike enough.
-    expect(similarIn(ref, runNorth('flat', 1800, (t) => PACE(Math.floor(t / 60) % 2 ? 240 : 360), { lon: 2.3 }), null).profile).toBeNull();
+    expect(similarIn(ref, runs.flatIntervals, null).profile).toBeNull();
   });
 
   it('Same route and same profile kept as blocks', () => {

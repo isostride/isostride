@@ -830,3 +830,6 @@ Q: (użytkownik) uruchom wersje lokalna do testow
 A: (model) The app runs at http://localhost:3000 (npm run dev) from the branch.
 Q: (model) Budżet JS (ADR "Built with React": 200 KB gzip na trasę) jest przekroczony: compare 204,1 KB, run 200,5 KB. Przed zmianą compare miała 199,9 KB, wspólna część wszystkich tras to teraz ~190 KB. Co robimy?
 A: (użytkownik) Podnieść budżet do 220 KB
+A: (model) Done on master (PR #4): the stages side by side, about 6.7 min against 14.5. A later run took 11.5 min: installing WebKit's system libraries took up to 7 min on a shard, for the one test that runs in WebKit.
+A: (użytkownik) ok
+A: (model) On the branch ci-faster-e2e: the shards install and run Chromium only; WebKit's one test runs in Playwright's image (its libraries there already), its report an ordinary artifact as it reads none of the runner's files; the unit tests that came near 100 ms on GitHub's runner build their runs once per file (beforeAll).

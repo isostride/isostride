@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { DEFAULT_TOLERANCES, defaultTolerances, type BlockDefinition, type BlockParams } from '@/lib/blocks';
 import { detectInstances, recommend } from '@/lib/detection';
 import type { RunFile } from '@/lib/kernel';
@@ -81,9 +81,15 @@ describe('Blocks by lap pattern', () => {
   const workout = (id: string, start: string, n: number) =>
     run(id, start, [[667, 2000 / 667], ...Array.from({ length: n }, () => [[480, FAST], [90, EASY]] as [number, number][]).flat(), [400, EASY]], true);
 
+  // The workouts built once (their building is no part of what the test checks).
+  let runs: ReturnType<typeof workout>[];
+  let short: ReturnType<typeof workout>;
+  beforeAll(() => {
+    runs = [workout('w1', '2026-10-01', 4), workout('w2', '2026-10-08', 4), workout('w3', '2026-10-15', 4)];
+    short = workout('w4', '2026-10-22', 3);
+  });
+
   it('Same workout found by its laps', () => {
-    const runs = [workout('w1', '2026-10-01', 4), workout('w2', '2026-10-08', 4), workout('w3', '2026-10-15', 4)];
-    const short = workout('w4', '2026-10-22', 3);
     const recs = recommend([], [...runs, short], new Map(), [], [...runs, short].map((r) => rowFor(r)));
     const pattern = recs.find((r) => r.params.type === 'pattern')!;
     expect(pattern.name).toBe('2 km + 4 × 8 min');
@@ -98,23 +104,29 @@ describe('Blocks by lap pattern', () => {
 });
 
 describe('Heart rate window per block', () => {
+  // 30 minutes at 4:00/km after 3 and after 13 easy minutes; heart rate 150 in the effort's
+  // first 5 minutes, 170 after. Built once (their building is no part of what the test checks).
+  const effortRun = (id: string, warmUp: number) => {
+    const r = run(id, '2026-10-01', [[warmUp, EASY], [1800, FAST], [300, EASY]]);
+    r.samples.values.heartRate = r.samples.t.map((t) => (t < warmUp ? 130 : t < warmUp + 300 ? 150 : t < warmUp + 1800 ? 170 : 140));
+    return r;
+  };
+  let efforts: ReturnType<typeof effortRun>[];
+  let early: ReturnType<typeof effortRun>;
+  beforeAll(() => {
+    efforts = [effortRun('early', 180), effortRun('late', 780)];
+    early = effortRun('route-like', 180);
+  });
+
   it('Heart rate from the same minute of every effort', () => {
-    // 30 minutes at 4:00/km after 3 and after 13 easy minutes; heart rate 150 in the effort's
-    // first 5 minutes, 170 after.
-    const effortRun = (id: string, warmUp: number) => {
-      const r = run(id, '2026-10-01', [[warmUp, EASY], [1800, FAST], [300, EASY]]);
-      r.samples.values.heartRate = r.samples.t.map((t) => (t < warmUp ? 130 : t < warmUp + 300 ? 150 : t < warmUp + 1800 ? 170 : 140));
-      return r;
-    };
     const thirty = { ...def({ type: 'effort', kind: 'time', target: 1800 }), tolerances: { ...defaultTolerances('effort'), effortBeforeMax: null } };
     expect(thirty.tolerances.hrSkip).toBe(300);
-    for (const r of [effortRun('early', 180), effortRun('late', 780)]) {
+    for (const r of efforts) {
       const [i] = detectInstances(thirty, r, rowFor(r), []);
       expect(i.status).toBe('accepted');
       expect(i.metrics.heartRate).toBe(170);
     }
     // A block without the attribute has heart rate over the whole block, wherever it starts in the run.
-    const early = effortRun('route-like', 180);
     const whole = { ...def({ type: 'effort', kind: 'time', target: 1800 }), tolerances: { ...DEFAULT_TOLERANCES, effortBeforeMax: null } };
     const [w] = detectInstances(whole, early, rowFor(early), []);
     expect(w.status).toBe('accepted');

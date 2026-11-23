@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { EMPTY_CONDITIONS, EMPTY_FILTER, RULE_TOLERANCES, decodeRule, defaultTolerances, definitionFromRule, encodeRule, matchesRunFilter, presetDates, readDefinitions, ruleName, ruleOf, windowStat, type Rule } from '@/lib/blocks';
 import { valueOf } from '@/lib/compare';
 import { detectInstances, instancesOf } from '@/lib/detection';
@@ -72,9 +72,12 @@ describe('Blocks defined in Analysis', () => {
   };
   const cond = (c: Partial<Rule['conditions']>): Rule => ({ ...WHOLE, conditions: { ...EMPTY_CONDITIONS, ...c } });
   const from = (f: Partial<Rule['runs']>): Rule => ({ ...WHOLE, runs: { ...EMPTY_FILTER, ...f } });
+  // The runs built once for the tests that read them (their building is no part of what a test checks).
+  let three: ReturnType<typeof threeRuns>;
+  beforeAll(() => { three = threeRuns(); });
 
   it('Runs chosen by a rule', () => {
-    const { ids } = threeRuns();
+    const { ids } = three;
     // Distance 3–5 km: the two 4 km runs; with pace 3:55–4:05 too: the test alone.
     expect(ids(cond({ distanceMin: 3000, distanceMax: 5000 }))).toEqual(['t', 'f']);
     expect(ids(cond({ distanceMin: 3000, distanceMax: 5000, paceMin: 235, paceMax: 245 }))).toEqual(['t']);
@@ -82,14 +85,14 @@ describe('Blocks defined in Analysis', () => {
   });
 
   it('Runs chosen by their title, type and date', () => {
-    const { ids } = threeRuns();
+    const { ids } = three;
     expect(ids(from({ title: 'coros' }))).toEqual(['t']);
     expect(ids(from({ title: 'coros', workoutTypes: ['easy'] }))).toEqual([]);
     expect(ids(from({ workoutTypes: ['easy', 'race'], dateFrom: '2026-10-02' }))).toEqual(['e', 'f']);
   });
 
   it('No condition takes every run whole', () => {
-    const { runs, extras } = threeRuns();
+    const { runs, extras } = three;
     const every = runs.flatMap((r, k) => found(WHOLE, r, extras[k]));
     expect(every.map((i) => [i.runId, i.start, i.status])).toEqual([['t', 0, 'accepted'], ['e', 0, 'accepted'], ['f', 0, 'accepted']]);
     expect(every[0].duration).toBe(960);
