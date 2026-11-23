@@ -442,7 +442,9 @@
       "tests/unit/logical.test.ts › Effort blocks on any route › Time trial on two routes"
     ] },
     { "element": "475837a5-3b10-4b07-9852-d560980a6540", "name": "Tagged test runs compared", "tests": [
-      "tests/unit/logical.test.ts › Blocks by workout type › Tagged test runs compared"
+      "tests/unit/logical.test.ts › Blocks by workout type › Tagged test runs compared",
+      "tests/unit/logical.test.ts › Blocks by workout type › Untagged run gives nothing",
+      "tests/unit/logical.test.ts › Blocks by workout type › Tagged runs proposed as a block"
     ] },
     { "element": "a014a923-cfeb-4a70-b3fc-72cd6469ec68", "name": "Same workout found by its laps", "tests": [
       "tests/unit/logical.test.ts › Blocks by lap pattern › Same workout found by its laps"
