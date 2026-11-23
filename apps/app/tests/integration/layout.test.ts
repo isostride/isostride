@@ -71,7 +71,7 @@ describe('Historical import', () => {
     for (const r of index.runs) {
       const run = (await readJson<RunFile>(folder, PATHS.runFile(r.id)))!;
       const has = (s: (number | null)[]) => s.some((v) => v !== null);
-      if (!has(run.samples.effortPace) || !has(run.samples.legSpringStiffness)) missingDeveloperFields++;
+      if (!has(run.samples.values.effortPace ?? []) || !has(run.samples.values.legSpringStiffness ?? [])) missingDeveloperFields++;
     }
     await recordMeasure('historicalImportErrors', report.errors);
     await recordMeasure('historicalRunsMissingDeveloperFields', missingDeveloperFields);

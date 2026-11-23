@@ -1,6 +1,6 @@
 import { decouplingOf } from '@/lib/blocks';
 import { CS_RANGE, CURVE_DURATIONS, bestsWithin } from '@/lib/curve';
-import type { RunFile, Series } from '@/lib/kernel';
+import { metricSeries, type RunFile, type Series } from '@/lib/kernel';
 
 /**
  * What the load models need of a run, whatever the settings (ADR "Load and form models"): kept in
@@ -90,7 +90,8 @@ export function normalised(t: number[], values: Series): number | null {
 
 /** The load summary of a run. */
 export function summarizeLoad(run: RunFile): LoadSummary {
-  const { t, heartRate, speed, effortPace, power } = run.samples;
+  const { t } = run.samples;
+  const [heartRate, speed, effortPace, power] = ['heartRate', 'speed', 'effortPace', 'power'].map((k) => metricSeries(run.samples, k));
   const secs = new Map<number, number>();
   for (let i = 0; i < t.length; i++) {
     const h = heartRate[i];
@@ -119,7 +120,7 @@ export function summarizeLoad(run: RunFile): LoadSummary {
     let sum = 0;
     let n = 0;
     for (let i = 0; i < w.start.length; i++) {
-      const h = w.heartRate[i];
+      const h = (w.values.heartRate?.[i] ?? null);
       if (w.start[i] < from - 5 || w.start[i] >= to || h === null) continue;
       if (peak === null || h > peak) peak = h;
       if (w.start[i] >= from + lag - 5) { sum += h; n++; }
@@ -133,8 +134,8 @@ export function summarizeLoad(run: RunFile): LoadSummary {
   for (let i = 0; i < w.start.length; i++) {
     if (w.flags.stopped[i]) continue;
     movingWindows++;
-    const v = w.speed[i];
-    const h = w.heartRate[i];
+    const v = (w.values.speed?.[i] ?? null);
+    const h = (w.values.heartRate?.[i] ?? null);
     if (v !== null && v > 0 && h !== null && h > 0) { sp += v; hrSum += h; both++; }
   }
   return {

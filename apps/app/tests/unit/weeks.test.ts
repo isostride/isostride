@@ -6,7 +6,7 @@ import type { IndexedRun } from '@/lib/kernel';
 const run = (day: string, km: number, minutes: number, hr: number | null = null): IndexedRun => ({
   id: day, startTime: new Date(`${day}T07:00:00`).toISOString(), file: `${day}.fit`, device: 'COROS PACE 4',
   distance: km * 1000, duration: minutes * 60, avgSpeed: (km * 1000) / (minutes * 60), avgHeartRate: hr,
-  temperature: null, hasGps: true, laps: 1, algorithmVersion: 1,
+  temperature: null, hasGps: true, laps: 1, metrics: ['speed', 'heartRate'], algorithmVersion: 1,
 });
 
 describe('Calendar of runs by week', () => {

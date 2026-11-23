@@ -4656,6 +4656,13 @@
     "targetId": "f43c283f-b3a3-4199-873e-c4773079e307"
   },
   {
+    "id": "9b99dc7f-0de5-49c6-8459-5432d578e2c3",
+    "quote": "(użytkownik) Podnieść budżet do 220 KB",
+    "relationType": "derives",
+    "sourceId": "36038f78-a505-4196-a7a7-9dbac6a637e8",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "9c18f417-571f-4dfa-9d54-edd68e14d56f",
     "relationType": "constrains",
     "sourceId": "4657ac26-ce37-4d24-a2cf-0e02511d9e0a",

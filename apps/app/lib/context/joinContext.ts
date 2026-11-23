@@ -1,4 +1,4 @@
-import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
+import { PATHS, readJson, writeJson, type DataFolder, readRunFile } from '@/lib/fs';
 import { type RunFile, type RunIndexRow, type RunsIndex, ALGORITHM_VERSION, type RunContext } from '@/lib/kernel';
 import { LOAD_SUMMARY_VERSION, formSeries, runLoads, summarizeLoad, type LoadSummary, type RunLoad } from '@/lib/load';
 import { readSettings } from '@/lib/settings';
@@ -50,7 +50,7 @@ export async function loadSummaries(folder: DataFolder, rows: RunIndexRow[]): Pr
   let changed = !current;
   for (const r of rows) {
     if (kept[r.id]) { runs[r.id] = kept[r.id]; continue; }
-    const run = await readJson<RunFile>(folder, PATHS.runFile(r.id));
+    const run = await readRunFile(folder, r.id);
     if (run) { runs[r.id] = summarizeLoad(run); changed = true; }
   }
   if (Object.keys(kept).some((id) => !runs[id])) changed = true;

@@ -1,5 +1,6 @@
 /** Block definitions and instances (spec sections 2, 3 and 5). */
 
+import { CONTEXT_METRICS } from '@/lib/kernel';
 import type { ProfileKey } from './profile';
 
 export type BlockType = 'route' | 'structure' | 'steady' | 'effort' | 'tag' | 'pattern' | 'rule' | 'profile';
@@ -65,6 +66,13 @@ export interface Conditions {
   alwaysHrMax: number | null;
   alwaysPaceMin: number | null;
   alwaysPaceMax: number | null;
+  /**
+   * any metric of the runs, on average within [metricMin, metricMax] (requirement "Every metric offered
+   * everywhere"), in the unit compare shows it (a pace in s/km); null for none
+   */
+  metric?: string | null;
+  metricMin?: number | null;
+  metricMax?: number | null;
   /** how the segment starts: right after a stop, on the move, or either */
   start: BlockStart;
 }
@@ -183,19 +191,22 @@ export interface BlockDefinitionsFile {
   definitions: BlockDefinition[];
 }
 
-/** The metrics the watch records, averaged from the samples. */
-export const SAMPLE_METRICS = [
-  'speed', 'heartRate', 'cadence', 'groundContactTime', 'verticalOscillation', 'stepLength', 'power', 'effortPace', 'legSpringStiffness',
-] as const;
+/**
+ * A metric of a block: any metric of its run (ADR "Metrics from the file"), by its key, and
+ * efficiency, metres per heartbeat (speed × 60 / heart rate).
+ */
+export type BlockMetric = string;
 
-/** Every metric of a block: the recorded ones, and efficiency, metres per heartbeat (speed × 60 / heart rate). */
-export const BLOCK_METRICS = [...SAMPLE_METRICS, 'efficiency'] as const;
+/** The metrics of a block of a run holding these metrics: all but the ground's and the day's, and efficiency with pace and heart rate. */
+export function blockMetricsOf(runMetrics: readonly string[]): BlockMetric[] {
+  const own = runMetrics.filter((m) => !CONTEXT_METRICS.includes(m) && m !== 'efficiency');
+  return own.includes('speed') && own.includes('heartRate') ? [...own, 'efficiency'] : own;
+}
 
 /** Metres per heartbeat: speed in m/s × 60 / heart rate in bpm. */
 export function efficiencyOf(speed: number | null, heartRate: number | null): number | null {
   return speed !== null && heartRate !== null && speed > 0 && heartRate > 0 ? (speed * 60) / heartRate : null;
 }
-export type BlockMetric = (typeof BLOCK_METRICS)[number];
 
 export interface InstanceContext {
   /** stopped: seconds standing inside the block (slow samples and auto-pause), left out of its metrics */

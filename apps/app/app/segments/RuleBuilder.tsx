@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useMetrics } from '@/components';
 import { PERIOD_PRESETS, REFERENCE_SHAPES, RULE_TOLERANCES, STATS, STAT_LABEL, STRETCH_PRESETS, presetDates, ruleName, ruleOf, type BlockDefinition, type BlockInstance, type BlockStart, type Conditions, type PeriodPreset, type Pick, type Rule, type RuleShape, type RunFilter, type Stat, type Tolerances, shapeName } from '@/lib/blocks';
 import { instancesInWorker } from '@/lib/client';
 import { date, pace as fmtPace } from '@/lib/format';
@@ -93,6 +94,10 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
   const [error, setError] = useState<string | null>(null);
   const runs = (p: Partial<RunFilter>) => setRule((r) => ({ ...r, runs: { ...r.runs, ...p } }));
   const cond = (p: Partial<Conditions>) => setRule((r) => ({ ...r, conditions: { ...r.conditions, ...p } }));
+  // Any other metric of the folder's runs, on average within a range (requirement "Every metric offered everywhere").
+  const known = useMetrics();
+  const otherMetrics = known.blockKeys.filter((k) => k !== 'speed' && k !== 'heartRate');
+  const chosenMetric = rule.conditions.metric ? known.view(rule.conditions.metric) : null;
   const setShape = (type: RuleShape['type']) => setRule((r) => {
     if (r.shape.type === type) return r;
     const shape: RuleShape | null = reference && reference.type === type ? reference : type === 'fastest' ? { type, kind: 'time', target: 300 } : type === 'steady' ? { type, minDuration: 600 } : type === 'run' || type === 'lap' ? { type } : null;
@@ -199,6 +204,18 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
         <div className="builder-title">The effort, on average</div>
         <Range label="Pace" names={['Pace from', 'Pace to']} unit="/km" from={c.paceMin} to={c.paceMax} show={mmss} parse={parsePace} onChange={(a, b) => cond({ paceMin: a, paceMax: b })} />
         <Range label="Heart rate" names={['Heart rate from', 'Heart rate to']} unit="bpm" from={c.hrMin} to={c.hrMax} show={String} parse={(t) => parseNum(t)} onChange={(a, b) => cond({ hrMin: a, hrMax: b })} />
+        <label className="field">
+          <span>Another metric</span>
+          <select className="select small" aria-label="Another metric" value={c.metric ?? ''} onChange={(e) => cond({ metric: e.target.value || null, metricMin: null, metricMax: null })}>
+            <option value="">None</option>
+            {otherMetrics.map((k) => <option key={k} value={k}>{known.view(k).title}</option>)}
+          </select>
+        </label>
+        {chosenMetric && (
+          <Range key={chosenMetric.key} label={chosenMetric.title} names={[`${chosenMetric.title} from`, `${chosenMetric.title} to`]} unit={chosenMetric.invert ? '/km' : chosenMetric.unit}
+            from={c.metricMin ?? null} to={c.metricMax ?? null} show={chosenMetric.invert ? mmss : (v) => String(+v.toFixed(2))} parse={chosenMetric.invert ? parsePace : (t) => parseNum(t)}
+            onChange={(a, b) => cond({ metricMin: a, metricMax: b })} />
+        )}
         {shape.type !== 'fastest' && (
           <>
             <Range label="Distance" names={['Distance from', 'Distance to']} unit="km" from={c.distanceMin} to={c.distanceMax} show={(v) => String(+(v / 1000).toFixed(2))} parse={(t) => parseNum(t, 1000)} onChange={(a, b) => cond({ distanceMin: a, distanceMax: b })} />

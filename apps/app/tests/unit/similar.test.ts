@@ -113,7 +113,7 @@ describe('Similar stretches', () => {
     // 5:00 /km with no elevation; a 40 s pause (no samples) at 10 minutes; samples without distance; a distance that steps back.
     const run = runNorth('p', 1800, () => PACE(300), { alt: () => null as unknown as number });
     const keep = run.samples.t.map((t) => t < 600 || t >= 640);
-    for (const k of Object.keys(run.samples) as (keyof typeof run.samples)[]) (run.samples[k] as unknown[]) = (run.samples[k] as unknown[]).filter((_, i) => keep[i]);
+    run.samples = { t: run.samples.t.filter((_, i) => keep[i]), distance: run.samples.distance.filter((_, i) => keep[i]), lat: run.samples.lat.filter((_, i) => keep[i]), lon: run.samples.lon.filter((_, i) => keep[i]), values: Object.fromEntries(Object.entries(run.samples.values).map(([k, v]) => [k, v!.filter((_, i) => keep[i])])) };
     // Auto-paused while standing: the distance does not move over the pause.
     const after = run.samples.t.findIndex((t) => t >= 640);
     const jump = run.samples.distance[after]! - run.samples.distance[after - 1]! - PACE(300);

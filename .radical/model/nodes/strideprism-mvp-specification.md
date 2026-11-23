@@ -823,3 +823,10 @@ Q: (model) Gdzie mają być dostępne nowe metryki?
 A: (użytkownik) Wszędzie
 Q: (model) Poprawka dla Garmina "Smart recording" (postój wykrywany po liczbie próbek w oknie 10 s): kiedy?
 A: (użytkownik) W tym samym PR
+A: (model) Done on the branch metrics-from-the-file: every numeric field of a record a metric, named and measured as the file names it (COROS' Vertical Ratio, Form Power and Air Power read now), the folder's catalog of metrics (derived/metrics.json), Settings → Metrics with which way is better, a metric condition in the rules, stops found by time (Garmin's Smart recording), two Garmin runs from python-fitparse and fitdecode (MIT) among the test files.
+Q: (użytkownik) poszukaj testowych plikow garmina w sieci ? github?
+A: (model) Found in python-fitparse and fitdecode (MIT): a fenix 2 run of 9 km, a fenix 5 run in Smart recording, a Forerunner 935 swim with developer fields; kept in tests/fixtures/garmin with their source and licence.
+Q: (użytkownik) uruchom wersje lokalna do testow
+A: (model) The app runs at http://localhost:3000 (npm run dev) from the branch.
+Q: (model) Budżet JS (ADR "Built with React": 200 KB gzip na trasę) jest przekroczony: compare 204,1 KB, run 200,5 KB. Przed zmianą compare miała 199,9 KB, wspólna część wszystkich tras to teraz ~190 KB. Co robimy?
+A: (użytkownik) Podnieść budżet do 220 KB

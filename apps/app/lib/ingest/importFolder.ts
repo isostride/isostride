@@ -1,4 +1,4 @@
-import { ALGORITHM_VERSION, SCHEMA_VERSION, type Windows, type Lap, type Samples, type RunFile, type RunIndexRow, type RunsIndex } from '@/lib/kernel';
+import { ALGORITHM_VERSION, KNOWN_METRICS, SCHEMA_VERSION, type MetricInfo, type MetricsFile, type Windows, type Lap, type Samples, type RunFile, type RunIndexRow, type RunsIndex } from '@/lib/kernel';
 import { PATHS, listFitFiles, readJson, writeJson, type DataFolder, emptyManifest, readManifest, writeManifest, type Manifest } from '@/lib/fs';
 import { buildWindows } from '@/lib/prepare';
 import { FitImportError, parseFit, runId } from './parseFit';
@@ -47,6 +47,13 @@ export async function importRuns(folder: DataFolder, opts: ImportOptions = {}): 
     runs: [],
   };
   const byStart = new Map(index.runs.map((r) => [r.startTime, r.id]));
+  // The folder's metrics: every metric some run holds (derived/metrics.json).
+  const catalog = new Map(((await readJson<MetricsFile>(folder, PATHS.metrics))?.metrics ?? []).map((m) => [m.key, m]));
+  const keep = (metrics: MetricInfo[]) => {
+    for (const m of metrics) if (!catalog.has(m.key)) catalog.set(m.key, m);
+    // Efficiency, metres per heartbeat, wherever a run holds both pace and heart rate.
+    if (metrics.some((m) => m.key === 'speed') && metrics.some((m) => m.key === 'heartRate') && !catalog.has('efficiency')) catalog.set('efficiency', KNOWN_METRICS.efficiency);
+  };
 
   const files = await listFitFiles(folder);
   // Files an earlier import handled are not read again; a file that failed is tried again.
@@ -80,12 +87,14 @@ export async function importRuns(folder: DataFolder, opts: ImportOptions = {}): 
           elapsed: run.elapsed,
           temperature: run.temperature,
           sources: run.sources,
+          metrics: run.metrics,
           laps: run.laps,
           samples: run.samples,
           windows,
         };
         await writeJson(folder, PATHS.runFile(id), runFile);
         index.runs.push(indexRow(runFile));
+        keep(run.metrics);
         byStart.set(run.startTime, id);
         manifest.files[file] = { status: 'imported', runId: id };
         outcome = { file, status: 'imported', runId: id, seconds: 0 };
@@ -107,13 +116,14 @@ export async function importRuns(folder: DataFolder, opts: ImportOptions = {}): 
   manifest.algorithmVersion = ALGORITHM_VERSION;
   manifest.schemaVersion = SCHEMA_VERSION;
   await writeJson(folder, PATHS.runsIndex, index);
+  await writeJson(folder, PATHS.metrics, { algorithmVersion: ALGORITHM_VERSION, metrics: [...catalog.values()] } satisfies MetricsFile);
   await writeManifest(folder, manifest);
   opts.onProgress?.({ done, total: todo.length, file: '' });
   return report;
 }
 
 function indexRow(r: RunFile): RunIndexRow {
-  const hr = r.samples.heartRate.filter((v): v is number => v !== null);
+  const hr = (r.samples.values.heartRate ?? []).filter((v): v is number => v !== null);
   return {
     id: r.id,
     startTime: r.startTime,
@@ -126,6 +136,7 @@ function indexRow(r: RunFile): RunIndexRow {
     temperature: r.temperature,
     hasGps: r.samples.lat.some((v) => v !== null),
     laps: r.laps.length,
+    metrics: r.metrics.map((m) => m.key),
     algorithmVersion: r.algorithmVersion,
   };
 }

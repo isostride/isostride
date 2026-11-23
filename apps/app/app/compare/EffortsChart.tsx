@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
-import { METRIC_VIEW, clock, ensureSpan, niceTicks, robustExtent, smoothPaths, useWidth } from '@/components';
+import { clock, ensureSpan, niceTicks, robustExtent, smoothPaths, useMetrics, useWidth } from '@/components';
 import { figuresInWorker, type EffortFigures } from '@/lib/client';
 import { date } from '@/lib/format';
 import type { DataFolder } from '@/lib/fs';
@@ -15,12 +15,7 @@ export interface ChartEffort {
   reference: boolean;
 }
 
-type Metric = (typeof METRICS)[number]['key'];
-/** The metrics of the chart, as the run chart offers them: those of a segment and the elevation. */
-const METRICS = [
-  ...METRIC_VIEW,
-  { key: 'altitude' as const, short: 'Elevation', name: 'Elevation (m)', fmt: (v: number) => `${Math.round(v)} m`, tick: (v: number) => String(Math.round(v)), minSpan: 10, invert: false },
-];
+type Metric = string;
 const DEFAULT_METRICS: Metric[] = ['speed', 'heartRate', 'cadence'];
 const BAND = 118;
 const GAP = 10;
@@ -51,6 +46,9 @@ export function EffortsChart({ efforts, handle, folder }: { efforts: ChartEffort
   const [figures, setFigures] = useState<Record<string, EffortFigures> | null>(null);
   const [zones, setZones] = useState<Record<string, number[]>>({});
   const [metrics, setMetrics] = useState<Metric[]>(DEFAULT_METRICS);
+  // The metrics of the chart, as the run chart offers them: those of the folder's segments and the elevation.
+  const known = useMetrics();
+  const METRICS = [...known.blockKeys, 'altitude'].map(known.view);
   const [axis, setAxis] = useState<'distance' | 'time'>('distance');
   const [smoothed, setSmoothed] = useState(true);
   const [cursor, setCursor] = useState<number | null>(null);
@@ -86,7 +84,7 @@ export function EffortsChart({ efforts, handle, folder }: { efforts: ChartEffort
   const H = PAD.t + shown.length * (BAND + GAP) + PAD.b;
   const bands = shown.map((m, k) => {
     const view = METRICS.find((x) => x.key === m)!;
-    const ys = lines.map((l) => smooth(l.f.series.values[m], smoothed));
+    const ys = lines.map((l) => smooth(l.f.series.values[m] ?? [], smoothed));
     const all = ys.flat().filter((v): v is number => v !== null);
     const [lo, hi] = ensureSpan(...robustExtent(all, 0.03, 0.1), view.minSpan);
     const top = PAD.t + k * (BAND + GAP);
@@ -178,6 +176,7 @@ export function EffortsChart({ efforts, handle, folder }: { efforts: ChartEffort
 
 /** Each effort's figures under the chart: time, distance, climb, and the average, lowest and highest of each metric drawn. */
 function EffortsFigures({ lines, metrics }: { lines: { e: ChartEffort; f: EffortFigures; color: string; name: string }[]; metrics: Metric[] }) {
+  const { view } = useMetrics();
   const stat = (ys: (number | null)[]) => {
     const v = ys.filter((y): y is number => y !== null);
     return v.length ? { avg: v.reduce((a, b) => a + b, 0) / v.length, min: Math.min(...v), max: Math.max(...v) } : null;
@@ -191,7 +190,7 @@ function EffortsFigures({ lines, metrics }: { lines: { e: ChartEffort; f: Effort
             <th scope="col" className="num">Time</th>
             <th scope="col" className="num">Distance</th>
             <th scope="col" className="num">Climb</th>
-            {metrics.map((m) => <th key={m} scope="col" className="num">{METRICS.find((x) => x.key === m)!.short}</th>)}
+            {metrics.map((m) => <th key={m} scope="col" className="num">{view(m).short}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -202,9 +201,9 @@ function EffortsFigures({ lines, metrics }: { lines: { e: ChartEffort; f: Effort
               <td className="num tnum">{(l.f.distance / 1000).toFixed(2)} km</td>
               <td className="num tnum">{l.f.ascent === null ? '–' : `${l.f.ascent} m`}</td>
               {metrics.map((m) => {
-                const view = METRICS.find((x) => x.key === m)!;
-                const s = stat(l.f.series.values[m]);
-                return <td key={m} className="num tnum">{s ? <><b>{view.fmt(s.avg)}</b><span className="muted small effort-range">{view.tick(view.invert ? s.max : s.min)}–{view.tick(view.invert ? s.min : s.max)}</span></> : '–'}</td>;
+                const mv = view(m);
+                const s = stat(l.f.series.values[m] ?? []);
+                return <td key={m} className="num tnum">{s ? <><b>{mv.fmt(s.avg)}</b><span className="muted small effort-range">{mv.tick(mv.invert ? s.max : s.min)}–{mv.tick(mv.invert ? s.min : s.max)}</span></> : '–'}</td>;
               })}
             </tr>
           ))}

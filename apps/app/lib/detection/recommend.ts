@@ -1,5 +1,5 @@
 import { angleBetween, distance, type TrackPoint } from '@/lib/geo';
-import type { IndexedRun, RunFile } from '@/lib/kernel';
+import { metricSeries, type IndexedRun, type RunFile } from '@/lib/kernel';
 import type { RouteSegment } from './segments';
 import { movingPart } from './instance';
 import { EFFORT_TARGETS, effortIn, effortName, patternKey, patternName, patternOf, tagName, workoutTypes } from './logical';
@@ -28,7 +28,8 @@ function band(paces: number[]): { paceMin: number; paceMax: number } {
 
 /** Mean speed of the moving part of [from, to): the measure an instance's pace condition uses. */
 function meanSpeed(run: RunFile, from: number, to: number): number {
-  const { t, speed } = run.samples;
+  const { t } = run.samples;
+  const speed = metricSeries(run.samples, 'speed');
   const idx: number[] = [];
   for (let i = 0; i < t.length; i++) if (t[i] >= from && t[i] < to) idx.push(i);
   const v = movingPart(t, speed, idx).moving.map((i) => speed[i]).filter((x): x is number => x !== null);

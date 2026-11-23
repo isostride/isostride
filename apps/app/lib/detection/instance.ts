@@ -1,6 +1,6 @@
-import type { IndexedRun, RunFile, Series } from '@/lib/kernel';
+import { metricSeries, type IndexedRun, type RunFile, type Series } from '@/lib/kernel';
 
-import { MIN_SECONDS, SAMPLE_METRICS, efficiencyOf, STANDING_WINDOW, type BlockDefinition, type BlockInstance, type BlockMetric, type Tolerances } from '@/lib/blocks';
+import { MIN_SECONDS, blockMetricsOf, efficiencyOf, STANDING_WINDOW, type BlockDefinition, type BlockInstance, type BlockMetric, type Tolerances } from '@/lib/blocks';
 
 const STOPPED_SPEED = 0.5;
 /** seconds between two samples above which the watch was paused */
@@ -64,12 +64,14 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
   for (let i = 0; i < s.t.length; i++) if (s.t[i] >= start && s.t[i] < end) idx.push(i);
 
   // Metrics and conditions from the moving part; time stopped is recorded, not rejected.
-  const { moving, stopped } = movingPart(s.t, s.speed, idx);
+  const speedSeries = metricSeries(s, 'speed');
+  const { moving, stopped } = movingPart(s.t, speedSeries, idx);
   const metrics = {} as Record<BlockMetric, number | null>;
   const profile = {} as Record<BlockMetric, (number | null)[]>;
   const minutes = Math.max(1, Math.ceil((end - start) / 60));
-  for (const m of SAMPLE_METRICS) {
-    const series = s[m] as Series;
+  for (const m of blockMetricsOf(run.metrics.map((x) => x.key))) {
+    if (m === 'efficiency') continue;
+    const series = metricSeries(s, m);
     metrics[m] = mean(moving.map((i) => series[i]));
     profile[m] = Array.from({ length: minutes }, (_, k) => {
       const v = mean(moving.filter((i) => s.t[i] >= start + k * 60 && s.t[i] < start + (k + 1) * 60).map((i) => series[i]));
@@ -83,31 +85,32 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
   const distance = dist1 - dist0;
   const duration = end - start;
   const speed = metrics.speed ?? (duration > 0 ? distance / duration : 0);
-  const speeds = moving.map((i) => s.speed[i]).filter((v): v is number => v !== null);
+  const speeds = moving.map((i) => (s.values.speed?.[i] ?? null)).filter((v): v is number => v !== null);
   const cv = speeds.length > 1 ? std(speeds) / meanOf(speeds) : 0;
-  const grade = metrics.effortPace !== null && speed > 0 ? Math.abs(metrics.effortPace / speed - 1) : 0;
+  const effortPace = metrics.effortPace ?? null;
+  const grade = effortPace !== null && speed > 0 ? Math.abs(effortPace / speed - 1) : 0;
   // Effort before the block: the moving part of the 2 minutes before it.
   const beforeIdx: number[] = [];
   for (let i = 0; i < s.t.length; i++) if (s.t[i] >= start - 120 && s.t[i] < start) beforeIdx.push(i);
-  const beforeSpeeds = movingPart(s.t, s.speed, beforeIdx).moving.map((i) => s.speed[i]).filter((v): v is number => v !== null);
+  const beforeSpeeds = movingPart(s.t, speedSeries, beforeIdx).moving.map((i) => (s.values.speed?.[i] ?? null)).filter((v): v is number => v !== null);
   const effortBefore = beforeSpeeds.length >= 60 && speed > 0 ? meanOf(beforeSpeeds) / speed - 1 : null;
   const pace = speed > 0 ? 1000 / speed : 0;
 
   const tol: Tolerances = def.tolerances;
   const reasons: string[] = [];
-  const begins = startKind(s.t, s.speed, start);
+  const begins = startKind(s.t, speedSeries, start);
   if (tol.start !== 'any' && begins !== tol.start) reasons.push(`start: ${begins}, the segment needs a ${tol.start} start`);
   // Heart rate from the block's own heart rate start, when it has one: the same in every instance.
   // Efficiency (metres per heartbeat) from the same samples as the heart rate.
   const hrIdx = tol.hrSkip !== null ? moving.filter((i) => s.t[i] >= start + tol.hrSkip!) : moving;
   if (tol.hrSkip !== null) {
-    const hr = mean(hrIdx.map((i) => s.heartRate[i]));
+    const hr = mean(hrIdx.map((i) => (s.values.heartRate?.[i] ?? null)));
     metrics.heartRate = hr === null ? null : round(hr, 3);
   }
-  const effSpeed = mean(hrIdx.map((i) => s.speed[i]));
-  const eff = efficiencyOf(effSpeed, metrics.heartRate);
+  const effSpeed = mean(hrIdx.map((i) => (s.values.speed?.[i] ?? null)));
+  const eff = efficiencyOf(effSpeed, metrics.heartRate ?? null);
   metrics.efficiency = eff === null ? null : round(eff, 4);
-  profile.efficiency = profile.speed.map((sp, k) => { const e = efficiencyOf(sp, profile.heartRate[k]); return e === null ? null : round(e, 4); });
+  profile.efficiency = (profile.speed ?? []).map((sp, k) => { const e = efficiencyOf(sp, profile.heartRate?.[k] ?? null); return e === null ? null : round(e, 4); });
   if (tol.paceMin !== null && tol.paceMax !== null && (pace < tol.paceMin || pace > tol.paceMax))
     reasons.push(`pace: ${fmtPace(pace)} outside ${fmtPace(tol.paceMin)}–${fmtPace(tol.paceMax)}`);
   if (grade > tol.gradeMax) reasons.push(`grade: effort pace differs by ${pct(grade)}, limit ${pct(tol.gradeMax)}`);

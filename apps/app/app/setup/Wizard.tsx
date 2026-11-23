@@ -8,10 +8,10 @@ import { PATHS, listFitFiles, readJson } from '@/lib/fs';
 import { dayOf, newGearId, readGear, writeGear, type Gear, type GearType } from '@/lib/gear';
 import type { RunsIndex } from '@/lib/kernel';
 import { LOAD_SUMMARY_VERSION, autoMaxHr, criticalByRun, type LoadSummary } from '@/lib/load';
-import { DEFAULT_PERFORMANCE, DEFAULT_ZONES, LOAD_MODELS, ZONE_METRICS, formatBoundaries, parseBoundaries, parsePerformance, readSettings, writeSettings, writeSetup, zonesFromMaxHr, zonesFromPace, zonesFromPower, type LoadModel, type PerformanceSettings } from '@/lib/settings';
+import { DEFAULT_PERFORMANCE, DEFAULT_ZONES, LOAD_MODELS, zoneMetricsOf, formatBoundaries, parseBoundaries, parsePerformance, readSettings, writeSettings, writeSetup, zonesFromMaxHr, zonesFromPace, zonesFromPower, type LoadModel, type PerformanceSettings, type ZoneMetric } from '@/lib/settings';
 import { LoadModelChoice } from '../performance/LoadModelPicker';
 import { ChartsCard, DisplayCard } from '../settings/DeviceCards';
-import { SetupSteps } from '@/components';
+import { SetupSteps, useMetrics } from '@/components';
 
 const STEPS = ['Your runs', 'You', 'Zones', 'Gear', 'Load model', 'Display', 'Done'] as const;
 /** The zones in groups, every metric's shown ("chodzi mi tez o strefy ... np. vertical oscillation, ground contact"). */
@@ -21,7 +21,6 @@ const ZONE_GROUPS: [string, string[]][] = [
   ['Running form', ['cadence', 'groundContactTime', 'verticalOscillation', 'stepLength', 'legSpringStiffness']],
   ['Other', ['efficiency', 'altitude']],
 ];
-const ALL = ZONE_METRICS.map((m) => m.key);
 const num = (t: string): number | null => (t.trim() !== '' && Number.isFinite(Number(t)) ? Number(t) : null);
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 const paceOf = (t: string): number | null | undefined => {
@@ -60,6 +59,12 @@ interface Have {
  * Skip leaves everything as it is.
  */
 export function Wizard() {
+  // Every metric of the folder's runs (requirement "Every metric offered everywhere"): the known ones
+  // in their groups, the others under Other.
+  const ZONE_METRICS = zoneMetricsOf(useMetrics().catalog);
+  const ALL = ZONE_METRICS.map((m) => m.key);
+  const grouped = ZONE_GROUPS.slice(0, -1).flatMap(([, ks]) => ks);
+  const groups: [string, string[]][] = [...ZONE_GROUPS.slice(0, -1), ['Other', ALL.filter((k) => !grouped.includes(k))]];
   const { folder, handle } = useOpenFolder();
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -97,7 +102,7 @@ export function Wizard() {
       setP(s.performance);
       const q = s.performance;
       setTexts({ restHr: String(q.restHr), maxHr: q.maxHr === null ? '' : String(q.maxHr), thresholdPace: q.thresholdPace === null ? '' : mmss(q.thresholdPace), thresholdPower: q.thresholdPower === null ? '' : String(q.thresholdPower), fitnessDays: String(q.fitnessDays), fatigueDays: String(q.fatigueDays) });
-      const z = Object.fromEntries(ALL.map((k) => [k, formatBoundaries(k, s.zones[k] ?? [])]));
+      const z = Object.fromEntries([...new Set([...ALL, ...Object.keys(s.zones)])].map((k) => [k, formatBoundaries(k, s.zones[k] ?? [])]));
       setZones(z);
       setSavedZones({ texts: z, defaults: !!s.defaults });
     }).catch(() => undefined);
@@ -161,7 +166,7 @@ export function Wizard() {
     if (DEFAULT_ZONES[k]) return ['Typical', k === 'cadence' ? 'common cadence bands' : "the bands of Garmin's running dynamics, from many runners", DEFAULT_ZONES[k]];
     return null;
   };
-  const ZONE_ROW = (m: (typeof ZONE_METRICS)[number]) => {
+  const ZONE_ROW = (m: ZoneMetric) => {
     const fill = fillFor(m.key);
     return (
       <label key={m.key} className="form-row setup-zone">
@@ -239,7 +244,7 @@ export function Wizard() {
           <>
             <h2>Zones</h2>
             <p className="muted">The boundaries between your zones, separated by commas, Z1 the easiest; pace as m:ss per km. {savedZones.defaults ? 'These are the defaults, for trying the app: change them to yours.' : 'These are yours, as saved.'} The run chart colours them; the intensity model and Edwards TRIMP read the heart rate&apos;s.</p>
-            {ZONE_GROUPS.map(([g, keys]) => (
+            {groups.filter(([, keys]) => keys.some((k) => ALL.includes(k))).map(([g, keys]) => (
               <div key={g} className="setup-zone-group" role="group" aria-label={g}>
                 <h3>{g}</h3>
                 <div className="form-rows setup-rows">

@@ -1,24 +1,26 @@
-import type { IndexedRun, RunFile, Samples, Series } from '@/lib/kernel';
+import { KNOWN_METRICS, type IndexedRun, type RunFile, type Samples, type Series } from '@/lib/kernel';
 import { buildWindows } from '@/lib/prepare';
 import { DEFAULT_TOLERANCES, asRule, type BlockDefinition, type Tolerances } from '@/lib/blocks';
 
-type Sample = Partial<Record<Exclude<keyof Samples, 't'>, number | null>>;
+/** One sample: lat, lon and any metric by its key (distance integrates speed). */
+type Sample = Partial<Record<string, number | null>>;
+
+/** The metrics of a synthetic run: those of a COROS run (effort pace following the speed when not given). */
+const METRICS = ['speed', 'heartRate', 'cadence', 'groundContactTime', 'verticalOscillation', 'stepLength', 'power', 'altitude', 'temperature', 'effortPace', 'legSpringStiffness'];
 
 /** A synthetic run file of `seconds` 1 s samples; distance integrates speed. */
 export function syntheticRun(seconds: number, f: (t: number) => Sample, laps: RunFile['laps'] = []): RunFile {
-  const s = {
-    t: [], speed: [], heartRate: [], cadence: [], groundContactTime: [], verticalOscillation: [], stepLength: [],
-    power: [], altitude: [], lat: [], lon: [], temperature: [], effortPace: [], legSpringStiffness: [], distance: [],
-  } as unknown as Samples;
+  const values: Record<string, Series> = {};
+  const s: Samples = { t: [], distance: [], lat: [], lon: [], values };
   let dist = 0;
   for (let t = 0; t < seconds; t++) {
     const v = f(t);
     s.t.push(t);
     const speed = v.speed ?? null;
-    for (const k of Object.keys(s) as (keyof Samples)[]) {
-      if (k === 't' || k === 'distance') continue;
-      (s[k] as Series).push(v[k] ?? (k === 'effortPace' ? speed : null));
-    }
+    s.lat.push(v.lat ?? null);
+    s.lon.push(v.lon ?? null);
+    const keys = new Set([...METRICS, ...Object.keys(v).filter((k) => k !== 'lat' && k !== 'lon')]);
+    for (const k of keys) (values[k] ??= new Array<number | null>(t).fill(null)).push(v[k] ?? (k === 'effortPace' ? speed : null));
     s.distance.push(dist);
     dist += speed ?? 0;
   }
@@ -26,6 +28,7 @@ export function syntheticRun(seconds: number, f: (t: number) => Sample, laps: Ru
     schemaVersion: 1, algorithmVersion: 1, id: 'synthetic', startTime: '2026-11-14T07:00:00.000Z', file: 'fit/synthetic.fit',
     device: 'COROS PACE 4', distance: dist, duration: seconds, elapsed: seconds, temperature: 12,
     sources: {}, laps, samples: s, windows: buildWindows(s),
+    metrics: Object.keys(values).map((k) => KNOWN_METRICS[k] ?? { key: k, name: k, short: k, unit: '', origin: 'standard', direction: 'neutral', display: 'value', decimals: 1, minSpan: 0 }),
   };
 }
 
@@ -33,7 +36,7 @@ export function rowFor(run: RunFile, extra: Partial<IndexedRun> = {}): IndexedRu
   return {
     id: run.id, startTime: run.startTime, file: run.file, device: run.device, distance: run.distance, duration: run.duration,
     avgSpeed: run.distance / run.duration, avgHeartRate: null, temperature: run.temperature, hasGps: false, laps: run.laps.length,
-    algorithmVersion: 1, shoes: 'Shoes A', heartRateSource: 'Arm band', workoutType: 'long', techniqueCue: null, load3: 120, load7: 300,
+    metrics: run.metrics.map((m) => m.key), algorithmVersion: 1, shoes: 'Shoes A', heartRateSource: 'Arm band', workoutType: 'long', techniqueCue: null, load3: 120, load7: 300,
     ...extra,
   };
 }

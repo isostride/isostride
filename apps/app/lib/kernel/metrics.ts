@@ -41,6 +41,7 @@ export const KNOWN_METRICS: Record<string, MetricInfo> = Object.fromEntries([
   known('stepLength', 'Step length', 'Step length', 'mm', 'higher', 0, 60),
   known('power', 'Power', 'Power', 'W', 'higher', 0, 20),
   known('altitude', 'Elevation', 'Elevation', 'm', 'neutral', 0, 10),
+  known('respirationRate', 'Respiration rate', 'Respiration', 'brpm', 'neutral', 0, 4),
   known('temperature', 'Temperature', 'Temperature', '°C', 'neutral', 0, 2),
   known('efficiency', 'Efficiency', 'Efficiency', 'm/beat', 'higher', 3, 0.1, { origin: 'derived' }),
   known('effortPace', 'Effort pace', 'Effort pace', 'min/km', 'lower', 0, 20, { origin: 'developer', display: 'pace' }),

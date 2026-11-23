@@ -37,7 +37,7 @@ describe('Metric zones in settings', () => {
 
     // With no settings saved, the default zones apply: heart rate, pace (6:00 … 4:15) and cadence.
     const folder = new NodeFolder(path.join(dir, 'f'));
-    expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: DEFAULT_ZONES, performance: DEFAULT_PERFORMANCE, defaults: true });
+    expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: DEFAULT_ZONES, performance: DEFAULT_PERFORMANCE, directions: {}, defaults: true });
     expect(formatBoundaries('speed', DEFAULT_ZONES.speed)).toBe('6:00, 5:15, 4:45, 4:15');
     expect(DEFAULT_ZONES.heartRate).toEqual(zonesFromMaxHr(190));
     // Ground contact and vertical oscillation in the bands of Garmin's running dynamics.
@@ -49,10 +49,10 @@ describe('Metric zones in settings', () => {
     // Kept in user/settings.json; metrics with no zones are left out; saved, only what was entered applies.
     await writeSettings(folder, { schemaVersion: 1, zones: { heartRate: [171, 114, 152, 133], cadence: [] }, defaults: true });
     expect(await readJson(folder, PATHS.settings)).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] }, performance: DEFAULT_PERFORMANCE });
-    expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] }, performance: DEFAULT_PERFORMANCE });
+    expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] }, performance: DEFAULT_PERFORMANCE, directions: {} });
     // The performance model saved alone (no zones of the runner's): the default zones go on applying.
     await writeSettings(folder, { schemaVersion: 1, performance: { ...DEFAULT_PERFORMANCE, load: 'rtss', confirmed: true } });
-    expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: DEFAULT_ZONES, performance: { ...DEFAULT_PERFORMANCE, load: 'rtss', confirmed: true }, defaults: true });
+    expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: DEFAULT_ZONES, performance: { ...DEFAULT_PERFORMANCE, load: 'rtss', confirmed: true }, directions: {}, defaults: true });
     await writeJson(folder, PATHS.settings, { zones: { speed: [270, 'x', 330], power: 'none' } });
     expect((await readSettings(folder)).zones).toEqual({ speed: [330, 270] });
   });

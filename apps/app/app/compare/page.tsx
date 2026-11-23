@@ -4,12 +4,12 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ItemKey, METRIC_VIEW, useDataVersion, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup } from '@/components';
+import { ItemKey, useDataVersion, useMetrics, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup } from '@/components';
 import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, asRule, definitionFromProfile, definitionFromRoute, shapeName, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule, ruleOf } from '@/lib/blocks';
 import { curvesInWorker, instancesInWorker, runInWorker, similarInWorker, useOpenFolder } from '@/lib/client';
 import { MAX_ITEMS, addItem, computeTrend, firstUsableMetric, formatItems, instancesCsv, parseItems, runMean, type AnalysisItem } from '@/lib/compare';
 import type { CurveMetric, CurvePoint, CurveSource } from '@/lib/curve';
-import { PATHS, isOutdated, readJson, readManifest } from '@/lib/fs';
+import { PATHS, isOutdated, readJson, readManifest, readRunFile } from '@/lib/fs';
 import { date } from '@/lib/format';
 import { readGear, type Gear } from '@/lib/gear';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
@@ -34,11 +34,9 @@ const EffortsPanel = dynamic(() => import('./EffortsPanel').then((m) => m.Effort
 const CurveTab = dynamic(() => import('./CurveTab').then((m) => m.CurveTab), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>Loading the curve…</div> });
 
 const DAY = 86_400_000;
-const METRICS = METRIC_VIEW;
 /** The item Analysis opens with: every run, whole (a rule with nothing set). */
 const ALL_RUNS = encodeRule(ruleOf({ type: 'run' }));
 
-const view = (mt: BlockMetric) => METRICS.find((x) => x.key === mt)!;
 
 /** The sections of the screen, one at a time (requirement "Analysis sections as tabs"). */
 type Tab = 'trends' | 'segments' | 'ab' | 'curve';
@@ -85,6 +83,10 @@ function AnalysisPage() {
   const params = useSearchParams();
   const router = useRouter();
   const { folder, handle } = useOpenFolder();
+  // The folder's metrics (requirement "Every metric offered everywhere") and how each is shown.
+  const known = useMetrics();
+  const view = known.view;
+  const METRICS = useMemo(() => known.blockKeys.map(known.view), [known]);
   const [loaded, setLoaded] = useState(false);
   const [outdated, setOutdated] = useState(false);
   const [defs, setDefs] = useState<BlockDefinition[]>([]);
@@ -160,7 +162,7 @@ function AnalysisPage() {
     if (!need.length) return;
     (async () => {
       const next = new Map(files);
-      for (const i of need) { const f = await readJson<RunFile>(folder, PATHS.runFile(i.id)); if (f) next.set(i.id, f); }
+      for (const i of need) { const f = await readRunFile(folder, i.id); if (f) next.set(i.id, f); }
       setFiles(next);
     })();
   }, [items, files, folder]);
@@ -188,7 +190,7 @@ function AnalysisPage() {
     const given = (params.get('m') ?? '').split(',').filter((k): k is BlockMetric => METRICS.some((x) => x.key === k));
     if (given.length) return METRICS.map((x) => x.key).filter((k) => given.includes(k));
     return [firstBlock ? firstUsableMetric(all, firstBlock, METRICS.map((x) => x.key)) : 'speed'];
-  }, [params, all, firstBlock]);
+  }, [params, all, firstBlock, METRICS]);
   const toggleMetric = (k: BlockMetric) => {
     const next = metrics.includes(k) ? metrics.filter((x) => x !== k) : METRICS.map((x) => x.key).filter((x) => x === k || metrics.includes(x));
     if (!next.length) return;

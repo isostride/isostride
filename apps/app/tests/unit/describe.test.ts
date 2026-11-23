@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeAb, describeDelta, describeTrend, type TrendSeries } from '@/lib/compare';
+import { describeAb, describeDelta, describeTrend, wordsOf, type TrendSeries } from '@/lib/compare';
 import { days, inst } from '../support/instances';
 
 const bpm = (v: number) => `${Math.round(v)} bpm`;
@@ -10,13 +10,13 @@ const series = (fit: TrendSeries['fit'], noise = 3.8, n = 6): TrendSeries => ({
 
 describe('Result transparency', () => {
   it('Results described in words', () => {
-    expect(describeDelta('speed', -12)).toBe('12 s/km faster');
-    expect(describeDelta('heartRate', -6.3)).toBe('6.3 bpm lower');
-    expect(describeDelta('groundContactTime', 4)).toBe('4 ms higher');
+    expect(describeDelta('speed', -12)).toBe('12 s/km faster, better');
+    expect(describeDelta('heartRate', -6.3)).toBe('6.3 bpm lower, better');
+    expect(describeDelta('groundContactTime', 4)).toBe('4 ms higher, worse');
 
     // A change beyond the noise, its interval on one side of zero.
     const change = describeTrend(series({ slope: -0.1, intercept: 154, change: -8, ci: [-12, -4], verdict: 'change' }), 'heartRate', bpm);
-    expect(change.headline).toBe('Changed: 8 bpm lower');
+    expect(change.headline).toBe('Changed: 8 bpm lower, better');
     expect(change.sentence).toMatch(/^Heart rate on this segment went from 154 bpm to 146 bpm \(fitted\) between .+, over 6 efforts\. That is more than the noise between efforts \(±3\.8 bpm\)/);
     // Within the noise; an uncertain interval; too few instances.
     expect(describeTrend(series({ slope: 0, intercept: 150, change: 2, ci: [-1, 5], verdict: 'no detectable change' }), 'heartRate', bpm).sentence).toMatch(/within the noise between efforts \(±3\.8 bpm\)\.$/);
@@ -26,7 +26,7 @@ describe('Result transparency', () => {
     // A/B: B against A.
     const ab = (difference: number | null, verdict: 'change' | 'no detectable change' | null, ci: [number, number] | null = [-1, 1]) =>
       describeAb({ a: { label: 'Shoes A', points: [1, 2, 3, 4] }, b: { label: 'Shoes B', points: [1, 2, 3, 4] }, difference, ci, noise: 1.4, verdict }, 'groundContactTime', 4);
-    expect(ab(-6, 'change', [-8, -4])).toMatchObject({ headline: 'Difference: 6 ms lower with Shoes B', change: true });
+    expect(ab(-6, 'change', [-8, -4])).toMatchObject({ headline: 'Difference: 6 ms lower with Shoes B, better', change: true });
     expect(ab(-0.1, 'no detectable change').sentence).toMatch(/^With Shoes B, ground contact time is 0\.1 ms lower than with Shoes A \(4 efforts with Shoes A, 4 with Shoes B\)\. That is within the noise/);
     expect(ab(-0.1, null).headline).toBe('No verdict yet');
     expect(ab(null, null).headline).toBe('Nothing to compare yet');
@@ -37,7 +37,7 @@ describe('Running efficiency metric', () => {
   it('Efficiency changes read to the thousandth', async () => {
     const { formatAmount, percentChange } = await import('@/lib/compare');
     // Efficiency moves in thousandths of a metre per beat: no rounding to 0.1.
-    expect(describeDelta('efficiency', 0.062)).toBe('0.062 m/beat higher');
+    expect(describeDelta('efficiency', 0.062)).toBe('0.062 m/beat higher, better');
     expect(formatAmount('efficiency', 0.0214)).toBe('0.021 m/beat');
     expect(formatAmount('heartRate', 3.84)).toBe('3.8 bpm');
     // A change as a share of where it started.
@@ -45,5 +45,22 @@ describe('Running efficiency metric', () => {
     expect(percentChange(-13, 280)).toBe('−4.6%');
     expect(percentChange(0, 150)).toBe('±0.0%');
     expect(percentChange(5, 0)).toBe('');
+  });
+});
+
+describe('Metric direction set by the runner', () => {
+  it('Unknown metric worded neutrally', () => {
+    // Respiration rate rose 2.4 brpm over the segment's efforts: a metric with no direction of its own.
+    const rising = series({ slope: 0.03, intercept: 30, change: 2.4, ci: [1.2, 3.6], verdict: 'change' }, 0.8);
+    const fmt = (v: number) => `${v.toFixed(1)} brpm`;
+    expect(describeDelta('respirationRate', 2.4)).toBe('2.4 brpm higher');
+    expect(describeTrend(rising, 'respirationRate', fmt).headline).toBe('Changed: 2.4 brpm higher');
+    // A metric of a developer field, named by the file: neutral too.
+    expect(describeDelta('dev.formPower', -3, wordsOf('dev.formPower', [{ key: 'dev.formPower', name: 'Form Power', short: 'Form Power', unit: 'W', origin: 'developer', direction: 'neutral', display: 'value', decimals: 1, minSpan: 0 }]))).toBe('3 W lower');
+    // The runner sets lower is better for it in Settings: the same change is worse.
+    const set = wordsOf('respirationRate', null, { respirationRate: 'lower' });
+    expect(describeTrend(rising, 'respirationRate', fmt, set).headline).toBe('Changed: 2.4 brpm higher, worse');
+    // And a known metric turned round by the runner.
+    expect(describeDelta('cadence', 4, wordsOf('cadence', null, { cadence: 'lower' }))).toBe('4 spm higher, worse');
   });
 });

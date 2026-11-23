@@ -93,7 +93,7 @@ describe('Heart rate window per block', () => {
     // first 5 minutes, 170 after.
     const effortRun = (id: string, warmUp: number) => {
       const r = run(id, '2026-10-01', [[warmUp, EASY], [1800, FAST], [300, EASY]]);
-      r.samples.heartRate = r.samples.t.map((t) => (t < warmUp ? 130 : t < warmUp + 300 ? 150 : t < warmUp + 1800 ? 170 : 140));
+      r.samples.values.heartRate = r.samples.t.map((t) => (t < warmUp ? 130 : t < warmUp + 300 ? 150 : t < warmUp + 1800 ? 170 : 140));
       return r;
     };
     const thirty = { ...def({ type: 'effort', kind: 'time', target: 1800 }), tolerances: { ...defaultTolerances('effort'), effortBeforeMax: null } };

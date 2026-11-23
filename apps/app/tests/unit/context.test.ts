@@ -10,7 +10,7 @@ import { FILES, makeDataFolder } from '../support/fixtures';
 
 const row = (startTime: string, id = startTime.slice(0, 10)): RunIndexRow => ({
   id, startTime, file: `fit/${id}.fit`, device: 'COROS PACE 4', distance: 10000, duration: 3000, avgSpeed: 3.33,
-  avgHeartRate: 150, temperature: null, hasGps: true, laps: 1, algorithmVersion: 1,
+  avgHeartRate: 150, temperature: null, hasGps: true, laps: 1, metrics: ['speed', 'heartRate'], algorithmVersion: 1,
 });
 const shoesA: Gear = { id: 'a', name: 'Shoes A', type: 'shoes', from: '2026-08-03', to: '2026-10-31' };
 const shoesB: Gear = { id: 'b', name: 'Shoes B', type: 'shoes', from: '2026-09-01', to: null };

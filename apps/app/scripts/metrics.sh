@@ -26,6 +26,7 @@ sense --metric compare.trend.duration.max=/trendMaxSeconds@s
 sense --metric compare.ab.duration.max=/abMaxSeconds@s
 sense --label trials=10 --metric ab.random_split.no_change_trials=/abRandomSplitNoChangeTrials
 sense --metric derived.files_without_algorithm_version=/derivedFilesWithoutVersion
+sense --metric ingest.fields.dropped=/ingestFieldsDropped
 sense --metric load.model_change.run_files_read=/loadModelChangeRunFilesRead
 sense --metric cache.repeat.run_files_read=/cachedResultRunFilesRead --metric context.change.run_files_read=/contextChangeRunFilesRead
 sense --metric import.repeat.records_added=/repeatRecordsAdded

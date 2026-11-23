@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { RunChart, clampDomain, clock, rollingMean, smoothSpan, type Domain, type RunLine } from '@/components';
-import { PATHS, readJson, type DataFolder } from '@/lib/fs';
+import { PATHS, readJson, type DataFolder, readRunFile } from '@/lib/fs';
 import { duration, km, pace } from '@/lib/format';
 import type { RunFile } from '@/lib/kernel';
-import { METRICS, seriesOf, type WindowKey } from './metrics';
+import { runMetric, seriesOf, type WindowKey } from './metrics';
 
 const DEFAULT: WindowKey[] = ['speed', 'heartRate', 'cadence', 'groundContactTime'];
 
@@ -22,7 +22,7 @@ export function RunWidget({ folder, id, metrics }: { folder: DataFolder; id: str
   const [zoom, setZoom] = useState<Domain | null>(null);
   useEffect(() => {
     let live = true;
-    readJson<RunFile>(folder, PATHS.runFile(id)).then((f) => live && setRun(f)).catch(() => live && setRun(null));
+    readRunFile(folder, id).then((f) => live && setRun(f)).catch(() => live && setRun(null));
     return () => { live = false; };
   }, [folder, id]);
 
@@ -37,11 +37,11 @@ export function RunWidget({ folder, id, metrics }: { folder: DataFolder; id: str
 
   if (run === undefined) return <p className="muted small" role="status">Reading the run…</p>;
   if (!run || !view) return <p className="muted small">This run is not there any more.</p>;
-  const keys = (metrics ? metrics.split(',') : DEFAULT).filter((k): k is WindowKey => METRICS.some((m) => m.key === k));
+  const keys = (metrics ? metrics.split(',') : DEFAULT).filter((k): k is WindowKey => !!view.series[k]);
   const domain: Domain = zoom ?? [0, view.total];
   const span = smoothSpan(domain[1] - domain[0]);
   const lines: RunLine[] = keys.flatMap((k, i) => {
-    const m = METRICS.find((x) => x.key === k)!;
+    const m = runMetric(k, run.metrics);
     return view.series[k].some((v) => v !== null) ? [{ key: m.key, title: m.title, short: m.short, unit: m.unit, y: rollingMean(view.x, view.series[k], span), color: `var(--series-${i + 1})`, format: m.format, tick: m.tick, minSpan: m.minSpan, invert: m.invert, steps: m.steps }] : [];
   });
   const head = (t: number) => {

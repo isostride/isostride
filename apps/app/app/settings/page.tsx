@@ -7,10 +7,12 @@ import { runInWorker, useOpenFolder } from '@/lib/client';
 import dynamic from 'next/dynamic';
 import { GearTags } from './GearTags';
 import { ChartsCard, DisplayCard } from './DeviceCards';
+import { MetricsCard } from './MetricsCard';
+import { useMetrics } from '@/components';
 
 /** The thresholds of the models' checks: loaded with their tab. */
 const ModelsCard = dynamic(() => import('./ModelsCard').then((m) => m.ModelsCard), { ssr: false });
-import { DEFAULT_ZONES, ZONE_METRICS, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneRanges, zoneShade, zonesFromMaxHr, type ZoneMetric } from '@/lib/settings';
+import { DEFAULT_ZONES, zoneMetricsOf, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneRanges, zoneShade, zonesFromMaxHr, type ZoneMetric } from '@/lib/settings';
 
 /** The values of the models (heart rates, thresholds, time constants): loaded with the Models tab. */
 const PerformanceCard = dynamic(() => import('../performance/PerformanceCard').then((m) => m.PerformanceCard), { ssr: false });
@@ -38,8 +40,8 @@ function ZoneChips({ m, boundaries }: { m: ZoneMetric; boundaries: number[] }) {
 }
 
 /** The Settings tabs (requirement "Settings in tabs"), kept in the link (tab=zones, gear, tags, charts, display). */
-type Tab = 'zones' | 'gear' | 'tags' | 'charts' | 'models' | 'display';
-const TABS: [Tab, string][] = [['zones', 'Zones'], ['gear', 'Gear'], ['tags', 'Tags'], ['charts', 'Charts'], ['models', 'Models'], ['display', 'Display']];
+type Tab = 'zones' | 'metrics' | 'gear' | 'tags' | 'charts' | 'models' | 'display';
+const TABS: [Tab, string][] = [['zones', 'Zones'], ['metrics', 'Metrics'], ['gear', 'Gear'], ['tags', 'Tags'], ['charts', 'Charts'], ['models', 'Models'], ['display', 'Display']];
 
 export default function SettingsPageWrapper() {
   return <Suspense fallback={<div className="page wide-page"><div className="page-head"><h1>Settings</h1></div></div>}><SettingsPage /></Suspense>;
@@ -73,6 +75,7 @@ function SettingsPage() {
       </div>
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === 'zones' && <ZonesCard />}
+        {tab === 'metrics' && <MetricsCard />}
         {(tab === 'gear' || tab === 'tags') && <GearTags part={tab} />}
         {tab === 'charts' && <ChartsCard />}
         {tab === 'models' && <section className="models-tab" aria-label="Models"><PerformanceCard /><ModelsCard /></section>}
@@ -85,6 +88,8 @@ function SettingsPage() {
 /** The zones of the metrics, kept in user/settings.json, coloured on the run chart. */
 function ZonesCard() {
   const { folder, handle } = useOpenFolder();
+  // Every metric of the folder's runs (requirement "Every metric offered everywhere").
+  const ZONE_METRICS = zoneMetricsOf(useMetrics().catalog);
   const [texts, setTexts] = useState<Record<string, string>>({});
   const [maxHr, setMaxHr] = useState('');
   const [status, setStatus] = useState<string | null>(null);
@@ -92,7 +97,7 @@ function ZonesCard() {
   const [defaults, setDefaults] = useState(false);
   /** what is saved, to tell a change not saved yet: only then is there a Save */
   const [saved, setSaved] = useState<string | null>(null);
-  const textsOf = (zones: Record<string, number[]>) => Object.fromEntries(ZONE_METRICS.map((m) => [m.key, formatBoundaries(m.key, zones[m.key] ?? [])]));
+  const textsOf = (zones: Record<string, number[]>) => Object.fromEntries([...new Set([...ZONE_METRICS.map((m) => m.key), ...Object.keys(zones)])].map((k) => [k, formatBoundaries(k, zones[k] ?? [])]));
   const fill = (zones: Record<string, number[]>) => setTexts(textsOf(zones));
 
   useEffect(() => {
@@ -106,7 +111,9 @@ function ZonesCard() {
   const save = async () => {
     if (invalid.length) return;
     const before = await readSettings(folder);
-    await writeSettings(folder, { schemaVersion: 1, zones: Object.fromEntries(ZONE_METRICS.map((m) => [m.key, parsed[m.key] ?? []])), performance: before.performance });
+    // The zones of metrics this folder does not hold stay as they were.
+    const kept = before.defaults ? {} : before.zones;
+    await writeSettings(folder, { schemaVersion: 1, zones: { ...kept, ...Object.fromEntries(ZONE_METRICS.map((m) => [m.key, parsed[m.key] ?? []])) }, performance: before.performance });
     setDefaults(false);
     setSaved(JSON.stringify(Object.fromEntries(ZONE_METRICS.map((m) => [m.key, texts[m.key] ?? '']))));
     // Edwards' TRIMP counts the heart rate zones: the loads follow them.

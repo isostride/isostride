@@ -1,6 +1,6 @@
 import { fastestFragment } from '@/lib/blocks';
-import { PATHS, readJson, type DataFolder } from '@/lib/fs';
-import type { RunFile, RunsIndex } from '@/lib/kernel';
+import { PATHS, readJson, type DataFolder, readRunFile } from '@/lib/fs';
+import { metricSeries, type RunFile, type RunsIndex } from '@/lib/kernel';
 
 /**
  * The curves of Analysis: for each length of time, the best stretch of that length inside the
@@ -51,7 +51,8 @@ type Best = { duration: number; value: number; from: number; to: number };
  * power held until the next sample (at most POWER_HOLD s), a sample without power counting as none.
  */
 export function strongestFragment(run: RunFile, duration: number, range: [number, number]): { from: number; to: number; power: number } | null {
-  const { t, power } = run.samples;
+  const { t } = run.samples;
+  const power = metricSeries(run.samples, 'power');
   const ts: number[] = [];
   const ps: number[] = [];
   for (let i = 0; i < t.length; i++) if (t[i] >= range[0] && t[i] < range[1]) { ts.push(t[i]); ps.push(power[i] ?? 0); }
@@ -117,7 +118,7 @@ export async function curvesOf(folder: DataFolder, sources: CurveSource[], onPro
   let done = 0;
   for (const id of ids) {
     const row = rows.get(id)!;
-    const run = await readJson<RunFile>(folder, PATHS.runFile(id));
+    const run = await readRunFile(folder, id);
     onProgress?.({ done: ++done, total: ids.length, file: row.file });
     if (!run) continue;
     for (const s of sources) {

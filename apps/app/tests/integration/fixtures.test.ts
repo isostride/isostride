@@ -34,12 +34,12 @@ describe('Versioned FIT fixtures', () => {
       expect(run.samples.t).toHaveLength(e.samples as number);
       const lap = (e.laps as { start: number; duration: number }[]).reduce((a, b) => (b.duration > a.duration ? b : a));
       const inLap = (s: (number | null)[]) => s.filter((_, i) => run.samples.t[i] >= lap.start && run.samples.t[i] < lap.start + lap.duration);
-      expect(pace(mean(inLap(run.samples.speed))), file).toBe(e.pace);
-      expect(mean(inLap(run.samples.heartRate))).toBe(e.heartRate);
-      expect(mean(inLap(run.samples.cadence))).toBe(e.cadence);
-      expect(mean(inLap(run.samples.groundContactTime))).toBe(e.groundContactTime);
-      expect(mean(inLap(run.samples.effortPace))).toBeCloseTo(e.effortPace as number, 3);
-      expect(mean(inLap(run.samples.legSpringStiffness))).toBe(e.legSpringStiffness);
+      expect(pace(mean(inLap(run.samples.values.speed ?? []))), file).toBe(e.pace);
+      expect(mean(inLap(run.samples.values.heartRate ?? []))).toBe(e.heartRate);
+      expect(mean(inLap(run.samples.values.cadence ?? []))).toBe(e.cadence);
+      expect(mean(inLap(run.samples.values.groundContactTime ?? []))).toBe(e.groundContactTime);
+      expect(mean(inLap(run.samples.values.effortPace ?? []))).toBeCloseTo(e.effortPace as number, 3);
+      expect(mean(inLap(run.samples.values.legSpringStiffness ?? []))).toBe(e.legSpringStiffness);
     }
     const index = (await readJson<RunsIndex>(folder, PATHS.runsIndex))!;
     expect(index.runs.map((r) => r.id)).toEqual(['20260601-070000', '20260603-070000']);

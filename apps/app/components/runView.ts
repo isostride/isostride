@@ -31,7 +31,7 @@ const num = (s: string | null) => (s === null || s.trim() === '' ? NaN : Number(
  * The view a link gives, over `base` for what the link leaves out; `keys` are the metrics there are,
  * a value that does not read is left out (the base's stays).
  */
-export function viewFromParams(p: URLSearchParams, base: RunView, keys: ReadonlySet<string>): RunView {
+export function viewFromParams(p: URLSearchParams, base: RunView, keys: { has: (key: string) => boolean }): RunView {
   const v: RunView = { ...base, slots: [...base.slots] };
   const from = num(p.get('from'));
   const to = num(p.get('to'));

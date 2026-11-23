@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BLOCK_METRICS, RECOMMENDATIONS_PATH, fromRecommendation, readDefinitions, writeDefinitions, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
+import { blockMetricsOf, RECOMMENDATIONS_PATH, fromRecommendation, readDefinitions, writeDefinitions, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
 import { runBlocks } from '@/lib/detection';
 import { MIN_TREND_INSTANCES, computeTrend, selectInstances } from '@/lib/compare';
 import { PATHS, readJson } from '@/lib/fs';
@@ -64,7 +64,7 @@ describe('Success criterion of step 1', () => {
     const all = (await readJson<BlockInstancesFile>(folder, PATHS.blockInstances))!.instances;
     const changes: string[] = [];
     for (const d of await readDefinitions(folder))
-      for (const m of BLOCK_METRICS)
+      for (const m of blockMetricsOf(['speed', 'heartRate', 'cadence', 'groundContactTime', 'verticalOscillation', 'stepLength', 'power', 'effortPace', 'legSpringStiffness']))
         for (const s of computeTrend(all, d.id, m).series)
           if (s.fit?.verdict === 'change') {
             expect(s.points.length).toBeGreaterThanOrEqual(MIN_TREND_INSTANCES);

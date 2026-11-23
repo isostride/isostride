@@ -1,4 +1,4 @@
-import type { IndexedRun, RunFile, WindowMetric } from '@/lib/kernel';
+import { isPace, metricInfo, secondsPerKm, type IndexedRun, type RunFile } from '@/lib/kernel';
 import { STAT_LABEL, efficiencyOf, type BlockMetric, type BlockParams, type Conditions, type Rule, type RuleShape, type RunFilter, type Stat, type Tolerances } from './types';
 
 /**
@@ -13,7 +13,7 @@ export const EMPTY_FILTER: RunFilter = {
 
 export const EMPTY_CONDITIONS: Conditions = {
   paceMin: null, paceMax: null, hrMin: null, hrMax: null, distanceMin: null, distanceMax: null, durationMin: null, durationMax: null,
-  alwaysHrMin: null, alwaysHrMax: null, alwaysPaceMin: null, alwaysPaceMax: null, start: 'any',
+  alwaysHrMin: null, alwaysHrMax: null, alwaysPaceMin: null, alwaysPaceMax: null, metric: null, metricMin: null, metricMax: null, start: 'any',
 };
 
 /** A rule of a shape with nothing else set: every run, no condition; the fastest stretch one per run, the others every one. */
@@ -56,6 +56,8 @@ export interface Subject {
   /** s/km; null when nothing moved */
   pace: number | null;
   heartRate: number | null;
+  /** the mean of the metric of the conditions over the moving part, when they name one (a pace in s/km) */
+  metric?: number | null;
 }
 
 /** A whole run as the subject: its figures from the runs index. */
@@ -67,8 +69,11 @@ export function runSubject(row: IndexedRun): Subject {
  * The stretch [from, to) s of a run as the subject: its distance, duration, pace over the moving time
  * (a wait at the lights left out, as the similar efforts read it) and mean heart rate.
  */
-export function stretchSubject(run: RunFile, from: number, to: number): Subject {
+export function stretchSubject(run: RunFile, from: number, to: number, metric?: string | null): Subject {
   const s = run.samples;
+  const series = metric ? s.values[metric] : undefined;
+  let msum = 0;
+  let mn = 0;
   let first: number | null = null;
   let last = 0;
   let hr = 0;
@@ -79,27 +84,32 @@ export function stretchSubject(run: RunFile, from: number, to: number): Subject 
     if (s.t[k] < from || s.t[k] >= to) continue;
     const d = s.distance[k];
     if (d !== null) { if (first === null) first = d; last = d; }
-    const h = s.heartRate[k];
+    const h = (s.values.heartRate?.[k] ?? null);
     if (h !== null) { hr += h; n++; }
+    const mv = series?.[k] ?? null;
+    if (mv !== null && (s.values.speed?.[k] ?? 1) >= 0.5) { msum += mv; mn++; }
     // Moving: a gap of up to 5 s at 0.8 m/s or more (the moving time of a profile).
-    const sp = s.speed[k];
+    const sp = (s.values.speed?.[k] ?? null);
     if (prev !== null) { const dt = s.t[k] - prev; if (dt > 0 && dt <= 5 && (sp === null || sp >= 0.8)) moving += dt; }
     prev = s.t[k];
   }
   const distance = first === null ? 0 : last - first;
   const time = moving > 0 ? moving : to - from;
-  return { distance, duration: to - from, pace: distance > 0 ? time / (distance / 1000) : null, heartRate: n ? hr / n : null };
+  const mean = mn ? msum / mn : null;
+  return { distance, duration: to - from, pace: distance > 0 ? time / (distance / 1000) : null, heartRate: n ? hr / n : null, ...(metric ? { metric: mean !== null && isPace(metric) ? secondsPerKm(mean) : mean } : {}) };
 }
 
 /** Lap i of a run as the subject: its own distance, timer time and pace, and its mean heart rate. */
-export function lapSubject(run: RunFile, i: number): Subject {
+export function lapSubject(run: RunFile, i: number, metric?: string | null): Subject {
   const lap = run.laps[i];
-  return { distance: lap.distance, duration: lap.duration, pace: lap.distance > 0 ? lap.duration / (lap.distance / 1000) : null, heartRate: stretchSubject(run, lap.start, lap.end).heartRate };
+  const within = stretchSubject(run, lap.start, lap.end, metric);
+  return { distance: lap.distance, duration: lap.duration, pace: lap.distance > 0 ? lap.duration / (lap.distance / 1000) : null, heartRate: within.heartRate, ...(metric ? { metric: within.metric } : {}) };
 }
 
 /** True when a segment meets the conditions on its average pace and heart rate, its distance and its duration. */
 export function meetsConditions(c: Conditions, s: Subject): boolean {
-  return inRange(s.pace, c.paceMin, c.paceMax) && inRange(s.heartRate, c.hrMin, c.hrMax) && inRange(s.distance, c.distanceMin, c.distanceMax) && inRange(s.duration, c.durationMin, c.durationMax);
+  return inRange(s.pace, c.paceMin, c.paceMax) && inRange(s.heartRate, c.hrMin, c.hrMax) && inRange(s.distance, c.distanceMin, c.distanceMax) && inRange(s.duration, c.durationMin, c.durationMax)
+    && (!c.metric || inRange(s.metric ?? null, c.metricMin ?? null, c.metricMax ?? null));
 }
 
 /** True when the conditions set something to hold in every 10 s window. */
@@ -161,6 +171,7 @@ export function ruleName(r: Rule): string {
     range(c.durationMin, c.durationMax, (v) => String(Math.round(v / 60)), ' min'),
     range(c.paceMin, c.paceMax, mmss, ' /km'),
     range(c.hrMin, c.hrMax, String, ' bpm'),
+    c.metric && (c.metricMin != null || c.metricMax != null) ? `${metricInfo(c.metric).name} ${range(c.metricMin ?? null, c.metricMax ?? null, isPace(c.metric) ? mmss : (v) => String(+v.toFixed(2)), isPace(c.metric) ? ' /km' : metricInfo(c.metric).unit ? ` ${metricInfo(c.metric).unit}` : '')}` : null,
     c.alwaysHrMin !== null ? `HR never below ${c.alwaysHrMin}` : null,
     c.alwaysHrMax !== null ? `HR never above ${c.alwaysHrMax}` : null,
     c.alwaysPaceMin !== null || c.alwaysPaceMax !== null ? `pace always ${range(c.alwaysPaceMin, c.alwaysPaceMax, mmss, ' /km')}` : null,
@@ -214,16 +225,16 @@ const WINDOW = 10;
  * A statistic of a metric over the 10 s windows with movement whose centre lies in [from, to) s
  * of a run: pace in s/km (so its minimum is the fastest window), efficiency per window.
  */
-export function windowStat(run: RunFile, metric: BlockMetric | WindowMetric, stat: Stat, from = 0, to = Infinity): number | null {
+export function windowStat(run: RunFile, metric: BlockMetric, stat: Stat, from = 0, to = Infinity): number | null {
   const w = run.windows;
   const vals: number[] = [];
   for (let i = 0; i < w.start.length; i++) {
     const centre = w.start[i] + WINDOW / 2;
     if (centre < from || centre >= to || w.flags.stopped[i]) continue;
     let v: number | null;
-    if (metric === 'efficiency') v = efficiencyOf(w.speed[i], w.heartRate[i]);
-    else if (metric === 'speed' || metric === 'effortPace') { const sp = w[metric][i]; v = sp !== null && sp > 0 ? 1000 / sp : null; }
-    else v = w[metric][i];
+    if (metric === 'efficiency') v = efficiencyOf((w.values.speed?.[i] ?? null), (w.values.heartRate?.[i] ?? null));
+    else if (isPace(metric)) v = secondsPerKm(w.values[metric]?.[i] ?? null);
+    else v = w.values[metric]?.[i] ?? null;
     if (v !== null) vals.push(v);
   }
   if (!vals.length) return null;

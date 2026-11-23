@@ -36,10 +36,21 @@
       "tests/integration/ingest.test.ts › No duplicate runs › Renamed copy skipped"
     ] },
     { "element": "4694d757-ae1c-4238-b0f7-1de633e81d8a", "name": "All fields read", "tests": [
-      "tests/integration/ingest.test.ts › Read all FIT fields › All fields read"
+      "tests/integration/ingest.test.ts › Read all FIT fields › All fields read",
+      "tests/integration/ingest.test.ts › Watches other than COROS › Garmin runs read"
     ] },
-    { "element": "56fbf8e4-2a89-449b-8ec4-aef33531f8eb", "name": "COROS developer fields read", "tests": [
-      "tests/integration/ingest.test.ts › Read all FIT fields › COROS developer fields read"
+    { "element": "05f1008a-d515-43d2-958e-fccc67ffb363", "name": "Smart recording keeps its moving windows", "tests": [
+      "tests/unit/windows.test.ts › Stops found by time › Smart recording keeps its moving windows",
+      "tests/integration/ingest.test.ts › Watches other than COROS › Smart recording keeps its moving windows"
+    ] },
+    { "element": "2c0b7ca7-d960-4e72-a2d3-8008da1a2549", "name": "New metric on every screen", "tests": [
+      "e2e/metrics.spec.ts › Every metric offered everywhere › New metric on every screen"
+    ] },
+    { "element": "eedbc272-266e-498a-871e-850ef29657ce", "name": "Unknown metric worded neutrally", "tests": [
+      "tests/unit/describe.test.ts › Metric direction set by the runner › Unknown metric worded neutrally"
+    ] },
+    { "element": "56fbf8e4-2a89-449b-8ec4-aef33531f8eb", "name": "Developer fields read", "tests": [
+      "tests/integration/ingest.test.ts › Read all FIT fields › Developer fields read"
     ] },
     { "element": "670674aa-8d04-4ca9-9389-9afb3f2dee44", "name": "Heart rate source recorded", "tests": [
       "tests/integration/ingest.test.ts › Read all FIT fields › Heart rate source recorded"
