@@ -30,12 +30,14 @@ resource "aws_acm_certificate" "this" {
   lifecycle { create_before_destroy = true }
 }
 
+# <domain> and *.<domain> are validated by one and the same record: the one of <domain>, keyed by the
+# name (known at plan, unlike the record's own name).
 resource "aws_route53_record" "validation" {
-  for_each        = { for o in aws_acm_certificate.this.domain_validation_options : o.resource_record_name => o... }
+  for_each        = { for o in aws_acm_certificate.this.domain_validation_options : o.domain_name => o if o.domain_name == var.domain_name }
   zone_id         = local.zone_id
-  name            = each.value[0].resource_record_name
-  type            = each.value[0].resource_record_type
-  records         = [each.value[0].resource_record_value]
+  name            = each.value.resource_record_name
+  type            = each.value.resource_record_type
+  records         = [each.value.resource_record_value]
   ttl             = 300
   allow_overwrite = true
 }

@@ -28,6 +28,8 @@ One certificate (ACM, us-east-1) covers `<domain>` and `*.<domain>`. A CloudFron
    terraform apply                                  # the certificate and CloudFront take 5–20 minutes
    ```
    If the account already has GitHub's OIDC provider (`token.actions.githubusercontent.com`), set `create_github_oidc_provider = false`.
+   If the domain is registered in another account (or at another registrar), set `create_hosted_zone = true`: apply the zone first (`terraform apply -target=aws_route53_zone.this`), set the domain's name servers to `terraform output name_servers`, then apply the rest. A domain can move to another AWS account only 60 days after its registration.
+   GitHub names the repository in the OIDC subject with its ids (`repo:<owner>@<id>/<name>@<id>:…`); for another repository set `github_repository` and `github_repository_ids` (`gh api repos/<owner>/<name> --jq '.owner.id, .id'`).
 5. **GitHub.** In the repository → Settings → Secrets and variables → Actions → Variables, add the values of `terraform output`:
    `AWS_DEPLOY_ROLE_ARN`, `APP_BUCKET`, `APP_DISTRIBUTION_ID`, `SITE_BUCKET`, `SITE_DISTRIBUTION_ID` (and `AWS_REGION` if not `eu-central-1`).
 

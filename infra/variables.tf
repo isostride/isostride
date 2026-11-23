@@ -27,6 +27,12 @@ variable "github_repository" {
   default     = "isostride/isostride"
 }
 
+variable "github_repository_ids" {
+  description = "The ids of the owner and of the repository, which GitHub puts beside their names in the OIDC subject (repo:<owner>@<id>/<name>@<id>:…): gh api repos/<owner>/<name> --jq '.owner.id, .id'"
+  type        = object({ owner = number, repository = number })
+  default     = { owner = 348399734, repository = 1467002530 }
+}
+
 variable "github_branch" {
   type    = string
   default = "master"

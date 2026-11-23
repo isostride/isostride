@@ -11,6 +11,8 @@ data "aws_iam_openid_connect_provider" "github" {
 }
 
 locals {
+  github_owner    = split("/", var.github_repository)[0]
+  github_name     = split("/", var.github_repository)[1]
   github_oidc_arn = var.create_github_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : data.aws_iam_openid_connect_provider.github[0].arn
 }
 
@@ -26,11 +28,13 @@ data "aws_iam_policy_document" "deploy_trust" {
       variable = "token.actions.githubusercontent.com:aud"
       values   = ["sts.amazonaws.com"]
     }
-    # Only the workflow on the deploy branch of this repository.
+    # Only the workflow on the deploy branch of this repository. GitHub names the repository in the subject
+    # with the ids of the owner and of the repository (immutable subject), so a repository of the same
+    # name made again after a deletion or a rename is not let in.
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:ref:refs/heads/${var.github_branch}"]
+      values   = ["repo:${local.github_owner}@${var.github_repository_ids.owner}/${local.github_name}@${var.github_repository_ids.repository}:ref:refs/heads/${var.github_branch}"]
     }
   }
 }
