@@ -20,6 +20,8 @@ run() { "$@" || { echo "check: $* failed"; failed=1; }; }
 
 if [ "$stage" = all ] || [ "$stage" = tests ]; then
   rm -rf reports/measures.d reports/coverage
+  # The speed of this machine against the reference one: the 100 ms rule scaled by it.
+  run node scripts/machine-speed.mjs
   # Unit tests alone, without coverage instrumentation: their times for the 100 ms rule.
   run npx vitest run --project unit --reporter=dot --reporter=json --outputFile=reports/vitest-unit.json
   t0=$(date +%s)
