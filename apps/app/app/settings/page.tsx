@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { runInWorker, useOpenFolder } from '@/lib/client';
 import dynamic from 'next/dynamic';
 import { GearTags } from './GearTags';
@@ -53,6 +53,8 @@ function SettingsPage() {
   const router = useRouter();
   const tabParam = params.get('tab');
   const tab: Tab = TABS.some(([t]) => t === tabParam) ? (tabParam as Tab) : 'zones';
+  const [performanceDrawn, setPerformanceDrawn] = useState(false);
+  const onPerformanceDrawn = useCallback(() => setPerformanceDrawn(true), []);
   const setTab = (t: Tab) => {
     const q = new URLSearchParams(params.toString());
     if (t === 'zones') q.delete('tab'); else q.set('tab', t);
@@ -78,7 +80,8 @@ function SettingsPage() {
         {tab === 'metrics' && <MetricsCard />}
         {(tab === 'gear' || tab === 'tags') && <GearTags part={tab} />}
         {tab === 'charts' && <ChartsCard />}
-        {tab === 'models' && <section className="models-tab" aria-label="Models"><PerformanceCard /><ModelsCard /></section>}
+        {/* The thresholds' card below the load model's once that is drawn, so it is not pushed down (layout shift 0). */}
+        {tab === 'models' && <section className="models-tab" aria-label="Models"><PerformanceCard onReady={onPerformanceDrawn} />{performanceDrawn && <ModelsCard />}</section>}
         {tab === 'display' && <DisplayCard />}
       </div>
     </div>
@@ -100,9 +103,13 @@ function ZonesCard() {
   const textsOf = (zones: Record<string, number[]>) => Object.fromEntries([...new Set([...ZONE_METRICS.map((m) => m.key), ...Object.keys(zones)])].map((k) => [k, formatBoundaries(k, zones[k] ?? [])]));
   const fill = (zones: Record<string, number[]>) => setTexts(textsOf(zones));
 
+  // Filled once the settings and the folder's metrics are both read, and drawn only then, whole: its
+  // note on the defaults, its rows and its Save do not come one after the other (layout shift 0).
+  const known = useMetrics();
   useEffect(() => {
-    readSettings(folder).then((s) => { fill(s.zones); setSaved(JSON.stringify(textsOf(s.zones))); setDefaults(!!s.defaults); });
-  }, [folder]);
+    if (!known.ready) return;
+    readSettings(folder).then((s) => { fill(s.zones); setSaved(JSON.stringify(Object.fromEntries(ZONE_METRICS.map((m) => [m.key, textsOf(s.zones)[m.key] ?? ''])))); setDefaults(!!s.defaults); });
+  }, [folder, known.ready]);
   const dirty = saved !== null && JSON.stringify(Object.fromEntries(ZONE_METRICS.map((m) => [m.key, texts[m.key] ?? '']))) !== saved;
 
   const parsed = Object.fromEntries(ZONE_METRICS.map((m) => [m.key, parseBoundaries(m.key, texts[m.key] ?? '')]));
@@ -122,6 +129,7 @@ function ZonesCard() {
   };
   const max = Number(maxHr);
 
+  if (saved === null) return null;
   return (
     <section className="card settings-zones" aria-label="Zones">
       <div className="settings-head">

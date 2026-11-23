@@ -25,7 +25,7 @@ const parseNum = (t: string): number | null | undefined => (t.trim() === '' ? nu
  * load model uses it; saved into user/settings.json, saving recomputes every run's load and the
  * context in the Processing Worker.
  */
-export function PerformanceCard({ onSaved }: { onSaved?: () => void } = {}) {
+export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; onReady?: () => void } = {}) {
   const { folder, handle } = useOpenFolder();
   const [p, setP] = useState<PerformanceSettings>(DEFAULT_PERFORMANCE);
   const [texts, setTexts] = useState({ restHr: '', maxHr: '', thresholdPace: '', thresholdPower: '', fitnessDays: '', fatigueDays: '' });
@@ -35,6 +35,10 @@ export function PerformanceCard({ onSaved }: { onSaved?: () => void } = {}) {
   const [status, setStatus] = useState<string | null>(null);
   /** what is saved, to tell a change not saved yet: only then is there a Save */
   const [saved, setSaved] = useState('');
+  /** the settings and what "auto" stands for both read: drawn whole only then (layout shift 0) */
+  const [read, setRead] = useState({ settings: false, auto: false });
+  const ready = read.settings && read.auto;
+  useEffect(() => { if (ready) onReady?.(); }, [ready, onReady]);
 
   useEffect(() => {
     readSettings(folder).then((s) => {
@@ -44,6 +48,7 @@ export function PerformanceCard({ onSaved }: { onSaved?: () => void } = {}) {
       const t = { restHr: String(q.restHr), maxHr: q.maxHr === null ? '' : String(q.maxHr), thresholdPace: q.thresholdPace === null ? '' : mmss(q.thresholdPace), thresholdPower: q.thresholdPower === null ? '' : String(q.thresholdPower), fitnessDays: String(q.fitnessDays), fatigueDays: String(q.fatigueDays) };
       setTexts(t);
       setSaved(JSON.stringify({ t, load: q.load, sex: q.sex }));
+      setRead((r) => ({ ...r, settings: true }));
     });
     // What "auto" stands for now: the maximum heart rate of the runs, the critical speed and power of the last 90 days.
     (async () => {
@@ -55,7 +60,8 @@ export function PerformanceCard({ onSaved }: { onSaved?: () => void } = {}) {
       const cp = last ? criticalByRun(rows, sums, 'power')[last.id] : null;
       setAuto({ maxHr: autoMaxHr(Object.values(sums)), pace: cs ? 1000 / cs : null, power: cp ?? null });
       setHave((h) => ({ ...h, runs: rows, sums, cs: cs ?? null }));
-    })().catch(() => undefined);
+      setRead((r) => ({ ...r, auto: true }));
+    })().catch(() => setRead((r) => ({ ...r, auto: true })));
   }, [folder]);
 
   const values = {
@@ -90,6 +96,7 @@ export function PerformanceCard({ onSaved }: { onSaved?: () => void } = {}) {
   );
   const inUse = (...models: string[]) => (models.includes(p.load) ? ' · in use' : '');
 
+  if (!ready) return null;
   return (
     <section className="card settings-perf form-card" aria-label="Performance model">
       <div className="form-card-head">

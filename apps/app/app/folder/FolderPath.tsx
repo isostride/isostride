@@ -1,20 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { FOLDER_PATH_KEY, getValue, setValue } from '@/lib/client';
+import { useState } from 'react';
+import { FOLDER_PATH_KEY, setValue } from '@/lib/client';
 
 /**
  * Where the data folder is on the disk (the runner's "daj path do folderu", then "Ścieżka wpisana
  * raz"): a browser gives a web page only the folder's name, so the runner types its path once and
  * the app keeps it in this browser beside the folder's handle; choosing another folder forgets it.
  */
-export function FolderPath({ name }: { name: string }) {
-  const [path, setPath] = useState<string | null | undefined>(undefined);
+export function FolderPath({ name, initial }: { name: string; initial: string | null }) {
+  const [path, setPath] = useState<string | null>(initial);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
-  useEffect(() => {
-    getValue<string | null>(FOLDER_PATH_KEY).then((p) => setPath(p ?? null)).catch(() => setPath(null));
-  }, [name]);
 
   const save = async (value: string | null) => {
     await setValue(FOLDER_PATH_KEY, value);
@@ -23,7 +20,6 @@ export function FolderPath({ name }: { name: string }) {
   };
   const last = (p: string) => p.replace(/[\\/]+$/, '').split(/[\\/]/).pop();
 
-  if (path === undefined) return <b>{name}</b>;
   if (path && !editing) {
     return (
       <>
