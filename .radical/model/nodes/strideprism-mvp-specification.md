@@ -806,3 +806,7 @@ A: (model) Yes: one invalidation of /* for each distribution on each deploy (1 p
 Q: (użytkownik) ok chce przeniesc wszystko na pipleline i miec poprawne ci/cd
 Q: (model) Pełny check (testy integracyjne, E2E, radical check) potrzebuje twoich plików FIT z apps/app/test_data: 280 plików, 43 MB, z danymi GPS i tętnem. Repo jest publiczne, więc tych plików nie może w nim być. Skąd CI ma je brać?
 A: (użytkownik) Prywatny bucket S3
+A: (użytkownik) tak
+A: (model) First run of the pipeline: every test passed on GitHub (unit, integration, 28 end-to-end), the check failed on the Lab budget (Compare 200.2 KB on Linux) and on the two fitness functions of the shuffled run, measured nowhere in the pipeline (locally an old reports/measures-nightly.json of 19 Nov was read again on each check). Fixed: the Efforts tab of Compare loaded with the tab (EffortsPanel), 199.1 KB; scripts/nightly.sh run in the pipeline before npm run check, the two fitness functions triggered on each pull request.
+Q: (użytkownik) nie widze PR-ow ...
+A: (użytkownik) tak zrob to gdy pipeline sie skonczy

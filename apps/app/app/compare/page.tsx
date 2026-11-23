@@ -7,7 +7,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { ItemKey, METRIC_VIEW, useDataVersion, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup } from '@/components';
 import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, asRule, definitionFromProfile, definitionFromRoute, shapeName, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule, ruleOf } from '@/lib/blocks';
 import { curvesInWorker, instancesInWorker, runInWorker, similarInWorker, useOpenFolder } from '@/lib/client';
-import { MAX_ITEMS, addItem, computeTrend, firstUsableMetric, formatItems, instancesCsv, parseItems, reasonSummary, runMean, selectInstances, valueOf, type AnalysisItem } from '@/lib/compare';
+import { MAX_ITEMS, addItem, computeTrend, firstUsableMetric, formatItems, instancesCsv, parseItems, runMean, type AnalysisItem } from '@/lib/compare';
 import type { CurveMetric, CurvePoint, CurveSource } from '@/lib/curve';
 import { PATHS, isOutdated, readJson, readManifest } from '@/lib/fs';
 import { date } from '@/lib/format';
@@ -25,14 +25,12 @@ const AbTab = dynamic(() => import('./AbTab').then((m) => m.AbTab), { ssr: false
 /** The verdicts under the trends' charts: loaded with the tab. */
 const TrendVerdicts = dynamic(() => import('./TrendVerdicts').then((m) => m.TrendVerdicts), { ssr: false });
 const SavedAnalyses = dynamic(() => import('./SavedAnalyses').then((m) => m.SavedAnalyses), { ssr: false });
-/** The efforts chosen on the Efforts tab on one chart as rich as the run's: loaded when one is chosen. */
-const EffortsChart = dynamic(() => import('./EffortsChart').then((m) => m.EffortsChart), { ssr: false });
 /** Pin to the Dashboard, in the Over time card's corner: loaded after the screen, as the budget wants. */
 const PinButton = dynamic(() => import('../dashboard/PinButton').then((m) => m.PinButton), { ssr: false });
 const SavedList = dynamic(() => import('./SavedAnalyses').then((m) => m.SavedList), { ssr: false });
 const AddDialog = dynamic(() => import('./AddDialog').then((m) => m.AddDialog), { ssr: false });
 const BlockSheet = dynamic(() => import('../segments/BlockSheet').then((m) => m.BlockSheet), { ssr: false });
-const SegmentsTable = dynamic(() => import('./SegmentsTable').then((m) => m.SegmentsTable), { ssr: false, loading: () => <div className="muted small" style={{ padding: 18 }}>Loading the efforts…</div> });
+const EffortsPanel = dynamic(() => import('./EffortsPanel').then((m) => m.EffortsPanel), { ssr: false, loading: () => <div className="card muted small" style={{ padding: 18 }}>Loading the efforts…</div> });
 const CurveTab = dynamic(() => import('./CurveTab').then((m) => m.CurveTab), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>Loading the curve…</div> });
 
 const DAY = 86_400_000;
@@ -114,11 +112,7 @@ function AnalysisPage() {
     import('../segments/options').then((m) => m.builderOptions(folder, runs)).then(setOptions).catch(() => undefined);
   }, [optionsRead, editing, folder, runs]);
   const [tableItem, setTableItem] = useState<string | null>(null);
-  const [tableMetric, setTableMetric] = useState<BlockMetric | null>(null);
-  const [sort, setSort] = useState<'date' | 'best' | 'worst'>('date');
   /** the efforts drawn on the overlay of the Efforts tab, per segment, by key (run:start) */
-  const [picked, setPicked] = useState<Record<string, string[]>>({});
-  const [top, setTop] = useState(10);
 
   const load = useCallback(async () => {
     setDefs((await readDefinitions(folder)).filter((d) => d.status === 'active'));
@@ -386,26 +380,6 @@ function AnalysisPage() {
 
   if (!loaded) return <div className="page wide-page"><div className="page-head"><h1>Compare</h1></div></div>;
 
-  const tableFor = blocks.find((i) => i.id === tableItem) ?? blocks[0];
-  /** True for the effort that is the part compared from: in its run, over at least half of it. */
-  const isReference = (e: BlockInstance) => !!reference && e.runId === reference.runId && Math.min(e.end, reference.to) - Math.max(e.start, reference.from) > 0.5 * (reference.to - reference.from);
-  const tableKey = tableMetric ?? metrics[0];
-  const tableView = view(tableKey);
-  const selection = tableFor ? selectInstances(all, defId(tableFor), tableKey) : null;
-  const lowerBetter = tableView.invert === true || ['heartRate', 'groundContactTime', 'verticalOscillation'].includes(tableKey);
-  const segments = selection ? selection.included.map((i) => ({ i, v: valueOf(i, tableKey)! })) : [];
-  // Drawn on the overlay: the efforts chosen; at first the part compared from with the two newest others.
-  const keyOfEffort = (e: BlockInstance) => `${e.runId}:${e.start}`;
-  const byKey = new Map(segments.map(({ i }) => [keyOfEffort(i), i]));
-  const firstChoice = () => {
-    const ref = segments.find(({ i }) => isReference(i));
-    if (!ref) return [];
-    const others = segments.filter(({ i }) => i !== ref.i).map(({ i }) => i).sort((a, b) => b.runStart.localeCompare(a.runStart)).slice(0, 2);
-    return [ref.i, ...others].map(keyOfEffort);
-  };
-  const chosen = (tableFor && picked[tableFor.id]) ?? firstChoice();
-  const drawn = chosen.flatMap((k) => { const e = byKey.get(k); return e ? [{ runId: e.runId, from: e.start, to: e.end, reference: isReference(e) }] : []; });
-  const tableRows = sort === 'date' ? [...segments].reverse() : [...segments].sort((a, b) => ((sort === 'best') === lowerBetter ? a.v - b.v : b.v - a.v)).slice(0, top);
   const titleOf = (runId: string) => runs.find((r) => r.id === runId)?.title ?? null;
   const computing = items.some((i) => i.kind === 'rule' && !adhoc.has(i.id));
   const editingDef = editing ? defOf(editing) : null;
@@ -498,39 +472,10 @@ function AnalysisPage() {
                 rows={blocks.map((i) => ({ id: i.id, defId: defId(i), label: label(i), shape: shape(i), color: color(i), attributes: attributes(defOf(i)), abHref: abHref(i.id), pending: i.kind === 'rule' && !adhoc.has(i.id) }))} />
             </>
           )}
-          {items.length > 0 && tab === 'segments' && (
-            <>
-              {tableFor && selection && (
-                <div className="card" style={{ overflowX: 'auto' }}>
-                  <div className="toolbar" style={{ padding: '12px 18px 0' }}>
-                    <span className="chart-title" style={{ margin: 0 }}>Efforts</span>
-                    {blocks.length > 1 && (
-                      <select className="select small" aria-label="Segment" value={tableFor.id} onChange={(e) => setTableItem(e.target.value)}>
-                        {blocks.map((i) => <option key={i.id} value={i.id}>{label(i)}</option>)}
-                      </select>
-                    )}
-                    <select className="select small" aria-label="Table metric" value={tableKey} onChange={(e) => setTableMetric(e.target.value as BlockMetric)}>
-                      {METRICS.map((x) => <option key={x.key} value={x.key}>{x.short}</option>)}
-                    </select>
-                    <div className="segmented" role="radiogroup" aria-label="Order">
-                      {([['date', 'By date'], ['best', 'Best first'], ['worst', 'Worst first']] as const).map(([k, l]) => <button key={k} type="button" role="radio" aria-checked={sort === k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>{l}</button>)}
-                    </div>
-                    {sort !== 'date' && (
-                      <select className="select small" aria-label="Top" value={top} onChange={(e) => setTop(Number(e.target.value))}>
-                        {[5, 10, 20, 50].map((n) => <option key={n} value={n}>top {n}</option>)}
-                      </select>
-                    )}
-                    <span className="muted small">{segments.length} in · {selection.rejected.length} left out{selection.rejected.length ? `: ${reasonSummary(selection.rejected).join(', ')}` : ''}</span>
-                  </div>
-                  {/* The efforts chosen, drawn over each other by distance ("tak" to the overlay for any segment's efforts). */}
-                  {drawn.length > 0 && <EffortsChart efforts={drawn} handle={handle} folder={folder} />}
-                  <SegmentsTable rows={tableRows} ranked={sort !== 'date'} lowerBetter={lowerBetter} metricName={tableView.name} fmt={tableView.fmt} titleOf={titleOf} computing={computing}
-                    similarHref={(e) => { const q = new URLSearchParams(params.toString()); q.set('similar', `${e.runId}~${e.start}~${e.end}`); return `/compare?${q.toString()}`; }}
-                    chosen={chosen} onToggle={(e) => { const k = `${e.runId}:${e.start}`; setPicked((p) => ({ ...p, [tableFor.id]: chosen.includes(k) ? chosen.filter((x) => x !== k) : chosen.length >= 4 ? chosen : [...chosen, k] })); }}
-                    isReference={isReference} />
-                </div>
-              )}
-            </>
+          {items.length > 0 && tab === 'segments' && blocks.length > 0 && (
+            <EffortsPanel blocks={blocks.map((i) => ({ id: i.id, defId: defId(i), label: label(i) }))} item={tableItem} onItem={setTableItem} all={all} metric={metrics[0]}
+              reference={reference} titleOf={titleOf} computing={computing} handle={handle} folder={folder}
+              similarHref={(e) => { const q = new URLSearchParams(params.toString()); q.set('similar', `${e.runId}~${e.start}~${e.end}`); return `/compare?${q.toString()}`; }} />
           )}
           {items.length > 0 && tab === 'ab' && (
             <AbTab items={blocks.map((i) => ({ id: i.id, defId: defId(i), label: label(i) }))} all={all} chosen={abChosen} onChoose={chooseAb} computing={computing} />

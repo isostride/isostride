@@ -55,6 +55,12 @@ jobs:
       - name: The runner's FIT files
         run: aws s3 sync "s3://${{ vars.TEST_DATA_BUCKET }}" apps/app/test_data --only-show-errors
 
+      # Fitness functions "Tests pass in any order" and "Flaky tests enter quarantine": the suite three
+      # times in random order, a failed test retried once; measured on every run of the pipeline.
+      - name: Tests in random order
+        working-directory: apps/app
+        run: sh scripts/nightly.sh
+
       # Builds the app (the end-to-end tests run against its static export) and judges everything
       # against the model; fails on any error of radical check or any step that failed.
       - name: Check the app

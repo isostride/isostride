@@ -7,7 +7,7 @@ characteristic: "maintainability"
 invocation: "automated"
 metrics: "tests.shuffled_runs.failed == 0"
 scope: "atomic"
-trigger: "nightly"
+trigger: "pull-request"
 ---
 
 Vitest runs files and tests in random order on every run (sequence.shuffle) and prints the seed; the nightly run (npm run nightly) runs the suite three times with a different seed each time, and a failure prints the seed so the order can be reproduced.
