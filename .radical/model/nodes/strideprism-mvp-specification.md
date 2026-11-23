@@ -893,3 +893,11 @@ A: (model) The app of this branch says IsoStride everywhere (menu, welcome, setu
 A: (użytkownik) jesli chodzi o githyb to daj ikone nie tekst ... i to za open the app a nie przed
 A: (model) In the top bar: the mark of GitHub as an icon after the button "Open the app", in place of the word in the navigation.
 A: (model) After a visual review of the page: the demo runs rougher (slower heart, economy of the day, smaller gains), the screenshots taken with the app's today on the demo's last Sunday (a full week on the Dashboard), the run, the trend and the A/B each full width, critical speed and form as a pair, predictions left out; the frames of the screenshots light in both themes; the invitation a ruled row with its links beside it; the models' table stacked on a phone; the diagram's cloud larger and centred under the computer; the titles' bar lighter in the dark theme.
+A: (użytkownik) ok strorz pr
+A: (model) Done: PR #6 (the site, the name IsoStride, the demo data), green, merged by the runner.
+A: (użytkownik) wylacz serwery developersk
+A: (model) Done: the dev servers of the app (3000) and of the site (3002) stopped.
+Q: (użytkownik) usun ta ikonke folderu ... w ekranie data folder .. daj path do folderu
+Q: (model) Przeglądarka nie podaje stronie pełnej ścieżki wybranego folderu, tylko jego nazwę (np. „isostride”). Co pokazać na ekranie Data folder?
+A: (użytkownik) Ścieżka wpisana raz
+A: (model) Done on the branch folder-path: the folder's line out of the side menu; on the Data folder screen the path, typed once, kept in this browser, forgotten when another folder is chosen (requirement "Folder path typed once").
