@@ -158,11 +158,25 @@ function RunPage() {
   /** the history entry the run is shown in, read as it opens (at its close the browser is in the next one) */
   const entry = useRef<string | null>(null);
   useEffect(() => { entry.current = entryKey(); }, []);
+  // A link to another screen clicked: the link of this one is no longer written (the router, still loading
+  // the next screen, would take that write for a return here and stay); the view goes into the run's
+  // memory as the screen closes.
+  const leaving = useRef(false);
+  useEffect(() => {
+    const click = (e: globalThis.MouseEvent) => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
+      if (a && !a.target && new URL(a.href, location.href).pathname !== location.pathname) leaving.current = true;
+    };
+    document.addEventListener('click', click, true);
+    return () => document.removeEventListener('click', click, true);
+  }, []);
   useEffect(() => {
     const view: RunView = { range: zoom, slots, focus, layout, axis, smooth, blocks: showBlocks, map: mapLed ? mapCam : null };
     const query = viewToParams(id, view).toString();
     unsaved.current = query;
     const t = setTimeout(() => {
+      if (leaving.current) return;
       unsaved.current = null;
       if (location.search !== `?${query}`) window.history.replaceState(null, '', `${location.pathname}?${query}`);
       written.current = query;

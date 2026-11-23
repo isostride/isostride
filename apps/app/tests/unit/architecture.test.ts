@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeAll } from 'vitest';
 // @ts-expect-error a plain ES module without types
 import { checkBoundaries } from '../../scripts/boundaries.mjs';
 import { recordMeasure } from '../support/fixtures';
@@ -23,9 +23,16 @@ function tree(parts: Record<string, Part>, files: Record<string, string>): strin
 }
 const check = (dir: string): Violation[] => checkBoundaries(dir).violations;
 
+/**
+ * The repository's own parts, read from the disk once for the tests that judge them: the reading is
+ * no part of what they check, and its time is the disk's (a unit test's 100 ms are its own logic's).
+ */
+let repo: ReturnType<typeof checkBoundaries>;
+beforeAll(() => { repo = checkBoundaries(ROOT); });
+
 describe('Processing in a Web Worker', () => {
   it('Processing modules load only in the worker', async () => {
-    const { violations, measures } = checkBoundaries(ROOT);
+    const { violations, measures } = repo;
     const mainThread = violations.filter((v: Violation) => v.rule === 'main-thread');
     await recordMeasure('processingOnMainThreadViolations', mainThread.length);
     expect(mainThread).toEqual([]);
@@ -36,7 +43,7 @@ describe('Processing in a Web Worker', () => {
 describe('Module boundaries', () => {
   it('The parts keep their boundaries', async () => {
     // The repository itself: no cycle, no undeclared dependency, no deep import, a small kernel.
-    const { violations, measures } = checkBoundaries(ROOT);
+    const { violations, measures } = repo;
     for (const [k, v] of Object.entries(measures)) await recordMeasure(k, v as number);
     expect(violations).toEqual([]);
     expect(measures.kernelSharePercent).toBeLessThanOrEqual(5);
