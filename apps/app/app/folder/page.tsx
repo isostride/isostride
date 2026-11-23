@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useConfirm } from '@/components';
-import { runInWorker, useFolder, useOpenFolder, watchJob, type JobState } from '@/lib/client';
+import { FOLDER_PATH_KEY, getValue, runInWorker, useFolder, useOpenFolder, watchJob, type JobState } from '@/lib/client';
 import { PATHS, isOutdated, readJson, readManifest, unseenFitFiles, type Manifest } from '@/lib/fs';
 import { ALGORITHM_VERSION, type RunsIndex } from '@/lib/kernel';
 import { FolderPath } from './FolderPath';
@@ -46,6 +46,9 @@ function FolderPage() {
     setFacts({ runs: runs.length, unseen: unseen.length, first: runs[0]?.startTime ?? null, last: runs[runs.length - 1]?.startTime ?? null });
   }, [folder]);
   useEffect(() => { read().catch(() => undefined); }, [read]);
+  // The folder's path as typed, read before the screen is drawn below its heading (layout shift 0).
+  const [folderPath, setFolderPath] = useState<string | null | undefined>(undefined);
+  useEffect(() => { getValue<string | null>(FOLDER_PATH_KEY).then((p) => setFolderPath(p ?? null)).catch(() => setFolderPath(null)); }, [folder]);
   useEffect(() => {
     let was = false;
     return watchJob((j) => {
@@ -91,6 +94,7 @@ function FolderPage() {
           <h1>Data folder</h1>
         </div>
       </div>
+      {folderPath !== undefined && (<>
 
       {isOutdated(manifest) && (
         <div className="banner warn">⚠ The data of this folder were built with algorithm v{manifest!.algorithmVersion}; this app is v{ALGORITHM_VERSION}. Recompute everything to rebuild them.</div>
@@ -102,7 +106,7 @@ function FolderPage() {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>
           </span>
           <div className="folder-name">
-            <FolderPath name={folder.name} />
+            <FolderPath name={folder.name} initial={folderPath ?? null} />
           </div>
           {facts && facts.unseen > 0 && <span className="folder-new tnum">{facts.unseen} new file{facts.unseen === 1 ? '' : 's'}</span>}
         </div>
@@ -140,6 +144,7 @@ function FolderPage() {
           <ul>{failed.map(([f, s]) => <li key={f}><b>{f.split('/').pop()}</b> <span className="muted">{s.reason}</span></li>)}</ul>
         </section>
       )}
+      </>)}
     </div>
   );
 }

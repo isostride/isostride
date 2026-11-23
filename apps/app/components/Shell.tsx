@@ -135,7 +135,8 @@ export function Shell({ children }: { children: ReactNode }) {
               <Icon d={n.ico} />
               <span className="label nav-text">
                 <span>{n.label}</span>
-                {facts[n.href] && <small className="nav-sub" id={`nav-sub-${n.label}`} aria-hidden="true">{facts[n.href]}</small>}
+                {/* Its line held from the start, empty until the facts are read, so the menu never moves (layout shift 0). */}
+                <small className="nav-sub" id={`nav-sub-${n.label}`} aria-hidden="true">{facts[n.href] ?? '\u00a0'}</small>
               </span>
             </Link>
           ))}

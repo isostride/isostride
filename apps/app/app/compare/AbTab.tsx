@@ -79,6 +79,8 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
   const included = result ? [...result.a.points, ...result.b.points].map((p) => p.instance) : [];
   const base = item.label.replace(/[^\w-]+/g, '_');
 
+  // Drawn once the folder's metrics are read: its buttons would else gain a row and push the tab down (layout shift 0).
+  if (!known.ready) return null;
   return (
     <>
       <div className="toolbar">

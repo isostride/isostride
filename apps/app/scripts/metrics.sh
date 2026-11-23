@@ -46,6 +46,8 @@ if [ -f "$E" ]; then
   sensee --label impact=serious-or-critical --metric a11y.violations=/a11ySeriousViolations 2>/dev/null || true
   sensee --metric e2e.keyboard_journey.completed=/keyboardJourneyCompleted 2>/dev/null || true
   sensee --metric e2e.lcp.max=/lcpMaxMs@ms --metric e2e.cls.max=/clsMax --metric e2e.tbt.max=/tbtMaxMs@ms --metric e2e.inp.max=/inpMaxMs@ms 2>/dev/null || true
+  sensee --metric e2e.cls.screens.max=/screensClsMax 2>/dev/null || true
+  sensee --metric site.cls.max=/siteClsMax --metric site.lcp.max=/siteLcpMaxMs@ms --metric site.a11y.violations=/siteA11ySeriousViolations 2>/dev/null || true
   sensee --label browser=webkit --metric e2e.unsupported_browser.started=/unsupportedStarted_webkit 2>/dev/null || true
   sensee --metric build.server_routes=/buildServerRoutes --metric build.static_routes_missing=/buildStaticRoutesMissing 2>/dev/null || true
   sensee --label browser=chromium --metric e2e.supported_browser.started=/supportedStartedChromium 2>/dev/null || true

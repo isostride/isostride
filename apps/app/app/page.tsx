@@ -298,9 +298,9 @@ function Calendar({ weeks, match, searching, loadUnit }: { weeks: LogWeek[]; mat
                     <span className="muted tnum">{duration(w.duration)} · {w.count} run{w.count === 1 ? '' : 's'}</span>
                     <span className="muted tnum">{pace(w.distance / w.duration)} /km{w.heartRate ? ` · ${Math.round(w.heartRate)} bpm` : ''}</span>
                     {(() => {
-                      // The week's load by the model of Settings.
+                      // The week's load by the model of Settings; its line held while the loads are read (layout shift 0).
                       const load = w.days.flatMap((d) => d.runs).reduce((sum, r) => sum + (r.load ?? 0), 0);
-                      return load > 0 ? <span className="muted tnum cal-load">{Math.round(load)} {loadUnit}</span> : null;
+                      return <span className="muted tnum cal-load">{load > 0 ? `${Math.round(load)} ${loadUnit}` : '\u00a0'}</span>;
                     })()}
                   </>
                 ) : <span className="muted small">rest</span>}

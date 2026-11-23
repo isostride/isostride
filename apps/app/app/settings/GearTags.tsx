@@ -16,7 +16,7 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
   const { folder, handle } = useOpenFolder();
   const [gear, setGear] = useState<Gear[]>([]);
   const [tags, setTags] = useState<RunTagsFile | null>(null);
-  const [index, setIndex] = useState<RunsIndex | null>(null);
+  const [index, setIndex] = useState<RunsIndex | null | undefined>(undefined);
   const [draft, setDraft] = useState<Omit<Gear, 'id'>>({ name: '', type: 'shoes', from: '', to: null });
   const [saved, setSaved] = useState<string | null>(null);
 
@@ -70,7 +70,8 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
     <>
       {saved && <div className="banner">✓ {saved}</div>}
 
-      {part === 'gear' && <div className="card gear-card" role="region" aria-label="Gear">
+      {/* Drawn once the runs are read: the time line of the gear spans their dates, not a guess first (layout shift 0). */}
+      {part === 'gear' && index !== undefined && <div className="card gear-card" role="region" aria-label="Gear">
         <h3 className="gear-title">Gear</h3>
         <div className="gear-row gear-span muted">
           <span />

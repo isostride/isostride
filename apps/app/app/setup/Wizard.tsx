@@ -337,14 +337,17 @@ export function Wizard() {
           </>
         )}
 
-        <div className="setup-nav">
-          {step > 0 && <button type="button" className="btn" onClick={() => setStep(step - 1)}>Back</button>}
-          <span className="spacer" />
-          {saving && <span className="muted small" role="status">{saving}</span>}
-          {step < STEPS.length - 1
-            ? <button type="button" className="btn primary" disabled={!canNext || job !== null} onClick={() => setStep(step + 1)}>Next</button>
-            : <button type="button" className="btn primary" disabled={saving !== null} onClick={finish}>Save and finish</button>}
-        </div>
+        {/* Shown with the first step's content, not before it, so it is not pushed down once the folder is read (layout shift 0). */}
+        {(step > 0 || have) && (
+          <div className="setup-nav">
+            {step > 0 && <button type="button" className="btn" onClick={() => setStep(step - 1)}>Back</button>}
+            <span className="spacer" />
+            {saving && <span className="muted small" role="status">{saving}</span>}
+            {step < STEPS.length - 1
+              ? <button type="button" className="btn primary" disabled={!canNext || job !== null} onClick={() => setStep(step + 1)}>Next</button>
+              : <button type="button" className="btn primary" disabled={saving !== null} onClick={finish}>Save and finish</button>}
+          </div>
+        )}
       </section>
     </div>
   );

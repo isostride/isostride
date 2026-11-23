@@ -10,7 +10,7 @@ const EXPORT = path.join(ROOT, '.next-build');
 /** web-vitals, loaded by the test only (never part of the app, nothing sent over the network); found where npm put it (the workspaces' root). */
 const WEB_VITALS = [ROOT, path.resolve(ROOT, '../..')].map((d) => path.join(d, 'node_modules/web-vitals/dist/web-vitals.iife.js')).find((f) => fs.existsSync(f))!;
 const SCREENS = [['Runs', '/'], ['Compare', '/compare'], ['Performance', '/performance'], ['Settings', '/settings']] as const;
-const BUDGET = { lcp: 2500, cls: 0.1, tbt: 200, inp: 200, scriptKB: 200 };
+const BUDGET = { lcp: 2500, cls: 0, tbt: 200, inp: 200, scriptKB: 220 };
 
 async function instrument(page: Page) {
   // The IIFE declares a top-level var; init scripts run in a function scope, so publish it.

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type RefObject } from 'react';
+import { useEffect, useId, useRef, useState, type RefObject, useLayoutEffect } from 'react';
 
 /**
  * The shared pieces of every chart: real-pixel sizing (so text is never stretched), round axis
@@ -12,9 +12,13 @@ import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 export function useWidth<T extends HTMLElement = HTMLDivElement>(initial = 800): [RefObject<T | null>, number] {
   const ref = useRef<T>(null);
   const [width, setWidth] = useState(initial);
-  useEffect(() => {
+  // Measured before the first paint, so a chart is never drawn at the guess and then redrawn at its
+  // width (layout shift 0); then followed as the box changes.
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const cs = getComputedStyle(el);
+    setWidth(Math.max(200, Math.round(el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight))));
     const ro = new ResizeObserver(([e]) => setWidth(Math.max(200, Math.round(e.contentRect.width))));
     ro.observe(el);
     return () => ro.disconnect();

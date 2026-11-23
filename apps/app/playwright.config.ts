@@ -16,12 +16,21 @@ export default defineConfig({
   forbidOnly: true,
   reporter: [['list'], ['json', { outputFile: 'reports/playwright.json' }]],
   use: { baseURL: 'http://localhost:4173', trace: 'retain-on-failure' },
-  webServer: {
-    command: 'npm run -s build && node scripts/static-server.mjs .next-build 4173',
-    url: 'http://localhost:4173',
-    reuseExistingServer: false,
-    timeout: 300_000,
-  },
+  webServer: [
+    {
+      command: 'npm run -s build && node scripts/static-server.mjs .next-build 4173',
+      url: 'http://localhost:4173',
+      reuseExistingServer: false,
+      timeout: 300_000,
+    },
+    // The site (apps/site), for its own budget (e2e/site.spec.ts), served the same way.
+    {
+      command: 'npm run -s build -w @isostride/site && node scripts/static-server.mjs ../site/.next-build 4174',
+      url: 'http://localhost:4174',
+      reuseExistingServer: false,
+      timeout: 300_000,
+    },
+  ],
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /unsupported/ },
     { name: 'webkit', use: { ...devices['Desktop Safari'] }, testMatch: /unsupported/ },
