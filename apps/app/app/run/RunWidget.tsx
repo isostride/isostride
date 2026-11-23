@@ -6,7 +6,7 @@ import { RunChart, clampDomain, clock, rollingMean, smoothSpan, type Domain, typ
 import { PATHS, readJson, type DataFolder, readRunFile } from '@/lib/fs';
 import { duration, km, pace } from '@/lib/format';
 import type { RunFile } from '@/lib/kernel';
-import { runMetric, seriesOf, type WindowKey } from './metrics';
+import { runMetric, secondsOf, type WindowKey } from './metrics';
 
 const DEFAULT: WindowKey[] = ['speed', 'heartRate', 'cadence', 'groundContactTime'];
 
@@ -28,11 +28,10 @@ export function RunWidget({ folder, id, metrics }: { folder: DataFolder; id: str
 
   const view = useMemo(() => {
     if (!run) return null;
-    const w = run.windows;
-    const step = w.start.length > 1 ? w.start[1] - w.start[0] : 10;
-    const x = w.start.map((s) => s + step / 2);
-    const total = w.start.length ? w.start[w.start.length - 1] + step : 1;
-    return { x, total, series: seriesOf(run), laps: run.laps.map((l, i) => ({ from: l.start, to: l.end, label: `Lap ${i + 1} · ${km(l.distance)} km`, short: `Lap ${i + 1}` })) };
+    // Second by second, as the Run screen draws it.
+    const { x, series } = secondsOf(run);
+    const total = x.length ? x[x.length - 1] : 1;
+    return { x, total, series, laps: run.laps.map((l, i) => ({ from: l.start, to: l.end, label: `Lap ${i + 1} · ${km(l.distance)} km`, short: `Lap ${i + 1}` })) };
   }, [run]);
 
   if (run === undefined) return <p className="muted small" role="status">Reading the run…</p>;

@@ -379,6 +379,10 @@ test.describe('Run chart', () => {
     await chart.waitFor();
     await expect(chart.locator('.zone-stripe[data-metric="heartRate"]').first()).toBeVisible();
     await expect(chart.locator('.zone-stripe[data-metric="speed"]')).toHaveCount(0);
+    // Green to red: Z1 green, through yellow and orange, Z5 red ("chce aby byly od czerwongo do zielonego").
+    const fills = await chart.locator('.zone-stripe[data-metric="heartRate"]').evaluateAll((gs) => gs.map((g) => [g.getAttribute('data-zone'), g.querySelector('rect')!.getAttribute('fill')]));
+    expect(fills.length).toBeGreaterThan(1);
+    for (const [z, fill] of fills) expect(fill).toBe(`var(--heat-${z})`);
     await expect(chart.locator('.zone-name').first()).toHaveText(/^Z[1-5]$/);
     const again = (await chart.boundingBox())!;
     await page.mouse.move(again.x + again.width * 0.5, again.y + again.height / 2);

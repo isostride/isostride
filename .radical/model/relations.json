@@ -2132,6 +2132,18 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "434abd77-83ad-4775-8a9d-a754ce3c7c41",
+    "relationType": "verifies",
+    "sourceId": "d4170178-0675-49e2-9e92-0767eb151f2f",
+    "targetId": "963972a3-59ff-4349-a241-9243356b180c"
+  },
+  {
+    "id": "4355b1b9-d67c-470e-b3ef-dbe5d2eebe9f",
+    "relationType": "verifies",
+    "sourceId": "5d2d1e69-624f-4af4-a484-22231459420d",
+    "targetId": "564584c7-63b4-467a-a057-2ccd77cc6fe2"
+  },
+  {
     "id": "4396086f-1b3a-445d-94e4-9aeecece6e32",
     "relationType": "illustrates",
     "sourceId": "3326b1ec-d31e-42a2-8e92-81f30f7ec6ef",
@@ -3688,6 +3700,12 @@
     "relationType": "verifies",
     "sourceId": "670674aa-8d04-4ca9-9389-9afb3f2dee44",
     "targetId": "11307cf5-4302-49f7-b72d-56ae367f462a"
+  },
+  {
+    "id": "7bf9ca75-8ab4-43c7-9e00-3eae134a07c1",
+    "relationType": "verifies",
+    "sourceId": "02a8e752-e87c-4e6f-adb0-9e12f5bc0a22",
+    "targetId": "564584c7-63b4-467a-a057-2ccd77cc6fe2"
   },
   {
     "id": "7bfe9b04-196a-4206-b276-3099def40d62",
@@ -5390,6 +5408,12 @@
     "targetId": "f60ff802-5abe-4c23-938f-d547bc115fad"
   },
   {
+    "id": "b3d0b0d8-a8e7-45f9-8284-4b54dd8a24c0",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "564584c7-63b4-467a-a057-2ccd77cc6fe2"
+  },
+  {
     "event": "2d616620-c32d-4865-9ec3-35cd2941687a",
     "id": "b405985b-c231-4ed7-b8b2-48a42501396d",
     "relationType": "transition",
@@ -5927,6 +5951,12 @@
     "relationType": "illustrates",
     "sourceId": "8b8003c2-e262-4787-95d6-4576f080cdf3",
     "targetId": "ab9f7280-d703-4816-a780-0e5ba3de8c71"
+  },
+  {
+    "id": "c36db61d-6cd1-4866-992f-88f8bc10af21",
+    "relationType": "verifies",
+    "sourceId": "774e1ae5-e486-4ebb-b7db-2ff200621e5c",
+    "targetId": "564584c7-63b4-467a-a057-2ccd77cc6fe2"
   },
   {
     "actions": "update the definition's instance count on the Blocks screen",
@@ -7039,6 +7069,13 @@
     "quote": "Read all fields\nstart time (key), source file, device, distance, duration\nrun, timestamp (1 s), speed, heart rate, cadence, ground contact time, vertical oscillation, step length, power, altitude, GPS position, temperature, effort pace, leg spring stiffness\nrun, start, end, duration, distance",
     "relationType": "derives",
     "sourceId": "7379e576-1802-487b-bc76-a9d745b2e2bd",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "e7c1986d-d1cf-4350-9840-0cef72be6bf7",
+    "quote": "nie podoba mi sie koncowka ... brak te,pa ? w corosie wyglada norlanie",
+    "relationType": "derives",
+    "sourceId": "564584c7-63b4-467a-a057-2ccd77cc6fe2",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {

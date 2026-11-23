@@ -10,9 +10,9 @@ import { PATHS, readJson, readRunFile } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { efficiencyOf, rangeStats, readDefinitions, zoneShares, type BlockInstance } from '@/lib/blocks';
 import { date, duration, km, pace, time } from '@/lib/format';
-import { LOAD_MODELS, readSettings, zoneOf, zoneShade } from '@/lib/settings';
+import { LOAD_MODELS, readSettings, zoneOf, zoneTint } from '@/lib/settings';
 import { PinButton } from '../dashboard/PinButton';
-import { runMetricsOf, seriesOf, type WindowKey } from './metrics';
+import { runMetricsOf, secondsOf, seriesOf, withSecondExtremes, type WindowKey } from './metrics';
 
 /** The map made large, coloured by a metric: loaded when it opens. */
 const RouteExpanded = dynamic(() => import('./RouteExpanded').then((m) => m.RouteExpanded), { ssr: false });
@@ -215,29 +215,35 @@ function RunPage() {
     if (!run) return null;
     const w = run.windows;
     const WINDOW_SECONDS = w.start.length > 1 ? w.start[1] - w.start[0] : 10;
-    const x = w.start.map((s) => s + WINDOW_SECONDS / 2);
+    // The chart second by second; the large map's colours by the 10 s windows.
+    const wx = w.start.map((s) => s + WINDOW_SECONDS / 2);
+    const { x, series } = secondsOf(run);
     const flagged: { from: number; to: number }[] = [];
     w.start.forEach((s, i) => {
       if (w.flags.stopped[i] || w.flags.grade[i] || w.flags.missingSignal[i]) flagged.push({ from: s, to: s + WINDOW_SECONDS });
     });
     const laps = run.laps.map((l, i) => ({ from: l.start, to: l.end, label: `Lap ${i + 1} · ${km(l.distance)} km · ${duration(l.duration)}`, short: `Lap ${i + 1} · ${km(l.distance)} km` }));
-    const series = seriesOf(run);
+    const wseries = seriesOf(run);
     const hr = (run.samples.values.heartRate ?? []).filter((v): v is number => v !== null);
     const avgHr = hr.length ? Math.round(hr.reduce((a, b) => a + b, 0) / hr.length) : null;
     // Elevation gain from the 10 s windows (smoothed by them), climbs of at least 1 m.
     let gain = 0;
     const alt = (w.values.altitude ?? []).filter((v): v is number => v !== null);
     for (let i = 1; i < alt.length; i++) if (alt[i] - alt[i - 1] > 0) gain += alt[i] - alt[i - 1];
-    const total = w.start.length ? w.start[w.start.length - 1] + WINDOW_SECONDS : 1;
+    // The run's length: to its last record.
+    const last = run.samples.t.length ? run.samples.t[run.samples.t.length - 1] : 0;
+    const total = last > 0 ? last : w.start.length ? w.start[w.start.length - 1] + WINDOW_SECONDS : 1;
     const dmap = distanceMap(run.samples.t, run.samples.distance);
-    return { w, x, total, dmap, flagged, laps, series, avgHr, gain: alt.length ? Math.round(gain) : null };
+    return { w, x, wx, total, dmap, flagged, laps, series, wseries, avgHr, gain: alt.length ? Math.round(gain) : null };
   }, [run]);
 
   // The statistics of the selection, the range shown; with none, of the whole run.
   const stats = useMemo(() => {
     if (!run || !view) return null;
     const [from, to] = zoom ?? [0, view.total];
-    return { ...rangeStats(run, from, to), what: zoom ? 'Selection' : 'Whole run' };
+    // The lowest and highest values second by second, as the chart draws them.
+    const r = rangeStats(run, from, to);
+    return { ...r, metrics: withSecondExtremes(r.metrics, view.x, view.series, from, to), what: zoom ? 'Selection' : 'Whole run' };
   }, [run, view, zoom]);
 
 
@@ -270,8 +276,8 @@ function RunPage() {
     setSlots(next);
     if (i >= 0 && focus === k) setFocus(null);
   };
-  // Smooth: each line the rolling mean of its windows over 1/30 of the range shown (10 s: none).
-  const span = smooth ? smoothSpan(domain[1] - domain[0]) : 10;
+  // Smooth: each line the rolling mean of its seconds over 1/30 of the range shown; Raw: every second.
+  const span = smooth ? smoothSpan(domain[1] - domain[0]) : 0;
   const lines: RunLine[] = slots.flatMap((k, i) => {
     const m = METRICS.find((x) => x.key === k);
     return m && has(m.key) ? [{ key: m.key, title: m.title, short: m.short, unit: m.unit, y: rollingMean(x, series[m.key], span), color: `var(--series-${i + 1})`, format: m.format, tick: m.tick, minSpan: m.minSpan, invert: m.invert, steps: m.steps, zones: zones[m.key] }] : [];
@@ -467,7 +473,7 @@ function RunPage() {
                       return (
                         <div className="zone-bar" role="img" aria-label={`${line.title} time in zones: ${zb.shares.map((p, i) => `Z${i + 1} ${Math.round(p * 100)} %`).join(', ')}`}>
                           {zb.shares.map((p, i) => p > 0 && (
-                            <span key={i} className="zone-share" style={{ width: `${p * 100}%`, background: `color-mix(in srgb, ${line.color} ${Math.round(zoneShade(i, zb.shares.length) * 240)}%, var(--surface))` }} title={`Z${i + 1} · ${Math.round(p * 100)} %`}>
+                            <span key={i} className="zone-share" style={{ width: `${p * 100}%`, background: zoneTint(i, zb.shares.length, 35) }} title={`Z${i + 1} · ${Math.round(p * 100)} %`}>
                               {p >= 0.18 ? `Z${i + 1} ${Math.round(p * 100)}%` : ''}
                             </span>
                           ))}
@@ -487,7 +493,7 @@ function RunPage() {
       )}
       {bigMap && (
         <RouteExpanded lat={run.samples.lat} lon={run.samples.lon} t={run.samples.t} start={view.w.start[0] ?? 0} step={view.w.start.length > 1 ? view.w.start[1] - view.w.start[0] : 10}
-          metrics={METRICS.filter((m) => has(m.key)).map((m) => ({ key: m.key, title: m.title, format: m.format, invert: m.invert, values: rollingMean(x, series[m.key], 30), zones: zones[m.key] }))}
+          metrics={METRICS.filter((m) => has(m.key)).map((m) => ({ key: m.key, title: m.title, format: m.format, invert: m.invert, values: rollingMean(view.wx, view.wseries[m.key], 30), zones: zones[m.key] }))}
           initial={focus ?? slots.find((k) => k !== null) ?? 'speed'} onClose={() => setBigMap(false)} />
       )}
     </div>

@@ -2,8 +2,8 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { clock, ensureSpan, niceTicks, robustExtent, tickDecimals, useWidth } from './chartKit';
-import { zoneOf, zoneRanges, zoneShade } from '@/lib/settings';
-import { LANE, smoothPaths } from './charts';
+import { zoneColor, zoneOf, zoneRanges } from '@/lib/settings';
+import { LANE, smoothPaths, thinPoints } from './charts';
 import { MIN_SPAN, clampDomain, kmLabel, kmTicks, panDomain, spanTicks, stepTicks, wheelFactor, zoomDomain, type DistanceMap, type Domain } from './chartZoom';
 
 export * from './chartZoom';
@@ -165,7 +165,7 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
     const pts: ([number, number] | null)[] = [];
     for (let i = i0; i < i1; i++) pts.push(l.y[i] === null ? null : [px(x[i]), py(l.y[i]!)]);
     const range = vals.length ? [Math.min(...vals), Math.max(...vals)] as const : null;
-    const p = smoothPaths(pts, b0 + bandH);
+    const p = smoothPaths(thinPoints(pts), b0 + bandH);
     // With zones, the values labelled are the boundaries of the zones in the range.
     const inRange = (t: number) => t >= lo && t <= hi;
     const bounds = (l.zones ?? []).filter(inRange);
@@ -321,8 +321,8 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
             </g>
           ))}
           {(banded ? drawn : scale ? [scale] : []).map((d) => d.stripes.map((st) => (
-            <g key={`z${d.line.key}${st.z}`} className="zone-stripe" data-metric={d.line.key}>
-              <rect x={PLOT_L} y={st.y} width={Math.max(0, plotW)} height={st.h} fill={d.line.color} fillOpacity={zoneShade(st.z, st.n)} />
+            <g key={`z${d.line.key}${st.z}`} className="zone-stripe" data-metric={d.line.key} data-zone={st.z + 1}>
+              <rect x={PLOT_L} y={st.y} width={Math.max(0, plotW)} height={st.h} fill={zoneColor(st.z, st.n)} fillOpacity={0.14} />
             </g>
           )))}
           {zoneLabels.map((z) => <text key={z.id} x={width - laneR - 4} y={z.y} fontSize="9.5" textAnchor="end" fill="var(--text-2)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke" className="zone-name">{z.text}</text>)}
@@ -444,7 +444,7 @@ function Overview({ x, total, line, laps, domain, onDomain, selection, onSelect,
     const vals = line.y.filter((v): v is number => v !== null);
     const [lo, hi] = ensureSpan(...robustExtent(vals), line.minSpan);
     const py = (v: number) => { const f = (Math.min(Math.max(v, lo), hi) - lo) / (hi - lo); return 4 + (line.invert ? f : 1 - f) * (h - 8); };
-    return smoothPaths(x.map((t, i): [number, number] | null => (line.y[i] === null ? null : [px(t), py(line.y[i]!)])), h).line;
+    return smoothPaths(thinPoints(x.map((t, i): [number, number] | null => (line.y[i] === null ? null : [px(t), py(line.y[i]!)]))), h).line;
     // px follows fwd and the width, which are among the dependencies.
   }, [line, x, total, plotW, fwd]);
   const zoomed = domain[1] - domain[0] < total;

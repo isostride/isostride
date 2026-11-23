@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { PATHS, readJson, writeJson } from '@/lib/fs';
-import { DEFAULT_ZONES, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneOf, zoneRanges, zonesFromMaxHr, zonesFromPace, zonesFromPower, DEFAULT_PERFORMANCE } from '@/lib/settings';
+import { DEFAULT_ZONES, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneOf, zoneRanges, zonesFromMaxHr, zonesFromPace, zonesFromPower, zoneColor, zoneTint, DEFAULT_PERFORMANCE } from '@/lib/settings';
 import { NodeFolder } from '../support/nodeFolder';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zones-'));
@@ -55,5 +55,22 @@ describe('Metric zones in settings', () => {
     expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: DEFAULT_ZONES, performance: { ...DEFAULT_PERFORMANCE, load: 'rtss', confirmed: true }, directions: {}, defaults: true });
     await writeJson(folder, PATHS.settings, { zones: { speed: [270, 'x', 330], power: 'none' } });
     expect((await readSettings(folder)).zones).toEqual({ speed: [330, 270] });
+  });
+});
+
+describe('Zones coloured on the chart', () => {
+  it('Zones coloured green to red', () => {
+    // Five zones: Z1 green, Z2 the lighter green, Z3 yellow, Z4 orange, Z5 red ("od czerwongo do zielonego").
+    expect([0, 1, 2, 3, 4].map((i) => zoneColor(i, 5))).toEqual(['var(--heat-1)', 'var(--heat-2)', 'var(--heat-3)', 'var(--heat-4)', 'var(--heat-5)']);
+    // Six end on dark red; three on green, yellow and red; two on green and red; one green.
+    expect(zoneColor(5, 6)).toBe('var(--heat-6)');
+    expect([0, 1, 2].map((i) => zoneColor(i, 3))).toEqual(['var(--heat-1)', 'var(--heat-3)', 'var(--heat-5)']);
+    expect([0, 1].map((i) => zoneColor(i, 2))).toEqual(['var(--heat-1)', 'var(--heat-5)']);
+    expect(zoneColor(0, 1)).toBe('var(--heat-1)');
+    // More than six: the sixth colour for the rest; an index out of range held at the ends.
+    expect(zoneColor(7, 8)).toBe('var(--heat-6)');
+    expect(zoneColor(-1, 5)).toBe('var(--heat-1)');
+    // A tint: the colour mixed with the surface.
+    expect(zoneTint(4, 5, 35)).toBe('color-mix(in srgb, var(--heat-5) 35%, var(--surface))');
   });
 });

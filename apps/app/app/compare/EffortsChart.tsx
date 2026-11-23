@@ -5,7 +5,7 @@ import { clock, ensureSpan, niceTicks, robustExtent, smoothPaths, useMetrics, us
 import { figuresInWorker, type EffortFigures } from '@/lib/client';
 import { date } from '@/lib/format';
 import type { DataFolder } from '@/lib/fs';
-import { readSettings, zoneRanges, zoneShade } from '@/lib/settings';
+import { readSettings, zoneColor, zoneRanges } from '@/lib/settings';
 
 /** An effort chosen on the Efforts tab: where it is, and whether it is the selection compared from. */
 export interface ChartEffort {
@@ -143,7 +143,7 @@ export function EffortsChart({ efforts, handle, folder }: { efforts: ChartEffort
           onMouseMove={move} onMouseLeave={() => setCursor(null)}>
           {bands.map((b) => (
             <g key={b.m} className="effort-band" data-metric={b.m}>
-              {b.stripes.map((s) => <rect key={s.z} x={PAD.l} y={s.y} width={w - PAD.l - PAD.r} height={s.h} fill="var(--accent)" opacity={zoneShade(s.z, s.n)} className="zone-stripe" />)}
+              {b.stripes.map((s) => <rect key={s.z} x={PAD.l} y={s.y} width={w - PAD.l - PAD.r} height={s.h} fill={zoneColor(s.z, s.n)} opacity={0.14} className="zone-stripe" />)}
               {b.ticks.map((t) => (
                 <g key={t}>
                   <line x1={PAD.l} x2={w - PAD.r} y1={b.py(t)} y2={b.py(t)} stroke="var(--grid)" />

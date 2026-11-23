@@ -12,7 +12,7 @@ import { useMetrics } from '@/components';
 
 /** The thresholds of the models' checks: loaded with their tab. */
 const ModelsCard = dynamic(() => import('./ModelsCard').then((m) => m.ModelsCard), { ssr: false });
-import { DEFAULT_ZONES, zoneMetricsOf, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneRanges, zoneShade, zonesFromMaxHr, type ZoneMetric } from '@/lib/settings';
+import { DEFAULT_ZONES, zoneMetricsOf, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneRanges, zoneTint, zonesFromMaxHr, type ZoneMetric } from '@/lib/settings';
 
 /** The values of the models (heart rates, thresholds, time constants): loaded with the Models tab. */
 const PerformanceCard = dynamic(() => import('../performance/PerformanceCard').then((m) => m.PerformanceCard), { ssr: false });
@@ -30,7 +30,7 @@ function ZoneChips({ m, boundaries }: { m: ZoneMetric; boundaries: number[] }) {
         // A pace zone reads from the slow end: "> 5:30" rather than "≥ 5:30".
         const paceText = m.pace ? (r.hi === null ? `> ${show(m, r.lo!)}` : r.lo === null ? `≤ ${show(m, r.hi)}` : `${show(m, r.hi)}–${show(m, r.lo)}`) : text;
         return (
-          <span key={i} className="zone-chip" style={{ background: `color-mix(in srgb, var(--accent) ${Math.round(zoneShade(i, ranges.length) * 140)}%, var(--surface))` }}>
+          <span key={i} className="zone-chip" style={{ background: zoneTint(i, ranges.length, 30) }}>
             <b>Z{i + 1}</b> {paceText}
           </span>
         );
