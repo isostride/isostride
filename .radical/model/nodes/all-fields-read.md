@@ -4,6 +4,7 @@ type: "scenario"
 label: "All fields read"
 gherkin: |
   And every 1 s Sample has the expected speed, heart rate, cadence, ground contact time, vertical oscillation, step length, power, altitude, GPS position and temperature
+  And the Run has the file's other numeric fields as metrics too (vertical ratio), with their names and units
   And every Lap has the expected start, end, duration and distance
 given: "the sample FIT file \"tempo-25.fit\" with hand-checked expected values"
 then: "the Run has the expected start time, source file, device, distance and duration"

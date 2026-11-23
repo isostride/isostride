@@ -368,6 +368,12 @@
     "targetId": "53251c56-3638-4ae7-909e-759e305873ad"
   },
   {
+    "id": "0cfcdb11-5b86-47ef-8185-66a3bd6b71db",
+    "relationType": "verifies",
+    "sourceId": "eedbc272-266e-498a-871e-850ef29657ce",
+    "targetId": "79d48e18-956c-4108-9eaf-18e7dd467f81"
+  },
+  {
     "id": "0d241330-84b1-45ee-ae95-817c18a3cb69",
     "quote": "A: Effort from a standing start: Like a time trial or test: the block starts from a stop (standing still or auto-pause just before it), not on the move. A block attribute 'start: standing / flying'; with 'standing', an instance must begin right after a stop, and every instance of the block starts the same way.",
     "relationType": "derives",
@@ -671,6 +677,12 @@
     "targetId": "f926b068-e811-49b2-8b51-f7df388e2ea8"
   },
   {
+    "id": "14b7c652-71d8-4d53-995c-55765c9c1397",
+    "relationType": "verifies",
+    "sourceId": "05f1008a-d515-43d2-958e-fccc67ffb363",
+    "targetId": "d61eb6c6-1894-4c74-a00d-1d90d91e302d"
+  },
+  {
     "id": "14e68d3a-2027-4d26-b766-10528eae981a",
     "relationType": "illustrates",
     "sourceId": "8b8003c2-e262-4787-95d6-4576f080cdf3",
@@ -711,6 +723,13 @@
     "quote": "1. zamien trend na analysis , 2. w analysis chce miec mozliwosc dodania bloku lub blokow, biegu i biegow .. 3. w analysis porownuje dane ... na tych samych wykresach",
     "relationType": "derives",
     "sourceId": "f6e6082a-1b7a-49e5-8f92-3bca3c726419",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "162a7980-52aa-4464-8df6-c78590d2851e",
+    "quote": "Gdzie mają być dostępne nowe metryki?\n(użytkownik) Wszędzie\nczy gdy metryk bedzie mniej lub wiecej w plikach to aplikacja sie dostosuje ?",
+    "relationType": "derives",
+    "sourceId": "d02fd861-20a1-4567-98d7-a603d612429d",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
@@ -1836,6 +1855,13 @@
     "relationType": "performed-by",
     "sourceId": "9eb7b737-0977-45c2-a785-1570c3a41d5a",
     "targetId": "af580e00-9fde-4182-89d8-479d71707a14"
+  },
+  {
+    "id": "3955dc85-6a08-4812-ad27-6feb3663f5e2",
+    "quote": "czy aplikacja zadziala z inymi zegarkami ? garmin itp ?\nW tym samym PR",
+    "relationType": "derives",
+    "sourceId": "d61eb6c6-1894-4c74-a00d-1d90d91e302d",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "399009e7-de75-4c6f-9cd6-c3faafc5c7ca",
@@ -4375,6 +4401,13 @@
     "targetId": "875a1b04-e98e-4a01-afa9-eab609a3a630"
   },
   {
+    "id": "932467cc-f70a-4a9c-a494-f5e8ff5b5953",
+    "quote": "Które pola z pliku FIT mają się stać metrykami?\nWszystkie liczbowe",
+    "relationType": "derives",
+    "sourceId": "7379e576-1802-487b-bc76-a9d745b2e2bd",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "93367f80-97e5-44b7-b44d-585a46115ae2",
     "relationType": "constrains",
     "sourceId": "6571fdbf-e3a5-4871-8aec-2f04b8ff4a85",
@@ -5592,6 +5625,12 @@
     "targetId": "368d77bf-f7ca-4698-8943-e0f8518b648a"
   },
   {
+    "id": "ba934034-e7e0-4c86-9c5d-045a9b177be5",
+    "relationType": "constrains",
+    "sourceId": "027b71b3-7b37-4e61-b765-489c9b4e9ecc",
+    "targetId": "dcc9c750-4930-43ec-b29a-96d8cc3419e7"
+  },
+  {
     "id": "baeb2ede-d306-4875-b301-e466f52052a0",
     "relationType": "verifies",
     "sourceId": "a23ad5ec-41a8-4148-9fcd-a762769f05a9",
@@ -5694,6 +5733,12 @@
     "relationType": "illustrates",
     "sourceId": "a58faa23-2592-4664-90ca-6b1c0143af21",
     "targetId": "de34688d-e396-4d2a-9461-bfc5d27540a6"
+  },
+  {
+    "id": "bf374d5c-ee2f-4a1c-8177-2291bca34114",
+    "relationType": "constrains",
+    "sourceId": "d3fb5710-54c5-4fe4-9969-e73257747c7c",
+    "targetId": "dcc9c750-4930-43ec-b29a-96d8cc3419e7"
   },
   {
     "id": "bf3f702c-8d86-4f86-9421-d807cef2f6ad",
@@ -6063,6 +6108,13 @@
     "relationType": "constrains",
     "sourceId": "fc4d5152-99b5-44ae-8ff1-2728cb8cfdf5",
     "targetId": "a694fdc9-58ad-462b-a996-c49812b6da79"
+  },
+  {
+    "id": "cb673ffb-e7d5-46b4-a7e5-3ca9962e831a",
+    "quote": "Dla metryki, której aplikacja nie zna (np. oddech, temperatura ciała ze Stryda), nie wiadomo, czy wyżej znaczy lepiej. Jak ją traktować w porównaniach i werdyktach?\nNeutralnie + ustawienie",
+    "relationType": "derives",
+    "sourceId": "79d48e18-956c-4108-9eaf-18e7dd467f81",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "cbd94eaf-8930-442f-bba2-9aea4d480421",
@@ -6571,6 +6623,12 @@
     "targetId": "67c05609-df7a-4838-bc6b-0180d42142d6"
   },
   {
+    "id": "dc87eda3-9219-4375-be94-d02af59aa80a",
+    "relationType": "implements",
+    "sourceId": "027b71b3-7b37-4e61-b765-489c9b4e9ecc",
+    "targetId": "d3fb5710-54c5-4fe4-9969-e73257747c7c"
+  },
+  {
     "id": "dca68606-8464-427b-bf9b-e7df12d1a951",
     "relationType": "satisfies",
     "sourceId": "989ddea4-2268-46b9-a61d-ef102ca319a6",
@@ -6793,6 +6851,12 @@
     "relationType": "transition",
     "sourceId": "9564f075-8afd-4fc4-8c62-7fc3c97e14bd",
     "targetId": "54b0cf3c-0a56-4033-bed3-328f9cc75395"
+  },
+  {
+    "id": "e361ac55-67e4-43db-91fb-ced17d585fe6",
+    "relationType": "verifies",
+    "sourceId": "2c0b7ca7-d960-4e72-a2d3-8008da1a2549",
+    "targetId": "d02fd861-20a1-4567-98d7-a603d612429d"
   },
   {
     "id": "e3d6a7cf-1418-4695-8257-f742b14f9bf9",

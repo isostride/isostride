@@ -5,4 +5,4 @@ label: "Sample"
 kind: "entity"
 ---
 
-One 1 s record of a run: speed, heart rate, cadence, ground contact time, vertical oscillation, step length, power, altitude, GPS position, temperature, effort pace and leg spring stiffness, each with the device that produced it (metric provenance).
+One record of a run (every 1 s, or every few seconds on a watch that records smart): each numeric field of the record as a metric (speed, heart rate, cadence, ground contact time, vertical oscillation, step length, power, altitude, temperature, effort pace, leg spring stiffness and whatever else the file holds, standard or developer field, with its name and unit), the GPS position and the distance, each metric with the device that produced it (metric provenance).

@@ -5,4 +5,4 @@ label: "Window"
 kind: "entity"
 ---
 
-A derived 10 s window of a run with the mean of each metric and quality flags: stopped, first 150 s of the run, grade, missing sensor signal. Records the algorithm version that produced it.
+A derived 10 s window of a run with the mean of each metric the run has and quality flags: stopped (less than half of its time covered by samples, or under 0.5 m/s), first 150 s of the run, grade, missing sensor signal. Records the algorithm version that produced it.
