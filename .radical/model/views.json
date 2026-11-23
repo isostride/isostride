@@ -2656,7 +2656,7 @@
     "folder": "Logical",
     "id": "fb3d0a34-a1a4-4eaa-bded-0dd03bd930d9",
     "kind": "static",
-    "name": "Strideprism",
+    "name": "Isostride",
     "nodeIds": [],
     "partOf": "4457e4a4-691c-48f1-965f-25e75ba89a17",
     "pipeline": {
@@ -3062,5 +3062,73 @@
     },
     "positions": {},
     "viewpoint": "container-dependencies"
+  },
+  {
+    "expandedNodeIds": [
+      "c72b5772-c80f-4e76-95de-c7ed8a022f88"
+    ],
+    "folder": "Logical",
+    "id": "b28469c9-d01f-495d-b558-92be4e8e640d",
+    "kind": "static",
+    "name": "Site",
+    "nodeIds": [],
+    "partOf": "b813328d-72e0-4b92-b4a0-fc8c4462228c",
+    "pipeline": {
+      "edges": "all",
+      "levels": [
+        {
+          "filters": [
+            {
+              "kind": "within",
+              "nodeId": "c72b5772-c80f-4e76-95de-c7ed8a022f88",
+              "self": true
+            }
+          ],
+          "ways": [
+            {
+              "types": [
+                "container",
+                "webapp",
+                "component"
+              ]
+            }
+          ]
+        },
+        {
+          "ways": [
+            {
+              "types": [
+                "person",
+                "system",
+                "container",
+                "webapp",
+                "database",
+                "queue",
+                "component"
+              ],
+              "via": {
+                "anyRelation": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "positions": {
+      "a694fdc9-58ad-462b-a996-c49812b6da79": {
+        "height": 840,
+        "width": 5467.515625,
+        "x": 0,
+        "y": 0
+      },
+      "c72b5772-c80f-4e76-95de-c7ed8a022f88": {
+        "height": 140,
+        "width": 210,
+        "x": 5227.515625,
+        "y": 120
+      }
+    },
+    "subject": "c72b5772-c80f-4e76-95de-c7ed8a022f88",
+    "viewpoint": "container-components"
   }
 ]

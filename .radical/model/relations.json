@@ -1319,6 +1319,13 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "28297808-afb3-4ac6-84af-b9a5d1f6b013",
+    "quote": "aplikacja bedzie wystawiona jako app.strideprism.com a strona na strideprism.com",
+    "relationType": "derives",
+    "sourceId": "4f0f6f76-68be-40ad-aa24-033e76d0db05",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "283a8dc3-46cc-4205-a18e-9f0dffcf8ae0",
     "relationType": "emits",
     "sourceId": "f58f1376-76ae-401e-9a0b-97fb2c636e4f",
@@ -2476,6 +2483,12 @@
     "targetId": "31ec5c9f-dc19-4487-a84b-67fbd381ead5"
   },
   {
+    "id": "51c7b564-227f-486b-8730-26d56752980c",
+    "relationType": "satisfies",
+    "sourceId": "c72b5772-c80f-4e76-95de-c7ed8a022f88",
+    "targetId": "4f0f6f76-68be-40ad-aa24-033e76d0db05"
+  },
+  {
     "id": "51f5e286-4e3a-451e-ab89-8065670cfbab",
     "relationType": "implements",
     "sourceId": "714b331c-200a-490e-85f7-6a72d565f28a",
@@ -3396,6 +3409,12 @@
     "relationType": "derives",
     "sourceId": "917c2241-0a24-4062-a058-0ca2df470b18",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "73460b31-175a-4ff2-a0dd-1ed1a758bb48",
+    "relationType": "verifies",
+    "sourceId": "79c59153-cd4d-4b15-81fe-de41f4378eed",
+    "targetId": "4f0f6f76-68be-40ad-aa24-033e76d0db05"
   },
   {
     "id": "736ab59f-c5ca-466f-81e5-3a76311528dc",
@@ -5228,6 +5247,12 @@
     "relationType": "verifies",
     "sourceId": "e4cddd01-214e-47af-9fbd-13cc29560a28",
     "targetId": "b77c2579-a694-46f3-b57d-9896de47072a"
+  },
+  {
+    "id": "b207b34e-398d-4772-ae8c-f409dea10d11",
+    "relationType": "satisfies",
+    "sourceId": "39491f93-4fcc-4f9c-960b-e12750deef8f",
+    "targetId": "4f0f6f76-68be-40ad-aa24-033e76d0db05"
   },
   {
     "id": "b219695e-87c5-46d9-b32e-6d001d4c5cca",

@@ -1,6 +1,6 @@
-# StridePrism
+# Isostride
 
-StridePrism analyses your running metrics: pace, heart rate, cadence, ground contact time, vertical oscillation, step length, power and leg spring stiffness. It compares like with like. You choose a **block**: a rule such as "the fastest 5 minutes with the heart rate above 160", "laps of 3 to 5 km" or "the runs since March", or a stretch of route or a workout lap the app found in your runs. The app selects every segment the block describes in your history and checks two things:
+Isostride analyses your running metrics: pace, heart rate, cadence, ground contact time, vertical oscillation, step length, power and leg spring stiffness. It compares like with like. You choose a **block**: a rule such as "the fastest 5 minutes with the heart rate above 160", "laps of 3 to 5 km" or "the runs since March", or a stretch of route or a workout lap the app found in your runs. The app selects every segment the block describes in your history and checks two things:
 
 - **Analysis:** whether a metric changes over time within that block.
 - **A/B comparison** (a tab of Analysis, on the items chosen there): whether two groups of instances differ, for example two pairs of shoes, two watches or a technique cue. The answer comes with a 95% interval and the noise level of your own data.
@@ -8,6 +8,19 @@ StridePrism analyses your running metrics: pace, heart rate, cadence, ground con
 It is an analysis tool, not a training planner.
 
 The app runs entirely in the browser. There is no server and no account, and nothing is sent anywhere. Your FIT files and everything derived from them stay in a folder on your computer.
+
+## Repository
+
+A monorepo (npm workspaces):
+
+| Folder | What |
+| --- | --- |
+| `apps/app` | the app (Next.js, static export), its tests and checks; served at app.isostride.com |
+| `apps/site` | the site (Next.js, static export); served at isostride.com |
+| `infra` | Terraform: Route 53, CloudFront, S3, the certificate and the deploy role ([infra/README.md](infra/README.md)) |
+| `.radical` | the model of the system: requirements, decisions, scenarios |
+
+From the root: `npm run dev` (the app on localhost:3000), `npm run dev:site` (localhost:3002), `npm run build`, `npm run check` (the app's full check). Each push to `master` is deployed by `.github/workflows/deploy.yml`.
 
 ## Requirements
 
@@ -20,7 +33,7 @@ The app runs entirely in the browser. There is no server and no account, and not
 2. Open the app and click **Choose data folder**. The browser asks for read and write access once. The app remembers the folder and asks again only if the browser drops the permission.
 3. Click **Import folder**. Each FIT file is imported once. If you add new files later, import again: only the new ones are processed. A file that cannot be read (damaged, or not a run) is skipped and listed with the reason.
 
-The app writes its own data next to your FIT files:
+The app writes its own data next to your FIT files (in a folder still named `strideprism/`, from before the app was called Isostride: data already imported stays readable):
 
 ```
 <your folder>/
@@ -62,18 +75,18 @@ The logo (and the folder's name under it) opens the Data folder screen: what the
 ## Development
 
 ```sh
-npm install
-npm run dev        # dev server on http://localhost:3000
-npm run build      # static export into .next-build/
+npm install                      # at the root: every workspace
+npm run dev                      # the app's dev server on http://localhost:3000
+npm run build                    # both static exports, into apps/*/.next-build/
 npm run typecheck
-npm test           # unit and integration tests (Vitest)
-npm run e2e        # end-to-end tests (Playwright: Chromium, plus WebKit for the not-supported message)
-npm run check      # tests + e2e + metrics, then radical check against the architecture model
+npm run check                    # the app: tests + e2e + metrics, then radical check against the architecture model
+npm test -w @isostride/app     # the app's unit and integration tests (Vitest)
+npm run e2e -w @isostride/app  # its end-to-end tests (Playwright: Chromium, plus WebKit for the not-supported message)
 ```
 
 The first `npm run e2e` needs the browsers: `npx playwright install chromium webkit`.
 
-Most tests read real FIT files from `test_data/coros_fit_2026/`. That folder holds personal health data, so it is not in the repository. Without it, the tests that need it fail.
+Most tests read real FIT files from `apps/app/test_data/coros_fit_2026/`. That folder holds personal health data, so it is not in the repository. Without it, the tests that need it fail.
 
 ### Architecture model
 

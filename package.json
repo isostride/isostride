@@ -1,50 +1,19 @@
 {
-  "name": "strideprism",
+  "name": "isostride",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "NEXT_DIST_DIR=.next-dev next dev -p 3000",
-    "build": "NEXT_DIST_DIR=.next-build next build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:report": "vitest run --coverage --reporter=default --reporter=json --outputFile=reports/vitest.json",
-    "check": "sh scripts/check.sh",
-    "metrics": "sh scripts/metrics.sh",
-    "e2e": "playwright test",
-    "test:unit": "vitest run --project unit",
-    "test:integration": "vitest run --project integration",
-    "nightly": "sh scripts/nightly.sh",
-    "check:deps": "node scripts/boundaries.mjs",
-    "lint": "eslint lib app components workers"
-  },
-  "dependencies": {
-    "@garmin/fitsdk": "^21.222.0",
-    "next": "^16.4.6",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1"
-  },
-  "devDependencies": {
-    "@axe-core/playwright": "^4.14.0",
-    "@playwright/test": "^1.65.1",
-    "@types/node": "^26.6.6",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitest/coverage-v8": "^5.1.1",
-    "eslint": "^10.15.0",
-    "eslint-plugin-compat": "^7.0.2",
-    "tsx": "^4.23.15",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.73.0",
-    "vitest": "^5.1.1",
-    "web-vitals": "^6.2.3"
-  },
-  "browserslist": [
-    "last 2 Chrome versions",
-    "last 2 Edge versions",
-    "last 2 Opera versions"
+  "description": "Isostride: the app (apps/app), the site (apps/site) and their infrastructure on AWS (infra)",
+  "workspaces": [
+    "apps/*"
   ],
-  "engines": {
-    "node": ">=26"
+  "scripts": {
+    "dev": "npm run dev -w @isostride/app",
+    "dev:site": "npm run dev -w @isostride/site",
+    "build": "npm run build -w @isostride/app && npm run build -w @isostride/site",
+    "build:app": "npm run build -w @isostride/app",
+    "build:site": "npm run build -w @isostride/site",
+    "check": "npm run check -w @isostride/app",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
   }
 }

@@ -1,0 +1,71 @@
+# The app (apps/app) to app.isostride.com and the site (apps/site) to isostride.com, on each push to
+# master: checked, built, copied to their S3 buckets, the CloudFront caches cleared. AWS is reached with
+# OIDC (the role of infra/github.tf); the full check with the end-to-end tests runs locally (npm run check),
+# for it needs the runner's own FIT files, which stay out of git.
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'eu-central-1' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check the app
+        working-directory: apps/app
+        run: |
+          npx tsc --noEmit
+          npx eslint lib app components workers
+          # The unit tests that read the runner's own FIT files (not in git) are left to the local check.
+          npx vitest run --project unit --exclude tests/unit/ab.test.ts --exclude tests/unit/recompute.test.ts --exclude tests/unit/trend.test.ts
+
+      - name: Check the site
+        working-directory: apps/site
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+      - name: Sign in to AWS
+        if: ${{ vars.AWS_DEPLOY_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # The hashed files kept a year (a new build has new names), the rest checked on every visit;
+      # old hashed files stay, so a page open during a deploy still finds its scripts.
+      - name: Deploy the app
+        if: ${{ vars.APP_BUCKET != '' }}
+        run: |
+          aws s3 sync apps/app/.next-build/_next/static "s3://${{ vars.APP_BUCKET }}/_next/static" --cache-control "public,max-age=31536000,immutable"
+          aws s3 sync apps/app/.next-build "s3://${{ vars.APP_BUCKET }}" --delete --exclude "_next/static/*" --cache-control "no-cache"
+          aws cloudfront create-invalidation --distribution-id "${{ vars.APP_DISTRIBUTION_ID }}" --paths "/*"
+
+      - name: Deploy the site
+        if: ${{ vars.SITE_BUCKET != '' }}
+        run: |
+          aws s3 sync apps/site/.next-build/_next/static "s3://${{ vars.SITE_BUCKET }}/_next/static" --cache-control "public,max-age=31536000,immutable"
+          aws s3 sync apps/site/.next-build "s3://${{ vars.SITE_BUCKET }}" --delete --exclude "_next/static/*" --cache-control "no-cache"
+          aws cloudfront create-invalidation --distribution-id "${{ vars.SITE_DISTRIBUTION_ID }}" --paths "/*"

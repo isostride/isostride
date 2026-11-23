@@ -1,24 +1,25 @@
 {
   "implements": [
-    { "element": "39491f93-4fcc-4f9c-960b-e12750deef8f", "name": "Web App", "paths": ["app"] },
-    { "element": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1", "name": "App Shell", "paths": ["components"] },
-    { "element": "d0291cd1-bdf1-4c49-8333-4b658a02f95d", "name": "Folder Access", "paths": ["lib/client", "lib/fs/browserFolder.ts"] },
-    { "element": "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7", "name": "Processing Worker", "paths": ["workers"] },
-    { "element": "ce42067b-80ea-40e1-a577-39607ab89630", "name": "Ingest", "paths": ["lib/ingest"] },
-    { "element": "31df2b33-7d61-4128-bd2a-a8fd73481b33", "name": "Prepare", "paths": ["lib/prepare"] },
-    { "element": "84b558e0-d87c-4134-8479-f01b164bcd47", "name": "Context", "paths": ["lib/context", "lib/gear"] },
-    { "element": "0765fef0-4b2e-4087-a745-30d31c103732", "name": "Pages", "paths": ["app", "lib/format"] },
-    { "element": "cbb5fc4a-220e-4316-97b6-63afe40c8cc8", "name": "Charts and Map", "paths": ["components/charts.tsx", "components/RunChart.tsx", "components/chartZoom.ts", "components/mapCamera.ts", "components/TrendChart.tsx"] },
-    { "element": "af580e00-9fde-4182-89d8-479d71707a14", "name": "Blocks", "paths": ["lib/blocks", "lib/detection", "lib/geo"] },
-    { "element": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9", "name": "Compare", "paths": ["lib/compare"] },
-    { "element": "ca29b4d4-2e21-4bd0-8a7d-dedef3dab8b4", "name": "Stats", "paths": ["lib/stats"] },
-    { "element": "c8218f3c-c48b-4800-a633-b190e85d5833", "name": "CSV Export", "paths": ["lib/compare/csv.ts"] },
-    { "element": "df4990c9-dd90-49cc-9eca-6507c3d5dd66", "name": "Pipeline", "paths": ["lib/pipeline"] },
-    { "element": "dcc9c750-4930-43ec-b29a-96d8cc3419e7", "name": "File Store", "paths": ["lib/fs/folder.ts", "lib/fs/manifest.ts"] },
-    { "element": "ea596479-434c-47bf-955f-e01d8bb2dddc", "name": "Shared Kernel", "paths": ["lib/kernel"] },
-    { "element": "49354ed3-2ed2-4462-b304-0688c5ddb16c", "name": "Settings", "paths": ["lib/settings"] },
-    { "element": "2632e603-65fd-4661-b830-d128d7f98975", "name": "Training log", "paths": ["lib/log"] },
-    { "element": "340e82f0-6223-4f6f-85eb-5418fff8ddec", "name": "Performance model", "paths": ["lib/load"] }
+    { "element": "39491f93-4fcc-4f9c-960b-e12750deef8f", "name": "Web App", "paths": ["apps/app/app"] },
+    { "element": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1", "name": "App Shell", "paths": ["apps/app/components"] },
+    { "element": "d0291cd1-bdf1-4c49-8333-4b658a02f95d", "name": "Folder Access", "paths": ["apps/app/lib/client", "apps/app/lib/fs/browserFolder.ts"] },
+    { "element": "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7", "name": "Processing Worker", "paths": ["apps/app/workers"] },
+    { "element": "ce42067b-80ea-40e1-a577-39607ab89630", "name": "Ingest", "paths": ["apps/app/lib/ingest"] },
+    { "element": "31df2b33-7d61-4128-bd2a-a8fd73481b33", "name": "Prepare", "paths": ["apps/app/lib/prepare"] },
+    { "element": "84b558e0-d87c-4134-8479-f01b164bcd47", "name": "Context", "paths": ["apps/app/lib/context", "apps/app/lib/gear"] },
+    { "element": "0765fef0-4b2e-4087-a745-30d31c103732", "name": "Pages", "paths": ["apps/app/app", "apps/app/lib/format"] },
+    { "element": "cbb5fc4a-220e-4316-97b6-63afe40c8cc8", "name": "Charts and Map", "paths": ["apps/app/components/charts.tsx", "apps/app/components/RunChart.tsx", "apps/app/components/chartZoom.ts", "apps/app/components/mapCamera.ts", "apps/app/components/TrendChart.tsx"] },
+    { "element": "af580e00-9fde-4182-89d8-479d71707a14", "name": "Blocks", "paths": ["apps/app/lib/blocks", "apps/app/lib/detection", "apps/app/lib/geo"] },
+    { "element": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9", "name": "Compare", "paths": ["apps/app/lib/compare"] },
+    { "element": "ca29b4d4-2e21-4bd0-8a7d-dedef3dab8b4", "name": "Stats", "paths": ["apps/app/lib/stats"] },
+    { "element": "c8218f3c-c48b-4800-a633-b190e85d5833", "name": "CSV Export", "paths": ["apps/app/lib/compare/csv.ts"] },
+    { "element": "df4990c9-dd90-49cc-9eca-6507c3d5dd66", "name": "Pipeline", "paths": ["apps/app/lib/pipeline"] },
+    { "element": "dcc9c750-4930-43ec-b29a-96d8cc3419e7", "name": "File Store", "paths": ["apps/app/lib/fs/folder.ts", "apps/app/lib/fs/manifest.ts"] },
+    { "element": "ea596479-434c-47bf-955f-e01d8bb2dddc", "name": "Shared Kernel", "paths": ["apps/app/lib/kernel"] },
+    { "element": "49354ed3-2ed2-4462-b304-0688c5ddb16c", "name": "Settings", "paths": ["apps/app/lib/settings"] },
+    { "element": "2632e603-65fd-4661-b830-d128d7f98975", "name": "Training log", "paths": ["apps/app/lib/log"] },
+    { "element": "340e82f0-6223-4f6f-85eb-5418fff8ddec", "name": "Performance model", "paths": ["apps/app/lib/load"] },
+    { "element": "c72b5772-c80f-4e76-95de-c7ed8a022f88", "name": "Site", "paths": ["apps/site"] }
   ],
   "verifies": [
     { "element": "2a0542b2-ead0-42d2-ad1c-24694dc2d613", "name": "Import new FIT files", "tests": [
@@ -746,6 +747,9 @@
     ] },
     { "element": "67154087-bcdd-43be-ad6f-bd9c3fef0932", "name": "Wizard on a folder set up before", "tests": [
       "e2e/import.spec.ts › Reopen same folder › Later launch reopens folder"
+    ] },
+    { "element": "79c59153-cd4d-4b15-81fe-de41f4378eed", "name": "Paths of the static export served", "tests": [
+      "tests/unit/hosting.test.ts › App and site served from AWS › Paths of the static export served"
     ] }
   ]
 }

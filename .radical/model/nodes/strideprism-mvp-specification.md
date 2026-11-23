@@ -755,3 +755,22 @@ Q: (użytkownik) popraw panel [screenshot: the Welcome screen as the first step,
 A: (model) Done: the Welcome panel in two columns: StridePrism on the left (what it does in three points, the data stays on this computer), the first step on the right: "Setup · step 1 of 8" with a bar of the steps, "Choose your data folder" in two short lines, why the browser asks, the button, and what comes next; stacked on a phone; checked by axe with the wizard.
 Q: (użytkownik) wizard przerywa po podaju katalogu z plikami
 A: (model) The folder held a mark that the wizard was skipped or done before, so it stopped after the first step. Done: a folder picked on the Welcome screen (the first step) always goes on into the wizard, filled with what the folder holds and skippable; a folder opened by itself (remembered) still opens it only once.
+Q: (użytkownik) ok chce stworzyc infrastructure na aws pod ta aplikacje ... route 53 z domena, cloudfront i pozniej s3 bucket ....  mam juz konto na aws
+A: (użytkownik) domena: Do zarejestrowania; IaC: Terraform (Recommended); deploy: GitHub Actions (Recommended)
+Q: (użytkownik) dodaktowo bedzie strona statyczna .. czyli aplikacja bedzie wystawiona jako app.strideprism.com a strona na strideprism.com
+Q: (użytkownik) strona ma byc w tym samym repo ... ma byc to monorepo
+A: (użytkownik) układ: apps/ i workspaces (Recommended); strona: Next.js static export (Recommended)
+A: (model) Done: a monorepo with npm workspaces: apps/app (the app, moved with its tests and checks), apps/site (the site, Next.js static export: what it does, how it works, the data stays on the computer, a way to the app), infra (Terraform: Route 53, one certificate, two private S3 buckets behind CloudFront, the GitHub OIDC deploy role, the state bucket in infra/bootstrap) and .github/workflows/deploy.yml (each push to master checked, built and deployed). Nothing is created on AWS yet: the domain is registered and terraform apply run by the runner (infra/README.md).
+Q: (użytkownik) strideprism.com - nie jest dostepna
+A: (użytkownik) Sprawdź dostępność za mnie
+A: (model) Checked at the registries (RDAP, .io by WHOIS), each against a domain known to be taken: strideprism.com taken; free: strideprism.io, strideprism.net, strideprism.app, strideprism.run, getstrideprism.com, usestrideprism.com, stride-prism.com. Recommended strideprism.io (app.strideprism.io), strideprism.net the cheaper one; a domain from another registrar is supported too (create_hosted_zone).
+Q: (użytkownik) ok a co proponujesz w zamian .... patrzac na cala aplikacje?
+A: (użytkownik) nie moja ... co porponujesz w zamian? cos na domenie run?
+Q: (użytkownik) ok .... a co innego ?
+Q: (użytkownik) ok wysil sie ...
+A: (użytkownik) ok kupilem isostride.com
+A: (użytkownik) rejestrator: Route 53 (AWS); marka: Tak, wszędzie Isostride (Recommended)
+A: (model) Done: the name Isostride everywhere the runner sees it (the app: menu, Welcome, setup, title; the site; the README), the packages (isostride, @isostride/app, @isostride/site), the AWS resources (isostride-…) and the domain (isostride.com, app.isostride.com, its zone from the Route 53 registration); kept: the data's own names (the strideprism/ folder in the data folder, the browser's keys, stride.prism), so what is imported and saved stays readable, and the GitHub repository's name until it is renamed there.
+Q: (użytkownik) pamietaj o organizacji na github ... tam ciagle jest strideprism
+A: (użytkownik) zrobione ... widze ze repo to ciagle strideprism
+A: (model) Done: the repository renamed to isostride/isostride (private), the git remote set to it; the deploy role of Terraform trusts isostride/isostride.
