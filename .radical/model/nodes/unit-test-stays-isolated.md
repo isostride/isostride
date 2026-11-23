@@ -9,6 +9,6 @@ metrics: |
   tests.unit.over_100ms == 0
   tests.unit.share >= 40 %
   tests.e2e.share <= 15 %
-then: "a test that reaches the network fails, every unit test runs in under 100 ms, unit tests are at least 40% of all tests and end-to-end tests at most 15%"
+then: "a test that reaches the network fails, every unit test runs in under 100 ms scaled by the speed of the machine (the reference machine 1), unit tests are at least 40% of all tests and end-to-end tests at most 15%"
 when: "it runs"
 ---
