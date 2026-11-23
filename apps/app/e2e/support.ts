@@ -21,7 +21,7 @@ export async function fakeFolderPicker(page: Page, { wizard = false } = {}): Pro
       if (location.protocol.startsWith('http') && sessionStorage.getItem('setup-skip-written')) return;
       try {
         const data = await (await navigator.storage.getDirectory()).getDirectoryHandle('data', { create: true });
-        const user = await (await data.getDirectoryHandle('strideprism', { create: true })).getDirectoryHandle('user', { create: true });
+        const user = await (await data.getDirectoryHandle('.isostride', { create: true })).getDirectoryHandle('user', { create: true });
         try { await user.getFileHandle('setup.json'); } catch {
           const w = await (await user.getFileHandle('setup.json', { create: true })).createWritable();
           await w.write('{"state":"skipped","at":"2026-11-23T00:00:00.000Z"}');
@@ -80,7 +80,7 @@ export async function recordMeasure(name: string, value: number): Promise<void> 
   all[name] = value;
   await fs.writeFile(file, JSON.stringify(all, null, 2));
 }
-/** Writes a text file into the fake data folder (path relative to it, e.g. strideprism/user/gear.json). */
+/** Writes a text file into the fake data folder (path relative to it, e.g. .isostride/user/gear.json). */
 export async function putText(page: Page, file: string, text: string): Promise<void> {
   await page.evaluate(async ({ file, text }) => {
     let dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('data', { create: true });
@@ -214,7 +214,7 @@ export async function setUpWithBlock(page: Page, { files = fitFiles(30, '2026-05
   await logOpenedFiles(page);
   await page.goto('/');
   await putFitFiles(page, await files);
-  await putText(page, 'strideprism/user/gear.json', JSON.stringify(gear));
+  await putText(page, '.isostride/user/gear.json', JSON.stringify(gear));
   await chooseFolder(page);
   await page.getByRole('heading', { name: 'Runs' }).waitFor();
   await importAll(page);

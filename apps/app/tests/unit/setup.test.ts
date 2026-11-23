@@ -24,7 +24,7 @@ describe('Setup wizard', () => {
     expect(await readSetup(folder)).toBeNull();
     await writeSetup(folder, 'done', new Date('2026-11-23T10:00:00Z'));
     expect(await readSetup(folder)).toEqual({ state: 'done', at: '2026-11-23T10:00:00.000Z' });
-    folder.files.set('strideprism/user/setup.json', '{"state":"other"}');
+    folder.files.set('.isostride/user/setup.json', '{"state":"other"}');
     expect(await readSetup(folder)).toBeNull();
   });
 });

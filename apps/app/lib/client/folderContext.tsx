@@ -22,6 +22,14 @@ interface FolderApi {
 const Ctx = createContext<FolderApi | null>(null);
 const HANDLE_KEY = 'folderHandle';
 
+/** The folder opened, its data moved first from strideprism/ to .isostride/ when an earlier version left it there. */
+async function opened(handle: FileSystemDirectoryHandle): Promise<FolderState> {
+  const folder = new BrowserFolder(handle);
+  const { moveLegacyData } = await import('@/lib/legacy');
+  await moveLegacyData(folder);
+  return { status: 'open', folder, handle };
+}
+
 export function FolderProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<FolderState>({ status: 'checking' });
   const [remembered, setRemembered] = useState<FileSystemDirectoryHandle | null>(null);
@@ -33,7 +41,7 @@ export function FolderProvider({ children }: { children: ReactNode }) {
       if (!handle) return setState({ status: 'not-chosen' });
       setRemembered(handle);
       const perm = await handle.queryPermission?.({ mode: 'readwrite' });
-      if (perm === 'granted') setState({ status: 'open', folder: new BrowserFolder(handle), handle });
+      if (perm === 'granted') setState(await opened(handle));
       else setState({ status: 'access-pending', name: handle.name });
     })();
   }, []);
@@ -42,13 +50,13 @@ export function FolderProvider({ children }: { children: ReactNode }) {
     const handle = await window.showDirectoryPicker!({ id: 'strideprism-data', mode: 'readwrite' });
     await setValue(HANDLE_KEY, handle);
     setRemembered(handle);
-    setState({ status: 'open', folder: new BrowserFolder(handle), handle });
+    setState(await opened(handle));
   }, []);
 
   const confirmAccess = useCallback(async () => {
     if (!remembered) return;
     const perm = await remembered.requestPermission?.({ mode: 'readwrite' });
-    if (perm === 'granted') setState({ status: 'open', folder: new BrowserFolder(remembered), handle: remembered });
+    if (perm === 'granted') setState(await opened(remembered));
   }, [remembered]);
 
   return <Ctx.Provider value={{ state, pick, confirmAccess }}>{children}</Ctx.Provider>;

@@ -33,12 +33,12 @@ From the root: `npm run dev` (the app on localhost:3000), `npm run dev:site` (lo
 2. Open the app and click **Choose data folder**. The browser asks for read and write access once. The app remembers the folder and asks again only if the browser drops the permission.
 3. Click **Import folder**. Each FIT file is imported once. If you add new files later, import again: only the new ones are processed. A file that cannot be read (damaged, or not a run) is skipped and listed with the reason.
 
-The app writes its own data next to your FIT files (in a folder still named `strideprism/`, from before the app was called Isostride: data already imported stays readable):
+The app writes its own data next to your FIT files, in `.isostride/` (hidden in Finder: ⌘⇧. shows it). Data that an earlier version left in `strideprism/` is moved there when you open the folder:
 
 ```
 <your folder>/
   *.fit or fit/*.fit             your exports, never modified
-  strideprism/
+  .isostride/
     user/                        what you entered
       gear.json                  shoes and heart-rate sensors with dates
       run-tags.json              workout type and technique cue per run

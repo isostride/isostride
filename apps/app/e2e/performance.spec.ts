@@ -35,7 +35,7 @@ test.describe('Performance model', () => {
     await thresholds.getByRole('button', { name: 'Save' }).click();
     await expect(thresholds.getByRole('status')).toContainText('Saved');
     await expect(thresholds.getByRole('button', { name: 'Save' })).toHaveCount(0);
-    expect(JSON.parse(await readText(page, 'strideprism/user/settings.json')).performance.thresholds).toEqual({ strapShare: 0.5 });
+    expect(JSON.parse(await readText(page, '.isostride/user/settings.json')).performance.thresholds).toEqual({ strapShare: 0.5 });
     await page.getByRole('tab', { name: 'Tags' }).click();
     await expect(page).toHaveURL(/\/settings\?tab=tags/);
     await expect(page.getByRole('region', { name: 'Tags' })).toContainText('Workout type');
@@ -128,7 +128,7 @@ test.describe('Performance model', () => {
     await card.getByRole('button', { name: 'Save and recompute' }).click();
     await expect(card.getByRole('status')).toHaveText('Saved · loads recomputed', { timeout: 60_000 });
     // Saved as the runner's own; the zones were not touched, so the default zones go on applying.
-    const saved = JSON.parse(await readText(page, 'strideprism/user/settings.json'));
+    const saved = JSON.parse(await readText(page, '.isostride/user/settings.json'));
     expect(saved.performance).toMatchObject({ load: 'powerTss', confirmed: true });
     expect(saved.zones).toBeUndefined();
     // On Load, a line names the model in use and leads to Settings.
@@ -202,7 +202,7 @@ test.describe('Performance model', () => {
     const pin = page.getByRole('button', { name: 'Pin Load · Weekly load to the dashboard' });
     await pin.click();
     await expect(pin).toHaveAttribute('aria-pressed', 'true');
-    expect(JSON.parse(await readText(page, 'strideprism/user/dashboard.json')).tiles).toContainEqual({ id: 'perf:load/weekly', kind: 'perf', ref: 'load/weekly', name: 'Load · Weekly load' });
+    expect(JSON.parse(await readText(page, '.isostride/user/dashboard.json')).tiles).toContainEqual({ id: 'perf:load/weekly', kind: 'perf', ref: 'load/weekly', name: 'Load · Weekly load' });
     // The files the Dashboard opens (its Last run reads its run) are not the Performance views': left out of the measure below.
     const openedBefore = await page.evaluate(() => [...(window as any).__opened] as string[]);
     await nav(page, 'Dashboard');

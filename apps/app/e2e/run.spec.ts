@@ -358,7 +358,7 @@ test.describe('Run chart', () => {
     await expect(page.getByText(/^These are the default zones/)).toHaveCount(0);
     await expect(page.getByRole('status')).toHaveText('Saved');
     // Only the zones entered are kept (the file also holds the performance model).
-    expect(JSON.parse(await readText(page, 'strideprism/user/settings.json')).zones).toEqual({ heartRate: [114, 133, 152, 171] });
+    expect(JSON.parse(await readText(page, '.isostride/user/settings.json')).zones).toEqual({ heartRate: [114, 133, 152, 171] });
     await page.goBack();
     await chart.waitFor();
     await expect(chart.locator('.zone-stripe[data-metric="heartRate"]').first()).toBeVisible();

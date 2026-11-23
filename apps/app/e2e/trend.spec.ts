@@ -8,7 +8,7 @@ test.describe('Denormalized index files', () => {
   test('Analysis without run files', async ({ page }) => {
     await setUpWithBlock(page);
     // Every row of block-instances.json holds shoes, sensor, tags and day state.
-    const { instances } = JSON.parse(await readText(page, 'strideprism/derived/block-instances.json'));
+    const { instances } = JSON.parse(await readText(page, '.isostride/derived/block-instances.json'));
     expect(instances.length).toBeGreaterThan(0);
     for (const i of instances) {
       expect(Object.keys(i.context.run)).toEqual(expect.arrayContaining(['shoes', 'heartRateSource', 'workoutType', 'techniqueCue']));

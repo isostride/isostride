@@ -14,7 +14,7 @@
     { "element": "ca29b4d4-2e21-4bd0-8a7d-dedef3dab8b4", "name": "Stats", "paths": ["apps/app/lib/stats"] },
     { "element": "c8218f3c-c48b-4800-a633-b190e85d5833", "name": "CSV Export", "paths": ["apps/app/lib/compare/csv.ts"] },
     { "element": "df4990c9-dd90-49cc-9eca-6507c3d5dd66", "name": "Pipeline", "paths": ["apps/app/lib/pipeline"] },
-    { "element": "dcc9c750-4930-43ec-b29a-96d8cc3419e7", "name": "File Store", "paths": ["apps/app/lib/fs/folder.ts", "apps/app/lib/fs/manifest.ts"] },
+    { "element": "dcc9c750-4930-43ec-b29a-96d8cc3419e7", "name": "File Store", "paths": ["apps/app/lib/fs/folder.ts", "apps/app/lib/fs/manifest.ts", "apps/app/lib/legacy"] },
     { "element": "ea596479-434c-47bf-955f-e01d8bb2dddc", "name": "Shared Kernel", "paths": ["apps/app/lib/kernel"] },
     { "element": "49354ed3-2ed2-4462-b304-0688c5ddb16c", "name": "Settings", "paths": ["apps/app/lib/settings"] },
     { "element": "2632e603-65fd-4661-b830-d128d7f98975", "name": "Training log", "paths": ["apps/app/lib/log"] },

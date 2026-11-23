@@ -5,4 +5,4 @@ label: "Data Folder"
 kind: "generic"
 ---
 
-The user's data folder: the fit/ files, the strideprism/ manifest with schema and algorithm versions and the list of imported files, user/ (user-entered, never recomputed) and derived/ (fully rebuildable).
+The user's data folder: the fit/ files, .isostride/ (strideprism/ before 23 Nov 2026) with user/ (user-entered, never recomputed) and derived/ (fully rebuildable, with the manifest of schema and algorithm versions and the list of imported files).

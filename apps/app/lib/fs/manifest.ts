@@ -6,7 +6,7 @@ export type ImportStatus =
   | { status: 'duplicate'; runId: string }
   | { status: 'error'; reason: string };
 
-/** strideprism/manifest.json */
+/** .isostride/derived/manifest.json */
 export interface Manifest {
   schemaVersion: number;
   algorithmVersion: number;
@@ -20,7 +20,7 @@ export function emptyManifest(): Manifest {
 
 /**
  * The manifest, in derived/ with the rest of what is computed from the FIT files; one left at
- * strideprism/ by an earlier version is moved there first.
+ * .isostride/ by an earlier version is moved there first.
  */
 export async function readManifest(folder: DataFolder): Promise<Manifest | null> {
   const manifest = await readJson<Manifest>(folder, PATHS.manifest);

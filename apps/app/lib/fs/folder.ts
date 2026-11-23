@@ -34,35 +34,38 @@ export async function writeJson(folder: DataFolder, path: string, value: unknown
   await folder.writeText(path, JSON.stringify(value));
 }
 
-/** The paths of the strideprism/ layout (spec section 7). */
+/**
+ * The paths of the .isostride/ layout (spec section 7): the app's own data in the runner's folder (the
+ * runner's request of 23 Nov 2026: ".isostride"; strideprism/ before, moved by lib/legacy).
+ */
 export const PATHS = {
   fit: 'fit',
-  root: 'strideprism',
+  root: '.isostride',
   /** with the rest of what is computed from the FIT files (the author's request of 21 Nov 2026) */
-  manifest: 'strideprism/derived/manifest.json',
+  manifest: '.isostride/derived/manifest.json',
   /** where versions before 21 Nov 2026 kept it; moved into derived/ on first reading */
-  legacyManifest: 'strideprism/manifest.json',
-  user: 'strideprism/user',
-  gear: 'strideprism/user/gear.json',
-  runTags: 'strideprism/user/run-tags.json',
-  blockDefinitions: 'strideprism/user/block-definitions.json',
+  legacyManifest: '.isostride/manifest.json',
+  user: '.isostride/user',
+  gear: '.isostride/user/gear.json',
+  runTags: '.isostride/user/run-tags.json',
+  blockDefinitions: '.isostride/user/block-definitions.json',
   /** the analyses the runner saved, by name */
-  analyses: 'strideprism/user/analyses.json',
+  analyses: '.isostride/user/analyses.json',
   /** the tiles of the Dashboard, in their order */
-  dashboard: 'strideprism/user/dashboard.json',
-  settings: 'strideprism/user/settings.json',
+  dashboard: '.isostride/user/dashboard.json',
+  settings: '.isostride/user/settings.json',
   /** whether the setup wizard was gone through or skipped in this folder */
-  setup: 'strideprism/user/setup.json',
-  derived: 'strideprism/derived',
-  runs: 'strideprism/derived/runs',
-  runFile: (id: string) => `strideprism/derived/runs/${id}.json`,
-  runsIndex: 'strideprism/derived/runs-index.json',
-  segments: 'strideprism/derived/segments.json',
-  blockInstances: 'strideprism/derived/block-instances.json',
-  dayState: 'strideprism/derived/day-state.json',
-  loadSummaries: 'strideprism/derived/load-summaries.json',
-  dataStamp: 'strideprism/derived/stamp.json',
-  cache: 'strideprism/derived/cache',
+  setup: '.isostride/user/setup.json',
+  derived: '.isostride/derived',
+  runs: '.isostride/derived/runs',
+  runFile: (id: string) => `.isostride/derived/runs/${id}.json`,
+  runsIndex: '.isostride/derived/runs-index.json',
+  segments: '.isostride/derived/segments.json',
+  blockInstances: '.isostride/derived/block-instances.json',
+  dayState: '.isostride/derived/day-state.json',
+  loadSummaries: '.isostride/derived/load-summaries.json',
+  dataStamp: '.isostride/derived/stamp.json',
+  cache: '.isostride/derived/cache',
 } as const;
 
 /**

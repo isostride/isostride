@@ -777,3 +777,23 @@ A: (model) Done: the repository renamed to isostride/isostride (private), the gi
 Q: (użytkownik) zrob to repo publiczne ... nie chce placic za akcje
 A: (użytkownik) Tak, upublicznij; licencja: MIT
 A: (model) Done: LICENSE (MIT) at the root, "license": "MIT" in the three packages, a License section in the README; the repository isostride/isostride made public, so its Actions are free.
+Q: (użytkownik) a lokalny katalog ... to ciagle strideprism
+A: (model) Done: the local folder renamed to /Volumes/data/Dev/isostride (the dev servers stopped, the agent's project memory copied to the new path, the Next.js caches with absolute paths removed); VS Code and the agent session to be reopened there.
+Q: (użytkownik) ok ... przeszedlem na isostride .... chce wypchnac na aws co mam zrobic
+Q: (użytkownik) jak stworzyc osobne konto pod isostride
+Q: (użytkownik) mam konto free ... czy organizacje moge stworzyc w ramach free?
+A: (model) The account is on the Paid plan (with 110 USD of credits left), so AWS Organizations is open to it; the credits are shared with the member accounts.
+Q: (użytkownik) czemu przelaczenie regionow jest zablokowane?
+Q: (użytkownik) czy jestes w stanie zrobic to za mnie na profilu radical?
+A: (model) The organization and the account isostride (410090450739) were already made; the AWS CLI profile isostride takes OrganizationAccountAccessRole in it from the profile radical-tools (no IAM Identity Center). isostride.com is registered in the management account.
+A: (użytkownik) tak i przenies domene na konto isostride
+A: (model) The domain cannot move to another account until 60 days after its registration (about 22 Jan 2027); its hosted zone was made in the account isostride by Terraform (create_hosted_zone = true), the domain's name servers set to it, the empty zone of the management account removed.
+Q: (użytkownik) pytanie, na glownym koncie aws mam inna aplikacje ... upewnij sie ze nic nie nadpiszesz
+A: (model) Terraform works in the account isostride only (both providers on the profile isostride, its state there); in the management account only isostride.com was touched (its name servers, its empty zone removed), radical.tools left as it was (11 records).
+A: (użytkownik) tak
+A: (model) Done: terraform apply (34 resources) in the account isostride, the five variables set in GitHub, the deploy workflow green; isostride.com, www.isostride.com (to isostride.com) and app.isostride.com answer 200. On the way: the certificate's validation record keyed by the domain (known at plan), the deploy role's trust with GitHub's immutable subject (repo:isostride@348399734/isostride@1467002530:…).
+Q: (użytkownik) jak w management consoli aws przepiac sie na isostride account?
+Q: (użytkownik) zrob poprawki
+A: (model) Done: the infra fixes committed and pushed to master, deployed by the workflow.
+Q: (użytkownik) katalog tworzony na podsstawie plikow gdzie trzymasz stan nazywa sie strideprism ... zmien nazwe na .isostride ?
+A: (model) Done: the app's data in the data folder is in .isostride/ (requirement Data folder layout); data left in strideprism/ by an earlier version is moved there when the folder is opened (copied, then strideprism/ removed). The browser's keys (strideprism.*, the IndexedDB database strideprism) kept, as the runner does not see them.

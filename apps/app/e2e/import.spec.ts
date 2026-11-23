@@ -61,11 +61,11 @@ test.describe('Pick data folder', () => {
     await expect(step('Done').getByRole('definition')).toHaveText(['1', '52 bpm', '188 bpm', '113, 132, 150, 169', '1 shoes · 0 straps', 'rTSS']);
     await page.getByRole('button', { name: 'Save and finish' }).click();
     await expect(page).toHaveURL(/\/dashboard$/, { timeout: 60_000 });
-    const saved = JSON.parse(await readText(page, 'strideprism/user/settings.json'));
+    const saved = JSON.parse(await readText(page, '.isostride/user/settings.json'));
     expect(saved.performance).toMatchObject({ load: 'rtss', restHr: 52, maxHr: 188, thresholdPace: 250, confirmed: true });
-    expect(JSON.parse(await readText(page, 'strideprism/user/gear.json')).gear).toMatchObject([{ name: 'Test shoes', type: 'shoes', to: null }]);
+    expect(JSON.parse(await readText(page, '.isostride/user/gear.json')).gear).toMatchObject([{ name: 'Test shoes', type: 'shoes', to: null }]);
     expect(saved.zones.heartRate).toEqual([113, 132, 150, 169]);
-    expect(JSON.parse(await readText(page, 'strideprism/user/setup.json')).state).toBe('done');
+    expect(JSON.parse(await readText(page, '.isostride/user/setup.json')).state).toBe('done');
     // From Settings at any time, filled with what is saved; Skip leaves it as it is.
     await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
     await page.getByRole('link', { name: 'Setup wizard' }).click();
@@ -95,9 +95,9 @@ test.describe('Reopen same folder', () => {
     await expect(page.getByRole('button', { name: 'Choose data folder' })).toHaveCount(0);
     await expect(page.locator('.crumbs')).toContainText('data');
     // A folder set up before the wizard came (its settings saved, the wizard never gone through): it opens once there too.
-    await putText(page, 'strideprism/user/settings.json', JSON.stringify({ schemaVersion: 1, performance: { load: 'rtss', restHr: 55 } }));
+    await putText(page, '.isostride/user/settings.json', JSON.stringify({ schemaVersion: 1, performance: { load: 'rtss', restHr: 55 } }));
     await page.evaluate(async () => {
-      const user = await (await (await (await navigator.storage.getDirectory()).getDirectoryHandle('data')).getDirectoryHandle('strideprism')).getDirectoryHandle('user');
+      const user = await (await (await (await navigator.storage.getDirectory()).getDirectoryHandle('data')).getDirectoryHandle('.isostride')).getDirectoryHandle('user');
       await user.removeEntry('setup.json');
     });
     await page.reload();
