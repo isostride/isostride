@@ -60,8 +60,8 @@ const MODEL_ROWS_EN: [string, string][] = [
 
 export const CONTENT: Record<Lang, Content> = {
   en: {
-    title: 'IsoStride · an open platform for analysing your runs',
-    description: 'IsoStride is an open platform for analysing your runs: the metrics in the FIT files of your watch and performance models, open source so you can add your own. It runs in your browser: no account, no cloud, your data stays on your computer.',
+    title: 'IsoStride · an open platform for analysing your running training',
+    description: 'IsoStride is an open platform for analysing your running training: the metrics in the FIT files of your watch and performance models, open source so you can add your own. It runs in your browser: no account, no cloud, your data stays on your computer.',
     ogAlt: 'The Dashboard of IsoStride, on demo data',
     home: 'IsoStride, home',
     sections: 'Sections',
@@ -70,13 +70,13 @@ export const CONTENT: Record<Lang, Content> = {
     source: 'Source on GitHub',
     other: { name: 'Polski', short: 'PL' },
     hero: {
-      h1: 'IsoStride is an open platform for analysing your runs.',
+      h1: 'IsoStride is an open platform for analysing your running training.',
       lead: 'It reads the FIT files your watch exports and analyses their metrics in your browser. It is open source, so you can add your own models and analyses. There is no account and no cloud: the files, and everything computed from them, stay in a folder on your disk.',
       facts: <>Free, MIT licence · {GH} · Chrome, Edge or Opera on a desktop</>,
     },
     heroShot: {
       alt: 'The Dashboard of IsoStride: this week’s running, form, the last run, fitness and fatigue, critical speed and recent runs.',
-      caption: 'The Dashboard. The screens on this page show demo data of a made-up runner with a critical speed of about 3:15 /km; click one to open it full size.',
+      caption: 'The Dashboard. The screens on this page show demo data; click one to open it full size.',
     },
     openFull: 'Open full size.',
     why: {
@@ -158,23 +158,23 @@ export const CONTENT: Record<Lang, Content> = {
   },
 
   pl: {
-    title: 'IsoStride · otwarta platforma do analizy biegów',
-    description: 'IsoStride to otwarta platforma do analizy biegów. Wczytuje pliki FIT z zegarka, pokazuje wszystkie zapisane w nich metryki i liczy modele wydolności. Kod jest otwarty, więc możesz dopisać własne. Działa w przeglądarce: bez konta i bez chmury, dane zostają u Ciebie.',
+    title: 'IsoStride · otwarta platforma do analizy treningu biegowego',
+    description: 'IsoStride to otwarta platforma do analizy treningu biegowego. Wczytuje pliki FIT z zegarka, pokazuje wszystkie zapisane w nich metryki i liczy modele wydolności. Kod jest otwarty, więc możesz dopisać własne. Działa w przeglądarce: bez konta i bez chmury, dane zostają u Ciebie.',
     ogAlt: 'Pulpit IsoStride na danych demonstracyjnych',
     home: 'IsoStride, strona główna',
     sections: 'Sekcje',
-    nav: [['why', 'Po co'], ['local', 'Dane u Ciebie'], ['metrics', 'Metryki'], ['models', 'Modele'], ['open', 'Otwarty kod']],
+    nav: [['why', 'Dlaczego'], ['local', 'Dane u Ciebie'], ['metrics', 'Metryki'], ['models', 'Modele'], ['open', 'Otwarty kod']],
     openApp: 'Otwórz aplikację',
     source: 'Kod na GitHubie',
     other: { name: 'English', short: 'EN' },
     hero: {
-      h1: 'IsoStride: otwarta platforma do analizy biegów.',
+      h1: 'IsoStride: otwarta platforma do analizy treningu biegowego.',
       lead: 'Wskazujesz pliki FIT wyeksportowane z zegarka, a IsoStride analizuje je w przeglądarce. Kod jest otwarty, więc możesz dodać własne modele i analizy. Nie zakładasz konta i nic nie trafia do chmury: pliki i wszystkie wyniki zostają w folderze na Twoim dysku.',
       facts: <>Bezpłatnie, licencja MIT · {GH_PL} · Chrome, Edge lub Opera na komputerze</>,
     },
     heroShot: {
       alt: 'Pulpit IsoStride: kilometry z tego tygodnia, forma, ostatni bieg, sprawność i zmęczenie, prędkość krytyczna i ostatnie biegi.',
-      caption: 'Pulpit. Zrzuty na tej stronie pokazują dane demonstracyjne fikcyjnego biegacza z prędkością krytyczną około 3:15 /km. Kliknij zrzut, żeby go powiększyć.',
+      caption: 'Pulpit. Zrzuty na tej stronie pokazują dane demonstracyjne. Kliknij zrzut, żeby go powiększyć.',
     },
     openFull: 'Powiększ.',
     why: {

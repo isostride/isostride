@@ -491,3 +491,35 @@ test.describe('Run chart', () => {
     await expect(big).toHaveCount(0);
   });
 });
+
+test.describe('Back to the previous screen', () => {
+  test('Back to what was shown before the run', async ({ page }) => {
+    await openWithFolder(page, await fitFiles(3, '2026-11-09'));
+    await importAll(page);
+    const palette = page.getByRole('dialog', { name: 'Command palette' });
+    const openFromPalette = async (n: number) => {
+      await page.keyboard.press('ControlOrMeta+k');
+      await palette.locator('.cmdk-item.group-runs').nth(n).click();
+      await expect(palette).toHaveCount(0);
+    };
+    // From Runs: back to Runs.
+    await showList(page);
+    await page.locator('tr.row').nth(0).click();
+    await expect(page.getByRole('link', { name: '← Runs' })).toBeVisible();
+    const a = page.url();
+    // From that run to another (⌘K): back to the first run, named by its date, as the back arrow goes.
+    await openFromPalette(1);
+    await expect(page).not.toHaveURL(a);
+    const toRun = page.getByRole('link', { name: /^← Run of / });
+    await expect(toRun).toBeVisible();
+    await toRun.click();
+    await expect(page).toHaveURL(a);
+    await expect(page.getByRole('link', { name: '← Runs' })).toBeVisible();
+    // From the Dashboard: back to the Dashboard, not to Runs.
+    await page.locator('.sidebar').getByRole('link', { name: /Dashboard$/ }).click();
+    await expect(page).toHaveURL(/\/dashboard/);
+    await openFromPalette(0);
+    await page.getByRole('link', { name: '← Dashboard' }).click();
+    await expect(page).toHaveURL(/\/dashboard/);
+  });
+});

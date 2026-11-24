@@ -1157,3 +1157,17 @@ A: (użytkownik) klikniecie na logo pokazuje popup z logiem, krotka informacje o
 A: (użytkownik) przycisk about ... chyba nie ma sensu
 A: (użytkownik) przy logu numer wersi nie dawaj pod spodem ale z prawej stronie
 A: (model) Done: the logo opens a splash (the mark, the name, "An open platform for analysing your runs", what the app does, that the data never leave the computer, the version with its commit and build date, Release notes and Close; no About button); Esc or a click beside it closes it. The version stands to the right of the name beside the logo.
+A: (użytkownik) w compare ... chcialbym moc pokazac takie statystyki: [pasted:] Porównuję z poprzednim 3×10 min z 13 października, czyli sprzed 6 tygodni. Od tamtej pory nie było innego treningu w tym formacie. | 13 paź | 24 lis | Zmiana || Tempo seria 1 / 2 / 3 | 4:10 / 4:06 / 4:06 | 4:00 / 3:54 / 3:54 | około −11 s/km || Średnie tempo w seriach | ~4:07 | ~3:56 | −4.5% || Dystans w 30 min pracy | 7.28 km | 7.62 km | +340 m || Moc w seriach | 237–238 W | 246–248 W | +3.5% || Kadencja | 170 / 173 / 175 | 172 / 177 / 179 | +2–4 || Długość kroku | 1.41 / 1.41 / 1.39 m | 1.46 / 1.45 / 1.43 m | +4–5 cm || Kontakt z podłożem | 218 / 211 / 211 ms | 215 / 208 / 208 ms | −3 ms || Vertical ratio | 6.8 / 6.6 / 6.6% | 6.5 / 6.1 / 6.0% | lepiej || Przerwy (trucht 2′) | 7:08–8:28/km | 6:13–6:58/km | aktywniejsze
+A: (użytkownik) to porwnanie 2 biegow 3x10min ... 3 tygodnie temu i zisiaj (no requirement)
+Q: (model) Gdzie w Analysis (compare) ma się pokazać porównanie dwóch treningów seria po serii (tabela jak w Twoim przykładzie)? [Nowa zakładka (Recommended): nowa zakładka Analysis, np. „Seria po serii”: działa, gdy w elementach są dwa biegi o tym samym układzie okrążeń (3 × 10 min). | W zakładce A/B | Na ekranie biegu]
+A: (użytkownik) Nowa zakładka (Recommended)
+Q: (model) Jak wybierać parę biegów? [Auto + ręcznie (Recommended): do biegu aplikacja sama znajduje poprzedni bieg w tym samym formacie (link z ekranu biegu otwiera Analysis z tą parą); można też ręcznie dodać dowolne dwa biegi. | Tylko ręcznie]
+A: (użytkownik) Auto + ręcznie (Recommended)
+A: (użytkownik) [a screenshot of the Run screen's back link "← Runs"] przegladnij wszystkie  .. back ... w tym momencie do tego sa strzalki ... moze sz zostawic ale to pwoinien byc return to tego co bylo wczensiej
+A: (użytkownik) w popup mam : Otwarta platforma do analizy biegów ... brzmi malo profesjonalnie ... Otwarta platforma do analizy formy biegaowej ????
+Q: (model) Jakie motto w popupie po kliknięciu logo (dziś: „Otwarta platforma do analizy biegów” / „An open platform for analysing your runs”)? […treningu biegowego (Recommended): PL „Otwarta platforma do analizy treningu biegowego”, EN „An open platform for analysing your running training” | …formy biegowej | …danych z biegów]
+A: (użytkownik) …treningu biegowego (Recommended)
+Q: (model) Gdzie zmienić to motto? [Popup i strona (Recommended): to samo zdanie w popupie aplikacji i w nagłówku strony (EN i /pl) | Tylko popup]
+A: (użytkownik) Popup i strona (Recommended)
+A: (użytkownik) popraw tekst Pulpit. Zrzuty na tej stronie pokazują dane demonstracyjne fikcyjnego biegacza z prędkością krytyczną około 3:15 /km. Kliknij zrzut, żeby go powiększyć. .... nie pisz nic o fikcyjnym biegaczu
+A: (użytkownik) zmien tez naglowek Po co  - powinno byc dlaczego

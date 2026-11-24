@@ -33,7 +33,7 @@ test.describe('Journeys', () => {
     // The logo opens a splash: the app, what it is and its version; Esc closes it.
     await page.locator('.sidebar .brand').click();
     const splash = page.getByRole('dialog', { name: 'IsoStride' });
-    await expect(splash).toContainText('An open platform for analysing your runs');
+    await expect(splash).toContainText('An open platform for analysing your running training');
     await expect(splash).toContainText(/Version \d+\.\d+/);
     await expect(splash.getByRole('link', { name: 'Release notes' })).toHaveAttribute('href', /\/releases/);
     await page.keyboard.press('Escape');

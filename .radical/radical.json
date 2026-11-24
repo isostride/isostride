@@ -904,6 +904,19 @@
       "tests/integration/copy.test.ts › Phone reads from a copy › The kept results of the jobs in the copy alone",
       "tests/integration/copy.test.ts › Phone reads from a copy › The copy filled in the background with what it lacks, newest runs first",
       "tests/integration/copy.test.ts › Phone reads from a copy › A file left empty in the copy read from the folder and mended"
+    ] },
+    { "element": "93ce685a-e1b3-4be5-9797-463055592ec2", "name": "Previous 2 × 3 min compared rep by rep", "tests": [
+      "e2e/reps.spec.ts › Rep by rep › Previous workout compared rep by rep"
+    ] },
+    { "element": "57aab67e-c55c-476d-9cac-50cc36dc08aa", "name": "Reps' changes computed", "tests": [
+      "tests/unit/reps.test.ts › Workouts compared rep by rep › Reps paired and their changes computed",
+      "tests/unit/reps.test.ts › Workouts compared rep by rep › Changes that go both ways have no verdict",
+      "tests/unit/reps.test.ts › Workouts compared rep by rep › Runs of other layouts compared by their efforts in order",
+      "tests/unit/reps.test.ts › Previous workout of a layout › Previous run of the layout found"
+    ] },
+    { "element": "457c8016-90e8-4e54-b595-90b2639a7b21", "name": "Back to what was shown before", "tests": [
+      "e2e/run.spec.ts › Back to the previous screen › Back to what was shown before the run",
+      "tests/unit/screenTrail.test.ts › Back to the previous screen › Back to what was shown before, from the history"
     ] }
   ]
 }

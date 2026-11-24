@@ -6,3 +6,4 @@ export * from './describe';
 export * from './select';
 export * from './trend';
 export * from './saved';
+export * from './reps';

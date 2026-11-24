@@ -30,6 +30,8 @@ const SavedList = eager(() => import('./SavedAnalyses').then((m) => m.SavedList)
 const AddDialog = eager(() => import('./AddDialog').then((m) => m.AddDialog));
 const BlockSheet = eager(() => import('../segments/BlockSheet').then((m) => m.BlockSheet));
 const EffortsPanel = eager(() => import('./EffortsPanel').then((m) => m.EffortsPanel), () => <div className="card muted small" style={{ padding: 18 }}>{t('Loading the efforts…')}</div>);
+/** The Rep by rep tab: loaded when it opens. */
+const RepsTab = eager(() => import('./RepsTab').then((m) => m.RepsTab), () => <div className="card muted small" style={{ padding: 18 }}>{t('Reading the runs…')}</div>);
 const CurveTab = eager(() => import('./CurveTab').then((m) => m.CurveTab), () => <div className="card chart muted small" style={{ padding: 18 }}>{t('Loading the curve…')}</div>);
 
 const DAY = 86_400_000;
@@ -38,8 +40,8 @@ const ALL_RUNS = encodeRule(ruleOf({ type: 'run' }));
 
 
 /** The sections of the screen, one at a time (requirement "Analysis sections as tabs"). */
-type Tab = 'trends' | 'segments' | 'ab' | 'curve';
-const TABS: [Tab, string][] = [['trends', msg('Trends')], ['segments', msg('Efforts')], ['ab', 'A/B'], ['curve', msg('Pace / power curve')]];
+type Tab = 'trends' | 'segments' | 'ab' | 'curve' | 'reps';
+const TABS: [Tab, string][] = [['trends', msg('Trends')], ['segments', msg('Efforts')], ['ab', 'A/B'], ['curve', msg('Pace / power curve')], ['reps', msg('Rep by rep')]];
 /** What sets a block apart, shown under its name: its kind, how its segments start, where its heart rate is read from. */
 function attributes(d: BlockDefinition | null): string[] {
   if (!d) return [];
@@ -497,6 +499,10 @@ function AnalysisPage() {
               {curve && curves.metric === curve && curves.key === sourcesKey && !computing && <CurveTab metric={curve} items={curveItems} bests={curves.by} missingPower={curve === 'power' && curves.metric === 'power' && items.some((i) => (curves.by.get(i.id)?.length ?? 0) === 0)} />}
 
             </>
+          )}
+          {items.length > 0 && tab === 'reps' && (
+            <RepsTab runIds={items.filter((i) => i.kind === 'run').map((i) => i.id)} rows={runs} files={files} read={(id) => readRunFile(folder, id)}
+              onAdd={(id) => setItems(addItem(latest.current, 'run', id))} />
           )}
         </div>
       </>

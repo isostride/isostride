@@ -50,6 +50,12 @@
     "targetId": "c0171ff7-cd96-4397-bfa6-0dc87e93beb7"
   },
   {
+    "id": "014d3726-e523-430a-9e0b-4ea597ab0dbe",
+    "relationType": "verifies",
+    "sourceId": "57aab67e-c55c-476d-9cac-50cc36dc08aa",
+    "targetId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69"
+  },
+  {
     "id": "01680cc3-f768-41ca-909b-a26819786196",
     "relationType": "traces-to",
     "sourceId": "c811d742-0659-4f3a-b7b9-da09229a7bf0",
@@ -174,6 +180,13 @@
     "targetId": "2a60339a-0a2c-4da8-b12e-4227eba8f4d1"
   },
   {
+    "id": "073d6213-ee6e-4c9f-8982-bfb5fda53f76",
+    "quote": "Auto + ręcznie (Recommended)",
+    "relationType": "derives",
+    "sourceId": "8fb79d8d-79eb-4aba-80b4-9d59d5d7bb0c",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "0749e952-572b-4de0-8611-75965b43689d",
     "quote": "F3. Quality flags on 10 s windows: stopped, first 150 s of the run, grade, missing sensor signal.",
     "relationType": "derives",
@@ -231,6 +244,13 @@
     "relationType": "interacts",
     "sourceId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1",
     "targetId": "0765fef0-4b2e-4087-a745-30d31c103732"
+  },
+  {
+    "id": "091a96f5-ddd1-48a5-b123-0aad4f6c861e",
+    "quote": "zmien tez naglowek Po co  - powinno byc dlaczego",
+    "relationType": "derives",
+    "sourceId": "94c0358a-e500-4a46-915b-1c5bc0b2dd38",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "event": "91dffe7a-a202-4302-9438-c0c3055367ed",
@@ -1459,6 +1479,12 @@
     "targetId": "be3423a1-1145-46d6-97c5-40b0abf4f00b"
   },
   {
+    "id": "29584c57-73b0-4d7e-8756-5fc92b6573b1",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69"
+  },
+  {
     "id": "297f29c7-58c4-435f-824a-ccc738bc6c04",
     "relationType": "satisfies",
     "sourceId": "39491f93-4fcc-4f9c-960b-e12750deef8f",
@@ -1898,10 +1924,23 @@
     "targetId": "a0e2d555-fcc7-45bd-a3e4-a9e4403028cb"
   },
   {
+    "id": "3725d08d-6057-49df-a157-8f7f3590678d",
+    "quote": "nie pisz nic o fikcyjnym biegaczu",
+    "relationType": "derives",
+    "sourceId": "94c0358a-e500-4a46-915b-1c5bc0b2dd38",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "372f39e2-2b2f-4bc4-a334-41bdde411ca7",
     "relationType": "illustrates",
     "sourceId": "338e617d-2563-4e79-997a-bf7596ac10aa",
     "targetId": "063a771e-2d84-49e2-8c92-d15fc52a2bce"
+  },
+  {
+    "id": "3781e5ad-37e0-4cbb-b9df-cfcf0f2f1bac",
+    "relationType": "verifies",
+    "sourceId": "93ce685a-e1b3-4be5-9797-463055592ec2",
+    "targetId": "8fb79d8d-79eb-4aba-80b4-9d59d5d7bb0c"
   },
   {
     "id": "37b84fc6-ca6e-42c7-ae11-9f41dd526b03",
@@ -2621,6 +2660,13 @@
     "targetId": "fd0a299b-2073-4758-a3c8-abd7a18087be"
   },
   {
+    "id": "4e22c2ae-1364-457e-a836-f6445a8799ef",
+    "quote": "moze sz zostawic ale to pwoinien byc return to tego co bylo wczensiej",
+    "relationType": "derives",
+    "sourceId": "ce948ace-bcae-4bc0-843b-68941b12e0c3",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "4e309e3a-ddb5-4ee6-99a5-afc062fc3821",
     "relationType": "traces-to",
     "sourceId": "7379e576-1802-487b-bc76-a9d745b2e2bd",
@@ -2722,6 +2768,13 @@
     "relationType": "implements",
     "sourceId": "714b331c-200a-490e-85f7-6a72d565f28a",
     "targetId": "db7bc61d-5dad-4fc7-a241-5d1fa31ca854"
+  },
+  {
+    "id": "52e9f845-52c2-4925-a808-186968997a01",
+    "quote": "w compare ... chcialbym moc pokazac takie statystyki\nNowa zakładka (Recommended)",
+    "relationType": "derives",
+    "sourceId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "cardinality": "many",
@@ -3712,6 +3765,12 @@
     "relationType": "verifies",
     "sourceId": "1a7ad257-fd5a-4d25-b529-e09dd80998a7",
     "targetId": "e6909b1e-ea15-4395-b4e5-0ecdb64eef5b"
+  },
+  {
+    "id": "73c484da-22e4-4d80-a739-9944d8d7e21b",
+    "relationType": "verifies",
+    "sourceId": "457c8016-90e8-4e54-b595-90b2639a7b21",
+    "targetId": "ce948ace-bcae-4bc0-843b-68941b12e0c3"
   },
   {
     "id": "74e3db91-459a-4942-ba8f-6926081af95c",
@@ -7048,6 +7107,12 @@
     "targetId": "d3295c52-b649-4492-aa82-5539aa4a1a1b"
   },
   {
+    "id": "da1a0be7-997a-4c65-9487-aa61bf917071",
+    "relationType": "verifies",
+    "sourceId": "93ce685a-e1b3-4be5-9797-463055592ec2",
+    "targetId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69"
+  },
+  {
     "id": "da3fcbae-affc-4e8a-9ce2-f5d43a4ffa73",
     "relationType": "presented-by",
     "sourceId": "c6d5b5bc-63e5-4e1d-b3e0-9f4b74617881",
@@ -7742,6 +7807,12 @@
     "targetId": "2f223517-a575-43e4-bac5-c331d15faa41"
   },
   {
+    "id": "ef1588eb-e086-444b-8004-97775f9844d5",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "8fb79d8d-79eb-4aba-80b4-9d59d5d7bb0c"
+  },
+  {
     "id": "ef4fb321-3d4b-495d-bcb5-7212a4433066",
     "quote": "The code in this element must stay easy to understand, test and change as it grows and as people come and go. That needs parts with clear boundaries: a change to one part should not ripple through the others, each part should be testable on its own, and the rules about what may depend on what should hold because the build checks them, not because everyone remembers them. The checks below share one layout: each part lives in src/modules/<name> with its published API in src/modules/<name>/index.ts and its declarations in src/modules/<name>/module.json; shared code, where allowed, lives in src/shared-kernel; the rules are in .dependency-cruiser.cjs and run as `npm run check:deps` (depcruise src --config .dependency-cruiser.cjs); known violations, where frozen, are in .dependency-cruiser-known-violations.json.",
     "relationType": "derives",
@@ -8104,6 +8175,13 @@
     "relationType": "verifies",
     "sourceId": "ee5830e5-5f44-4c16-b3a4-a2e0b6692085",
     "targetId": "0e952c97-92a0-4037-846e-9154619a2261"
+  },
+  {
+    "id": "fa3a7763-779c-422b-9604-38fd20eb0c07",
+    "quote": "brzmi malo profesjonalnie\n…treningu biegowego (Recommended)\nPopup i strona (Recommended)",
+    "relationType": "derives",
+    "sourceId": "94c0358a-e500-4a46-915b-1c5bc0b2dd38",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "fa58f666-5d6c-43cb-bbbc-35e3094d51e0",

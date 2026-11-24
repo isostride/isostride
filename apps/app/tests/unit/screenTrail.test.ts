@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { backTarget, recordAddress, type TrailStore } from '@/components/screenTrail';
+import { backTarget, previousPage, recordAddress, runStartOf, type TrailStore } from '@/components/screenTrail';
 
 const store = (): TrailStore & { data: Map<string, string> } => {
   const data = new Map<string, string>();
@@ -34,5 +34,22 @@ describe('Back to the previous screen', () => {
     const broken: TrailStore = { getItem: () => { throw new Error('denied'); }, setItem: () => { throw new Error('denied'); } };
     recordAddress(broken, '/compare', null);
     expect(backTarget(broken)).toEqual({ href: '/', label: 'Runs', viaHistory: false });
+  });
+
+  it('Back to what was shown before, from the history', () => {
+    // From the Dashboard: back to it, one step (the back arrow's way), not to Runs.
+    expect(previousPage(['/', '/dashboard', '/run?id=20261013-184900'], 2)).toEqual({ href: '/dashboard', label: 'Dashboard', steps: 1 });
+    // From another run: back to that run, named by its date; the run's own changes of address passed over.
+    expect(previousPage(['/', '/run?id=20261013-184900&from=60&to=600', '/run?id=20261124-180000', '/run?id=20261124-180000&from=0&to=600'], 3))
+      .toEqual({ href: '/run?id=20261013-184900&from=60&to=600', label: 'Run of {date}', run: '20261013-184900', steps: 2 });
+    // An address that only redirects, or of another site, is passed over; Segments and Compare as they were left.
+    expect(previousPage(['/segments?id=b1', '/blocks', '', '/run?id=r1'], 3)).toEqual({ href: '/segments?id=b1', label: 'Segments', steps: 3 });
+    expect(previousPage(['/compare?items=r:r1:0&tab=reps', '/run?id=r1'], 1)?.label).toBe('Compare');
+    // Nothing of the app behind (the run opened in a new tab): none.
+    expect(previousPage(['/run?id=r1'], 0)).toBeNull();
+    expect(previousPage(['', '/run?id=r1'], 1)).toBeNull();
+    // A run's start from its id.
+    expect(runStartOf('20261013-184900')).toBe('2026-10-13T18:49:00');
+    expect(runStartOf('synthetic')).toBeNull();
   });
 });

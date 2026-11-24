@@ -2018,3 +2018,9 @@ html[data-lang-pending] body { visibility: hidden; animation: lang-reveal 0s 1.5
 .diagnostics { align-items: flex-start; }
 .diagnostics-text { display: block; width: 100%; margin-top: 10px; font: 12px/1.45 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); white-space: pre; resize: vertical; }
 .diagnostics-actions { display: flex; flex-direction: column; gap: 8px; flex: none; }
+
+/* Rep by rep (requirement "Workouts compared rep by rep"): a change better or worse in every rep. */
+.reps-card { padding: 14px 18px; }
+.reps-lead { margin: 0 0 10px; }
+.reps-table td.better { color: var(--ok); font-weight: 600; }
+.reps-table td.worse { color: var(--warn); font-weight: 600; }

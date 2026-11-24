@@ -90,7 +90,7 @@ test.describe('Definition from selection', () => {
     await page.getByRole('link', { name: 'Compare similar' }).click();
     await expect(page.getByRole('heading', { name: 'Compare', level: 1 })).toBeVisible();
     const sections = page.getByRole('tablist', { name: 'Compare sections' });
-    await expect(sections.getByRole('tab')).toHaveText(['Trends', 'Efforts', 'A/B', 'Pace / power curve']);
+    await expect(sections.getByRole('tab')).toHaveText(['Trends', 'Efforts', 'A/B', 'Pace / power curve', 'Rep by rep']);
     const route = page.locator('.item-chip', { hasText: /^Same route as \w{3} \d+, 2026 · \d\.\d km/ });
     const profileChip = page.locator('.item-chip', { hasText: /^Same profile as / });
     await expect(route).toHaveCount(1, { timeout: 60_000 });

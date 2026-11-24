@@ -23,7 +23,7 @@ const PREV = 'strideprism.prevPage';
 
 /** The screens a back link can name, by path: keys of their names, shown through t(). */
 export const SCREEN_NAMES: Record<string, string> = {
-  '/': msg('Runs'), '/compare': msg('Compare'), '/performance': msg('Performance'), '/settings': msg('Settings'),
+  '/': msg('Runs'), '/dashboard': msg('Dashboard'), '/segments': msg('Segments'), '/compare': msg('Compare'), '/performance': msg('Performance'), '/settings': msg('Settings'),
 };
 
 const pathOf = (url: string) => url.split('?')[0] || '/';
@@ -52,4 +52,38 @@ export function backTarget(store: TrailStore): { href: string; label: string; vi
     if (href && SCREEN_NAMES[pathOf(href)]) return { href, label: SCREEN_NAMES[pathOf(href)], viaHistory: store.getItem(PREV) === href };
   } catch { /* no storage */ }
   return { href: '/', label: msg('Runs'), viaHistory: false };
+}
+
+/** What the back link returns to: its link, its name (a key of the texts), the run it is when one, and how many steps back in the history. */
+export interface PreviousPage {
+  href: string;
+  label: string;
+  /** a run: its id (null when its address carries none); left out for a screen */
+  run?: string | null;
+  steps: number;
+}
+
+/**
+ * What was shown before the current page in the tab's history (requirement "Back to the previous
+ * screen": "return to tego co bylo wczensiej"), as the back arrow goes: the addresses of the history's
+ * entries, oldest first (path and query; '' for one of another site), and the current one's index.
+ * The current page's own changes of address and addresses that are no screen (a redirect) are passed
+ * over; null when nothing of the app is behind.
+ */
+export function previousPage(urls: string[], index: number): PreviousPage | null {
+  const here = urls[index] === undefined ? null : pageOf(urls[index]);
+  for (let i = index - 1; i >= 0; i--) {
+    const url = urls[i];
+    if (!url || pageOf(url) === here) continue;
+    const path = pathOf(url);
+    if (path === '/run') return { href: url, label: msg('Run of {date}'), run: new URLSearchParams(url.split('?')[1] ?? '').get('id'), steps: index - i };
+    if (SCREEN_NAMES[path]) return { href: url, label: SCREEN_NAMES[path], steps: index - i };
+  }
+  return null;
+}
+
+/** The start of a run from its id (YYYYMMDD-HHMMSS, local time) as an ISO time without a zone; null for another id. */
+export function runStartOf(id: string | null): string | null {
+  const m = /^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})$/.exec(id ?? '');
+  return m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}` : null;
 }

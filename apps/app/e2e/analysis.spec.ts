@@ -62,9 +62,9 @@ test.describe('Analysis workspace', () => {
     await page.goBack();
     await expect(page.locator('.item-chip')).toHaveCount(2);
 
-    // The sections are tabs, kept in the link: Trends first, then Segments, A/B and the curve; one at a time.
+    // The sections are tabs, kept in the link: Trends first, then Segments, A/B, the curve and Rep by rep; one at a time.
     const tabs = page.getByRole('tablist', { name: 'Compare sections' });
-    await expect(tabs.getByRole('tab')).toHaveText(['Trends', 'Efforts', 'A/B', 'Pace / power curve']);
+    await expect(tabs.getByRole('tab')).toHaveText(['Trends', 'Efforts', 'A/B', 'Pace / power curve', 'Rep by rep']);
     await expect(tabs.getByRole('tab', { name: 'Trends' })).toHaveAttribute('aria-selected', 'true');
     await tabs.getByRole('tab', { name: 'Efforts' }).click();
     await expect(page).toHaveURL(/tab=segments/);
