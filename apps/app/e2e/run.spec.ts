@@ -33,12 +33,31 @@ test.describe('Run chart', () => {
     await openRun(page);
     await page.getByRole('group', { name: 'Scale shown' }).getByRole('button', { name: /^Heart rate/ }).click();
     await nav(page, 'Settings');
-    await expect(page.getByRole('tab', { name: 'Charts', exact: true })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Display', exact: true })).toBeVisible();
     await expect(page).toHaveURL(/\/settings/);
     // Back on the run: the view as it was left.
     await page.goBack();
     await expect(page.getByRole('group', { name: 'Scale shown' }).getByRole('button', { pressed: true })).toContainText('Heart rate');
   });
+  test('Run tagged from its screen', async ({ page }) => {
+    await openRun(page);
+    // Its tags and note set on the Run screen as on the Runs list, shown in its head, kept in the folder.
+    await page.getByRole('button', { name: 'Tags and note' }).click();
+    const editor = page.getByRole('dialog', { name: /^Edit / });
+    await editor.getByLabel('Type').selectOption('tempo');
+    await editor.getByLabel('Note').fill('Windy on the way back');
+    await editor.getByRole('button', { name: 'Save' }).click();
+    await expect(editor).toHaveCount(0);
+    const head = page.locator('.run-head');
+    await expect(head.locator('.run-tag')).toHaveText(['tempo']);
+    await expect(head.locator('.run-note')).toContainText('Windy on the way back');
+    const id = new URL(page.url()).searchParams.get('id')!;
+    expect(JSON.parse(await readText(page, '.isostride/user/run-tags.json')).tags[id]).toEqual({ workoutType: 'tempo', note: 'Windy on the way back' });
+    // Opened again: the editor holds them.
+    await page.getByRole('button', { name: 'Tags and note' }).click();
+    await expect(editor.getByLabel('Type')).toHaveValue('tempo');
+  });
+
   test('Metrics laid over one chart, zoomed in and out', async ({ page }) => {
     const chart = await openRun(page);
     // Four metrics by default, one line each, laid over one chart.
@@ -59,9 +78,9 @@ test.describe('Run chart', () => {
     await expect(chart.locator('.run-line').last()).toHaveAttribute('data-metric', 'heartRate');
     // By default each line in its own band, top to bottom, its name in the gutter; overlaid, they share the height.
     // No chart menu any more ("przycisk chart w runs ... czy ma sens jeszcze"): how every chart draws is set in
-    // Settings, Charts, which a small icon on the chart leads to; the metrics stay above the chart.
+    // Settings, Display, with no link to it from the run ("usun link do settings z runa"); the metrics stay above the chart.
     await expect(page.getByRole('button', { name: 'Chart', exact: true })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Chart settings' })).toHaveAttribute('href', '/settings?tab=charts');
+    await expect(page.getByRole('link', { name: 'Chart settings' })).toHaveCount(0);
     await expect(chart.locator('.band-name')).toHaveText(['Pace', 'HR', 'Cadence', 'GCT']);
     const tops = await chart.locator('.band-name rect').evaluateAll((rs) => rs.map((r) => Number(r.getAttribute('y'))));
     expect(tops).toEqual([...tops].sort((a, b) => a - b));
@@ -354,7 +373,7 @@ test.describe('Run chart', () => {
     // With no settings saved, the default zones stripe heart rate and pace (cadence is off by now).
     for (const m of ['heartRate', 'speed']) await expect(chart.locator(`.zone-stripe[data-metric="${m}"]`).first()).toBeVisible();
     await nav(page, 'Settings');
-    await page.getByRole('tab', { name: 'Zones' }).click();
+    await page.getByRole('tab', { name: 'Metrics' }).click();
     await expect(page.getByText(/^These are the default zones/)).toBeVisible();
     await expect(page.getByRole('textbox', { name: /^Pace/ })).toHaveValue('6:00, 5:15, 4:45, 4:15');
     await page.getByRole('textbox', { name: /^Heart rate/ }).fill('');

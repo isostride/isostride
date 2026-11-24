@@ -115,13 +115,10 @@ test.describe('Layout that fits a phone', () => {
         await check(`Performance · ${tab} · ${view}`);
       }
     }
-    await page.getByRole('tab', { name: 'To do', exact: true }).click();
-    await page.locator('.todo-item').first().waitFor();
-    await check('Performance · To do', true);
 
     // Settings: its tabs.
     await nav(page, 'Settings');
-    for (const tab of ['Zones', 'Gear', 'Tags', 'Charts', 'Models', 'Display']) {
+    for (const tab of ['Models', 'Metrics', 'Gears', 'Tags', 'Display', 'About']) {
       await page.getByRole('tab', { name: tab, exact: true }).click();
       await page.getByRole('region', { name: tab }).waitFor();
       await check(`Settings · ${tab}`, tab !== 'Tags');

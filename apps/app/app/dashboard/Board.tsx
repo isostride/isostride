@@ -98,7 +98,7 @@ export function DashboardPage() {
               <button type="button" className="btn sm icon" aria-label={`Move ${title} up`} disabled={i === 0} onClick={() => change(moveTile(tiles, id, -1))}>↑</button>
               <button type="button" className="btn sm icon" aria-label={`Move ${title} down`} disabled={i === tiles.length - 1} onClick={() => change(moveTile(tiles, id, 1))}>↓</button>
               <button type="button" className="btn sm" aria-label={`Width of ${title}: ${['one third', 'two thirds', 'the whole row'][size - 1]}`} title="Width: one third, two thirds, the whole row" onClick={() => change(resizeTile(tiles, id))}>{['⅓', '⅔', 'Full'][size - 1]}</button>
-              <button type="button" className="btn sm icon" aria-label={`Remove ${title}`} onClick={() => change(removeTile(tiles, id))}>✕</button>
+              <button type="button" className="btn sm icon" aria-label={`Remove ${title}`} title="Remove from the dashboard" onClick={() => change(removeTile(tiles, id))}>×</button>
             </span>
           )}
         </div>
@@ -110,7 +110,6 @@ export function DashboardPage() {
   const today = new Date();
   const last = data.runs[data.runs.length - 1] ?? null;
   const modelKeys = tiles.filter((t) => t.kind === 'model' && t.ref).map((t) => t.ref!) as ModelKey[];
-  const hasTodo = tiles.some((t) => t.kind === 'todo');
 
   return (
     <div className="page wide-page dashboard-page">
@@ -155,7 +154,7 @@ export function DashboardPage() {
           }
           return null;
         })}
-        {(modelKeys.length > 0 || hasTodo) && <ModelTiles folder={folder} models={modelKeys} todo={hasTodo} render={(id, title, body) => frame(id, title, body)} />}
+        {modelKeys.length > 0 && <ModelTiles folder={folder} models={modelKeys} render={(id, title, body) => frame(id, title, body)} />}
       </div>
     </div>
   );

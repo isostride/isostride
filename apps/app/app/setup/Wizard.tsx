@@ -280,7 +280,7 @@ export function Wizard() {
               <input className="input" type="date" aria-label="In use from" value={newGear.from || firstDay} onChange={(e) => setNewGear((n) => ({ ...n, from: e.target.value }))} />
               <button type="button" className="btn" disabled={!newGear.name.trim()} onClick={addGear}>Add</button>
             </div>
-            <p className="muted small">More (the end of a pair&apos;s use, tags for your runs) in Settings › Gear and Tags.</p>
+            <p className="muted small">More (the end of a pair&apos;s use, tags for your runs) in Settings › Gears and Tags.</p>
           </>
         )}
 

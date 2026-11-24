@@ -9,6 +9,6 @@ import { useEffect } from 'react';
  */
 export default function GearRedirect() {
   const router = useRouter();
-  useEffect(() => { router.replace('/settings?tab=gear'); }, [router]);
+  useEffect(() => { router.replace('/settings?tab=gears'); }, [router]);
   return <div className="page muted">Opening Settings…</div>;
 }

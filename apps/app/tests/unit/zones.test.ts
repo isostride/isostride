@@ -48,7 +48,7 @@ describe('Metric zones in settings', () => {
     expect(zonesFromPower(250)).toEqual([200, 225, 250, 288]);
     // Kept in user/settings.json; metrics with no zones are left out; saved, only what was entered applies.
     await writeSettings(folder, { schemaVersion: 1, zones: { heartRate: [171, 114, 152, 133], cadence: [] }, defaults: true });
-    expect(await readJson(folder, PATHS.settings)).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] }, performance: DEFAULT_PERFORMANCE });
+    expect(await readJson(folder, PATHS.settings)).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] }, performance: DEFAULT_PERFORMANCE, app: { version: expect.any(String), commit: null } });
     expect(await readSettings(folder)).toEqual({ schemaVersion: 1, zones: { heartRate: [114, 133, 152, 171] }, performance: DEFAULT_PERFORMANCE, directions: {} });
     // The performance model saved alone (no zones of the runner's): the default zones go on applying.
     await writeSettings(folder, { schemaVersion: 1, performance: { ...DEFAULT_PERFORMANCE, load: 'rtss', confirmed: true } });

@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
+import pkg from '../../package.json' with { type: 'json' };
 
 const alias = { '@': path.resolve(import.meta.dirname) };
 
@@ -10,6 +11,8 @@ const alias = { '@': path.resolve(import.meta.dirname) };
  */
 export default defineConfig({
   test: {
+    // The app's version as a build gives it (lib/kernel/version.ts), no commit.
+    env: { NEXT_PUBLIC_APP_VERSION: pkg.version },
     sequence: { shuffle: true },
     // Coverage of the processing code, for the new-code coverage check (scripts/coverage-new.mjs).
     coverage: { provider: 'v8', include: ['lib/**'], exclude: ['lib/client/**'], reporter: ['json'], reportsDirectory: 'reports/coverage' },

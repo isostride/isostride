@@ -215,7 +215,18 @@ jobs:
     concurrency:
       group: deploy
       cancel-in-progress: false
+    # contents: write to tag the version deployed and publish its notes (ADR "Version from package.json").
+    permissions:
+      contents: write
+      id-token: write
     steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            package.json
+            CHANGELOG.md
+            apps/app/scripts/release.mjs
+          sparse-checkout-cone-mode: false
       - uses: actions/download-artifact@v8
         with:
           name: builds
@@ -240,3 +251,15 @@ jobs:
           aws s3 sync apps/site/.next-build/_next/static "s3://${{ vars.SITE_BUCKET }}/_next/static" --cache-control "public,max-age=31536000,immutable"
           aws s3 sync apps/site/.next-build "s3://${{ vars.SITE_BUCKET }}" --delete --exclude "_next/static/*" --cache-control "no-cache"
           aws cloudfront create-invalidation --distribution-id "${{ vars.SITE_DISTRIBUTION_ID }}" --paths "/*"
+
+      # The version deployed tagged v<version> (0.1.0 as v0.1) with its notes from CHANGELOG.md, once:
+      # a deploy of the same version later leaves the tag where it is.
+      - name: Tag the version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          tag="v$(echo "$version" | sed -E 's/^([0-9]+\.[0-9]+)\.0$/\1/')"
+          if gh release view "$tag" >/dev/null 2>&1; then echo "$tag is there already"; exit 0; fi
+          node apps/app/scripts/release.mjs notes "$version" > notes.md
+          gh release create "$tag" --target "$GITHUB_SHA" --title "IsoStride ${tag#v}" --notes-file notes.md

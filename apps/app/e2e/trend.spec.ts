@@ -55,7 +55,7 @@ test.describe('Analysis workspace', () => {
     await setUpWithBlock(page, { files: fitFiles(200, '2026-08-03'), gear: GEAR_AUTUMN, block: /^1\.0 km northeast/ });
     // A second block for later: the first suggestion left.
     const picker = await openPicker(page);
-    const secondName = (await picker.locator('.palette-row', { has: page.getByRole('button', { name: /^Dismiss / }) }).first().locator('.palette-item span').first().textContent())!;
+    const secondName = (await picker.locator('.palette-row', { has: page.getByRole('button', { name: /^Dismiss / }) }).first().locator('.palette-item .cmdk-label').textContent())!;
     await page.keyboard.press('Escape');
     const chips = page.locator('.item-chip');
     await expect(chips).toHaveCount(1);

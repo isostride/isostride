@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useConfirm } from '@/components';
+import { EditButton, EditDialog, useConfirm } from '@/components';
 import { SAVED_PARAM, analysisChanged, parseItems, defaultAnalysisName, removeAnalysis, upsertAnalysis, type SavedAnalysesFile, type SavedAnalysis } from '@/lib/compare';
 import { date } from '@/lib/format';
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
@@ -12,7 +12,7 @@ const linkOf = (a: SavedAnalysis) => `${a.query}${a.query ? '&' : ''}${SAVED_PAR
 /**
  * The runner's saved analyses, in the head of Analysis (the runner's request of 22 Nov 2026:
  * "powinno byc puste .. ale chce miec mozliwosc zapisania analiz"; requirement "Saved analyses"):
- * a list to open one from, and Save analysis, which asks for a name in the app and keeps what the
+ * Save analysis, which asks for a name in the app and keeps what the
  * screen shows (its segments and runs, metrics, tab) in the data folder; an open analysis is saved
  * again in place or as a new one, or deleted.
  */
@@ -57,12 +57,7 @@ export function SavedAnalyses({ folder, query, labels, hasItems, onOpen }: {
 
   return (
     <div className="saved-analyses">
-      {list.length > 0 && (
-        <select className="select small" aria-label="Saved analyses" value={current?.id ?? ''} onChange={(e) => { const a = list.find((x) => x.id === e.target.value); if (a) onOpen(linkOf(a)); }}>
-          <option value="" disabled>{current ? '' : 'Open a saved analysis…'}</option>
-          {list.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-        </select>
-      )}
+      {/* No list to open one from here ("nie ma chyba sensu"): the saved analyses are listed on the empty screen, each opened by its row. */}
       <button type="button" className="btn" disabled={!hasItems && !current} onClick={() => setDialog(true)}>
         {current ? (changed ? 'Save changes…' : 'Saved') : 'Save analysis'}
       </button>
@@ -109,20 +104,34 @@ function SaveDialog({ current, changed, offered, onSave, onDelete, onClose }: {
 /**
  * The saved analyses on the empty Analysis screen (the runner's request: "open saved analysis .. chce
  * aby ta lista pojawila sie na ekranie analysis po wejsciu"): each with what it holds and when it was
- * saved, opened with a click; nothing when none is saved.
+ * saved, opened by a click on its row ("przycisk open sa bezsensu ... poprostu klikam na wiersz"), with
+ * Edit ("jak zapisze to chce open oraz edit"; ADR "One way to add, edit and delete"), which renames it
+ * in its dialog or deletes it after asking; nothing when none is saved.
  */
 export function SavedList({ folder, onOpen }: { folder: DataFolder; onOpen: (query: string) => void }) {
   const [list, setList] = useState<SavedAnalysis[] | null>(null);
+  /** the analysis being edited, with its name as typed */
+  const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
   const [confirmDialog, confirm] = useConfirm();
   useEffect(() => {
     readJson<SavedAnalysesFile>(folder, PATHS.analyses).then((f) => setList(f?.analyses ?? [])).catch(() => setList([]));
   }, [folder]);
-  /** Deleted from its row ("a co z usuwaniem analiz?"), once confirmed in the app. */
-  const remove = async (a: SavedAnalysis) => {
-    if (!list || !(await confirm({ title: 'Delete this analysis?', message: `“${a.name}” goes from your saved analyses. The segments and runs in it stay.`, confirm: 'Delete', danger: true }))) return;
-    const next = removeAnalysis(list, a.id);
+  const write = async (next: SavedAnalysis[]) => {
     await writeJson(folder, PATHS.analyses, { analyses: next } satisfies SavedAnalysesFile);
     setList(next);
+  };
+  /** Renamed: the name typed, what it holds as it was. */
+  const rename = async () => {
+    const name = editing?.name.trim();
+    if (!list || !editing || !name) return;
+    setEditing(null);
+    await write(list.map((x) => (x.id === editing.id ? { ...x, name } : x)));
+  };
+  /** Deleted from its editor ("a co z usuwaniem analiz?"), once confirmed in the app. */
+  const remove = async (a: SavedAnalysis) => {
+    if (!list || !(await confirm({ title: 'Delete this analysis?', message: `“${a.name}” goes from your saved analyses. The segments and runs in it stay.`, confirm: 'Delete', danger: true }))) return;
+    setEditing(null);
+    await write(removeAnalysis(list, a.id));
   };
   if (!list?.length) return confirmDialog ? <>{confirmDialog}</> : null;
   return (
@@ -133,16 +142,23 @@ export function SavedList({ folder, onOpen }: { folder: DataFolder; onOpen: (que
           const n = parseItems(new URLSearchParams(a.query).get('items')).length;
           return (
             <li key={a.id} className="saved-item">
-              <button type="button" className="saved-row" onClick={() => onOpen(linkOf(a))}>
+              <button type="button" className="saved-row" aria-label={`Open ${a.name}`} onClick={() => onOpen(linkOf(a))}>
                 <b>{a.name}</b>
                 <span className="muted small">{n} item{n === 1 ? '' : 's'} · saved {date(a.savedAt)}</span>
-                <span className="saved-open" aria-hidden="true">Open →</span>
               </button>
-              <button type="button" className="btn sm danger" aria-label={`Delete ${a.name}`} onClick={() => remove(a)}>Delete</button>
+              <EditButton name={a.name} onClick={() => setEditing({ id: a.id, name: a.name })} />
             </li>
           );
         })}
       </ul>
+      {editing && (() => {
+        const a = list.find((x) => x.id === editing.id)!;
+        return (
+          <EditDialog kind="analysis" kindLabel="Saved analysis" title={a.name} onSave={() => void rename()} onCancel={() => setEditing(null)} onDelete={() => void remove(a)} canSave={!!editing.name.trim()}>
+            <label className="edit-field">Name<input className="input" value={editing.name} onChange={(e) => setEditing({ id: a.id, name: e.target.value })} /></label>
+          </EditDialog>
+        );
+      })()}
       {confirmDialog}
     </section>
   );

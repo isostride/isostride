@@ -36,19 +36,35 @@ export function AddDialog({ defs, recs, runs, items, allRuns, onAdd, onAccept, o
   onClose: () => void;
 }) {
   return (
-    <div className="palette-backdrop" onClick={onClose}>
-      <div className="palette" role="dialog" aria-label="Add segment or run" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
-        <ListTab defs={defs} recs={recs} runs={runs} items={items} allRuns={allRuns} onAdd={onAdd} onAccept={onAccept} onDismiss={onDismiss} />
-        {/* One way to make a block (requirement "One way to make a block"): the editor of the Blocks screen. */}
-        <div className="palette-foot"><Link className="btn sm" href="/segments?new=1">New segment…</Link><span className="muted small">made on the Segments screen, then added here from this list</span></div>
+    // The look of the command palette (components/CommandPalette): a search with its glyph, groups with
+    // their counts, each option with the glyph of its kind ("panel add compare .. wyglada biednie").
+    <div className="palette-backdrop cmdk-backdrop" onClick={onClose}>
+      <div className="cmdk add-picker" role="dialog" aria-modal="true" aria-label="Add segment or run" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+        <ListTab defs={defs} recs={recs} runs={runs} items={items} allRuns={allRuns} onAdd={onAdd} onAccept={onAccept} onDismiss={onDismiss} onClose={onClose} />
+        {/* One way to make a block (requirement "One way to make a block"): the editor of the Segments screen. */}
+        <div className="cmdk-foot">
+          <span><kbd className="cmdk-kbd">↑</kbd><kbd className="cmdk-kbd">↓</kbd> move</span>
+          <span><kbd className="cmdk-kbd">↵</kbd> add</span>
+          <span><kbd className="cmdk-kbd">esc</kbd> close</span>
+          <span className="cmdk-foot-end"><Link className="btn sm" href="/segments?new=1">New segment…</Link></span>
+        </div>
       </div>
     </div>
   );
 }
 
-function ListTab({ defs, recs, runs, items, allRuns, onAdd, onAccept, onDismiss }: {
+/** The glyph of each kind of option. */
+const GLYPH: Record<Option['kind'], string> = {
+  rule: 'M4 7h16|M4 12h16|M4 17h16',
+  block: 'M4 18c3-8 5-8 8 0s5 8 8 0',
+  suggested: 'M12 3v4|M12 17v4|M3 12h4|M17 12h4|M6 6l2.5 2.5|M15.5 15.5L18 18|M6 18l2.5-2.5|M15.5 8.5L18 6',
+  run: 'M3 12h4l2-5 4 10 2-5h6',
+};
+
+function ListTab({ defs, recs, runs, items, allRuns, onAdd, onAccept, onDismiss, onClose }: {
   defs: BlockDefinition[]; recs: Recommendation[]; runs: RunsIndex['runs']; items: AnalysisItem[]; allRuns: string;
   onAdd: (kind: 'block' | 'run' | 'rule', id: string) => void; onAccept: (rec: Recommendation) => void; onDismiss: (rec: Recommendation) => void;
+  onClose: () => void;
 }) {
   const [q, setQ] = useState('');
   const [active, setActive] = useState(0);
@@ -66,29 +82,45 @@ function ListTab({ defs, recs, runs, items, allRuns, onAdd, onAccept, onDismiss 
       .map((r): Option => ({ kind: 'run', id: r.id, text: runName(r.startTime, r.distance, r.title), hint: [r.workoutType, `${Math.floor(r.duration / 60)} min`].filter(Boolean).join(' · ') })),
   ].slice(0, 80);
   const choose = (o: Option) => (o.kind === 'suggested' ? onAccept(o.rec) : onAdd(o.kind, o.id));
+  const count = (kind: Option['kind']) => list.filter((o) => o.kind === kind).length;
+  // The option chosen by the keys kept in view.
+  const box = useRef<HTMLUListElement>(null);
+  useEffect(() => { box.current?.querySelector('.palette-item.on')?.scrollIntoView({ block: 'nearest' }); }, [active]);
   return (
     <>
-      <input ref={input} value={q} placeholder="Search your segments, suggestions and runs…" aria-label="Search segments and runs"
-        onChange={(e) => { setQ(e.target.value); setActive(0); }}
-        onKeyDown={(e) => {
-          if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => Math.min(list.length - 1, a + 1)); }
-          if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => Math.max(0, a - 1)); }
-          if (e.key === 'Enter' && list[active]) choose(list[active]);
-        }} />
-      <ul className="palette-list" aria-label="Segments and runs">
+      <div className="cmdk-head">
+        <svg className="cmdk-search" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+        <input ref={input} value={q} placeholder="Search your segments, suggestions and runs…" aria-label="Search segments and runs"
+          onChange={(e) => { setQ(e.target.value); setActive(0); }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => Math.min(list.length - 1, a + 1)); }
+            if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => Math.max(0, a - 1)); }
+            if (e.key === 'Enter' && list[active]) choose(list[active]);
+          }} />
+        <button type="button" className="cmdk-esc" onClick={onClose} aria-label="Close, esc">esc</button>
+      </div>
+      <ul ref={box} className="cmdk-list palette-list" aria-label="Segments and runs">
         {list.map((o, k) => (
           <li key={o.kind + o.id}>
-            {(k === 0 || list[k - 1].kind !== o.kind) && <div className="palette-group">{GROUP[o.kind]}</div>}
-            <div className="palette-row">
-              <button type="button" className={`palette-item ${k === active ? 'on' : ''}`} onMouseEnter={() => setActive(k)} onClick={() => choose(o)}>
-                <span>{o.text}</span>
-                <span className="muted small">{o.hint}</span>
+            {(k === 0 || list[k - 1].kind !== o.kind) && <div className="cmdk-group palette-group"><span>{GROUP[o.kind]}</span><span className="cmdk-count">{count(o.kind)}</span></div>}
+            <div className={`palette-row add-${o.kind}`}>
+              <button type="button" className={`cmdk-item palette-item ${k === active ? 'on' : ''}`} onMouseEnter={() => setActive(k)} onClick={() => choose(o)}>
+                <span className="cmdk-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{GLYPH[o.kind].split('|').map((d) => <path key={d} d={d} />)}</svg>
+                </span>
+                <span className="cmdk-text"><span className="cmdk-label">{o.text}</span><span className="cmdk-hint">{o.hint}</span></span>
+                <span className="cmdk-enter" aria-hidden="true">↵</span>
               </button>
-              {o.kind === 'suggested' && <button type="button" className="btn sm" aria-label={`Dismiss ${o.text}`} title="Do not suggest this segment again" onClick={() => onDismiss(o.rec)}>Dismiss</button>}
+              {o.kind === 'suggested' && <button type="button" className="btn sm add-dismiss" aria-label={`Dismiss ${o.text}`} title="Do not suggest this segment again" onClick={() => onDismiss(o.rec)}>Dismiss</button>}
             </div>
           </li>
         ))}
-        {!list.length && <li className="muted small" style={{ padding: 12 }}>Nothing found. Make a segment on the Segments screen.</li>}
+        {!list.length && (
+          <li className="cmdk-empty">
+            <b>Nothing found{q ? ` for “${q}”` : ''}</b>
+            <span>Try another word, or make a segment on the Segments screen.</span>
+          </li>
+        )}
       </ul>
     </>
   );

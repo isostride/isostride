@@ -75,6 +75,13 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
 
   const now = JSON.stringify({ t: texts, load: p.load, sex: p.sex });
   const dirty = saved !== '' && now !== saved;
+  /** The changes not saved left: the values as saved. */
+  const discard = () => {
+    const s = JSON.parse(saved) as { t: typeof texts; load: PerformanceSettings['load']; sex: PerformanceSettings['sex'] };
+    setTexts(s.t);
+    setP((q) => ({ ...q, load: s.load, sex: s.sex }));
+    setStatus(null);
+  };
   const save = async () => {
     if (bad.length) return;
     const s = await readSettings(folder);
@@ -106,6 +113,7 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
         </div>
         <span className="spacer" />
         {status && <span className="muted small" role="status">{status}</span>}
+        {dirty && <button className="btn" onClick={discard}>Cancel</button>}
         {dirty && <button className="btn primary" disabled={bad.length > 0} onClick={save}>Save and recompute</button>}
       </div>
       <div className="form-section">

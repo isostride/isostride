@@ -23,11 +23,14 @@ export function ModelsCard() {
   const [status, setStatus] = useState<string | null>(null);
   /** what is saved, to tell a change not saved yet: only then is there a Save */
   const [saved, setSaved] = useState<string | null>(null);
+  /** the texts as saved, to go back to with Cancel */
+  const [base, setBase] = useState<Record<string, string>>({});
   useEffect(() => {
     readSettings(folder).then((s) => {
       const own = s.performance.thresholds;
       const t = Object.fromEntries(THRESHOLD_FIELDS.filter((f) => f.key in own).map((f) => [f.key, shown(own[f.key], f.scale)]));
       setTexts(t);
+      setBase(t);
       setSaved(key(t));
     }).catch(() => undefined);
   }, [folder]);
@@ -51,6 +54,7 @@ export function ModelsCard() {
     // The zones stay as they are: the defaults are not saved as the runner's own.
     await writeSettings(folder, { schemaVersion: 1, ...(s.defaults ? {} : { zones: s.zones }), performance: { ...s.performance, thresholds } });
     setSaved(key(texts));
+    setBase(texts);
     setStatus('Saved · Performance judges by these now');
   };
 
@@ -63,6 +67,7 @@ export function ModelsCard() {
         </div>
         <span className="spacer" />
         {Object.values(texts).some((v) => v.trim()) && <button type="button" className="btn" onClick={() => { setTexts({}); setStatus(null); }}>Defaults</button>}
+        {dirty && <button type="button" className="btn" onClick={() => { setTexts(base); setStatus(null); }}>Cancel</button>}
         {dirty && <button type="button" className="btn primary" disabled={bad.length > 0} onClick={save}>Save</button>}
       </div>
       {status && <p className="muted small models-status" role="status">{status}</p>}

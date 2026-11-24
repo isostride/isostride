@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { useFolder, useNarrowMenu, useTheme } from '@/lib/client';
+import { APP_COMMIT, APP_VERSION, versionLabel } from '@/lib/kernel';
 import { Logo } from './Logo';
 import { Welcome } from './Welcome';
 import { CommandPalette } from './CommandPalette';
@@ -74,7 +75,8 @@ const NAV = [
   { href: '/segments', label: 'Segments', ico: ICONS.blocks },
   { href: '/compare', label: 'Compare', ico: ICONS.analysis },
   { href: '/performance', label: 'Performance', ico: ICONS.performance },
-  { href: '/settings', label: 'Settings', ico: ICONS.settings },
+  // At the bottom of the side menu ("na sam dol przenies settings").
+  { href: '/settings', label: 'Settings', ico: ICONS.settings, end: true },
 ];
 
 /** Records each address shown in the tab's trail of screens, for the Run screen's back link. */
@@ -120,7 +122,10 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="brand-row">
           <Link className={`brand ${path.startsWith('/folder') ? 'active' : ''}`} href="/folder" title="Data folder: import, recompute, change" aria-current={path.startsWith('/folder') ? 'page' : undefined}>
             <Logo size={36} />
-            <span className="label brand-name">Iso<i className="brand-dot">Stride</i></span>
+            <span className="label brand-text">
+              <span className="brand-name">Iso<i className="brand-dot">Stride</i></span>
+              <span className="brand-version" title={`Version ${APP_VERSION}${APP_COMMIT ? `, commit ${APP_COMMIT}` : ''}`}>{versionLabel(APP_VERSION)}</span>
+            </span>
           </Link>
           <HistoryNav />
         </div>
@@ -131,7 +136,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <nav className="nav" aria-label="Screens">
           {NAV.map((n) => (
             // Named by the screen alone (its facts hidden from the name); the facts describe it.
-            <Link key={n.href} href={n.href} className={`nav-item ${active(n.href) ? 'active' : ''}`} title={n.label} aria-describedby={facts[n.href] ? `nav-sub-${n.label}` : undefined} aria-current={active(n.href) ? 'page' : undefined}>
+            <Link key={n.href} href={n.href} className={`nav-item ${active(n.href) ? 'active' : ''} ${'end' in n ? 'nav-end' : ''}`} title={n.label} aria-describedby={facts[n.href] ? `nav-sub-${n.label}` : undefined} aria-current={active(n.href) ? 'page' : undefined}>
               <Icon d={n.ico} />
               <span className="label nav-text">
                 <span>{n.label}</span>

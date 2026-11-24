@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addFromPicker, fitFiles, importAll, nav, openPicker, openRun, openWithFolder, showList, clearAnalysis, setChart } from './support';
+import { addFromPicker, clearAnalysis, fitFiles, headGap, importAll, nav, openPicker, openRun, openWithFolder, setChart, showList } from './support';
 
 test.describe('Accept or reject recommendation', () => {
   test('Accept recommendation', async ({ page }) => {
@@ -7,10 +7,21 @@ test.describe('Accept or reject recommendation', () => {
     await importAll(page);
     await nav(page, 'Compare');
     await clearAnalysis(page);
+    // Add segment or run at the right of the head, as New segment on Segments ("daj po prawej tak samo jak w segments").
+    const head = page.locator('.page-head');
+    const add = head.getByRole('button', { name: '+ Add segment or run' });
+    const [headBox, addBox] = [(await head.boundingBox())!, (await add.boundingBox())!];
+    expect(headBox.x + headBox.width - (addBox.x + addBox.width)).toBeLessThanOrEqual(24);
     // The blocks found in the runs are offered in the picker; taking one keeps it and shows it.
     let dialog = await openPicker(page);
+    // In the look of the command palette ("panel add compare .. wyglada biednie"): the groups with their counts,
+    // each option with the glyph of its kind, the keys and New segment… at its foot.
+    await expect(dialog.locator('.cmdk-group').first()).toHaveText(/^Every run\d+$/);
+    await expect(dialog.locator('.palette-item').first().locator('.cmdk-icon svg')).toBeVisible();
+    await expect(dialog.locator('.cmdk-foot')).toContainText('↵ add');
+    await expect(dialog.getByRole('link', { name: 'New segment…' })).toBeVisible();
     const row = dialog.locator('.palette-row', { has: page.getByRole('button', { name: /^Dismiss / }) }).first();
-    const name = (await row.locator('.palette-item span').first().textContent())!;
+    const name = (await row.locator('.palette-item .cmdk-label').textContent())!;
     await row.locator('.palette-item').click();
     const chip = page.locator('.item-chip', { hasText: name });
     await expect(chip).toHaveCount(1, { timeout: 30_000 });
@@ -45,7 +56,7 @@ test.describe('Accept or reject recommendation', () => {
     await page.keyboard.press('Escape');
     // Deleted from its sheet: gone from the screen, suggested again.
     await chip.getByRole('button', { name: `Edit ${name}` }).click();
-    await page.getByRole('button', { name: 'Delete segment' }).click();
+    await page.getByRole('dialog', { name: 'Segment' }).getByRole('button', { name: 'Delete', exact: true }).click();
     await page.getByRole('alertdialog', { name: 'Delete this segment?' }).getByRole('button', { name: 'Delete' }).click();
     await expect(chip).toHaveCount(0, { timeout: 30_000 });
     await expect(page.getByText(/^⟳ /)).toHaveCount(0, { timeout: 30_000 });
@@ -196,14 +207,18 @@ test.describe('Every block on one screen', () => {
     await dialog.getByLabel('Title contains').fill('coros');
     await expect(count).toContainText('1 effort in 1 run', { timeout: 30_000 });
     await expect(dialog.getByLabel('Name')).toHaveValue('Runs · 0.5–100 km · “coros”');
-    await dialog.getByRole('button', { name: 'Save segment' }).click();
+    await dialog.getByRole('button', { name: 'Save', exact: true }).click();
     // On the screen: the block, the stretch it takes, its segments, their runs and the latest.
     const table = page.getByRole('region', { name: 'Segments', exact: true });
     const row = table.getByRole('row', { name: /^Runs · 0\.5–100 km · “coros”/ });
     await expect(row).toBeVisible({ timeout: 30_000 });
-    await expect(row.getByRole('cell')).toHaveText([/^Runs · 0\.5–100 km · “coros”/, 'Runs', '1', '1', /\w{3} \d+, 2026/, /Edit/]);
-    // Opened in Analysis: Segments lists the block's segment, the titled run.
-    await row.getByRole('link', { name: /in Compare$/ }).click();
+    await expect(row.getByRole('cell')).toHaveText([/^Runs · 0\.5–100 km · “coros”/, 'Runs', '1', '1', /\w{3} \d+, 2026/, '']);
+    await expect(row.getByRole('button', { name: /^Edit / })).toHaveAttribute('title', 'Edit');
+    await row.hover();
+    expect(await headGap(table.locator('table'))).toBeGreaterThanOrEqual(6);
+    // Opened in Analysis by a click on its row (no Compare button: "poprostu klikam na wiersz"): Segments lists the block's segment, the titled run.
+    await expect(row.getByRole('link', { name: 'Compare →' })).toHaveCount(0);
+    await row.getByRole('cell').nth(2).click();
     const kept = page.locator('.item-chip', { hasText: 'Runs · 0.5–100 km · “coros”' });
     await expect(kept).toHaveCount(1, { timeout: 30_000 });
     const tabs = page.getByRole('tablist', { name: 'Compare sections' });
@@ -219,7 +234,7 @@ test.describe('Every block on one screen', () => {
     await sheet.getByLabel('Title contains').fill('');
     await sheet.getByLabel('Heart rate never below').fill('100');
     await expect(sheet.locator('.preview-count')).toContainText(/^\d+ efforts in \d+ runs/, { timeout: 30_000 });
-    await sheet.getByRole('button', { name: 'Save & find again' }).click();
+    await sheet.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(table.getByRole('row').nth(1).getByRole('cell').nth(1)).toHaveText('Fastest 5 min', { timeout: 30_000 });
     // Pinned to the Dashboard (scenario "Dashboard of the runner's tiles"): first in the menu, its tiles at first this week,
     // the form, the last run, the weekly distance and recent runs; the segment pinned joins them with its efforts' pace.
@@ -234,6 +249,11 @@ test.describe('Every block on one screen', () => {
     await nav(page, 'Dashboard');
     const tiles = page.locator('.dash-tile');
     await expect(tiles.locator('h2')).toHaveText(['This week', 'Form today', 'Last run', 'Weekly distance', 'Recent runs', 'COROS test'], { timeout: 30_000 });
+    // Each tile's way on, a pill at its foot ("linki na widgeta wygladaja kiepsko").
+    const ways = tiles.locator('a.row-open');
+    await expect(ways.first()).toBeVisible();
+    for (const style of await ways.evaluateAll((as) => as.map((a) => { const c = getComputedStyle(a); return [c.borderTopLeftRadius, c.borderTopStyle, c.height]; })))
+      expect(style).toEqual(['999px', 'solid', '30px']);
     // The run's chart there as on its screen: its bands, Pace first.
     await expect(page.getByRole('region', { name: 'COROS test' }).locator('.dash-run svg').first()).toBeVisible();
     await expect(page.getByRole('region', { name: 'COROS test' })).toContainText('Pace');
@@ -261,14 +281,27 @@ test.describe('Every block on one screen', () => {
     await expect(sheet).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(sheet).toHaveCount(0);
-    // Asked in the app, not by the browser (requirement "Confirmations in the app"): Cancel (or Esc) keeps it, Delete removes it.
-    const del = table.getByRole('row').nth(1).getByRole('button', { name: /^Delete / });
+    // Its editor a dialog as every other: Cancel and ✕ close it too; Delete, Cancel and Save at its foot.
+    await table.getByRole('row').nth(1).getByRole('button', { name: /^Edit / }).click();
+    await expect(sheet.locator('.builder-actions button')).toHaveText(['Delete', 'Cancel', 'Save']);
+    await sheet.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(sheet).toHaveCount(0);
+    await table.getByRole('row').nth(1).getByRole('button', { name: /^Edit / }).click();
+    await sheet.getByRole('button', { name: 'Close' }).click();
+    await expect(sheet).toHaveCount(0);
+    // The list offers Edit and Compare only; a segment is deleted from its editor ("lista segmentow powinna miec
+    // tylko edit i compare, w samym edit jest usuwanie"), asked in the app, not by the browser (requirement
+    // "Confirmations in the app"): Cancel (or Esc) keeps it, Delete removes it.
+    await expect(table.getByRole('row').nth(1).getByRole('button', { name: /^Delete / })).toHaveCount(0);
+    const del = sheet.getByRole('button', { name: 'Delete', exact: true });
     const confirm = page.getByRole('alertdialog', { name: 'Delete this segment?' });
+    await table.getByRole('row').nth(1).getByRole('button', { name: /^Edit / }).click();
     await del.click();
     await expect(confirm).toContainText('Fastest 5 min');
     await expect(confirm.getByRole('button', { name: 'Cancel' })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(confirm).toHaveCount(0);
+    await expect(sheet).toBeVisible();
     await expect(table.getByRole('row')).toHaveCount(2);
     await del.click();
     await confirm.getByRole('button', { name: 'Delete' }).click();

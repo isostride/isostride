@@ -18,7 +18,6 @@ import { IntensityTab } from './IntensityTab';
 import { LoadTab } from './LoadTab';
 import { CriticalTab, PredictionsTab } from './MarkersTab';
 import { OverviewTab } from './OverviewTab';
-import { TodoTab } from './TodoTab';
 import { TABS, type Tab } from './structure';
 import { Vo2Tab } from './Vo2Tab';
 
@@ -74,7 +73,6 @@ export function Body({ tab, view, embedded = false }: { tab: Tab; view: string; 
   // What the load model chosen changes, marked so wherever it shows.
   const byLoad = { set: onLoad(report.models), name: LOAD_MODELS.find((m) => m.key === data.settings.performance.load)?.name ?? 'the load model', unit: report.now.loadUnit };
   if (tab === 'overview') return <OverviewTab models={report.models} by={by} now={report.now} byLoad={byLoad} />;
-  if (tab === 'todo') return <TodoTab models={report.models} by={by} />;
 
   const views = TABS.find((t) => t.key === tab)!.views;
   const shown = views.find((v) => v.key === view) ?? views[0];

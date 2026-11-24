@@ -1,6 +1,7 @@
 'use client';
 
 import { useChartSettings, useMapTiles, useNarrowMenu, useTheme, type ChartSettings, type Theme } from '@/lib/client';
+import { APP_BUILT, APP_COMMIT, APP_VERSION, versionLabel } from '@/lib/kernel';
 
 /** A setting of a choice among a few: its name and what it does on the left, the choice on the right. */
 function Choice<T extends string | boolean>({ name, hint, label, value, options, onChange }: { name: string; hint: string; label: string; value: T; options: [T, string][]; onChange: (v: T) => void }) {
@@ -85,3 +86,29 @@ export function DisplayCard() {
   );
 }
 
+
+/** The repository of IsoStride, its commits and its changelog. */
+const REPO = 'https://github.com/isostride/isostride';
+
+/**
+ * About the app (requirement "App version shown"): its version, the commit and the date of its build,
+ * and the changelog of its versions.
+ */
+export function AboutCard() {
+  return (
+    <section className="card display-card" aria-label="About IsoStride">
+      <div className="settings-head"><div><h2>About IsoStride</h2><p className="muted small">The version of the app in this browser; the files it writes to the data folder record it too.</p></div></div>
+      <div className="display-row">
+        <div>
+          <div className="display-name">Version {versionLabel(APP_VERSION)}</div>
+          <div className="muted small">
+            {APP_VERSION}
+            {APP_COMMIT && <> · commit <a href={`${REPO}/commit/${APP_COMMIT}`}><code>{APP_COMMIT}</code></a></>}
+            {APP_BUILT && <> · built {APP_BUILT}</>}
+          </div>
+        </div>
+        <a className="btn" href={`${REPO}/blob/master/CHANGELOG.md`}>Changelog</a>
+      </div>
+    </section>
+  );
+}

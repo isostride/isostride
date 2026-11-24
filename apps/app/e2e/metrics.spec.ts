@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
-import { addFromPicker, clearAnalysis, fitFiles, importAll, nav, openWithFolder, showList } from './support';
+import { addFromPicker, clearAnalysis, fitFiles, importAll, nav, openWithFolder, readText, showList } from './support';
 
 /**
  * Requirement "Every metric offered everywhere" (ADR "Metrics from the file"): the runner's COROS files
@@ -37,11 +37,28 @@ test.describe('Every metric offered everywhere', () => {
 
     // Settings: a zone of Form Power, and which way is better, not set (up or down).
     await nav(page, 'Settings');
+    await page.getByRole('tab', { name: 'Metrics' }).click();
     await expect(page.locator('.zone-row', { hasText: 'Form Power' })).toBeVisible();
     await expect(page.locator('.zone-row', { hasText: /Respiration/ })).toHaveCount(0);
-    await page.getByRole('tab', { name: 'Metrics' }).click();
     const direction = page.getByRole('combobox', { name: 'Which way is better for Form Power' });
     await expect(direction).toHaveValue('app');
     await expect(direction.locator('option:checked')).toHaveText('Not set: up or down');
+    // Chosen, it waits for Save with the zones; Cancel goes back to what is saved (ADR "One way to add, edit and delete").
+    const card = page.getByRole('region', { name: 'Metrics' });
+    await direction.selectOption('higher');
+    await card.getByRole('button', { name: 'Cancel' }).click();
+    await expect(direction).toHaveValue('app');
+    await direction.selectOption('higher');
+    await card.getByRole('button', { name: 'Save' }).click();
+    await expect(card.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await expect.poll(async () => JSON.parse(await readText(page, '.isostride/user/settings.json')).directions).toEqual({ 'dev.formPower': 'higher' });
+    // A zone typed waits for Save too; Cancel leaves it as saved.
+    const zones = card.getByRole('textbox', { name: /^Form Power/ });
+    const before = await zones.inputValue();
+    await zones.fill('200, 250');
+    await expect(card.getByLabel('Form Power zones').locator('.zone-chip')).toHaveCount(3);
+    await card.getByRole('button', { name: 'Cancel' }).click();
+    await expect(zones).toHaveValue(before);
+    await expect(card.getByRole('button', { name: 'Save' })).toHaveCount(0);
   });
 });

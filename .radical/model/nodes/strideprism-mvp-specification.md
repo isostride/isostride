@@ -917,3 +917,76 @@ A: (model) The run of 23 Nov 2026, 20:52 (948 m, 190 s): its file holds speed to
 A: (użytkownik) momment w coros widze metryke co 1 sekunde ... czemu piszesz o 10s ?
 Q: (model) COROS draws a point every second; the IsoStride run chart draws 10 s window means (Raw = 10 s windows too). Should the run chart switch to the per-second data from the file?
 A: (użytkownik) 1 s on the chart (Recommended): Raw draws every second as in COROS; Smooth is a rolling mean of the seconds; the line runs to the end of the run; min/max of a selection from seconds. Segments, comparisons and models stay on 10 s windows.
+A: (użytkownik) dodaj wersjonowanie do aplikacji, w tym momencie to 0.1
+Q: (model) How should the app version (now 0.1) be raised?
+A: (użytkownik) By hand, release notes (Recommended): You decide when it is 0.2: one command bumps package.json, adds a CHANGELOG entry and a git tag v0.2 on merge; every deploy shows the version plus the commit, e.g. 0.1 (d6852e4).
+Q: (model) Where should the version be visible?
+A: (użytkownik) Settings, Display tab; In the data folder; Site footer; Sidebar, under the logo.
+A: (użytkownik) w miedzyczasie usun: [this week's running in the side menu] na sam dol przenies settings
+A: (model) Done: this week's running taken out of the side menu; Settings at the bottom of the side menu, the other screens at its top (on a phone it stays in the bar of screens).
+A: (użytkownik) przeorganizuj settings kolejnosc: metrics (w srodku zones) bo zones sa w kontkescie metryk pozniej gear - zmien na gears tags displays (w srodku charts) i models
+A: (model) Done: the tabs Metrics (the zones first, the metrics' directions under them), Gears, Tags, Display (the theme and the map, the charts, about the app) and Models; links made before (tab=zones, gear, charts) open the tab that holds them now.
+A: (użytkownik) settings metrics - polacz obie tabele nie che tam 2-och
+A: (model) Done: one table in the Metrics tab, a row a metric: its name and unit, its zones (the boundaries, Fill from max HR for heart rate, the zones as chips) and which way is better; the zones saved with Save, the direction at once.
+A: (użytkownik) kilka poprawek - jak juz stworzy gear to nie moge zmienic jego nazwy - jak juz stworze tag to tez nie moge zmienic jego nazwy - about to osobny tab, teraz jest w display
+A: (model) Done: a piece of gear renamed in place (its name a field, saved on Enter or on leaving it); a tag renamed from its chip, in its place in the dictionary and on every run tagged with it; the segments' rules naming either follow; About a tab of its own after Models.
+A: (użytkownik) dolozenie tagu, notati jest dostepne tylko z widoku listy runs
+A: (model) Done: on the Run screen a button "Tags and note" opens the editor of the Runs list under the head; the run's workout type, technique cue and note show in its head.
+A: (użytkownik) nazwa sie nie miesci [the name of a piece of gear in Settings, Gears]
+A: (model) Done: the gear's name shown as text that wraps, a click (or ✎) edits it over the row's width.
+A: (użytkownik) w settings - tab models daj jako pierwsze
+A: (model) Done: Models the first tab of Settings, opened at /settings; the others after it in their order.
+A: (użytkownik) usun link do settings z runa
+A: (model) Done: the icon on the run chart leading to Settings, Display, taken out; how the chart draws is set in Settings alone.
+A: (użytkownik) taby load, responsem aerobic nakladaja sie ... powinnien byc odstep [the lanes of the map of the models on Performance, Overview]
+A: (model) Done: a row of 8 px between two lanes of the map, so their bands stand apart (at least 8 px between them).
+A: (użytkownik) w wielu elementach apliakcji mozna cos edytowac, usuwac i dodawac ... upewnij sie ze wszedzie jest spojny mechanism pod wzgledem UI
+A: (użytkownik) jeszcze nie jest dobrze
+A: (użytkownik) w segments lista segmentow powinna miec tylko edit i compare, w samym edit jest usuwanie
+A: (użytkownik) w compare ... tez ... jak zapisze to chce open oraz edit
+A: (model) Done (ADR "One way to add, edit and delete"): a list offers Edit and the way to use the thing (Compare for a segment, Open for a saved analysis), no Delete; Edit opens the fields with Delete, Cancel and Save, nothing saved before Save, Enter saves and Esc cancels; Delete asks in the app's dialog; Add at the end of a list; Settings' forms wait for Save, Cancel beside it; × takes a thing out of a view without deleting it.
+A: (użytkownik) w segments i w analysis ... przyccisk open sa bezsensu ... poprostu klikam na wiersz
+A: (model) Done: a segment's row opens it in Compare, a saved analysis' row opens it; their only button is Edit; for the keyboard, the segment's name is the row's link and the analysis' row a button.
+A: (użytkownik) edit zawsze pokazuje popup na srodku w ktorym moge edytowac lub tez usuwac, edytowane segmentow tez tam przenies
+A: (model) Done: every Edit opens one dialog in the middle of the screen (components/EditDialog): a piece of gear, a tag, a saved analysis, a run's tags and note (from the Runs list and the Run screen), and a segment, its editor moved from the side into the same dialog, wide; Delete, Cancel and Save at its foot.
+A: (użytkownik) delete segment -> tekst ujednolic .. poprostu delete
+A: (model) Done: the segment's editor says Delete, Cancel and Save, as every editor of the app ("Delete segment", "Save segment" and "Save & find again" gone).
+A: (użytkownik) jest lepiej, popracuj nad wygladamen tego popupa .. wyglada biednie
+A: (model) Done: the editor's dialog has a head saying what is edited (a glyph, its kind, its name, a ✕ to close it), roomy fields with their labels and a hint where it helps, and a foot apart with Delete (its word alone, as in every editor) on the left and Cancel and Save on the right; it comes in with a short movement; the segment's editor has the same head and foot.
+A: (użytkownik) skad na ikonka w edit analuss? [the bin beside Delete]
+A: (model) Taken out: Delete is its word alone in every editor, as in the segment's.
+A: (użytkownik) nigdzie indziej jej nie ma
+A: (użytkownik) wszedzie jest slowo edit .... i to biednie wyglada .. moze jakas ikonka?
+A: (model) Done: Edit is a pencil on every list (components/EditButton): the runs, the segments, the saved analyses, the gear, the tags and the items of Compare; titled Edit, named "Edit <name>" for a screen reader, 32 px in a row, 24 px in a chip.
+A: (użytkownik) linki na widgeta wygladaja kiepsko pod wzgledem ui [Performance →, Open the run →, All runs → at the foot of the Dashboard's tiles]
+A: (model) Done: a tile's way on is a quiet pill at its foot (a line around it, smaller and bolder, the accent when pointed at).
+A: (użytkownik) ramka zachodzi na header [the highlight of a row pointed at touches the table's head] sprawdz we wszystkich tabelach
+A: (model) Done: every table's head (table.data, all of the app's) keeps 6 px apart from its first row, its background kept to its padding; a row's highlight no longer touches it.
+A: (użytkownik) w performance w roznych zakladkach mam 2 poziomy tabow
+Q: (model) Performance has two rows of tabs: the groups (Overview, Load, Capacity, Aerobic, Response, To do) and, inside a group, its views (e.g. Load: Form, Weekly load, Intensity). How should it look?
+A: (użytkownik) Views inside the card: Keep both levels but make the views clearly a second level: a small segmented switch in the head of the group's card, next to its title, not a second tab bar.
+A: (model) Done: a group with views (Load, Capacity, Aerobic, Response) is one card under the tabs: its name and a small switch of its views in its head, the view's charts inside; one row of tabs only.
+A: (użytkownik) lepiej ale chce to po lewej stronie tez musze obracac glowe [the switch of a group's views, at the right of its card's head]
+A: (model) Done: the switch of the views stands on the left, right after the group's name.
+A: (użytkownik) powtarzasz tytul .. menu capacity, title capacity
+A: (model) Done: the group's name taken out of its card's head; the tab says it; the switch of its views alone at the left.
+A: (użytkownik) uzyj tez tego niebieskiego koloru aby pokazac ktory tab jest wybrany [in the switch of a group's views]
+A: (model) Done: the view chosen in the blue of the tabs (their gradient, the text in the colour over it).
+A: (użytkownik) tlo w wewnetrznej ramce powinny byc biale nie szare [the card of a group's views on Performance]
+A: (model) Done: the group's card white (the surface), as every card.
+A: (użytkownik) zwieksz odstep pomiedzy wewnetrznym menu a trescia w tym momencie sie zlewa
+A: (model) Done: under the switch of the views a line across the group's card, with 16 px above it and 18 px below.
+A: (użytkownik) usun todo
+Q: (model) "To do for the models" is the To do tab of Performance, but also a Dashboard tile (the first 3 items, "All of it →") and an entry of the command palette. What should go?
+A: (użytkownik) Everything (Recommended): Remove the tab, the Dashboard tile, the palette entry and the list behind them; a To do tile already on someone's Dashboard simply disappears. The requirement "To do for the models" is retired in the model.
+A: (model) Done: no To do tab, tile or palette entry; the list behind them (lib/load/todo) gone; a To do tile kept on a Dashboard is left out as a tile of an unknown kind; the requirement "To do for the models" and its scenario retired.
+A: (użytkownik) nie ma chyba sensu: [the list "Open a saved analysis…" in the head of Compare]
+A: (model) Done: taken out; the saved analyses are listed on the empty Compare screen, each opened by its row.
+A: (użytkownik) performance overview - popracuj nad fontami, ten bold jest przytlaczajacy
+A: (model) Done: the map's type lighter: a model's value at a medium weight (580, was 700), its name at 500 (was 600), the lanes' names at 600 (was 720), the columns, the tallies and the trust quieter; the same order of importance.
+A: (użytkownik) odstep po prawej: [the cards of the last column of the map touch the right edge of their lane]
+A: (model) Done: each lane's band reaches 8 px past the cards of the last column, into the map's own margin.
+A: (użytkownik) panel add compare .. wyglada biednie pod katem UI
+A: (model) Done: Add segment or run in the look of the command palette: a search with its glyph and esc, groups with their counts, each option with the glyph and colour of its kind (every run, your segments, suggested, runs), the one chosen by the keys marked with ↵ and kept in view, a foot with the keys and New segment…
+A: (użytkownik) w compare ... add segment or run daj po prawej tak samo jak w segmebts
+A: (model) Done: + Add segment or run the last button at the right of Compare's head, in the primary style, as New segment on Segments; the bar under the head holds the items added only.

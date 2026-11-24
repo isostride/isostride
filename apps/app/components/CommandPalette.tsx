@@ -109,10 +109,9 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
         { group: 'Screens', glyph: 'ab', label: 'A/B comparison', hint: 'Compare', run: go('/compare?tab=ab') },
         { group: 'Screens', glyph: 'model', label: 'Load model', hint: 'Settings › Models', run: go('/settings?tab=models') },
         { group: 'Screens', glyph: 'settings', label: 'Setup wizard', hint: 'Settings', run: go('/setup') },
-        { group: 'Screens', glyph: 'tags', label: 'To do for the models', hint: 'Performance', run: go('/performance?tab=todo') },
-        { group: 'Screens', glyph: 'gear', label: 'Gear', hint: 'Settings', run: go('/settings?tab=gear') },
+        { group: 'Screens', glyph: 'gear', label: 'Gears', hint: 'Settings', run: go('/settings?tab=gears') },
         { group: 'Screens', glyph: 'tags', label: 'Tags', hint: 'Settings', run: go('/settings?tab=tags') },
-        { group: 'Screens', glyph: 'display', label: 'Display', hint: 'Settings · theme and map background', run: go('/settings?tab=display') },
+        { group: 'Screens', glyph: 'display', label: 'Display', hint: 'Settings · theme, map background, charts', run: go('/settings?tab=display') },
         { group: 'Actions', glyph: 'import', label: 'Import folder', hint: 'Read the new FIT files of the folder', run: go('/folder?action=import') },
         { group: 'Actions', glyph: 'block', label: 'New segment', hint: 'Segments · which runs, which part of each, which conditions', run: go('/segments?new=1') },
         { group: 'Actions', glyph: 'theme', label: 'Switch theme', hint: 'Light, dark, system', run: () => { onTheme(); } },
@@ -170,7 +169,7 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
               if (e.key === 'Enter' && shown[active]) shown[active].run();
             }}
           />
-          <button type="button" className="cmdk-esc" onClick={() => setOpen(false)} aria-label="Close">esc</button>
+          <button type="button" className="cmdk-esc" onClick={() => setOpen(false)} aria-label="Close, esc">esc</button>
         </div>
         <div ref={list} className="cmdk-list" id="cmdk-list" role="listbox" aria-label="Results">
           {shown.map((i, k) => (

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CellBar, columnPath, useWidth } from '@/components';
+import { CellBar, EditButton, columnPath, useWidth } from '@/components';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useOpenFolder, runInWorker, watchJob } from '@/lib/client';
@@ -9,6 +9,7 @@ import { PATHS, readJson, isOutdated, readManifest, type Manifest } from '@/lib/
 import { type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { date, duration, km, pace, time } from '@/lib/format';
 import { readGear, type Gear, readRunTags, writeRunTags, type RunTag, type RunTagsFile } from '@/lib/gear';
+import { TagEditor } from './run/TagEditor';
 import { NO_SEARCH, isSearching, isoWeek, matchesSearch, monthsOf, searchFromParams, searchToParams, weeksOf, type LogWeek, type RunSearch } from '@/lib/log';
 import type { IndexedRun } from '@/lib/kernel';
 import { LOAD_MODELS, readSettings } from '@/lib/settings';
@@ -169,16 +170,9 @@ function RunsPage() {
                     </td>
                     <td className="num muted" title={r.loadEstimated ? 'estimated from the duration: the run lacks what the load model needs' : undefined}>{r.load === null || r.load === undefined ? '–' : `${Math.round(r.load)}${r.loadEstimated ? '*' : ''}`}</td>
                     <td>
-                      <button className="btn sm" onClick={(e) => { e.stopPropagation(); setEditing(editing === r.id ? null : r.id); }}>Edit</button>
+                      <EditButton name={r.title ?? `${date(r.startTime)} ${time(r.startTime)}`} onClick={(e) => { e.stopPropagation(); setEditing(editing === r.id ? null : r.id); }} />
                     </td>
                   </tr>
-                  {editing === r.id && tags && (
-                    <tr>
-                      <td colSpan={12} style={{ background: 'var(--surface-2)' }}>
-                        <TagEditor tag={tags.tags[r.id] ?? {}} gear={gear} dictionary={tags.dictionary} onSave={(t) => saveTag(r.id, t)} onCancel={() => setEditing(null)} />
-                      </td>
-                    </tr>
-                  )}
                 </Fragment>
               ))}
             </tbody>
@@ -186,6 +180,11 @@ function RunsPage() {
         )}
       </div>
       )}
+      {/* A run's tags edited in the app's one editor, in the middle of the screen. */}
+      {editing && tags && (() => {
+        const r = runs.find((x) => x.id === editing);
+        return r ? <TagEditor title={r.title ?? `${date(r.startTime)} ${time(r.startTime)}`} tag={tags.tags[r.id] ?? {}} gear={gear} dictionary={tags.dictionary} onSave={(t) => saveTag(r.id, t)} onCancel={() => setEditing(null)} /> : null;
+      })()}
     </div>
   );
 }
@@ -310,44 +309,6 @@ function Calendar({ weeks, match, searching, loadUnit }: { weeks: LogWeek[]; mat
         </div>
       ))}
     </section>
-  );
-}
-
-function TagEditor({ tag, gear, dictionary, onSave, onCancel }: {
-  tag: RunTag;
-  gear: Gear[];
-  dictionary: RunTagsFile['dictionary'];
-  onSave: (t: RunTag) => void;
-  onCancel: () => void;
-}) {
-  const [t, setT] = useState<RunTag>(tag);
-  const set = (k: keyof RunTag, v: string) => setT({ ...t, [k]: v || undefined });
-  return (
-    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', padding: '4px 0' }}>
-      <label className="muted">Title <input value={t.title ?? ''} placeholder="e.g. COROS test" onChange={(e) => set('title', e.target.value)} style={{ width: 180 }} /></label>
-      <label className="muted">Shoe override{' '}
-        <select value={t.shoesOverride ?? ''} onChange={(e) => set('shoesOverride', e.target.value)}>
-          <option value="">by date</option>
-          {gear.filter((g) => g.type === 'shoes').map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-        </select>
-      </label>
-      <label className="muted">Type{' '}
-        <select value={t.workoutType ?? ''} onChange={(e) => set('workoutType', e.target.value)}>
-          <option value="">–</option>
-          {dictionary.workoutTypes.map((v) => <option key={v}>{v}</option>)}
-        </select>
-      </label>
-      <label className="muted">Technique cue{' '}
-        <select value={t.techniqueCue ?? ''} onChange={(e) => set('techniqueCue', e.target.value)}>
-          <option value="">–</option>
-          {dictionary.techniqueCues.map((v) => <option key={v}>{v}</option>)}
-        </select>
-      </label>
-      <label className="muted">Note <input value={t.note ?? ''} onChange={(e) => set('note', e.target.value)} style={{ width: 200 }} /></label>
-      <span style={{ flex: 1 }} />
-      <button className="btn" onClick={onCancel}>Cancel</button>
-      <button className="btn primary" onClick={() => onSave(t)}>Save</button>
-    </div>
   );
 }
 

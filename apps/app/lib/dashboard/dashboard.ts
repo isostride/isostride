@@ -14,7 +14,7 @@ import type { IndexedRun, Series } from '@/lib/kernel';
  * analysis' query. A widget pinned from its card (the runner's "Pin na kazdej karcie-widgecie") shows
  * there as it does on its screen.
  */
-export type TileKind = 'week' | 'weekly' | 'last' | 'form' | 'run' | 'segment' | 'analysis' | 'model' | 'todo' | 'recent' | 'perf' | 'compare';
+export type TileKind = 'week' | 'weekly' | 'last' | 'form' | 'run' | 'segment' | 'analysis' | 'model' | 'recent' | 'perf' | 'compare';
 
 export interface Tile {
   id: string;
@@ -59,7 +59,6 @@ export const TILE_KINDS: { kind: TileKind; title: string; of?: 'run' | 'segment'
   { kind: 'analysis', title: 'A saved analysis', of: 'analysis' },
   { kind: 'model', title: 'A model of Performance', of: 'model' },
   { kind: 'perf', title: 'A chart of Performance', of: 'perf' },
-  { kind: 'todo', title: 'To do for the models' },
 ];
 
 /** The tiles of a dashboard the runner has not set (the runner's \"tak\" to them). */

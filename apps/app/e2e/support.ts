@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -92,13 +92,23 @@ export async function putText(page: Page, file: string, text: string): Promise<v
   }, { file, text });
 }
 
-/** Reads a text file of the fake data folder. */
+/**
+ * Reads a text file of the fake data folder. A file being written (the app's write replaces it whole) is
+ * not there for a moment: read again, up to a second, rather than failing on that moment.
+ */
 export async function readText(page: Page, file: string): Promise<string> {
   return page.evaluate(async (file) => {
-    let dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('data');
     const parts = file.split('/');
-    for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p);
-    return (await (await dir.getFileHandle(parts[parts.length - 1])).getFile()).text();
+    for (let tries = 0; ; tries++) {
+      try {
+        let dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('data');
+        for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p);
+        return await (await (await dir.getFileHandle(parts[parts.length - 1])).getFile()).text();
+      } catch (e) {
+        if (tries >= 20 || (e as DOMException).name !== 'NotFoundError') throw e;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    }
   }, file);
 }
 
@@ -153,7 +163,7 @@ export async function importAll(page: Page): Promise<void> {
  */
 export async function setChart(page: Page, ...choices: string[]): Promise<void> {
   await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
-  await page.getByRole('tab', { name: 'Charts', exact: true }).click();
+  await page.getByRole('tab', { name: 'Display', exact: true }).click();
   const card = page.getByRole('region', { name: 'Charts' });
   for (const c of choices) {
     if (c === 'blocks on' || c === 'blocks off') await card.getByRole('checkbox', { name: /Segments on the chart/ }).setChecked(c === 'blocks on');
@@ -234,4 +244,17 @@ export async function showList(page: Page): Promise<void> {
 export async function openRun(page: Page, n = 0): Promise<void> {
   await showList(page);
   await page.locator('tr.row').nth(n).click();
+}
+
+/**
+ * The room between a table's head (its background) and its first row, px: a row's highlight never
+ * touches the head ("ramka zachodzi na header ... sprawdz we wszystkich tabelach").
+ */
+export async function headGap(table: Locator): Promise<number> {
+  return table.evaluate((t) => {
+    const th = t.querySelector('thead th')!;
+    const td = t.querySelector('tbody tr td')!;
+    const head = th.getBoundingClientRect().bottom - parseFloat(getComputedStyle(th).borderBottomWidth);
+    return td.getBoundingClientRect().top - head;
+  });
 }

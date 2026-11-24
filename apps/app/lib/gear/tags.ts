@@ -40,3 +40,23 @@ export async function writeRunTags(folder: DataFolder, file: RunTagsFile): Promi
   );
   await writeJson(folder, PATHS.runTags, { dictionary: file.dictionary, tags } satisfies RunTagsFile);
 }
+
+/** The two lists of the tag dictionary, and the field of a run's tag each fills. */
+export type TagKind = 'workoutTypes' | 'techniqueCues';
+const FIELD: Record<TagKind, 'workoutType' | 'techniqueCue'> = { workoutTypes: 'workoutType', techniqueCues: 'techniqueCue' };
+
+/**
+ * The tags with one renamed (the runner's "jak juz stworze tag to tez nie moge zmienic jego nazwy"):
+ * in the dictionary, in its place, and on every run tagged with it. Unchanged when the new name is
+ * empty, the same, or another tag of the list already.
+ */
+export function renameTag(file: RunTagsFile, kind: TagKind, from: string, to: string): RunTagsFile {
+  const name = to.trim();
+  const list = file.dictionary[kind];
+  if (!name || name === from || !list.includes(from) || list.includes(name)) return file;
+  const field = FIELD[kind];
+  return {
+    dictionary: { ...file.dictionary, [kind]: list.map((v) => (v === from ? name : v)) },
+    tags: Object.fromEntries(Object.entries(file.tags).map(([id, t]) => [id, t[field] === from ? { ...t, [field]: name } : t])),
+  };
+}
