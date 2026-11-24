@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { BrowserFolder, MirroredFolder, copyIsCurrent, openCopy, openDataFolder, pruneCopies, usesCopy, type DataFolder } from '@/lib/fs';
+import { BrowserFolder, usesCopy, type DataFolder } from '@/lib/fs';
 import { setCopyId } from './worker';
 import { getValue, setValue } from './handleStore';
 
@@ -57,13 +57,17 @@ const startNewCopy = () => { void setValue(COPY_KEY, newCopyId()).catch(() => un
  * the folder read alone meanwhile.
  */
 async function opened(handle: FileSystemDirectoryHandle, fresh = false): Promise<FolderState> {
+  const before = await getValue<string | null>(COPY_KEY).catch(() => null);
   const copy = await copyFor(fresh);
   setCopyId(copy);
-  const folder = await openDataFolder(handle, copy, startNewCopy);
+  // The copy's code only on a device that keeps one, or had one to prune: the screens' scripts stay in their budget.
+  const copies = copy || before ? await import('@/lib/copy') : null;
+  const folder = copies ? await copies.openDataFolder(handle, copy, startNewCopy) : new BrowserFolder(handle);
   const { moveLegacyData } = await import('@/lib/legacy');
   await moveLegacyData(folder);
-  void pruneCopies(copy).catch(() => undefined);
-  if (copy) {
+  if (copies) void copies.pruneCopies(copy).catch(() => undefined);
+  if (copy && copies) {
+    const { MirroredFolder, copyIsCurrent, openCopy } = copies;
     void (async () => {
       if (await copyIsCurrent(new BrowserFolder(handle), await openCopy(copy))) {
         // The copy filled in the background with what it lacks, after the first screen had its turn.

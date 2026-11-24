@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { instancesInWorker, useOpenFolder } from '@/lib/client';
-import { BrowserFolder, MirroredFolder, PATHS, diagnose, diagnosticText } from '@/lib/fs';
+import { BrowserFolder, PATHS, diagnose, diagnosticText } from '@/lib/fs';
+import { MirroredFolder } from '@/lib/copy';
 import { t } from '@/lib/i18n';
 import { APP_COMMIT, APP_VERSION } from '@/lib/kernel';
 

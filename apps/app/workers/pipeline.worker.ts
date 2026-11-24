@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
-import { forgetRunFiles, keepRunFiles, openDataFolder, type DataFolder } from '@/lib/fs';
+import { forgetRunFiles, keepRunFiles, type DataFolder } from '@/lib/fs';
+import { openDataFolder } from '@/lib/copy';
 import type { BlockDefinition, BlockInstance } from '@/lib/blocks';
 import { curvesOf, type CurvePoint, type CurveSource } from '@/lib/curve';
 import { figuresOf, instancesOf, similarOf, type EffortFigures, type SimilarQuery, type SimilarResult } from '@/lib/detection';

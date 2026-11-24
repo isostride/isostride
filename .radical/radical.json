@@ -2,7 +2,7 @@
   "implements": [
     { "element": "39491f93-4fcc-4f9c-960b-e12750deef8f", "name": "Web App", "paths": ["apps/app/app"] },
     { "element": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1", "name": "App Shell", "paths": ["apps/app/components"] },
-    { "element": "d0291cd1-bdf1-4c49-8333-4b658a02f95d", "name": "Folder Access", "paths": ["apps/app/lib/client", "apps/app/lib/fs/browserFolder.ts"] },
+    { "element": "d0291cd1-bdf1-4c49-8333-4b658a02f95d", "name": "Folder Access", "paths": ["apps/app/lib/client", "apps/app/lib/fs/browserFolder.ts", "apps/app/lib/copy"] },
     { "element": "c14dbde0-de4f-48ba-a569-779a0fdfc5c8", "name": "COROS Sync", "paths": ["apps/app/lib/coros", "apps/app/app/data/CorosCard.tsx", "apps/app/app/coros"] },
     { "element": "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7", "name": "Processing Worker", "paths": ["apps/app/workers"] },
     { "element": "ce42067b-80ea-40e1-a577-39607ab89630", "name": "Ingest", "paths": ["apps/app/lib/ingest"] },

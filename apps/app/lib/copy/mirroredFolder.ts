@@ -1,5 +1,4 @@
-import { BrowserFolder } from './browserFolder';
-import { PATHS, readJson, type DataFolder, type FolderEntry } from './folder';
+import { BrowserFolder, PATHS, readJson, type DataFolder, type FolderEntry } from '@/lib/fs';
 
 /**
  * The runner's folder with a copy of the app's own files in the browser's private storage (ADR "A copy
@@ -166,21 +165,6 @@ export async function removeCopy(id: string): Promise<void> {
   const root = await navigator.storage.getDirectory();
   const copies = await root.getDirectoryHandle(COPIES, { create: true });
   await copies.removeEntry(id, { recursive: true }).catch(() => undefined);
-}
-
-/**
- * Whether this device keeps a copy: on Android (its folder is slow to read), unless this browser says
- * otherwise ("isostride.mirror": "on" or "off", for a test).
- */
-export function usesCopy(): boolean {
-  try {
-    const said = localStorage.getItem('isostride.mirror');
-    if (said === 'on') return true;
-    if (said === 'off') return false;
-  } catch {
-    // No storage (a worker): the page says, by the request.
-  }
-  return typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
 }
 
 /** The folder the app reads: the runner's, with its copy when it keeps one. */

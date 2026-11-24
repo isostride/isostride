@@ -5,6 +5,7 @@
     "lib/blocks",
     "lib/client",
     "lib/compare",
+    "lib/copy",
     "lib/coros",
     "lib/curve",
     "lib/dashboard",

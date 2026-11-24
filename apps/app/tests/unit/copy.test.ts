@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BrowserFolder, MirroredFolder, openCopy, openDataFolder, pruneCopies, removeCopy, usesCopy, type DataFolder } from '@/lib/fs';
+import { BrowserFolder, usesCopy, type DataFolder } from '@/lib/fs';
+import { MirroredFolder, openCopy, openDataFolder, pruneCopies, removeCopy } from '@/lib/copy';
 import { MemDir, dirHandle } from '../support/memFolder';
 
 /**

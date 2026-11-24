@@ -4,4 +4,4 @@ export * from './folder';
 export * from './manifest';
 export * from './newRuns';
 export * from './diagnose';
-export * from './mirroredFolder';
+export * from './usesCopy';
