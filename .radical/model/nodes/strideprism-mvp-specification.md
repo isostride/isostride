@@ -1128,3 +1128,12 @@ A: (model) [OPFS explained: the browser's private, fast file storage for the sit
 A: (użytkownik) tak najpierw poprawka
 A: (model) Done: the page keeps the run files it read too (a run opened again is not read again); the diagnostics test holds a second read of a file at 0 calls to the system.
 A: (model) Done (found by CI on PR #19: the new code of the folder was covered 7.8%, the browser's folder runs in no unit test): unit tests over a folder in memory with the API's shape hold what a folder keeps, what it forgets when another writes or removes, and a stale handle made again (91% of browserFolder.ts).
+Q: (użytkownik) opfs - jakies ograniczenie na rozmiar ?
+A: (model) The browser's shared quota (Chrome: up to about 60% of the disk for one site); IsoStride's files ~220 KB a run (500 runs ~110 MB); best-effort storage may be cleared under pressure, so OPFS would be a copy rebuilt from the folder.
+A: (użytkownik) [the same diagnostics pasted again: version fd25568, the phone still on the version before PR #19]
+A: (model) The same report as before (fd25568): the phone had not loaded the new version; reload and run again.
+A: (użytkownik) ok idzmy z opfs w przypadku telefonu
+A: (model) Done (requirement "Phone reads from a copy", ADR "A copy in the browser on phones"): on Android the app reads its own files (.isostride/) through a copy in the browser's private storage (OPFS), filled from the folder as files are read and kept between sessions; every write goes to both; FIT files and listings come from the folder; a copy whose data stamp differs from the folder's is dropped when the app opens and the app opened again; one copy for each folder chosen, the copy of a folder left removed; the workers read through the same copy; the diagnostics say whether the copy is on, the site's storage, and a read as the app does it. "isostride.mirror" (on/off) in the browser's storage turns it on or off for a test.
+Q: (model) Gdy E2E przejdą, wypchnąć jako PR?
+A: (użytkownik) tak
+A: (użytkownik) nie czekaj na pelne testy i sienie ... to bezsensu ... 3 serie testow sa robione

@@ -1,0 +1,11 @@
+---
+id: "2dd6ffe3-1b0d-4558-a192-4f8997234db5"
+type: "adr"
+label: "A copy in the browser on phones"
+alternatives: "The copy on every device: no gain where the folder is fast, and two copies of everything. The data in OPFS only, the folder as an export: against ADR \"Folder via File System Access\" (the runner's data visible and theirs). Filling the whole copy at once when the folder is opened: minutes on the phone before anything shows."
+consequences: "On the phone a file read once is read from the copy afterwards, also in the next sessions: the screens no longer wait on the folder; the first opening of each file and every write still take the folder's time. The folder stays the whole data: the copy can be lost (site data cleared) and is filled again. A change to the runner's settings made outside this browser without a change of the data stamp is not seen until the copy is dropped. Desktops keep reading the folder alone."
+context: "The data live in a folder the runner chooses (ADR \"Folder via File System Access\"). On Android, Chrome reaches that folder through the system's storage access: the runner's fast phone took 0.6–1 s for each call and ~3 s to read a file's content, whatever its size (a 2 KB index in 5 s); keeping what was read in memory (ADR \"One reading worker, files kept\") helps only once a file was read in this session, and every opening read each file again. The browser's private storage (OPFS) reads in milliseconds and holds as much as IsoStride writes (an origin may use about 60% of the disk), but it is invisible to the runner and may be cleared with the site's data."
+date: "2026-11-24"
+decision: "We will, on Android, keep a copy of the app's own files (.isostride/) in OPFS, one copy for each folder chosen: a file is read from the copy and, missing there, from the folder and put in the copy; a write goes to both before it is done; a removal removes from both; the FIT files and every listing come from the folder. When the app opens, the folder's data stamp is compared with the copy's, in the background; when they differ (the folder changed outside this browser) the copy is dropped and the app opened again. The workers read through the same copy."
+status: "accepted"
+---

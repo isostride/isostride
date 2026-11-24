@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { BrowserFolder, forgetRunFiles, keepRunFiles } from '@/lib/fs';
+import { forgetRunFiles, keepRunFiles, openDataFolder, type DataFolder } from '@/lib/fs';
 import type { BlockDefinition, BlockInstance } from '@/lib/blocks';
 import { curvesOf, type CurvePoint, type CurveSource } from '@/lib/curve';
 import { figuresOf, instancesOf, similarOf, type EffortFigures, type SimilarQuery, type SimilarResult } from '@/lib/detection';
@@ -9,7 +9,8 @@ import { addedRuns, cached, dataStamp, importFolder, recomputeEverything, refres
 /** context: gear or tags changed; blocks: block definitions changed; instances: blocks not kept, computed now; curve: pace curves of stretches; similar: stretches like a selected one; figures: the curves of stretches by distance. */
 export type WorkerJob = 'import' | 'recompute' | 'context' | 'blocks' | 'instances' | 'curve' | 'similar' | 'figures';
 /** id: the request's number, its events carry it (the worker that stays answers several requests). */
-export type WorkerRequest = { id?: number } & (
+/** copy: the id of the folder's copy in the browser, when the page keeps one (ADR "A copy in the browser on phones"). */
+export type WorkerRequest = { id?: number; copy?: string | null } & (
   | { type: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures'>; handle: FileSystemDirectoryHandle }
   | { type: 'figures'; handle: FileSystemDirectoryHandle; stretches: SimilarQuery[] }
   | { type: 'similar'; handle: FileSystemDirectoryHandle; query: SimilarQuery }
@@ -35,7 +36,7 @@ const send = (e: WorkerEvent) => (self as unknown as { postMessage(m: unknown): 
 const KEEP_RUNS = 150;
 let keptFor: string | null = null;
 /** The folder the worker that stays reads, kept between its requests. */
-let readingFolder: BrowserFolder | null = null;
+let readingFolder: Promise<DataFolder> | null = null;
 /** The requests given up (the screen moved on). */
 const cancelled = new Set<number>();
 
@@ -50,7 +51,7 @@ self.onmessage = async (msg: MessageEvent<WorkerRequest | CancelRequest>) => {
   const reading = e.data.type === 'instances' || e.data.type === 'curve' || e.data.type === 'figures' || e.data.type === 'similar';
   // The worker that stays reads one folder through one BrowserFolder, which keeps the handles and
   // texts it learned (the page starts another worker for another folder); a writing job's worker has its own.
-  const folder = reading ? (readingFolder ??= new BrowserFolder(e.data.handle)) : new BrowserFolder(e.data.handle);
+  const folder = await (reading ? (readingFolder ??= openDataFolder(e.data.handle, e.data.copy ?? null)) : openDataFolder(e.data.handle, e.data.copy ?? null));
   const onProgress = (p: { done: number; total: number; file: string }) => {
     // Given up: the job stops at its next file, the worker goes on with the others.
     if (id !== undefined && cancelled.has(id)) throw new DOMException('abandoned', 'AbortError');

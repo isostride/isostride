@@ -133,7 +133,7 @@ function ask(request: ReadRequest, onProgress?: Progress, signal?: AbortSignal):
       if (current?.job === request.type) publish(null);
       reject(new DOMException('abandoned', 'AbortError'));
     }, { once: true });
-    w.postMessage({ ...request, id });
+    w.postMessage({ ...request, id, copy: copyId });
   });
 }
 
@@ -144,9 +144,15 @@ function ask(request: ReadRequest, onProgress?: Progress, signal?: AbortSignal):
  */
 let writing: Promise<unknown> = Promise.resolve();
 
+/** The copy in the browser of the folder open (ADR "A copy in the browser on phones"), the workers read through it too. */
+let copyId: string | null = null;
+export function setCopyId(id: string | null): void {
+  copyId = id;
+}
+
 /** Runs one job in a fresh Processing Worker, after the jobs writing the data before it; resolves when it is done. */
 export async function runInWorker(job: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures'>, handle: FileSystemDirectoryHandle, onProgress?: Progress): Promise<DoneEvent> {
-  const turn = writing.then(() => start({ type: job, handle }, onProgress));
+  const turn = writing.then(() => start({ type: job, handle, copy: copyId }, onProgress));
   writing = turn.catch(() => undefined);
   const m = await turn;
   if (m.type !== 'done') throw new Error(t('unexpected {type}', { type: m.type }));

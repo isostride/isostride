@@ -222,3 +222,52 @@ test.describe('Recompute on mismatch', () => {
   });
 });
 
+test.describe('Phone reads from a copy', () => {
+  test('The app read through a copy in the browser, the folder kept whole', async ({ page }) => {
+    // As on an Android phone (ADR "A copy in the browser on phones"): the copy turned on for this browser.
+    await page.addInitScript(() => localStorage.setItem('isostride.mirror', 'on'));
+    await openWithFolder(page, await fitFiles(3));
+    await importAll(page);
+    await expect(page.locator('.run-tile')).toHaveCount(3);
+    // The folder holds the whole data, the copy what the app wrote and read.
+    const copyIndex = () => page.evaluate(async () => {
+      const copies = await (await navigator.storage.getDirectory()).getDirectoryHandle('copies');
+      for await (const [, h] of (copies as any).entries()) {
+        try {
+          const d = await (await (h as FileSystemDirectoryHandle).getDirectoryHandle('.isostride')).getDirectoryHandle('derived');
+          return JSON.parse(await (await (await d.getFileHandle('runs-index.json')).getFile()).text()).runs.length;
+        } catch { /* another copy */ }
+      }
+      return null;
+    });
+    expect(await copyIndex()).toBe(3);
+    expect(JSON.parse(await readText(page, '.isostride/derived/runs-index.json')).runs).toHaveLength(3);
+    // Opened again: the runs read through the copy.
+    await page.reload();
+    await expect(page.locator('.run-tile')).toHaveCount(3);
+    // The diagnostics say so.
+    await page.goto('/settings?tab=about');
+    await page.getByRole('button', { name: 'Run diagnostics' }).click();
+    await expect(page.getByRole('textbox', { name: 'Diagnostics' })).toHaveValue(/copy in the browser: on/, { timeout: 30_000 });
+    // The folder's data changed outside this browser (another stamp): the copy is dropped, the app opened again on the folder.
+    const stamp = JSON.parse(await readText(page, '.isostride/derived/stamp.json'));
+    await putText(page, '.isostride/derived/stamp.json', JSON.stringify({ ...stamp, stamp: 'elsewhere' }));
+    await page.goto('/');
+    // Dropped and filled again from the folder: the copy no longer holds its own stamp (the folder's, once read).
+    const copyStamp = () => page.evaluate(async () => {
+      const copies = await (await navigator.storage.getDirectory()).getDirectoryHandle('copies');
+      for await (const [, h] of (copies as any).entries()) {
+        try {
+          const d = await (await (h as FileSystemDirectoryHandle).getDirectoryHandle('.isostride')).getDirectoryHandle('derived');
+          return JSON.parse(await (await (await d.getFileHandle('stamp.json')).getFile()).text()).stamp;
+        } catch { /* not filled yet */ }
+      }
+      return null;
+    });
+    await expect(async () => expect([null, 'elsewhere']).toContain(await copyStamp())).toPass({ timeout: 30_000 });
+    expect(await copyStamp()).not.toBe(stamp.stamp);
+    await page.goto('/');
+    await expect(page.locator('.run-tile')).toHaveCount(3, { timeout: 30_000 });
+  });
+});
+
