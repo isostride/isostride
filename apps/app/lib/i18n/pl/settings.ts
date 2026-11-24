@@ -40,4 +40,12 @@ export const SETTINGS: Dictionary = {
   'Release notes': 'Informacje o wydaniu',
   // The language in a tab of its own.
   'Language & region': 'Język i region',
+  // Diagnostics of this device, in About.
+  Diagnostics: 'Diagnostyka',
+  'Measures on this device how long the folder takes to read and the app to work, as text to copy and send when the app is slow. Nothing is sent by itself.': 'Mierzy na tym urządzeniu, ile trwa czytanie folderu i praca aplikacji, i podaje wynik jako tekst do skopiowania i wysłania, gdy aplikacja działa wolno. Sama niczego nie wysyła.',
+  'Run diagnostics': 'Uruchom diagnostykę',
+  'Measuring…': 'Mierzę…',
+  Copied: 'Skopiowano',
+  Copy: 'Kopiuj',
+  'Diagnostics failed: {error}': 'Diagnostyka nie powiodła się: {error}',
 };

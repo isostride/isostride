@@ -886,6 +886,10 @@
     ] },
     { "element": "f1c03f5c-4092-4ddf-aaa9-efc717d56dc7", "name": "Reading worker keeps runs", "tests": [
       "tests/unit/keptRuns.test.ts › Run files kept by the reading worker › Read once, the oldest let go, forgotten when the data change"
+    ] },
+    { "element": "cc160c7c-2632-4d74-902c-56af70f51643", "name": "Device diagnosed", "tests": [
+      "tests/integration/diagnose.test.ts › Diagnostics of this device › Each read of the folder timed, as lines to copy",
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
     ] }
   ]
 }

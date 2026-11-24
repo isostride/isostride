@@ -34,6 +34,12 @@ test.describe('Performance model', () => {
     const about = page.getByRole('region', { name: 'About IsoStride' });
     await expect(about).toContainText(`Version ${shown}`);
     await expect(about.getByRole('link', { name: 'Release notes' })).toHaveAttribute('href', /\/releases\/tag\/v\d+\.\d+(\.\d+)?$/);
+    // Diagnostics of this device: measured here, as text to copy (requirement "Diagnostics of this device").
+    await about.getByRole('button', { name: 'Run diagnostics' }).click();
+    const report = about.getByRole('textbox', { name: 'Diagnostics' });
+    await expect(report).toHaveValue(/read runs-index\.json \(first time\): \d+ ms/, { timeout: 30_000 });
+    await expect(report).toHaveValue(/a job in the background worker \(no work\): \d+ ms/);
+    await expect(about.getByRole('button', { name: 'Copy' })).toBeVisible();
     // Models (requirement "Thresholds of the models"): each threshold of the checks with its default; one out of
     // its range cannot be saved; set, it is kept in the data folder with the performance model.
     await page.getByRole('tab', { name: 'Models' }).click();

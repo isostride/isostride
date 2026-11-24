@@ -1099,3 +1099,20 @@ A: (użytkownik) Do otwarcia, najdłużej 7 dni (Recommended)
 A: (model) Done: a run stays New until it is opened or marked as seen, 7 days after its import at most (new-runs.json keeps when each was marked; a file of before counts from the run's start); the Runs screen says "a week at most".
 Q: (model) Dołożyć te zmiany do PR #17 i wypchnąć?
 A: (użytkownik) tak
+Q: (użytkownik) mam telefon z androidem, dosyc szybki ... ale isostride dziala tam bardzo wolno jak to przedebugowac?
+Q: (model) Pod jakim adresem otwierasz aplikację na telefonie? [...] Mogę też zrobić to sam: wersja produkcyjna ze 131 biegami, procesor spowolniony jak w telefonie, pomiar każdego ekranu.
+A: (użytkownik) app.isostride.com
+A: (użytkownik) moj telefon motorola razr 60 ultra
+Q: (model) Które ekrany albo czynności są wolne? I gdzie leży folder na telefonie?
+A: (użytkownik) wszystkie ... ekrany
+A: (model) Measured with each file operation 25 ms slower (as Android might be): a screen does 30–40 file operations when it opens, two thirds of them finding the same folders (.isostride, derived) again for each file read; that gives ~0.2 s a screen, not "very slow": a recording from the phone is needed.
+Q: (użytkownik) jak mam to sprawdzic
+A: (model) [instructions to connect the phone by USB to chrome://inspect and record a Performance profile]
+Q: (użytkownik) tryb usb jaki?
+A: (model) Przesyłanie plików (File transfer), then allow USB debugging on the phone.
+A: (użytkownik) nie udalo mi sie polaczyc ..
+Q: (model) Spróbujesz jeszcze kabla, czy robię „Diagnostykę” (przycisk w Settings › About, który mierzy na telefonie folder, odczyty, liczenie i ekrany i daje tekst do wklejenia)?
+A: (użytkownik) zrob diagnostyka w inny sposb
+A: (model) Done: Settings › About › Run diagnostics measures on the device the folder's listing, the index read first and again, settings, blocks, the last run file read and parsed, run files one after another, a FIT file, a job in the background worker, with the version, the device and the long tasks since the page loaded; the report shows as text with Copy, and nothing is sent by itself.
+Q: (model) Wypchnąć jako PR?
+A: (użytkownik) tak wypchnij
