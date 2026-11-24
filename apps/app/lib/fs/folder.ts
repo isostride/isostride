@@ -30,7 +30,9 @@ export interface DataFolder {
 
 export async function readJson<T>(folder: DataFolder, path: string): Promise<T | null> {
   const text = await folder.readText(path);
-  return text === null ? null : (JSON.parse(text) as T);
+  // An empty file is one whose writing was cut off (the browser makes a file before it writes it, a
+  // tab closed in between leaves it empty): no data, as a missing file, not a failure of the screen.
+  return text === null || text.trim() === '' ? null : (JSON.parse(text) as T);
 }
 
 export async function writeJson(folder: DataFolder, path: string, value: unknown): Promise<void> {
