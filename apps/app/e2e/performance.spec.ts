@@ -23,7 +23,7 @@ test.describe('Performance model', () => {
     const performance = (await screens.nth(4).boundingBox())!;
     expect(side.y + side.height - (settings.y + settings.height)).toBeLessThan(40);
     expect(settings.y - (performance.y + performance.height)).toBeGreaterThan(100);
-    // The app's version under its name (requirement "App version shown"), and in Settings, Display, with the changelog.
+    // The app's version under its name (requirement "App version shown"), and in Settings, Display, with the release notes of the version.
     const pkgVersion = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '../../../package.json'), 'utf8')).version as string;
     const shown = pkgVersion.replace(/^(\d+\.\d+)\.0$/, '$1');
     await expect(page.locator('.sidebar .brand-version')).toHaveText(shown);
@@ -33,7 +33,7 @@ test.describe('Performance model', () => {
     await page.getByRole('tab', { name: 'About' }).click();
     const about = page.getByRole('region', { name: 'About IsoStride' });
     await expect(about).toContainText(`Version ${shown}`);
-    await expect(about.getByRole('link', { name: 'Changelog' })).toHaveAttribute('href', /CHANGELOG\.md$/);
+    await expect(about.getByRole('link', { name: 'Release notes' })).toHaveAttribute('href', /\/releases\/tag\/v\d+\.\d+(\.\d+)?$/);
     // Models (requirement "Thresholds of the models"): each threshold of the checks with its default; one out of
     // its range cannot be saved; set, it is kept in the data folder with the performance model.
     await page.getByRole('tab', { name: 'Models' }).click();

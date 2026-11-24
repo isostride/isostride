@@ -87,12 +87,17 @@ export function DisplayCard() {
 }
 
 
-/** The repository of IsoStride, its commits and its changelog. */
+/** The repository of IsoStride, its commits and the release notes of its versions. */
 const REPO = 'https://github.com/isostride/isostride';
+/**
+ * The release notes of a version, on the GitHub release the deploy makes for it ("link do changelog ... a nie
+ * powinien byc do release note ?"); a build without a version, all the releases.
+ */
+export const releaseNotesUrl = (version: string): string => (version === '0.0.0' ? `${REPO}/releases` : `${REPO}/releases/tag/v${versionLabel(version)}`);
 
 /**
  * About the app (requirement "App version shown"): its version, the commit and the date of its build,
- * and the changelog of its versions.
+ * and the release notes of its version.
  */
 export function AboutCard() {
   return (
@@ -107,7 +112,7 @@ export function AboutCard() {
             {APP_BUILT && <> · built {APP_BUILT}</>}
           </div>
         </div>
-        <a className="btn" href={`${REPO}/blob/master/CHANGELOG.md`}>Changelog</a>
+        <a className="btn" href={releaseNotesUrl(APP_VERSION)}>Release notes</a>
       </div>
     </section>
   );
