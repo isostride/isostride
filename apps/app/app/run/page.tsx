@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget } from '@/components';
+import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, SCREEN_LEAVE, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget } from '@/components';
 import { readChartSettings, runInWorker, useChartSettings, useLocale, useOpenFolder } from '@/lib/client';
 import { msg, number, t, tn } from '@/lib/i18n';
 import { readGear, readRunTags, writeRunTags, type Gear, type RunTag, type RunTagsFile } from '@/lib/gear';
@@ -170,7 +170,7 @@ function RunPage() {
   /** the history entry the run is shown in, read as it opens (at its close the browser is in the next one) */
   const entry = useRef<string | null>(null);
   useEffect(() => { entry.current = entryKey(); }, []);
-  // A link to another screen clicked: the link of this one is no longer written (the router, still loading
+  // A link to another screen clicked, or another screen chosen in the search: the link of this one is no longer written (the router, still loading
   // the next screen, would take that write for a return here and stay); the view goes into the run's
   // memory as the screen closes.
   const leaving = useRef(false);
@@ -181,7 +181,10 @@ function RunPage() {
       if (a && !a.target && new URL(a.href, location.href).pathname !== location.pathname) leaving.current = true;
     };
     document.addEventListener('click', click, true);
-    return () => document.removeEventListener('click', click, true);
+    // Left from the search (⌘K): the same.
+    const leave = () => { leaving.current = true; };
+    window.addEventListener(SCREEN_LEAVE, leave);
+    return () => { document.removeEventListener('click', click, true); window.removeEventListener(SCREEN_LEAVE, leave); };
   }, []);
   useEffect(() => {
     const view: RunView = { range: zoom, slots, focus, layout, axis, smooth, blocks: showBlocks, map: mapLed ? mapCam : null };

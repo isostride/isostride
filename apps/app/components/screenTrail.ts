@@ -12,6 +12,12 @@ export interface TrailStore {
   setItem(key: string, value: string): void;
 }
 
+/**
+ * Sent before a screen is left without a link (the search, ⌘K): the screen being left stops writing its
+ * address, which the router, still loading the next screen, would take for a return and stay on it.
+ */
+export const SCREEN_LEAVE = 'isostride.screen-leave';
+
 const BACK = 'strideprism.backTo';
 const PREV = 'strideprism.prevPage';
 

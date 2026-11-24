@@ -7,6 +7,7 @@ import { readDefinitions } from '@/lib/blocks';
 import { PATHS, readJson } from '@/lib/fs';
 import { dateText, msg, number, t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
+import { SCREEN_LEAVE } from './screenTrail';
 
 type Group = 'Screens' | 'Actions' | 'Runs' | 'Segments';
 type Glyph = 'runs' | 'analysis' | 'ab' | 'performance' | 'model' | 'settings' | 'gear' | 'tags' | 'display' | 'block' | 'run' | 'import' | 'theme';
@@ -97,7 +98,7 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
     setActive(0);
     setTimeout(() => input.current?.focus(), 0);
     (async () => {
-      const go = (href: string) => () => { setOpen(false); router.push(href); };
+      const go = (href: string) => () => { setOpen(false); window.dispatchEvent(new Event(SCREEN_LEAVE)); router.push(href); };
       const fixed: (Item & { hint: string })[] = [
         // The six screens first: with nothing typed, only they show.
         { group: 'Screens', glyph: 'performance', label: msg('Dashboard'), hint: msg('What matters to you, at a glance'), run: go('/dashboard') },
