@@ -13,8 +13,9 @@ const SITE = 'http://localhost:4174/';
 /**
  * The site's home page holds still (the runner's "ustaw ze layout shift ma byc 0"): no layout shift at
  * all while it loads and while it is read to its end (its screenshots loaded lazily on the way), on a
- * desktop and on a phone, in the light and the dark theme; its largest paint within 2500 ms and no
- * serious accessibility violation.
+ * desktop and on a phone, with the system in its light and its dark scheme (the site is light in both:
+ * "strone glowna pokazuj tylko w trybie jasnym"); its largest paint within 2500 ms and no serious
+ * accessibility violation.
  */
 test.describe('Site without layout shift', () => {
   test('Site home page holds still', async ({ browser }) => {
@@ -40,6 +41,8 @@ test.describe('Site without layout shift', () => {
         }).observe({ type: 'layout-shift', buffered: true });
       });
       await page.goto(SITE, { waitUntil: 'networkidle' });
+      // Light whatever the system's scheme: its paper colour.
+      expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(244, 245, 247)');
       // Read to the end, a screen at a time, as a visitor scrolls (the screenshots load on the way).
       for (let y = 0; y < (await page.evaluate(() => document.body.scrollHeight)); y += height * 0.8) {
         await page.evaluate((top) => window.scrollTo(0, top), y);

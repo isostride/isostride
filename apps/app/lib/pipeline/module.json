@@ -5,6 +5,7 @@
     "lib/context",
     "lib/detection",
     "lib/fs",
+    "lib/i18n",
     "lib/ingest",
     "lib/kernel"
   ],

@@ -4,6 +4,16 @@ The versions of IsoStride (the app at app.isostride.com and the site at isostrid
 
 ## Unreleased
 
+### Languages
+- The app in English and Polish: every screen, message and explanation of the models. At first in your browser's language; change it in Settings › Display or in the setup wizard. Numbers and dates follow the language (5,24 km, 24 lis 2026).
+- The site in Polish too, at isostride.com/pl, with EN and PL in its header; a first visit from a browser in Polish opens it.
+
+### On a phone
+- Every screen, dialog and step of the setup wizard fits a phone: the wizard's steps, the rule of a new segment, the tables (their secondary columns left out), the map of the models read down the screen.
+
+### Other
+- Release notes of the version shown, from Settings › About and the site's footer.
+
 ## 0.1 — 2026-11-24
 
 The first version of IsoStride: an open source tool for analysing the metrics of your runs and modelling your performance, in your browser, with your data on your own disk.

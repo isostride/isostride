@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { msg, t, tn } from '@/lib/i18n';
 import type { ModelGroup, ModelKey, ModelReport, Trust } from '@/lib/load';
 import { TRUST_LABEL, WhyButton, WhyDialog, shortName, type Models } from './Assumptions';
 import { TABS, performanceHref } from './structure';
@@ -16,13 +17,23 @@ interface Edge { from: ModelKey; to: ModelKey; d: string; caps: Trust | null }
  */
 const LANES: ModelGroup[] = ['load', 'response', 'aerobic', 'capacity'];
 /** The columns: measured from the runs, built on those, fitted to both. */
-const COLUMNS = ['From your runs', 'Built on them', 'Fitted response'];
+const COLUMNS = [msg('From your runs'), msg('Built on them'), msg('Fitted response')];
 /** The radius of the turns of a line, px. */
 const TURN = 12;
 const TRUST_ORDER: Trust[] = ['ok', 'rough', 'no', 'nodata'];
 
 /** A model's name on the map: its short name; a fitted response by what it is fitted to. */
-const mapName = (m: ModelReport) => (m.group === 'response' ? `On ${m.name.split(' · ')[1] ?? shortName(m)}` : shortName(m));
+const mapName = (m: ModelReport) => (m.group === 'response' ? t('On {model}', { model: m.name.split(' · ')[1] ?? shortName(m) }) : shortName(m));
+
+/** How many models of a lane have a trust: "3 reliable". */
+const tallyText = (trust: Trust, n: number): string => {
+  switch (trust) {
+    case 'ok': return tn(n, '{n} reliable', '{n} reliable');
+    case 'rough': return tn(n, '{n} rough', '{n} rough');
+    case 'no': return tn(n, '{n} not reliable', '{n} not reliable');
+    default: return tn(n, '{n} no data', '{n} no data');
+  }
+};
 
 /** A path through `pts` turning at each inner point with a rounded corner. */
 function rounded(pts: [number, number][]): string {
@@ -169,32 +180,34 @@ export function ModelMap({ models, by: models_, says, byLoad }: { models: ModelR
     return set;
   }, [active, by, models]);
 
-  const lane = (g: ModelGroup) => TABS.find((t) => t.key === g)!;
-  const tally = (g: ModelGroup) => TRUST_ORDER.map((t) => [t, models.filter((m) => m.group === g && m.trust === t).length] as const).filter(([, n]) => n > 0);
+  const lane = (g: ModelGroup) => TABS.find((x) => x.key === g)!;
+  const tally = (g: ModelGroup) => TRUST_ORDER.map((tr) => [tr, models.filter((m) => m.group === g && m.trust === tr).length] as const).filter(([, n]) => n > 0);
+  /** What a lane's evidence is: its words after the colon ("from every run"); the response's, before it. */
+  const laneEvidence = (g: ModelGroup) => { const e = lane(g).evidence; return e ? t(e).split(':')[g === 'response' ? 0 : 1]?.trim() : undefined; };
 
   return (
-    <section ref={card} className="card model-map" aria-label="Map of the models" style={fill ? { minHeight: fill } : undefined}>
+    <section ref={card} className="card model-map" aria-label={t('Map of the models')} style={fill ? { minHeight: fill } : undefined}>
       <div className="model-map-head">
-        <h2>How the models rest on each other</h2>
-        <p className="muted">Point at a model to light up its chain.</p>
+        <h2>{t('How the models rest on each other')}</h2>
+        <p className="muted">{t('Point at a model to light up its chain.')}</p>
         <div className="map-legend muted" aria-hidden="true">
-          {TRUST_ORDER.map((t) => <span key={t}><i className={`trust-dot ${t}`} />{TRUST_LABEL[t]}</span>)}
-          <span><i className="map-key-line" />rests on</span>
-          <span><i className="map-key-line caps" />holds back the trust of the next</span>
-          {byLoad && <span><b className="by-load">{byLoad.unit}</b>follows the load model, {byLoad.name}</span>}
+          {TRUST_ORDER.map((tr) => <span key={tr}><i className={`trust-dot ${tr}`} />{t(TRUST_LABEL[tr])}</span>)}
+          <span><i className="map-key-line" />{t('rests on')}</span>
+          <span><i className="map-key-line caps" />{t('holds back the trust of the next')}</span>
+          {byLoad && <span><b className="by-load">{byLoad.unit}</b>{t('follows the load model, {model}', { model: t(byLoad.name) })}</span>}
         </div>
       </div>
       <div className="model-map-scroll">
         <div ref={inner} className="model-map-grid" style={{ gridTemplateRows: gridRows }}>
-          {COLUMNS.map((c, i) => <div key={c} className="map-col-title" style={{ gridColumn: 3 + i * 2, gridRow: 1 }}>{c}</div>)}
+          {COLUMNS.map((c, i) => <div key={c} className="map-col-title" style={{ gridColumn: 3 + i * 2, gridRow: 1 }}>{t(c)}</div>)}
           {LANES.map((g, i) => (
             <div key={`band-${g}`} className={`map-lane lane-${g}`} style={{ gridColumn: '1 / -1', gridRow: `${laneStart[i]} / span ${rows[i]}` }} aria-hidden="true" />
           ))}
           {LANES.map((g, i) => (
             <div key={`head-${g}`} className="map-lane-head" style={{ gridColumn: 1, gridRow: `${laneStart[i]} / span ${rows[i]}`, '--order': i * 100 } as CSSProperties}>
-              <Link href={performanceHref(g)}>{lane(g).name}</Link>
-              <span className="muted">{lane(g).evidence?.split(':')[g === 'response' ? 0 : 1]?.trim()}</span>
-              <span className="map-tally">{tally(g).map(([t, n]) => <span key={t}><i className={`trust-dot ${t}`} aria-hidden="true" />{n} {TRUST_LABEL[t].toLowerCase()}</span>)}</span>
+              <Link href={performanceHref(g)}>{t(lane(g).name)}</Link>
+              <span className="muted">{laneEvidence(g)}</span>
+              <span className="map-tally">{tally(g).map(([tr, n]) => <span key={tr}><i className={`trust-dot ${tr}`} aria-hidden="true" />{tallyText(tr, n)}</span>)}</span>
             </div>
           ))}
           <svg className="model-map-lines" width={size.w} height={size.h} aria-hidden="true">
@@ -217,9 +230,9 @@ export function ModelMap({ models, by: models_, says, byLoad }: { models: ModelR
                   <span className="map-now tnum" title={says(m)}>{says(m)}</span>
                 </Link>
                 <span className="map-side">
-                  <span className="map-trust"><i className={`trust-dot ${m.trust}`} aria-hidden="true" />{TRUST_LABEL[m.trust]}</span>
+                  <span className="map-trust"><i className={`trust-dot ${m.trust}`} aria-hidden="true" />{t(TRUST_LABEL[m.trust])}</span>
                   <span className="map-side-foot">
-                    {byLoad?.set.has(m.key) && <span className="by-load" title={`Changes with the load model: ${byLoad.name}`}>{byLoad.unit}</span>}
+                    {byLoad?.set.has(m.key) && <span className="by-load" title={t('Changes with the load model: {model}', { model: t(byLoad.name) })}>{byLoad.unit}</span>}
                     <WhyButton m={m} open={open === m.key} onToggle={() => setOpen(open === m.key ? null : m.key)} />
                   </span>
                 </span>

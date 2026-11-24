@@ -1,4 +1,5 @@
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
+import { msg } from '@/lib/i18n';
 import type { IndexedRun, Series } from '@/lib/kernel';
 
 /**
@@ -47,18 +48,18 @@ export interface DashboardFile {
   tiles: Tile[];
 }
 
-/** The kinds a runner can add, in the order offered; those naming one thing say what. */
+/** The kinds a runner can add, in the order offered; those naming one thing say what. Their titles are keys, shown with t(). */
 export const TILE_KINDS: { kind: TileKind; title: string; of?: 'run' | 'segment' | 'analysis' | 'model' | 'perf' }[] = [
-  { kind: 'week', title: 'This week' },
-  { kind: 'weekly', title: 'Weekly distance' },
-  { kind: 'last', title: 'Last run' },
-  { kind: 'form', title: 'Form today' },
-  { kind: 'recent', title: 'Recent runs' },
-  { kind: 'run', title: 'A run', of: 'run' },
-  { kind: 'segment', title: 'A segment', of: 'segment' },
-  { kind: 'analysis', title: 'A saved analysis', of: 'analysis' },
-  { kind: 'model', title: 'A model of Performance', of: 'model' },
-  { kind: 'perf', title: 'A chart of Performance', of: 'perf' },
+  { kind: 'week', title: msg('This week') },
+  { kind: 'weekly', title: msg('Weekly distance') },
+  { kind: 'last', title: msg('Last run') },
+  { kind: 'form', title: msg('Form today') },
+  { kind: 'recent', title: msg('Recent runs') },
+  { kind: 'run', title: msg('A run'), of: 'run' },
+  { kind: 'segment', title: msg('A segment'), of: 'segment' },
+  { kind: 'analysis', title: msg('A saved analysis'), of: 'analysis' },
+  { kind: 'model', title: msg('A model of Performance'), of: 'model' },
+  { kind: 'perf', title: msg('A chart of Performance'), of: 'perf' },
 ];
 
 /** The tiles of a dashboard the runner has not set (the runner's \"tak\" to them). */

@@ -5,6 +5,7 @@
     "lib/curve",
     "lib/detection",
     "lib/fs",
+    "lib/i18n",
     "lib/pipeline"
   ],
   "runs": "worker"

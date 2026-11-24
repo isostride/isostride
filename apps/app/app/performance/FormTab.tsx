@@ -5,12 +5,13 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { Key, TipRow, WashGradient, columnPath, dayLabel, monthLabel, monthTicks, niceTicks, useSvgId, useWidth } from '@/components';
 import { useOpenFolder } from '@/lib/client';
+import { msg, number, t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import { formSeries, type FormDay } from '@/lib/load';
 import { DEFAULT_PERFORMANCE, LOAD_MODELS, readSettings, type PerformanceSettings } from '@/lib/settings';
 
 /** The periods the chart shows, kept in the link (period=90, 365 or all). */
-const PERIODS: [string, string, number | null][] = [['90', '90 days', 90], ['365', '1 year', 365], ['all', 'All', null]];
+const PERIODS: [string, string, number | null][] = [['90', msg('90 days'), 90], ['365', msg('1 year'), 365], ['all', msg('All'), null]];
 /** The acute:chronic ratio's band of steady build-up (Gabbett 2016), a guide. */
 const ACWR_BAND: [number, number] = [0.8, 1.3];
 const M = { l: 52, r: 16 };
@@ -18,7 +19,8 @@ const PANELS = { load: 200, form: 110, acwr: 90, gap: 40, axis: 22, title: 22 };
 
 const localDay = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const timeOf = (day: string) => new Date(`${day}T12:00:00`).getTime();
-const signed = (v: number) => `${v > 0 ? '+' : ''}${Math.round(v)}`;
+/** A whole number with its sign: +5, -3, 0 (a rounded -0.3 is 0). */
+const signed = (v: number) => `${v > 0 ? '+' : ''}${number(Math.round(v) || 0)}`;
 
 /**
  * The Form tab of Performance (requirement "Form over time"): the daily load of the model chosen in
@@ -52,7 +54,7 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
   const now = all[all.length - 1];
 
   if (!withLoad.length) {
-    return <div className="card empty">No run has a load yet. Import runs, or open the <Link href="/performance?tab=model">Model</Link> tab and save it to compute the loads.</div>;
+    return <div className="card empty">{t('No run has a load yet. Import runs, or open the')} <Link href="/performance?tab=model">{t('Model')}</Link> {t('tab and save it to compute the loads.')}</div>;
   }
 
   const t0 = timeOf(days[0].date);
@@ -94,42 +96,42 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
   return (
     <>
       <div className="toolbar">
-        <div className="segmented" role="radiogroup" aria-label="Period">
-          {PERIODS.map(([k, name]) => <button key={k} type="button" role="radio" aria-checked={period[0] === k} className={period[0] === k ? 'on' : ''} onClick={() => setPeriod(k)}>{name}</button>)}
+        <div className="segmented" role="radiogroup" aria-label={t('Period')}>
+          {PERIODS.map(([k, name]) => <button key={k} type="button" role="radio" aria-checked={period[0] === k} className={period[0] === k ? 'on' : ''} onClick={() => setPeriod(k)}>{t(name)}</button>)}
         </div>
       </div>
       <div className="card chart">
-        <dl className="form-figures" aria-label="Form today">
-          <div><dt>Fitness (CTL)</dt><dd className="tnum">{Math.round(now.fitness)}</dd></div>
-          <div><dt>Fatigue (ATL)</dt><dd className="tnum">{Math.round(now.fatigue)}</dd></div>
-          <div><dt>Form (TSB)</dt><dd className="tnum">{signed(now.fitness - now.fatigue)}</dd></div>
-          <div><dt>Acute:chronic</dt><dd className="tnum">{now.acwr === null ? '–' : now.acwr.toFixed(2)}</dd></div>
-          <div><dt>Load, last 7 days</dt><dd className="tnum">{Math.round(all.slice(-7).reduce((s, d) => s + d.load, 0))} <span className="unit">{model.unit}</span></dd></div>
+        <dl className="form-figures" aria-label={t('Form today')}>
+          <div><dt>{t('Fitness (CTL)')}</dt><dd className="tnum">{number(Math.round(now.fitness))}</dd></div>
+          <div><dt>{t('Fatigue (ATL)')}</dt><dd className="tnum">{number(Math.round(now.fatigue))}</dd></div>
+          <div><dt>{t('Form (TSB)')}</dt><dd className="tnum">{signed(now.fitness - now.fatigue)}</dd></div>
+          <div><dt>{t('Acute:chronic')}</dt><dd className="tnum">{now.acwr === null ? '–' : number(now.acwr, 2)}</dd></div>
+          <div><dt>{t('Load, last 7 days')}</dt><dd className="tnum">{number(Math.round(all.slice(-7).reduce((s, d) => s + d.load, 0)))} <span className="unit">{model.unit}</span></dd></div>
         </dl>
         <div className="form-keys">
-          <Key color="var(--axis)" label="daily load" kind="dot" />
-          <Key color="var(--series-1)" label="fitness (CTL)" />
-          <Key color="var(--series-2)" label="fatigue (ATL)" />
-          <Key color="var(--series-3)" label="form (TSB)" />
-          <Key color="var(--series-4)" label="acute:chronic" />
+          <Key color="var(--axis)" label={t('daily load')} kind="dot" />
+          <Key color="var(--series-1)" label={t('fitness (CTL)')} />
+          <Key color="var(--series-2)" label={t('fatigue (ATL)')} />
+          <Key color="var(--series-3)" label={t('form (TSB)')} />
+          <Key color="var(--series-4)" label={t('acute:chronic')} />
         </div>
         <div ref={box} style={{ position: 'relative' }}>
-          <svg width={width} height={H} role="img" aria-label="Form over time" onMouseMove={move} onMouseLeave={() => setHover(null)} style={{ display: 'block' }}>
+          <svg width={width} height={H} role="img" aria-label={t('Form over time')} onMouseMove={move} onMouseLeave={() => setHover(null)} style={{ display: 'block' }}>
             {/* Load, fitness and fatigue. */}
             {loadTicks.map((v) => (
               <g key={`l${v}`}>
                 <line x1={M.l} x2={width - M.r} y1={yLoad(v)} y2={yLoad(v)} stroke="var(--grid)" />
-                <text x={M.l - 8} y={yLoad(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{v}</text>
+                <text x={M.l - 8} y={yLoad(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{number(v)}</text>
               </g>
             ))}
             <defs><WashGradient id={washId} color="var(--series-1)" top={top.load} base={yLoad(0)} strength={0.2} /></defs>
-            <text x={M.l} y={top.load - 10} className="panel-title">Daily load, fitness and fatigue <tspan fill="var(--muted)" fontWeight="400">· {model.unit}</tspan></text>
+            <text x={M.l} y={top.load - 10} className="panel-title">{t('Daily load, fitness and fatigue')} <tspan fill="var(--muted)" fontWeight="400">· {model.unit}</tspan></text>
             {days.map((d, i) => d.load > 0 && <path key={d.date} className="form-load" d={columnPath(x(d.date) - barW / 2, barW, yLoad(d.load), yLoad(0), 2)} fill="var(--axis)" opacity={hover === null || hover === i ? 1 : 0.5} />)}
             <path className="form-fitness-wash" d={fitnessArea} fill={`url(#${washId})`} />
             <polyline className="form-fitness" points={line((d) => d.fitness, yLoad)} fill="none" stroke="var(--series-1)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
             <polyline className="form-fatigue" points={line((d) => d.fatigue, yLoad)} fill="none" stroke="var(--series-2)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
             {/* Form, around zero. */}
-            <text x={M.l} y={top.form - 12} className="panel-title">Form <tspan fill="var(--muted)" fontWeight="400">· TSB, fitness less fatigue</tspan></text>
+            <text x={M.l} y={top.form - 12} className="panel-title">{t('Form')} <tspan fill="var(--muted)" fontWeight="400">· {t('TSB, fitness less fatigue')}</tspan></text>
             <path className="form-form-area" d={formArea} fill="var(--series-3)" opacity={0.12} />
             {formTicks.map((v) => (
               <g key={`f${v}`}>
@@ -139,9 +141,9 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
             ))}
             <polyline className="form-form" points={line((d) => d.form, yForm)} fill="none" stroke="var(--series-3)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
             {/* The acute:chronic ratio, its band of steady build-up. */}
-            <text x={M.l} y={top.acwr - 12} className="panel-title">Acute:chronic <tspan fill="var(--muted)" fontWeight="400">· the band of steady build-up, {ACWR_BAND[0]}–{ACWR_BAND[1]}</tspan></text>
+            <text x={M.l} y={top.acwr - 12} className="panel-title">{t('Acute:chronic')} <tspan fill="var(--muted)" fontWeight="400">· {t('the band of steady build-up, {lo}–{hi}', { lo: number(ACWR_BAND[0]), hi: number(ACWR_BAND[1]) })}</tspan></text>
             <rect x={M.l} width={width - M.l - M.r} y={yAcwr(ACWR_BAND[1])} height={yAcwr(ACWR_BAND[0]) - yAcwr(ACWR_BAND[1])} rx={4} fill="var(--band)" />
-            {ACWR_BAND.map((v) => <text key={`a${v}`} x={M.l - 8} y={yAcwr(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{v.toFixed(1)}</text>)}
+            {ACWR_BAND.map((v) => <text key={`a${v}`} x={M.l - 8} y={yAcwr(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{number(v, 1)}</text>)}
             <polyline className="form-acwr" points={line((d) => d.acwr, yAcwr)} fill="none" stroke="var(--series-4)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
             {/* The time axis. */}
             <line x1={M.l} x2={width - M.r} y1={H - PANELS.axis} y2={H - PANELS.axis} stroke="var(--axis)" />
@@ -160,11 +162,11 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
           {h && (
             <div className="tooltip" style={{ left: x(h.date) > width - 260 ? x(h.date) - 248 : x(h.date) + 14, top: 8 }}>
               <div className="tip-value">{dayLabel(timeOf(h.date))}</div>
-              <TipRow kind="dot" color="var(--axis)" label="load" value={`${Math.round(h.load)} ${model.unit}`} />
-              <TipRow color="var(--series-1)" label="fitness" value={String(Math.round(h.fitness))} />
-              <TipRow color="var(--series-2)" label="fatigue" value={String(Math.round(h.fatigue))} />
-              <TipRow color="var(--series-3)" label="form that morning" value={signed(h.form)} />
-              <TipRow color="var(--series-4)" label="acute:chronic" value={h.acwr === null ? '–' : h.acwr.toFixed(2)} />
+              <TipRow kind="dot" color="var(--axis)" label={t('load')} value={`${number(Math.round(h.load))} ${model.unit}`} />
+              <TipRow color="var(--series-1)" label={t('fitness')} value={number(Math.round(h.fitness))} />
+              <TipRow color="var(--series-2)" label={t('fatigue')} value={number(Math.round(h.fatigue))} />
+              <TipRow color="var(--series-3)" label={t('form that morning')} value={signed(h.form)} />
+              <TipRow color="var(--series-4)" label={t('acute:chronic')} value={h.acwr === null ? '–' : number(h.acwr, 2)} />
             </div>
           )}
         </div>

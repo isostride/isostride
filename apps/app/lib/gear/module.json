@@ -1,7 +1,8 @@
 {
   "$comment": "Parts this part may import, each through its index (ADR \"Declared dependencies only\"); runs: main thread, worker or both.",
   "uses": [
-    "lib/fs"
+    "lib/fs",
+    "lib/i18n"
   ],
   "runs": "both"
 }

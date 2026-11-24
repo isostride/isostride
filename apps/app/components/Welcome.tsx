@@ -1,8 +1,9 @@
 'use client';
 
 import { useFolder } from '@/lib/client';
+import { number, t } from '@/lib/i18n';
 import { Logo } from './Logo';
-import { SETUP_CONTINUE, SetupSteps } from './SetupSteps';
+import { SETUP_CONTINUE, SETUP_STEPS, SetupSteps } from './SetupSteps';
 
 /**
  * Welcome: the setup's first step (the runner's "przy starcie pierwszym powinien uruchamiac wizarda",
@@ -18,25 +19,25 @@ export function Welcome() {
         <aside className="welcome-brand">
           <Logo size={56} />
           <h1>Iso<i className="brand-dot">Stride</i></h1>
-          <p>Compare the same segments of your runs in the same context, and see changes the watch averages hide.</p>
+          <p>{t('Compare the same segments of your runs in the same context, and see changes the watch averages hide.')}</p>
           <ul className="welcome-points">
-            <li>Your runs from your watch&apos;s FIT files</li>
-            <li>Segments and efforts compared over time</li>
-            <li>Models that say how far to trust them</li>
+            <li>{t("Your runs from your watch's FIT files")}</li>
+            <li>{t('Segments and efforts compared over time')}</li>
+            <li>{t('Models that say how far to trust them')}</li>
           </ul>
-          {state.status !== 'unsupported' && <p className="note">🔒 Your data never leaves this computer.</p>}
+          {state.status !== 'unsupported' && <p className="note">🔒 {t('Your data never leaves this computer.')}</p>}
         </aside>
-        <section className="welcome-step" aria-label="Setup">
+        <section className="welcome-step" aria-label={t('Setup')}>
           {state.status === 'unsupported' && (
             <div className="banner err">
               <span>⚠</span>
               {state.insecure ? (
                 <span>
-                  <b>Open this page over https.</b> Browsers give a page access to a folder only over https (or on localhost); this address is plain http.
+                  <b>{t('Open this page over https.')}</b> {t('Browsers give a page access to a folder only over https (or on localhost); this address is plain http.')}
                 </span>
               ) : (
                 <span>
-                  <b>Browser not supported.</b> Open IsoStride in Chrome, Edge or Opera: it needs access to a folder on your disk.
+                  <b>{t('Browser not supported.')}</b> {t('Open IsoStride in Chrome, Edge or Opera: it needs access to a folder on your disk.')}
                 </span>
               )}
             </div>
@@ -44,27 +45,27 @@ export function Welcome() {
           {state.status === 'not-chosen' && (
             <>
               <div className="welcome-progress">
-                <span>Setup · step 1 of 8</span>
+                <span>{t('Setup · step {step} of {steps}', { step: number(1), steps: number(SETUP_STEPS.length) })}</span>
                 <SetupSteps at={0} compact />
               </div>
-              <h2>Choose your data folder</h2>
-              <p>The folder with your watch&apos;s FIT files, or an empty one to put them in. IsoStride reads it here, in your browser, and keeps its own files beside them.</p>
-              <p className="muted small">Your browser asks you to pick it: a web page cannot open a folder by itself.</p>
+              <h2>{t('Choose your data folder')}</h2>
+              <p>{t("The folder with your watch's FIT files, or an empty one to put them in. IsoStride reads it here, in your browser, and keeps its own files beside them.")}</p>
+              <p className="muted small">{t('Your browser asks you to pick it: a web page cannot open a folder by itself.')}</p>
               <button className="btn primary" onClick={() => { try { sessionStorage.setItem(SETUP_CONTINUE, '1'); } catch { /* the wizard opens by its own rule */ } pick().catch(() => undefined); }}>
-                Choose data folder
+                {t('Choose data folder')}
               </button>
-              <p className="muted small welcome-next">Next: your runs, you, your zones, gear, the load model and the display. A few minutes; each step can be skipped.</p>
+              <p className="muted small welcome-next">{t('Next: your runs, you, your zones, gear, the load model and the display. A few minutes; each step can be skipped.')}</p>
             </>
           )}
           {state.status === 'access-pending' && (
             <>
-              <h2>Welcome back</h2>
-              <p>Your browser asks again for the folder you chose last time.</p>
+              <h2>{t('Welcome back')}</h2>
+              <p>{t('Your browser asks again for the folder you chose last time.')}</p>
               <button className="btn primary" onClick={() => confirmAccess()}>
-                Continue with {state.name}
+                {t('Continue with {name}', { name: state.name })}
               </button>
               <button className="btn" onClick={() => pick().catch(() => undefined)}>
-                Choose another folder
+                {t('Choose another folder')}
               </button>
             </>
           )}

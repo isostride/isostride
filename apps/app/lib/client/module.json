@@ -4,6 +4,7 @@
     "lib/blocks",
     "lib/curve",
     "lib/fs",
+    "lib/i18n",
     "lib/legacy",
     "workers"
   ],

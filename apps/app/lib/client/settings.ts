@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
+import { isLocale, loadLocale, locale, localeOf, onLocale, setLocale, type Locale } from '@/lib/i18n';
 
 const MAP_TILES = 'strideprism.mapTiles';
 
@@ -140,4 +141,53 @@ export function useChartSettings(): [ChartSettings, (change: Partial<ChartSettin
     window.dispatchEvent(new Event('chart-settings'));
   };
   return [chart, set];
+}
+
+/** The language chosen in this browser (requirement "Language chosen"); the head script of the layout reads it too. */
+export const LANGUAGE_KEY = 'isostride.language';
+
+/** The language chosen in this browser, else the first of the browser's languages the app has, else English. */
+export function startLocale(): Locale {
+  try {
+    const saved = localStorage.getItem(LANGUAGE_KEY);
+    if (isLocale(saved)) return saved;
+  } catch { /* storage blocked */ }
+  return localeOf(navigator.languages?.length ? navigator.languages : [navigator.language]);
+}
+
+const applyLocale = async (l: Locale) => {
+  // Its dictionary first (loaded once, in a script of its own); English has none to load.
+  try { await loadLocale(l); } catch { l = 'en'; }
+  setLocale(l);
+  document.documentElement.lang = l;
+  // The page was hidden by the head script until it is in its language (no English flashes first).
+  document.documentElement.removeAttribute('data-lang-pending');
+};
+
+/** The language in use; the component renders again when it changes. */
+export function useLocale(): Locale {
+  return useSyncExternalStore(onLocale, locale, () => 'en');
+}
+
+/**
+ * Puts the app in its language once, before the first paint after hydration (the static pages are
+ * built in English), and follows a choice made in another tab.
+ */
+export function useStartLocale(): void {
+  useLayoutEffect(() => {
+    void applyLocale(startLocale());
+    const other = (e: StorageEvent) => { if (e.key === LANGUAGE_KEY) void applyLocale(startLocale()); };
+    window.addEventListener('storage', other);
+    return () => window.removeEventListener('storage', other);
+  }, []);
+}
+
+/** The language and its setter (Settings › Display, the setup wizard): kept in this browser, applied at once. */
+export function useLanguage(): [Locale, (l: Locale) => void] {
+  const l = useLocale();
+  const set = (next: Locale) => {
+    try { localStorage.setItem(LANGUAGE_KEY, next); } catch { /* storage blocked: for this visit only */ }
+    void applyLocale(next);
+  };
+  return [l, set];
 }

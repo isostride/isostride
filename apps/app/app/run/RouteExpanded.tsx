@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RouteMap } from '@/components';
+import { msg, number, t } from '@/lib/i18n';
 import { zoneOf, zoneRanges, zoneStep } from '@/lib/settings';
 
 /** A metric the route can be coloured by: its values per window of the run. */
@@ -30,7 +31,7 @@ const STEPS = 6;
  * wartosci z settings"), Z1 green, or by six steps that each hold a sixth of this run ("teraz prawie
  * wszystko jest czerwone na skali"), with the ranges and shares, the metric's lowest, mean and highest. Esc or the close button returns to the run.
  */
-export function RouteExpanded({ lat, lon, t, start, step, metrics, initial, onClose }: {
+export function RouteExpanded({ lat, lon, t: times, start, step, metrics, initial, onClose }: {
   lat: (number | null)[];
   lon: (number | null)[];
   t: number[];
@@ -79,7 +80,7 @@ export function RouteExpanded({ lat, lon, t, start, step, metrics, initial, onCl
     return (time: number) => {
       const i = Math.floor((time - start) / step);
       const v = metric.values[Math.min(metric.values.length - 1, Math.max(0, i))];
-      return v === null || v === undefined ? null : `var(--heat-${stepOf(v) + 1})`;
+      return v === null || v === undefined ? null : `var(--heat-${stepOf(v) + 1})`; // i18n-ignore: a colour
     };
     // stepOf follows metric, scale and the zones.
   }, [metric, scale, start, step, byZones, zones]);
@@ -110,49 +111,49 @@ export function RouteExpanded({ lat, lon, t, start, step, metrics, initial, onCl
 
   return (
     <div className="route-expanded-backdrop">
-      <div className="route-expanded" role="dialog" aria-modal="true" aria-label="Map of the run">
+      <div className="route-expanded" role="dialog" aria-modal="true" aria-label={t('Map of the run')}>
         <div className="route-expanded-head">
-          <h2>Map <span className="muted">· {metric ? metric.title.toLowerCase() : 'the route'}</span></h2>
-          <button ref={close} type="button" className="btn sm" onClick={onClose}>Close</button>
+          <h2>{t('Map')} <span className="muted">· {metric ? metric.title.toLowerCase() : t('the route')}</span></h2>
+          <button ref={close} type="button" className="btn sm" onClick={onClose}>{t('Close')}</button>
         </div>
         <div className="route-expanded-map">
-          <RouteMap lat={lat} lon={lon} t={t} cursor={null} size={640} colorAt={colorAt} valueAt={valueAt} follow={false} controls hint="Point at the route for its value · scroll or + − to zoom · drag to move" />
+          <RouteMap lat={lat} lon={lon} t={times} cursor={null} size={640} colorAt={colorAt} valueAt={valueAt} follow={false} controls hint={t('Point at the route for its value · scroll or + − to zoom · drag to move')} />
         </div>
         <aside className="route-expanded-side">
-          <div className="route-metric" role="radiogroup" aria-label="Colour the route by">
+          <div className="route-metric" role="radiogroup" aria-label={t('Colour the route by')}>
             {metrics.map((m) => (
               <button key={m.key} type="button" role="radio" aria-checked={m.key === key} className={`route-metric-option ${m.key === key ? 'on' : ''}`} onClick={() => setKey(m.key)}>{m.title}</button>
             ))}
           </div>
           {metric && scale ? (
             <>
-              <dl className="route-figures form-figures" aria-label={`${metric.title} of the run`}>
-                <div><dt>Lowest</dt><dd className="tnum">{metric.format(scale.min)}</dd></div>
-                <div><dt>Mean</dt><dd className="tnum">{metric.format(scale.mean)}</dd></div>
-                <div><dt>Highest</dt><dd className="tnum">{metric.format(scale.max)}</dd></div>
+              <dl className="route-figures form-figures" aria-label={t('{metric} of the run', { metric: metric.title })}>
+                <div><dt>{t('Lowest')}</dt><dd className="tnum">{metric.format(scale.min)}</dd></div>
+                <div><dt>{t('Mean')}</dt><dd className="tnum">{metric.format(scale.mean)}</dd></div>
+                <div><dt>{t('Highest')}</dt><dd className="tnum">{metric.format(scale.max)}</dd></div>
               </dl>
-              <div className="segmented route-by" role="radiogroup" aria-label="Colours by">
-                {([['zones', 'Zones from Settings'], ['run', 'This run']] as const).map(([k, l]) => (
-                  <button key={k} type="button" role="radio" aria-checked={(k === 'zones') === byZones} className={(k === 'zones') === byZones ? 'on' : ''} disabled={k === 'zones' && !zones} onClick={() => setBy(k)}>{l}</button>
+              <div className="segmented route-by" role="radiogroup" aria-label={t('Colours by')}>
+                {([['zones', msg('Zones from Settings')], ['run', msg('This run')]] as const).map(([k, l]) => (
+                  <button key={k} type="button" role="radio" aria-checked={(k === 'zones') === byZones} className={(k === 'zones') === byZones ? 'on' : ''} disabled={k === 'zones' && !zones} onClick={() => setBy(k)}>{t(l)}</button>
                 ))}
               </div>
-              <div className="route-legend" role="list" aria-label={`Colours of ${metric.title.toLowerCase()}`}>
+              <div className="route-legend" role="list" aria-label={t('Colours of {metric}', { metric: metric.title.toLowerCase() })}>
                 {legend.map((l) => (
                   <div key={l.name ?? l.step} role="listitem" className="route-legend-row">
                     <i style={{ background: `var(--heat-${l.step + 1})` }} aria-hidden="true" />
                     {l.name && <b className="route-zone">{l.name}</b>}
                     <span className="tnum">{l.label}</span>
-                    <span className="muted tnum route-share">{Math.round(l.share * 100)} %</span>
+                    <span className="muted tnum route-share">{number(Math.round(l.share * 100))} %</span>
                   </div>
                 ))}
               </div>
               <p className="muted small">
                 {byZones
-                  ? <>Your zones of {metric.title.toLowerCase()} in <Link href="/settings">Settings</Link>, Z1 green; the share of the run in each beside it.</>
-                  : <>{metric.invert ? 'Green slow, red fast' : 'Green low, red high'}; each colour holds about a sixth of the run, the share beside its range.{!zones && <> {metric.title} has no zones in <Link href="/settings">Settings</Link>.</>}</>}
+                  ? <>{t('Your zones of {metric} in', { metric: metric.title.toLowerCase() })} <Link href="/settings">{t('Settings')}</Link>{t(', Z1 green; the share of the run in each beside it.')}</>
+                  : <>{metric.invert ? t('Green slow, red fast') : t('Green low, red high')}{t('; each colour holds about a sixth of the run, the share beside its range.')}{!zones && <> {t('{metric} has no zones in', { metric: metric.title })} <Link href="/settings">{t('Settings')}</Link>.</>}</>}
               </p>
             </>
-          ) : <p className="muted small">This run has no values of it.</p>}
+          ) : <p className="muted small">{t('This run has no values of it.')}</p>}
         </aside>
       </div>
     </div>

@@ -30,9 +30,12 @@ export const EFFORT_DURATIONS = CURVE_DURATIONS.filter((d) => d >= CS_RANGE[0] &
 
 /** How hard a best of a length was, from the heart rate read for that length (its peak or its mean) against the maximum. */
 export function effortOf(duration: number, hr: number | null | undefined, maxHr: number | null): Effort {
+  // i18n-ignore
   if (hr === null || hr === undefined || !maxHr) return 'unknown';
   const share = hr / maxHr;
+  // i18n-ignore
   if (share >= (duration <= SHORT_EFFORT ? ALLOUT_PEAK : ALLOUT_MEAN)) return 'allout';
+  // i18n-ignore
   return share >= HARD_SHARE ? 'hard' : 'easy';
 }
 

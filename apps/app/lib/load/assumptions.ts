@@ -1,4 +1,5 @@
 import { duration as fmtDuration, pace as fmtPace } from '@/lib/format';
+import { msg, number, t, tn } from '@/lib/i18n';
 import { LOAD_MODELS, type PerformanceSettings } from '@/lib/settings';
 import { BANISTER_MIN_POINTS, BANISTER_MIN_SPAN, TAU1_RANGE, TAU2_RANGE, fitBanister, type BanisterFit } from './banister';
 import { bestEfforts, effortEvidence, type BestEffort, type EffortEvidence } from './efforts';
@@ -60,6 +61,11 @@ export interface ModelReport {
   /** the model that caps its trust, when one does */
   cappedBy: ModelKey | null;
 }
+
+/**
+ * The texts of a report (its names, methods, inputs, checks) are made in the language in use when it is
+ * built, while a screen renders; a model's key, group, tab and view stay the same in every language.
+ */
 
 /** The values now, as the checks read them and the overview shows them. */
 export interface PerformanceNow {
@@ -129,53 +135,54 @@ export type Thresholds = typeof THRESHOLDS;
 /**
  * The thresholds the runner can set in Settings, Models (the runner's "tak" to setting them there):
  * each by its key (a pair's ends as .0 and .1), in the unit shown (scale: the unit per stored value),
- * within a range that keeps the check meaningful.
+ * within a range that keeps the check meaningful. Its group, label and unit are shown through t().
  */
 export const THRESHOLD_FIELDS: { key: string; group: string; label: string; unit: string; scale: number; min: number; max: number }[] = [
-  { key: 'strapShare', group: 'Heart rate', label: 'A heart rate strap in at least', unit: '% of the runs', scale: 100, min: 0, max: 100 },
-  { key: 'coverage.0', group: 'Data', label: 'A model holds when it covers at least', unit: '% of the runs', scale: 100, min: 0, max: 100 },
-  { key: 'coverage.1', group: 'Data', label: 'and is in doubt from', unit: '% of the runs', scale: 100, min: 0, max: 100 },
-  { key: 'easyRuns', group: 'Data', label: 'Easy runs for the efficiency trend, at least', unit: 'runs', scale: 1, min: 1, max: 50 },
-  { key: 'longRuns', group: 'Data', label: 'Long runs for decoupling, at least', unit: 'runs', scale: 1, min: 1, max: 50 },
-  { key: 'vo2Runs', group: 'Data', label: 'Runs for VO2max from heart rate, at least', unit: 'runs', scale: 1, min: 1, max: 50 },
-  { key: 'lengths', group: 'Best efforts', label: 'All-out bests, at least', unit: 'lengths of 2–20 min', scale: 1, min: 1, max: 6 },
-  { key: 'recentDays', group: 'Best efforts', label: 'An all-out effort within', unit: 'days', scale: 1, min: 7, max: 365 },
-  { key: 'ratioClear', group: 'Best efforts', label: 'The 3-minute best clearly faster than the 15-minute from', unit: '% faster', scale: 100, min: 0, max: 30 },
-  { key: 'ratioFlat', group: 'Best efforts', label: 'and flat under', unit: '% faster', scale: 100, min: 0, max: 30 },
-  { key: 'dPrime.0', group: 'Best efforts', label: 'D′ of a runner from', unit: 'm', scale: 1, min: 0, max: 2000 },
-  { key: 'dPrime.1', group: 'Best efforts', label: 'to', unit: 'm', scale: 1, min: 0, max: 2000 },
-  { key: 'agree.0', group: 'Agreement', label: 'VO2max from heart rate and VDOT agree within', unit: '%', scale: 100, min: 0, max: 100 },
-  { key: 'agree.1', group: 'Agreement', label: 'and disagree beyond', unit: '%', scale: 100, min: 0, max: 100 },
-  { key: 'r2.0', group: 'Fitted response', label: 'The fit explains the performances from R²', unit: '', scale: 1, min: 0, max: 1 },
-  { key: 'r2.1', group: 'Fitted response', label: 'and says little under R²', unit: '', scale: 1, min: 0, max: 1 },
-  { key: 'fatigueShare', group: 'Fitted response', label: 'Fatigue matters from', unit: '% of fitness', scale: 100, min: 0, max: 100 },
+  { key: 'strapShare', group: msg('Heart rate'), label: msg('A heart rate strap in at least'), unit: msg('% of the runs'), scale: 100, min: 0, max: 100 },
+  { key: 'coverage.0', group: msg('Data'), label: msg('A model holds when it covers at least'), unit: msg('% of the runs'), scale: 100, min: 0, max: 100 },
+  { key: 'coverage.1', group: msg('Data'), label: msg('and is in doubt from'), unit: msg('% of the runs'), scale: 100, min: 0, max: 100 },
+  { key: 'easyRuns', group: msg('Data'), label: msg('Easy runs for the efficiency trend, at least'), unit: msg('runs'), scale: 1, min: 1, max: 50 },
+  { key: 'longRuns', group: msg('Data'), label: msg('Long runs for decoupling, at least'), unit: msg('runs'), scale: 1, min: 1, max: 50 },
+  { key: 'vo2Runs', group: msg('Data'), label: msg('Runs for VO2max from heart rate, at least'), unit: msg('runs'), scale: 1, min: 1, max: 50 },
+  { key: 'lengths', group: msg('Best efforts'), label: msg('All-out bests, at least'), unit: msg('lengths of 2–20 min'), scale: 1, min: 1, max: 6 },
+  { key: 'recentDays', group: msg('Best efforts'), label: msg('An all-out effort within'), unit: msg('days'), scale: 1, min: 7, max: 365 },
+  { key: 'ratioClear', group: msg('Best efforts'), label: msg('The 3-minute best clearly faster than the 15-minute from'), unit: msg('% faster'), scale: 100, min: 0, max: 30 },
+  { key: 'ratioFlat', group: msg('Best efforts'), label: msg('and flat under'), unit: msg('% faster'), scale: 100, min: 0, max: 30 },
+  { key: 'dPrime.0', group: msg('Best efforts'), label: msg('D′ of a runner from'), unit: 'm', scale: 1, min: 0, max: 2000 },
+  { key: 'dPrime.1', group: msg('Best efforts'), label: msg('to'), unit: 'm', scale: 1, min: 0, max: 2000 },
+  { key: 'agree.0', group: msg('Agreement'), label: msg('VO2max from heart rate and VDOT agree within'), unit: '%', scale: 100, min: 0, max: 100 },
+  { key: 'agree.1', group: msg('Agreement'), label: msg('and disagree beyond'), unit: '%', scale: 100, min: 0, max: 100 },
+  { key: 'r2.0', group: msg('Fitted response'), label: msg('The fit explains the performances from R²'), unit: '', scale: 1, min: 0, max: 1 },
+  { key: 'r2.1', group: msg('Fitted response'), label: msg('and says little under R²'), unit: '', scale: 1, min: 0, max: 1 },
+  { key: 'fatigueShare', group: msg('Fitted response'), label: msg('Fatigue matters from'), unit: msg('% of fitness'), scale: 100, min: 0, max: 100 },
 ];
 
 /** A threshold's value now, stored (a share as a fraction), by its key. */
-export function thresholdValue(t: Thresholds, key: string): number {
+export function thresholdValue(thresholds: Thresholds, key: string): number {
   const [k, i] = key.split('.');
-  const v = (t as unknown as Record<string, number | number[]>)[k];
+  const v = (thresholds as unknown as Record<string, number | number[]>)[k];
   return Array.isArray(v) ? v[Number(i)] : v;
 }
 
 /** The thresholds with the runner's own (Settings, Models) over the defaults; one out of its range keeps its default. */
 export function thresholdsOf(own: Record<string, number> = {}): Thresholds {
-  const t = structuredClone(THRESHOLDS) as unknown as Record<string, number | number[]>;
+  const out = structuredClone(THRESHOLDS) as unknown as Record<string, number | number[]>;
   for (const f of THRESHOLD_FIELDS) {
     const v = own[f.key];
     if (typeof v !== 'number' || !Number.isFinite(v) || v * f.scale < f.min || v * f.scale > f.max) continue;
     const [k, i] = f.key.split('.');
-    if (Array.isArray(t[k])) (t[k] as number[])[Number(i)] = v; else t[k] = v;
+    if (Array.isArray(out[k])) (out[k] as number[])[Number(i)] = v; else out[k] = v;
   }
-  return t as unknown as Thresholds;
+  return out as unknown as Thresholds;
 }
 
 const DAY = 86_400_000;
 const ORDER: Trust[] = ['ok', 'rough', 'no'];
 const worse = (a: Trust, b: Trust): Trust => (a === 'nodata' ? a : ORDER[Math.max(ORDER.indexOf(a), ORDER.indexOf(b === 'nodata' ? 'no' : b))]);
-const minutes = (ds: number[]) => (ds.length ? `${ds.map((d) => d / 60).join(', ')} min` : 'none');
-const pct = (v: number) => `${Math.round(v * 100)} %`;
+const minutes = (ds: number[]) => (ds.length ? `${ds.map((d) => number(d / 60)).join(', ')} min` : t('none'));
+const pct = (v: number) => `${number(Math.round(v * 100))} %`;
 const check = (key: string, label: string, status: CheckStatus, detail: string): Check => ({ key, label, status, detail });
+// i18n-ignore
 const graded = (v: number, [good, fair]: [number, number]): CheckStatus => (v >= good ? 'met' : v >= fair ? 'doubt' : 'unmet');
 
 /**
@@ -190,7 +197,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
   const model = LOAD_MODELS.find((m) => m.key === p.load)!;
   const maxHr = p.maxHr ?? autoMaxHr(have.map((r) => summaries[r.id]));
   const end = new Date(`${today}T23:59:59`).getTime();
-  const inWindow = have.filter((r) => { const t = Date.parse(r.startTime); return t > end - MARKER_DAYS * DAY && t <= end; });
+  const inWindow = have.filter((r) => { const at = Date.parse(r.startTime); return at > end - MARKER_DAYS * DAY && at <= end; });
 
   // The values now.
   const weeks = markersOverTime(have, summaries, today);
@@ -214,7 +221,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
     vdot: fitBanister(loads, performancesFor('vdot', have, summaries, p.restHr, maxHr, today)),
   };
   const now: PerformanceNow = {
-    loadModel: model.name, loadUnit: model.unit, restHr: p.restHr, maxHr,
+    loadModel: t(model.name), loadUnit: model.unit, restHr: p.restHr, maxHr,
     day: days[days.length - 1] ?? null, week: loadWeeks[loadWeeks.length - 1] ?? null, shares,
     marker, vdot, efforts, evidence, powerEfforts, powerEvidence,
     ef: eff.ef, decoupling: eff.decoupling, vo2hr: vo2.value, uth, fitted,
@@ -223,44 +230,57 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
   // Checks shared by several models.
   const withHr = have.filter((r) => summaries[r.id].hr.length > 0);
   const strapShare = withHr.length ? withHr.filter((r) => r.heartRateSource && !r.heartRateSource.startsWith('wrist')).length / withHr.length : 0;
+  const restLabel = t('Your resting heart rate is set');
   const restCheck = (why: string) => (p.confirmed
-    ? check('resthr', 'Your resting heart rate is set', 'met', `${p.restHr} bpm, saved in Model`)
-    : check('resthr', 'Your resting heart rate is set', 'doubt', `${p.restHr} bpm is the default, never saved: ${why}`));
+    ? check('resthr', restLabel, 'met', t('{bpm} bpm, saved in Model', { bpm: p.restHr }))
+    : check('resthr', restLabel, 'doubt', t('{bpm} bpm is the default, never saved: {why}', { bpm: p.restHr, why })));
+  const maxLabel = t('Your maximum heart rate is known');
   const maxCheck = (why: string) => (p.maxHr !== null
-    ? check('maxhr', 'Your maximum heart rate is known', 'met', `${p.maxHr} bpm, set in Model`)
+    ? check('maxhr', maxLabel, 'met', t('{bpm} bpm, set in Model', { bpm: p.maxHr }))
     : maxHr
-      ? check('maxhr', 'Your maximum heart rate is known', 'doubt', `${maxHr} bpm is the highest in your runs: too low if you have never gone all out, and then ${why}`)
-      : check('maxhr', 'Your maximum heart rate is known', 'unmet', 'no heart rate in the runs'));
+      ? check('maxhr', maxLabel, 'doubt', t('{bpm} bpm is the highest in your runs: too low if you have never gone all out, and then {why}', { bpm: maxHr, why }))
+      : check('maxhr', maxLabel, 'unmet', t('no heart rate in the runs')));
   const zonesCheck = (why: string, lacking: CheckStatus = 'unmet') => (zonesOwn && hrZones.length
-    ? check('zones', 'The heart rate zones are yours', 'met', `${hrZones.length + 1} zones, saved in Settings`)
-    : check('zones', 'The heart rate zones are yours', lacking, `the default zones apply (60–90 % of a maximum of 190 bpm): ${why}`));
-  const hrCheck = () => { const share = have.length ? withHr.length / have.length : 0; return check('hr', 'Heart rate in the runs', graded(share, T.coverage), `${withHr.length} of ${have.length} runs have a heart rate`); };
+    ? check('zones', t('The heart rate zones are yours'), 'met', tn(hrZones.length + 1, '{n} zones, saved in Settings', '{n} zones, saved in Settings'))
+    : check('zones', t('The heart rate zones are yours'), lacking, t('the default zones apply (60–90 % of a maximum of 190 bpm): {why}', { why })));
+  const hrCheck = () => {
+    const share = have.length ? withHr.length / have.length : 0;
+    return check('hr', t('Heart rate in the runs'), graded(share, T.coverage), tn(have.length, '{count} of {n} runs have a heart rate', '{count} of {n} runs have a heart rate', { count: number(withHr.length) }));
+  };
+  const sensorLabel = t('The heart rate comes from a strap');
   const sensorCheck = () => (strapShare >= T.strapShare
-    ? check('sensor', 'The heart rate comes from a strap', 'met', `a registered sensor in ${pct(strapShare)} of the runs`)
+    ? check('sensor', sensorLabel, 'met', t('a registered sensor in {share} of the runs', { share: pct(strapShare) }))
     : strapShare > 0
-      ? check('sensor', 'The heart rate comes from a strap', 'doubt', `a registered sensor in ${pct(strapShare)} of the runs, the watch's wrist sensor in the rest: the two read differently, most at high intensity`)
-      : check('sensor', 'The heart rate comes from a strap', 'unknown', 'no heart rate sensor is registered in Settings → Gear, so the watch\'s wrist sensor is assumed: it misreads most at high intensity and in the cold'));
-  const recorded = () => check('recorded', 'All your training is here', 'unknown', 'only the runs of this folder count: other sports, and runs not imported, are missing from the load');
+      ? check('sensor', sensorLabel, 'doubt', t("a registered sensor in {share} of the runs, the watch's wrist sensor in the rest: the two read differently, most at high intensity", { share: pct(strapShare) }))
+      : check('sensor', sensorLabel, 'unknown', t("no heart rate sensor is registered in Settings → Gear, so the watch's wrist sensor is assumed: it misreads most at high intensity and in the cold")));
+  const recorded = () => check('recorded', t('All your training is here'), 'unknown', t('only the runs of this folder count: other sports, and runs not imported, are missing from the load'));
 
-  /** The checks of the bests the curve models are fitted to. */
+  /** The checks of the bests the curve models are fitted to; `what` is the model fitted to them, shown in a detail. */
   const effortChecks = (e: EffortEvidence, what: string): Check[] => {
     const out: Check[] = [];
-    out.push(check('lengths', `Bests at ${T.lengths} lengths or more of 2–20 min in the last ${MARKER_DAYS} days`, e.lengths >= T.lengths ? 'met' : 'unmet', `${e.lengths} of 6 lengths have a best`));
-    const list = `all-out: ${minutes(e.allOut)} · hard: ${minutes(e.hard)} · not all-out: ${minutes(e.easy)}`;
+    out.push(check('lengths', t('Bests at {lengths} lengths or more of 2–20 min in the last {days} days', { lengths: T.lengths, days: MARKER_DAYS }), e.lengths >= T.lengths ? 'met' : 'unmet',
+      tn(e.lengths, '{n} of 6 lengths have a best', '{n} of 6 lengths have a best')));
+    const list = t('all-out: {allOut} · hard: {hard} · not all-out: {easy}', { allOut: minutes(e.allOut), hard: minutes(e.hard), easy: minutes(e.easy) });
+    const allOutLabel = t('All-out efforts at {lengths} lengths or more', { lengths: T.lengths });
     out.push(e.lengths > 0 && e.unknown === e.lengths
-      ? check('allout', `All-out efforts at ${T.lengths} lengths or more`, 'unknown', 'no heart rate in the bests: whether they were all-out cannot be told')
-      : check('allout', `All-out efforts at ${T.lengths} lengths or more`, e.allOut.length >= T.lengths ? 'met' : e.allOut.length + e.hard.length >= T.lengths ? 'doubt' : 'unmet',
-        `${list}. A best that was not all-out lies below what you can do, and ${what} with it`));
-    out.push(maxCheck('the efforts look harder than they were'));
-    out.push(check('separate', `The bests are ${T.lengths} separate efforts or more`, e.distinct >= T.lengths ? 'met' : e.distinct === 2 ? 'doubt' : 'unmet',
-      `${e.distinct} separate effort${e.distinct === 1 ? '' : 's'}: a best cut out of a longer one is not all-out for its own length`));
+      ? check('allout', allOutLabel, 'unknown', t('no heart rate in the bests: whether they were all-out cannot be told'))
+      : check('allout', allOutLabel, e.allOut.length >= T.lengths ? 'met' : e.allOut.length + e.hard.length >= T.lengths ? 'doubt' : 'unmet',
+        t('{list}. A best that was not all-out lies below what you can do, and {what} with it', { list, what })));
+    out.push(maxCheck(t('the efforts look harder than they were')));
+    out.push(check('separate', t('The bests are {lengths} separate efforts or more', { lengths: T.lengths }), e.distinct >= T.lengths ? 'met' : e.distinct === 2 ? 'doubt' : 'unmet',
+      tn(e.distinct, '{n} separate effort: a best cut out of a longer one is not all-out for its own length', '{n} separate efforts: a best cut out of a longer one is not all-out for its own length')));
+    const shapeLabel = t('Short efforts are clearly stronger than long ones');
     out.push(e.ratio === null
-      ? check('shape', 'Short efforts are clearly stronger than long ones', 'unknown', 'needs a best of 3 min or less and one of 15 min or more')
-      : check('shape', 'Short efforts are clearly stronger than long ones', e.ratio >= T.ratioClear ? 'met' : e.ratio >= T.ratioFlat ? 'doubt' : 'unmet',
-        `the shortest best is ${pct(e.ratio - 1)} above the longest (${pct(T.ratioClear - 1)} or more expected): ${e.ratio >= T.ratioClear ? 'the curve falls as an all-out curve does' : 'a flat curve means the short efforts were held back'}`));
+      ? check('shape', shapeLabel, 'unknown', t('needs a best of 3 min or less and one of 15 min or more'))
+      : check('shape', shapeLabel, e.ratio >= T.ratioClear ? 'met' : e.ratio >= T.ratioFlat ? 'doubt' : 'unmet',
+        t('the shortest best is {above} above the longest ({expected} or more expected): {verdict}', {
+          above: pct(e.ratio - 1), expected: pct(T.ratioClear - 1),
+          verdict: e.ratio >= T.ratioClear ? t('the curve falls as an all-out curve does') : t('a flat curve means the short efforts were held back'),
+        })));
+    const recentLabel = t('An all-out effort in the last {days} days', { days: T.recentDays });
     out.push(e.newestAllOut === null
-      ? check('recent', `An all-out effort in the last ${T.recentDays} days`, 'doubt', 'none')
-      : check('recent', `An all-out effort in the last ${T.recentDays} days`, e.newestAllOut <= T.recentDays ? 'met' : 'doubt', `the newest was ${e.newestAllOut} days ago`));
+      ? check('recent', recentLabel, 'doubt', t('none'))
+      : check('recent', recentLabel, e.newestAllOut <= T.recentDays ? 'met' : 'doubt', tn(e.newestAllOut, 'the newest was {n} days ago', 'the newest was {n} days ago')));
     return out;
   };
 
@@ -268,181 +288,199 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
   type Def = Omit<ModelReport, 'checks' | 'own' | 'trust' | 'cappedBy'> & { has: boolean; checks: Check[] };
   const withLoad = rows.filter((r) => typeof r.load === 'number');
   const measured = withLoad.filter((r) => !r.loadEstimated).length;
-  const coverage = check('coverage', 'Every run has what the model needs', graded(withLoad.length ? measured / withLoad.length : 0, T.coverage),
-    `${measured} of ${withLoad.length} runs measured${withLoad.length - measured ? `; ${withLoad.length - measured} counted from their duration` : ''}`);
+  const counted = withLoad.length - measured;
+  const coverage = check('coverage', t('Every run has what the model needs'), graded(withLoad.length ? measured / withLoad.length : 0, T.coverage),
+    `${tn(withLoad.length, '{count} of {n} runs measured', '{count} of {n} runs measured', { count: number(measured) })}${counted ? `; ${tn(counted, '{n} counted from their duration', '{n} counted from their duration')}` : ''}`);
   const loadDef: Pick<Def, 'inputs' | 'parents' | 'checks'> = p.load === 'trimpBanister'
-    ? { inputs: ['heart rate of every run', 'resting heart rate', 'maximum heart rate', 'sex'], parents: [], checks: [coverage, restCheck('the reserve is counted from it'), maxCheck('every load comes out too high')] }
+    ? { inputs: [t('heart rate of every run'), t('resting heart rate'), t('maximum heart rate'), t('sex')], parents: [], checks: [coverage, restCheck(t('the reserve is counted from it')), maxCheck(t('every load comes out too high'))] }
     : p.load === 'trimpEdwards'
-      ? { inputs: ['heart rate of every run', 'your heart rate zones'], parents: [], checks: [coverage, zonesCheck('the minutes are weighted by zones that are not yours')] }
+      ? { inputs: [t('heart rate of every run'), t('your heart rate zones')], parents: [], checks: [coverage, zonesCheck(t('the minutes are weighted by zones that are not yours'))] }
       : p.load === 'rtss'
         ? {
-          inputs: ['effort pace of every run', 'threshold pace'], parents: p.thresholdPace === null ? ['cs'] : [],
+          inputs: [t('effort pace of every run'), t('threshold pace')], parents: p.thresholdPace === null ? ['cs'] : [],
           checks: [coverage, p.thresholdPace !== null
-            ? check('threshold', 'The threshold pace is yours', 'met', `${fmtPace(1000 / p.thresholdPace)} /km, set in Model`)
-            : check('threshold', 'The threshold pace is yours', 'met', `taken from the critical speed of the ${MARKER_DAYS} days up to each run: as reliable as the efforts behind it`)],
+            ? check('threshold', t('The threshold pace is yours'), 'met', t('{pace} /km, set in Model', { pace: fmtPace(1000 / p.thresholdPace) }))
+            : check('threshold', t('The threshold pace is yours'), 'met', t('taken from the critical speed of the {days} days up to each run: as reliable as the efforts behind it', { days: MARKER_DAYS }))],
         }
         : {
-          inputs: ['power of every run', 'critical power'], parents: p.thresholdPower === null ? ['cp'] : [],
+          inputs: [t('power of every run'), t('critical power')], parents: p.thresholdPower === null ? ['cp'] : [],
           checks: [coverage, p.thresholdPower !== null
-            ? check('threshold', 'The critical power is yours', 'met', `${p.thresholdPower} W, set in Model`)
-            : check('threshold', 'The critical power is yours', 'met', `taken from the bests of the ${MARKER_DAYS} days up to each run: as reliable as the efforts behind it`)],
+            ? check('threshold', t('The critical power is yours'), 'met', t('{power} W, set in Model', { power: p.thresholdPower }))
+            : check('threshold', t('The critical power is yours'), 'met', t('taken from the bests of the {days} days up to each run: as reliable as the efforts behind it', { days: MARKER_DAYS }))],
         };
 
   const powerRuns = inWindow.filter((r) => summaries[r.id].normPower !== null);
-  const powerWatches = new Set(powerRuns.map((r) => r.device ?? 'unknown'));
+  const powerWatches = new Set(powerRuns.map((r) => r.device ?? t('unknown')));
   const longest = 1200;
   const race = (d: number) => marker?.predictions.find((x) => x.distance === d)?.seconds ?? null;
+  const pointsLabel = t('{points} performances or more over {days} days', { points: BANISTER_MIN_POINTS, days: BANISTER_MIN_SPAN });
   const fittedDef = (fit: BanisterFit | null, name: string): Pick<Def, 'has' | 'checks'> => ({
     has: fit !== null,
     checks: fit === null
-      ? [check('points', `${BANISTER_MIN_POINTS} performances or more over ${BANISTER_MIN_SPAN} days`, 'unmet', 'too few performances, or no fit with positive gains')]
+      ? [check('points', pointsLabel, 'unmet', t('too few performances, or no fit with positive gains'))]
       : [
-        check('points', `${BANISTER_MIN_POINTS} performances or more over ${BANISTER_MIN_SPAN} days`, 'met', `${fit.n} performances (${name})`),
-        check('fit', 'The loads explain the performances', graded(fit.r2, T.r2), `R² ${fit.r2.toFixed(2)}: the model explains ${pct(Math.max(0, fit.r2))} of their variation (${pct(T.r2[0])} or more expected)`),
-        check('identified', 'Your data settle the time constants', fit.tau1 > TAU1_RANGE[0] && fit.tau1 < TAU1_RANGE[1] && fit.tau2 > TAU2_RANGE[0] && fit.tau2 < TAU2_RANGE[1] ? 'met' : 'doubt',
-          `τ1 ${fit.tau1} d of ${TAU1_RANGE[0]}–${TAU1_RANGE[1]} tried, τ2 ${fit.tau2} d of ${TAU2_RANGE[0]}–${TAU2_RANGE[1]}: one at the edge of its range is not settled by the data`),
-        check('fatigue', 'Fatigue shows in the performances', fit.terms.fatigue >= T.fatigueShare * fit.terms.fitness ? 'met' : 'doubt',
-          `the fatigue term is ${pct(fit.terms.fitness > 0 ? fit.terms.fatigue / fit.terms.fitness : 0)} of the fitness term: under ${pct(T.fatigueShare)} the model is fitness alone, and its taper says nothing`),
-        check('stable', 'You respond the same way all through the period', 'unknown', 'one set of gains and time constants is fitted to the whole period; they drift with training (Busso 2003)'),
+        check('points', pointsLabel, 'met', tn(fit.n, '{n} performances ({what})', '{n} performances ({what})', { what: name })),
+        check('fit', t('The loads explain the performances'), graded(fit.r2, T.r2),
+          t('R² {r2}: the model explains {share} of their variation ({expected} or more expected)', { r2: number(fit.r2, 2), share: pct(Math.max(0, fit.r2)), expected: pct(T.r2[0]) })),
+        check('identified', t('Your data settle the time constants'), fit.tau1 > TAU1_RANGE[0] && fit.tau1 < TAU1_RANGE[1] && fit.tau2 > TAU2_RANGE[0] && fit.tau2 < TAU2_RANGE[1] ? 'met' : 'doubt',
+          t('τ1 {tau1} d of {from1}–{to1} tried, τ2 {tau2} d of {from2}–{to2}: one at the edge of its range is not settled by the data', {
+            tau1: number(fit.tau1), from1: TAU1_RANGE[0], to1: TAU1_RANGE[1], tau2: number(fit.tau2), from2: TAU2_RANGE[0], to2: TAU2_RANGE[1],
+          })),
+        check('fatigue', t('Fatigue shows in the performances'), fit.terms.fatigue >= T.fatigueShare * fit.terms.fitness ? 'met' : 'doubt',
+          t('the fatigue term is {share} of the fitness term: under {least} the model is fitness alone, and its taper says nothing', {
+            share: pct(fit.terms.fitness > 0 ? fit.terms.fatigue / fit.terms.fitness : 0), least: pct(T.fatigueShare),
+          })),
+        check('stable', t('You respond the same way all through the period'), 'unknown', t('one set of gains and time constants is fitted to the whole period; they drift with training (Busso 2003)')),
       ],
   });
 
   const defs: Record<ModelKey, Def> = {
     load: {
-      key: 'load', group: 'load', depth: 0, name: `Load of a run · ${model.name}`, method: model.about, tells: 'how much each run cost, in one number',
+      key: 'load', group: 'load', depth: 0, name: t('Load of a run · {model}', { model: t(model.name) }), method: t(model.about), tells: t('how much each run cost, in one number'),
       where: { tab: 'load', view: 'form' }, has: withLoad.length > 0, ...loadDef,
     },
     form: {
-      key: 'form', group: 'load', depth: 1, name: 'Fitness and fatigue (impulse–response)', method: 'Banister’s fitness–fatigue model as weighted averages of the daily load (CTL, ATL, TSB)',
-      tells: 'whether training outweighs recovery now', inputs: [`time constants ${p.fitnessDays} and ${p.fatigueDays} days`], parents: ['load'], where: { tab: 'load', view: 'form' }, has: days.length > 0,
+      key: 'form', group: 'load', depth: 1, name: t('Fitness and fatigue (impulse–response)'), method: t('Banister’s fitness–fatigue model as weighted averages of the daily load (CTL, ATL, TSB)'),
+      tells: t('whether training outweighs recovery now'), inputs: [t('time constants {fitness} and {fatigue} days', { fitness: p.fitnessDays, fatigue: p.fatigueDays })], parents: ['load'], where: { tab: 'load', view: 'form' }, has: days.length > 0,
       checks: [
-        check('history', 'Enough history for the averages to settle', days.length >= 3 * p.fitnessDays ? 'met' : days.length >= p.fitnessDays ? 'doubt' : 'unmet',
-          `${days.length} days of runs; fitness needs about ${3 * p.fitnessDays} (3 × ${p.fitnessDays}) to stop depending on where the history starts`),
+        check('history', t('Enough history for the averages to settle'), days.length >= 3 * p.fitnessDays ? 'met' : days.length >= p.fitnessDays ? 'doubt' : 'unmet',
+          tn(days.length, '{n} days of runs; fitness needs about {need} (3 × {days}) to stop depending on where the history starts', '{n} days of runs; fitness needs about {need} (3 × {days}) to stop depending on where the history starts', { need: 3 * p.fitnessDays, days: p.fitnessDays })),
         recorded(),
-        check('constants', 'The time constants fit you', 'unknown', `${p.fitnessDays} and ${p.fatigueDays} days are conventions, not measured for you; the Response tab fits yours`),
+        check('constants', t('The time constants fit you'), 'unknown', t('{fitness} and {fatigue} days are conventions, not measured for you; the Response tab fits yours', { fitness: p.fitnessDays, fatigue: p.fatigueDays })),
       ],
     },
     acwr: {
-      key: 'acwr', group: 'load', depth: 1, name: 'Acute:chronic ratio', method: '7- over 28-day weighted average of the load (Williams et al. 2017)', tells: 'how fast the load is changing',
+      key: 'acwr', group: 'load', depth: 1, name: t('Acute:chronic ratio'), method: t('7- over 28-day weighted average of the load (Williams et al. 2017)'), tells: t('how fast the load is changing'),
       inputs: [], parents: ['load'], where: { tab: 'load', view: 'form' }, has: (days[days.length - 1]?.acwr ?? null) !== null,
       checks: [
-        check('history', '28 days of history or more', days.length >= 28 ? 'met' : 'unmet', `${days.length} days`),
-        check('band', 'The 0.8–1.3 band tells injury risk', 'doubt', 'contested: Impellizzeri et al. 2020 found the ratio\'s link to injury unreliable; read it as the pace of change, not as a risk score'),
+        check('history', t('28 days of history or more'), days.length >= 28 ? 'met' : 'unmet', tn(days.length, '{n} days', '{n} days')),
+        check('band', t('The 0.8–1.3 band tells injury risk'), 'doubt', t("contested: Impellizzeri et al. 2020 found the ratio's link to injury unreliable; read it as the pace of change, not as a risk score")),
         recorded(),
       ],
     },
     weekly: {
-      key: 'weekly', group: 'load', depth: 1, name: 'Weekly load, monotony and strain', method: 'Foster 1998', tells: 'how the load is spread over the days of a week',
-      inputs: ['the load of each day of the week'], parents: ['load'], where: { tab: 'load', view: 'weekly' }, has: loadWeeks.length > 0,
+      key: 'weekly', group: 'load', depth: 1, name: t('Weekly load, monotony and strain'), method: t('Foster 1998'), tells: t('how the load is spread over the days of a week'),
+      inputs: [t('the load of each day of the week')], parents: ['load'], where: { tab: 'load', view: 'weekly' }, has: loadWeeks.length > 0,
       checks: [
         recorded(),
-        check('guide', 'A monotony above 2 means too little variation for you', 'unknown', 'from Foster\'s observations of athletes: a guide, not a limit measured for you'),
+        check('guide', t('A monotony above 2 means too little variation for you'), 'unknown', t("from Foster's observations of athletes: a guide, not a limit measured for you")),
       ],
     },
     intensity: {
-      key: 'intensity', group: 'load', depth: 0, name: 'Intensity distribution', method: 'time in the heart rate zones; low, moderate and high after Seiler', tells: 'how hard you train, by time',
-      inputs: ['heart rate of every run', 'your heart rate zones'], parents: [], where: { tab: 'load', view: 'intensity' }, has: shares.seconds > 0,
+      key: 'intensity', group: 'load', depth: 0, name: t('Intensity distribution'), method: t('time in the heart rate zones; low, moderate and high after Seiler'), tells: t('how hard you train, by time'),
+      inputs: [t('heart rate of every run'), t('your heart rate zones')], parents: [], where: { tab: 'load', view: 'intensity' }, has: shares.seconds > 0,
       checks: [
-        zonesCheck('the shares say nothing about you until you set yours'), hrCheck(), sensorCheck(),
-        check('method', 'Time in a zone is what you mean by intensity', 'unknown', 'by time, a session of intervals looks easier than by its goal: its recoveries count as low intensity'),
+        zonesCheck(t('the shares say nothing about you until you set yours')), hrCheck(), sensorCheck(),
+        check('method', t('Time in a zone is what you mean by intensity'), 'unknown', t('by time, a session of intervals looks easier than by its goal: its recoveries count as low intensity')),
       ],
     },
     efforts: {
-      key: 'efforts', group: 'capacity', depth: 0, name: 'Best efforts of 2–20 min', method: `the best effort of each length in the last ${MARKER_DAYS} days`, tells: 'the pace you held at your hardest, by length',
-      inputs: ['pace of your hardest efforts', 'heart rate in them', 'maximum heart rate'], parents: [], where: { tab: 'capacity', view: 'efforts' }, has: evidence.lengths >= T.lengths,
-      checks: effortChecks(evidence, 'the critical speed'),
+      key: 'efforts', group: 'capacity', depth: 0, name: t('Best efforts of 2–20 min'), method: t('the best effort of each length in the last {days} days', { days: MARKER_DAYS }), tells: t('the pace you held at your hardest, by length'),
+      inputs: [t('pace of your hardest efforts'), t('heart rate in them'), t('maximum heart rate')], parents: [], where: { tab: 'capacity', view: 'efforts' }, has: evidence.lengths >= T.lengths,
+      checks: effortChecks(evidence, t('the critical speed')),
     },
     cs: {
-      key: 'cs', group: 'capacity', depth: 1, name: 'Critical speed and D′', method: 'distance = CS·time + D′ fitted to the bests (Monod & Scherrer 1965; Jones & Vanhatalo 2017)', tells: 'the fastest pace you can hold in a steady state, and the reserve above it',
+      key: 'cs', group: 'capacity', depth: 1, name: t('Critical speed and D′'), method: t('distance = CS·time + D′ fitted to the bests (Monod & Scherrer 1965; Jones & Vanhatalo 2017)'), tells: t('the fastest pace you can hold in a steady state, and the reserve above it'),
       inputs: [], parents: ['efforts'], where: { tab: 'capacity', view: 'critical' }, has: (marker?.cs ?? null) !== null,
       checks: marker?.dPrime === null || marker?.dPrime === undefined ? [] : [
-        check('dprime', `D′ comes out as a runner's (${T.dPrime[0]}–${T.dPrime[1]} m)`, marker.dPrime >= T.dPrime[0] && marker.dPrime <= T.dPrime[1] ? 'met' : 'doubt',
-          `${Math.round(marker.dPrime)} m${marker.dPrime < T.dPrime[0] ? ': so small a reserve means the short bests were held back, and the critical speed is then too high' : ''}`),
+        check('dprime', t("D′ comes out as a runner's ({from}–{to} m)", { from: T.dPrime[0], to: T.dPrime[1] }), marker.dPrime >= T.dPrime[0] && marker.dPrime <= T.dPrime[1] ? 'met' : 'doubt',
+          marker.dPrime < T.dPrime[0]
+            ? t('{d} m: so small a reserve means the short bests were held back, and the critical speed is then too high', { d: number(Math.round(marker.dPrime)) })
+            : `${number(Math.round(marker.dPrime))} m`),
       ],
     },
     predictions: {
-      key: 'predictions', group: 'capacity', depth: 1, name: 'Predicted race times', method: 'Riegel’s law fitted to the bests of 3–20 min (Riegel 1981)', tells: 'the times your bests imply at race distances',
-      inputs: ['a power law of time beyond the efforts'], parents: ['efforts'], where: { tab: 'capacity', view: 'predictions' }, has: (marker?.predictions.length ?? 0) > 0,
+      key: 'predictions', group: 'capacity', depth: 1, name: t('Predicted race times'), method: t('Riegel’s law fitted to the bests of 3–20 min (Riegel 1981)'), tells: t('the times your bests imply at race distances'),
+      inputs: [t('a power law of time beyond the efforts')], parents: ['efforts'], where: { tab: 'capacity', view: 'predictions' }, has: (marker?.predictions.length ?? 0) > 0,
       checks: race(21097.5) === null ? [] : [
-        check('near', 'The 5 km and 10 km lie near the efforts fitted', (race(10000) ?? Infinity) <= 3 * longest ? 'met' : 'doubt',
-          `10 km in ${fmtDuration(Math.round(race(10000)!))}: ${(race(10000)! / longest).toFixed(1)} × the longest effort fitted (20 min)`),
-        check('endurance', 'You have the endurance of the half and the marathon', 'doubt',
-          `they last ${(race(21097.5)! / longest).toFixed(1)} × and ${(race(42195)! / longest).toFixed(1)} × the longest effort fitted: the law holds that far only for a runner trained for the distance`),
+        check('near', t('The 5 km and 10 km lie near the efforts fitted'), (race(10000) ?? Infinity) <= 3 * longest ? 'met' : 'doubt',
+          t('10 km in {time}: {times} × the longest effort fitted (20 min)', { time: fmtDuration(Math.round(race(10000)!)), times: number(race(10000)! / longest, 1) })),
+        check('endurance', t('You have the endurance of the half and the marathon'), 'doubt',
+          t('they last {half} × and {full} × the longest effort fitted: the law holds that far only for a runner trained for the distance', { half: number(race(21097.5)! / longest, 1), full: number(race(42195)! / longest, 1) })),
       ],
     },
     vdot: {
-      key: 'vdot', group: 'capacity', depth: 2, name: 'VO2max as VDOT', method: 'the VO2max a race time implies (Daniels & Gilbert 1979)', tells: 'your capacity as one number, comparable with race tables',
-      inputs: ['the predicted 5 km'], parents: ['efforts'], where: { tab: 'capacity', view: 'predictions' }, has: vdot !== null,
+      key: 'vdot', group: 'capacity', depth: 2, name: t('VO2max as VDOT'), method: t('the VO2max a race time implies (Daniels & Gilbert 1979)'), tells: t('your capacity as one number, comparable with race tables'),
+      inputs: [t('the predicted 5 km')], parents: ['efforts'], where: { tab: 'capacity', view: 'predictions' }, has: vdot !== null,
       checks: race(5000) === null ? [] : [
-        check('near', 'The predicted 5 km lies within the lengths fitted', race(5000)! <= 1.5 * longest ? 'met' : 'doubt', `5 km in ${fmtDuration(Math.round(race(5000)!))}, against efforts of 3–20 min`),
+        check('near', t('The predicted 5 km lies within the lengths fitted'), race(5000)! <= 1.5 * longest ? 'met' : 'doubt', t('5 km in {time}, against efforts of 3–20 min', { time: fmtDuration(Math.round(race(5000)!)) })),
       ],
     },
     powerEfforts: {
-      key: 'powerEfforts', group: 'capacity', depth: 0, name: 'Best power of 2–20 min', method: `the highest average power of each length in the last ${MARKER_DAYS} days`, tells: 'the power you held at your hardest, by length',
-      inputs: ['power of your hardest efforts', 'heart rate in them', 'maximum heart rate'], parents: [], where: { tab: 'capacity', view: 'efforts' }, has: powerEvidence.lengths >= T.lengths,
+      key: 'powerEfforts', group: 'capacity', depth: 0, name: t('Best power of 2–20 min'), method: t('the highest average power of each length in the last {days} days', { days: MARKER_DAYS }), tells: t('the power you held at your hardest, by length'),
+      inputs: [t('power of your hardest efforts'), t('heart rate in them'), t('maximum heart rate')], parents: [], where: { tab: 'capacity', view: 'efforts' }, has: powerEvidence.lengths >= T.lengths,
       checks: [
-        check('power', 'Power in the runs', graded(inWindow.length ? powerRuns.length / inWindow.length : 0, T.coverage), `${powerRuns.length} of ${inWindow.length} runs of the last ${MARKER_DAYS} days have power`),
-        check('watch', 'The power comes from one watch', powerWatches.size <= 1 ? 'met' : 'doubt', powerWatches.size <= 1 ? [...powerWatches][0] ?? 'no power' : `${[...powerWatches].join(' and ')}: running power is computed differently by each make and model, so their watts do not compare`),
-        ...effortChecks(powerEvidence, 'the critical power'),
+        check('power', t('Power in the runs'), graded(inWindow.length ? powerRuns.length / inWindow.length : 0, T.coverage),
+          tn(inWindow.length, '{count} of {n} runs of the last {days} days have power', '{count} of {n} runs of the last {days} days have power', { count: number(powerRuns.length), days: MARKER_DAYS })),
+        check('watch', t('The power comes from one watch'), powerWatches.size <= 1 ? 'met' : 'doubt', powerWatches.size <= 1 ? [...powerWatches][0] ?? t('no power')
+          : t('{watches}: running power is computed differently by each make and model, so their watts do not compare', { watches: [...powerWatches].join(` ${t('and')} `) })),
+        ...effortChecks(powerEvidence, t('the critical power')),
       ],
     },
     cp: {
-      key: 'cp', group: 'capacity', depth: 1, name: 'Critical power and W′', method: 'work = CP·time + W′ fitted to the bests (Monod & Scherrer 1965)', tells: 'the highest power you can hold in a steady state, and the work above it',
+      key: 'cp', group: 'capacity', depth: 1, name: t('Critical power and W′'), method: t('work = CP·time + W′ fitted to the bests (Monod & Scherrer 1965)'), tells: t('the highest power you can hold in a steady state, and the work above it'),
       inputs: [], parents: ['powerEfforts'], where: { tab: 'capacity', view: 'critical' }, has: (marker?.cp ?? null) !== null,
       checks: marker?.wPrime === null || marker?.wPrime === undefined ? [] : [
-        check('wprime', 'W′ comes out positive', marker.wPrime > 0 ? 'met' : 'doubt', `${(marker.wPrime / 1000).toFixed(1)} kJ${marker.wPrime <= 0 ? ': the short bests were held back' : ''}`),
+        check('wprime', t('W′ comes out positive'), marker.wPrime > 0 ? 'met' : 'doubt',
+          marker.wPrime <= 0 ? t('{kj} kJ: the short bests were held back', { kj: number(marker.wPrime / 1000, 1) }) : `${number(marker.wPrime / 1000, 1)} kJ`),
       ],
     },
     ef: {
-      key: 'ef', group: 'aerobic', depth: 0, name: 'Efficiency factor', method: 'mean speed per mean heart rate while moving, the easy runs', tells: 'the speed you get for a heartbeat at an easy effort',
-      inputs: ['pace and heart rate of every run', 'your heart rate zones (which runs are easy)'], parents: [], where: { tab: 'aerobic', view: 'efficiency' }, has: eff.ef !== null,
+      key: 'ef', group: 'aerobic', depth: 0, name: t('Efficiency factor'), method: t('mean speed per mean heart rate while moving, the easy runs'), tells: t('the speed you get for a heartbeat at an easy effort'),
+      inputs: [t('pace and heart rate of every run'), t('your heart rate zones (which runs are easy)')], parents: [], where: { tab: 'aerobic', view: 'efficiency' }, has: eff.ef !== null,
       checks: [
-        check('easy', `${T.easyRuns} easy runs or more in the last ${EF_TREND_DAYS} days`, eff.easyRuns >= T.easyRuns ? 'met' : eff.easyRuns > 0 ? 'doubt' : 'unmet', `${eff.easyRuns} easy run${eff.easyRuns === 1 ? '' : 's'} (mean heart rate in Z1–Z2)`),
-        zonesCheck('which runs count as easy is decided by zones that are not yours', 'doubt'), hrCheck(), sensorCheck(),
-        check('conditions', 'The runs share terrain and weather', 'unknown', 'hills, heat and wind move the factor as much as fitness does'),
+        check('easy', t('{runs} easy runs or more in the last {days} days', { runs: T.easyRuns, days: EF_TREND_DAYS }), eff.easyRuns >= T.easyRuns ? 'met' : eff.easyRuns > 0 ? 'doubt' : 'unmet',
+          tn(eff.easyRuns, '{n} easy run (mean heart rate in Z1–Z2)', '{n} easy runs (mean heart rate in Z1–Z2)')),
+        zonesCheck(t('which runs count as easy is decided by zones that are not yours'), 'doubt'), hrCheck(), sensorCheck(),
+        check('conditions', t('The runs share terrain and weather'), 'unknown', t('hills, heat and wind move the factor as much as fitness does')),
       ],
     },
     decoupling: {
-      key: 'decoupling', group: 'aerobic', depth: 0, name: 'Aerobic decoupling', method: 'the efficiency of a long run’s first half against its second (Pa:HR, Friel)', tells: 'whether your heart rate drifts up at a steady pace',
-      inputs: [`pace and heart rate of runs of ${DECOUPLING_MIN / 60} min and more`], parents: [], where: { tab: 'aerobic', view: 'decoupling' }, has: eff.decoupling !== null,
+      key: 'decoupling', group: 'aerobic', depth: 0, name: t('Aerobic decoupling'), method: t('the efficiency of a long run’s first half against its second (Pa:HR, Friel)'), tells: t('whether your heart rate drifts up at a steady pace'),
+      inputs: [t('pace and heart rate of runs of {min} min and more', { min: DECOUPLING_MIN / 60 })], parents: [], where: { tab: 'aerobic', view: 'decoupling' }, has: eff.decoupling !== null,
       checks: [
-        check('long', `${T.longRuns} long runs or more in the last ${MARKER_DAYS} days`, eff.longRuns90 >= T.longRuns ? 'met' : eff.longRuns90 > 0 ? 'doubt' : 'unmet', `${eff.longRuns90} run${eff.longRuns90 === 1 ? '' : 's'} of ${DECOUPLING_MIN / 60} min or more`),
+        check('long', t('{runs} long runs or more in the last {days} days', { runs: T.longRuns, days: MARKER_DAYS }), eff.longRuns90 >= T.longRuns ? 'met' : eff.longRuns90 > 0 ? 'doubt' : 'unmet',
+          tn(eff.longRuns90, '{n} run of {min} min or more', '{n} runs of {min} min or more', { min: DECOUPLING_MIN / 60 })),
         sensorCheck(),
-        check('steady', 'The long runs are steady', 'unknown', 'intervals, hills and a fast finish raise it without any drift of the heart'),
+        check('steady', t('The long runs are steady'), 'unknown', t('intervals, hills and a fast finish raise it without any drift of the heart')),
       ],
     },
     vo2hr: {
-      key: 'vo2hr', group: 'aerobic', depth: 0, name: 'VO2max from heart rate', method: 'the oxygen cost of the pace (ACSM) over the share of the heart rate reserve used (Swain 1997)', tells: 'your capacity guessed from everyday runs',
-      inputs: [`pace and heart rate of runs of ${HR_VO2_MIN_SECONDS / 60} min and more at ${pct(HR_VO2_MIN_RESERVE)} of the reserve`, 'resting heart rate', 'maximum heart rate'], parents: [], where: { tab: 'aerobic', view: 'vo2' }, has: vo2.value !== null,
+      key: 'vo2hr', group: 'aerobic', depth: 0, name: t('VO2max from heart rate'), method: t('the oxygen cost of the pace (ACSM) over the share of the heart rate reserve used (Swain 1997)'), tells: t('your capacity guessed from everyday runs'),
+      inputs: [t('pace and heart rate of runs of {min} min and more at {share} of the reserve', { min: HR_VO2_MIN_SECONDS / 60, share: pct(HR_VO2_MIN_RESERVE) }), t('resting heart rate'), t('maximum heart rate')], parents: [], where: { tab: 'aerobic', view: 'vo2' }, has: vo2.value !== null,
       checks: [
-        check('runs', `${T.vo2Runs} runs or more in the last ${HR_VO2_MEDIAN_DAYS} days`, vo2.runs >= T.vo2Runs ? 'met' : vo2.runs > 0 ? 'doubt' : 'unmet', `${vo2.runs} run${vo2.runs === 1 ? '' : 's'} long and hard enough`),
-        restCheck('the estimate moves by about 1 ml/kg/min for every 2 bpm of it'), maxCheck('the estimate comes out too low'), sensorCheck(),
+        check('runs', t('{runs} runs or more in the last {days} days', { runs: T.vo2Runs, days: HR_VO2_MEDIAN_DAYS }), vo2.runs >= T.vo2Runs ? 'met' : vo2.runs > 0 ? 'doubt' : 'unmet',
+          tn(vo2.runs, '{n} run long and hard enough', '{n} runs long and hard enough')),
+        restCheck(t('the estimate moves by about 1 ml/kg/min for every 2 bpm of it')), maxCheck(t('the estimate comes out too low')), sensorCheck(),
         ...(vo2.value !== null && vdot !== null ? [(() => {
           const apart = Math.abs(vo2.value! - vdot) / vdot;
-          return check('agrees', `It agrees with the VDOT from your bests (within ${pct(T.agree[0])})`, apart <= T.agree[0] ? 'met' : apart <= T.agree[1] ? 'doubt' : 'unmet',
-            `${vo2.value} against ${vdot}: ${pct(apart)} apart${apart > T.agree[0] ? '. One of them is off: check the resting and maximum heart rate, and whether the bests were all-out' : ''}`);
+          const vars = { hr: number(vo2.value!), vdot: number(vdot), apart: pct(apart) };
+          return check('agrees', t('It agrees with the VDOT from your bests (within {share})', { share: pct(T.agree[0]) }), apart <= T.agree[0] ? 'met' : apart <= T.agree[1] ? 'doubt' : 'unmet',
+            apart > T.agree[0]
+              ? t('{hr} against {vdot}: {apart} apart. One of them is off: check the resting and maximum heart rate, and whether the bests were all-out', vars)
+              : t('{hr} against {vdot}: {apart} apart', vars));
         })()] : []),
-        check('level', 'Level ground at a steady effort', 'unknown', 'the equation is for level running: hills, heat and a drifting heart rate lower the estimate'),
+        check('level', t('Level ground at a steady effort'), 'unknown', t('the equation is for level running: hills, heat and a drifting heart rate lower the estimate')),
       ],
     },
     uth: {
-      key: 'uth', group: 'aerobic', depth: 0, name: 'VO2max by Uth’s ratio', method: '15.3 × maximum ÷ resting heart rate (Uth et al. 2004)', tells: 'a population figure, for reference',
-      inputs: ['resting heart rate', 'maximum heart rate'], parents: [], where: { tab: 'aerobic', view: 'vo2' }, has: uth !== null,
+      key: 'uth', group: 'aerobic', depth: 0, name: t('VO2max by Uth’s ratio'), method: t('15.3 × maximum ÷ resting heart rate (Uth et al. 2004)'), tells: t('a population figure, for reference'),
+      inputs: [t('resting heart rate'), t('maximum heart rate')], parents: [], where: { tab: 'aerobic', view: 'vo2' }, has: uth !== null,
       checks: [
-        restCheck('the ratio follows it directly'), maxCheck('the ratio comes out too low'),
-        check('population', 'A population formula fits you', 'doubt', 'fitted to 46 trained men; for one person it is off by about ±5 ml/kg/min, and it knows nothing of your running'),
+        restCheck(t('the ratio follows it directly')), maxCheck(t('the ratio comes out too low')),
+        check('population', t('A population formula fits you'), 'doubt', t('fitted to 46 trained men; for one person it is off by about ±5 ml/kg/min, and it knows nothing of your running')),
       ],
     },
     fittedHr: {
-      key: 'fittedHr', group: 'response', depth: 0, name: 'Fitted response · VO2max from heart rate', method: 'performance = p0 + k1·fitness − k2·fatigue, fitted to you (Banister 1975; Busso 2003)', tells: 'your own time constants, and when a rest would peak',
-      inputs: ['the load of every day', 'VO2max from heart rate of each run'], parents: ['load', 'vo2hr'], where: { tab: 'response' }, ...fittedDef(fitted.hr, 'VO2max from heart rate, a day\'s mean'),
+      key: 'fittedHr', group: 'response', depth: 0, name: t('Fitted response · VO2max from heart rate'), method: t('performance = p0 + k1·fitness − k2·fatigue, fitted to you (Banister 1975; Busso 2003)'), tells: t('your own time constants, and when a rest would peak'),
+      inputs: [t('the load of every day'), t('VO2max from heart rate of each run')], parents: ['load', 'vo2hr'], where: { tab: 'response' }, ...fittedDef(fitted.hr, t("VO2max from heart rate, a day's mean")),
     },
     fittedVdot: {
-      key: 'fittedVdot', group: 'response', depth: 0, name: 'Fitted response · VDOT', method: 'the same model, fitted to the weekly VDOT', tells: 'your own time constants, on your bests',
-      inputs: ['the load of every day', 'the weekly VDOT'], parents: ['load', 'vdot'], where: { tab: 'response' },
+      key: 'fittedVdot', group: 'response', depth: 0, name: t('Fitted response · VDOT'), method: t('the same model, fitted to the weekly VDOT'), tells: t('your own time constants, on your bests'),
+      inputs: [t('the load of every day'), t('the weekly VDOT')], parents: ['load', 'vdot'], where: { tab: 'response' },
       ...(() => {
-        const d = fittedDef(fitted.vdot, 'weekly VDOT');
-        return { ...d, checks: [...d.checks, check('smooth', 'The performance moves from week to week', 'doubt', `the VDOT is the best of ${MARKER_DAYS} days: it holds for weeks after a hard effort, so it cannot show fatigue`)] };
+        const d = fittedDef(fitted.vdot, t('weekly VDOT'));
+        return { ...d, checks: [...d.checks, check('smooth', t('The performance moves from week to week'), 'doubt', t('the VDOT is the best of {days} days: it holds for weeks after a hard effort, so it cannot show fatigue', { days: MARKER_DAYS }))] };
       })(),
     },
   };
@@ -457,8 +495,8 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
     let trust = own;
     let cappedBy: ModelKey | null = null;
     for (const parent of d.parents) {
-      const t = worse(trust, resolve(parent).trust);
-      if (t !== trust) { trust = t; cappedBy = parent; }
+      const capped = worse(trust, resolve(parent).trust);
+      if (capped !== trust) { trust = capped; cappedBy = parent; }
     }
     const report: ModelReport = { ...d, own, trust, cappedBy };
     done.set(key, report);

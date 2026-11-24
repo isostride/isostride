@@ -7,17 +7,20 @@
  * Set when the runner picks a folder on the Welcome screen, the setup's first step ("wizard przerywa
  * po podaniu katalogu z plikami"): the wizard goes on to its next step whatever the folder holds.
  */
+import { msg, number, t } from '@/lib/i18n';
+
 export const SETUP_CONTINUE = 'strideprism.setupContinue';
 
-export const SETUP_STEPS = ['Data folder', 'Your runs', 'You', 'Zones', 'Gear', 'Load model', 'Display', 'Done'] as const;
+/** The steps' names, in English (they name the steps for the tests too); shown in the language in use. */
+export const SETUP_STEPS = [msg('Data folder'), msg('Your runs'), msg('You'), msg('Zones'), msg('Gear'), msg('Load model'), msg('Display'), msg('Done')] as const;
 
 /** Compact: a bar of segments, only the current step's name shown (the names stay for screen readers). */
 export function SetupSteps({ at, compact = false }: { at: number; compact?: boolean }) {
   return (
-    <ol className={`setup-steps${compact ? ' compact' : ''}`} aria-label="Steps">
+    <ol className={`setup-steps${compact ? ' compact' : ''}`} aria-label={t('Steps')}>
       {SETUP_STEPS.map((s, i) => (
         <li key={s} className={i === at ? 'on' : i < at ? 'done' : ''} aria-current={i === at ? 'step' : undefined}>
-          <span className="setup-num">{i < at ? '✓' : i + 1}</span>{s}
+          <span className="setup-num">{i < at ? '✓' : number(i + 1)}</span>{t(s)}
         </li>
       ))}
     </ol>

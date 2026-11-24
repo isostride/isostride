@@ -8,9 +8,12 @@ import { TEST_DATA, addFromPicker, chooseFolder, clearAnalysis, fakeFolderPicker
  * made-up runner, never on anybody's own runs. Not part of the test suite:
  *   node scripts/make-demo.mjs /tmp/demo && DEMO=/tmp/demo npx playwright test -c playwright.shots.config.ts
  * then, in apps/site/public/shots: for f in *.png; do cwebp -q 82 -m 6 $f -o ${f%.png}.webp; done; rm *.png
+ * With SHOTS_LANG=pl the same screens in Polish, into apps/site/public/shots/pl ("pamietaj o screensjota
+ * polskich w wersji polskiej strony"): the app is driven in English and put in Polish for each shot.
  */
 const DEMO = process.env.DEMO!;
-const OUT = path.resolve(TEST_DATA, '../../../site/public/shots');
+const LANG = process.env.SHOTS_LANG === 'pl' ? 'pl' : 'en';
+const OUT = path.resolve(TEST_DATA, '../../../site/public/shots', LANG === 'en' ? '' : LANG);
 test.use({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, colorScheme: 'light', locale: 'en-GB' });
 
 async function put(page: Page, dir: string[], files: { name: string; b64: string }[]) {
@@ -26,13 +29,24 @@ async function put(page: Page, dir: string[], files: { name: string; b64: string
 }
 const read = async (dir: string, names: string[]) => Promise.all(names.map(async (name) => ({ name, b64: (await fs.readFile(path.join(dir, name))).toString('base64') })));
 
-/** The whole window, as the runner sees it. */
+/** Puts the app in a language (as Settings › Display does) and reloads the screen shown. */
+async function language(page: Page, lang: string) {
+  await page.evaluate((l) => localStorage.setItem('isostride.language', l), lang);
+  await page.reload();
+  await page.locator('html:not([data-lang-pending])').waitFor();
+  await page.waitForTimeout(5000);
+}
+
+/** The whole window, as the runner sees it; in Polish, the screen put in Polish for it, then back. */
 async function shot(page: Page, name: string) {
+  if (LANG !== 'en') await language(page, LANG);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.mouse.move(700, 895);
   await page.waitForTimeout(1500);
+  await fs.mkdir(OUT, { recursive: true });
   await page.screenshot({ path: path.join(OUT, `${name}.png`) });
   console.log('shot', name, (await page.locator('h1').first().textContent().catch(() => '')) ?? '');
+  if (LANG !== 'en') await language(page, 'en');
 }
 
 test('site shots', async ({ page }) => {

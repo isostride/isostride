@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, type MouseEvent } from 'react';
 import type { BlockInstance } from '@/lib/blocks';
+import { dateText, t } from '@/lib/i18n';
 import { ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useWidth } from './chartKit';
 import type { Marker } from './TrendChart';
 
@@ -47,7 +48,7 @@ export interface OverTimeGroup {
  * Over time: every block instance and every added run's average by date, one colour and
  * marker per item, each block's fitted lines with their noise bands, gear changes as lines.
  */
-export function OverTimeChart({ groups, format, tick, invert, markers, minSpan = 0, selected = new Set(), onPick, title = 'Over time', domain, join = true, fit = true, labels = true, height = 300 }: {
+export function OverTimeChart({ groups, format, tick, invert, markers, minSpan = 0, selected = new Set(), onPick, title, domain, join = true, fit = true, labels = true, height = 300 }: {
   groups: OverTimeGroup[]; format: (v: number) => string; tick: (v: number, decimals?: number) => string; invert?: boolean; markers: Marker[];
   /** the least range of the y axis (a smaller difference stays small on the chart) */
   minSpan?: number;
@@ -85,7 +86,7 @@ export function OverTimeChart({ groups, format, tick, invert, markers, minSpan =
     const hi = Math.max(hi0, ticks[ticks.length - 1] ?? hi0);
     return { t0: domain?.[0] ?? Math.min(...ts) - 4 * DAY, t1: domain?.[1] ?? Math.max(...ts) + 4 * DAY, lo, hi, ticks };
   }, [groups, domain, minSpan]);
-  if (!scale) return <div ref={box} className="muted small" style={{ padding: 12 }}>No efforts or runs with this metric.</div>;
+  if (!scale) return <div ref={box} className="muted small" style={{ padding: 12 }}>{t('No efforts or runs with this metric.')}</div>;
   const { t0, t1, lo, hi, ticks } = scale;
   const shown = markers.filter((m) => Date.parse(m.date) > t0 && Date.parse(m.date) < t1).sort((a, b) => a.date.localeCompare(b.date));
   const lane = shown.length && labels ? 36 : 10;
@@ -105,7 +106,7 @@ export function OverTimeChart({ groups, format, tick, invert, markers, minSpan =
   };
   return (
     <div ref={box} style={{ position: 'relative' }}>
-      <svg width={width} height={H} role="img" aria-label={title === 'Over time' ? title : `Over time · ${title}`} onMouseMove={move} onMouseLeave={() => setHover(null)} onClick={() => { if (!hover) return; if (hover.p.instance && onPick) onPick(hover.p.instance); else if (hover.p.href) router.push(hover.p.href); }} style={{ display: 'block', cursor: hover && ((hover.p.instance && onPick) || hover.p.href) ? 'pointer' : 'default' }}>
+      <svg width={width} height={H} role="img" aria-label={title === undefined ? t('Over time') : t('Over time · {title}', { title })} onMouseMove={move} onMouseLeave={() => setHover(null)} onClick={() => { if (!hover) return; if (hover.p.instance && onPick) onPick(hover.p.instance); else if (hover.p.href) router.push(hover.p.href); }} style={{ display: 'block', cursor: hover && ((hover.p.instance && onPick) || hover.p.href) ? 'pointer' : 'default' }}>
         {ticks.map((v) => (
           <g key={v}>
             <line x1={M.l} x2={width - M.r} y1={y(v)} y2={y(v)} stroke="var(--grid)" />
@@ -141,8 +142,8 @@ export function OverTimeChart({ groups, format, tick, invert, markers, minSpan =
         <div className="tooltip" style={{ left: hover.x > width - 260 ? hover.x - 248 : hover.x + 16, top: Math.max(4, hover.y - 20) }}>
           <div className="tip-value"><ItemKey shape={hover.g.shape} color={hover.g.color} /> {format(hover.p.v)}</div>
           <div>{hover.g.label}</div>
-          <div className="muted">{new Date(hover.p.t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}{hover.p.note ? ` · ${hover.p.note}` : ''}</div>
-          {hover.p.href && !onPick && <div className="muted tip-hint">Click to open the run</div>}
+          <div className="muted">{dateText(hover.p.t, { day: 'numeric', month: 'short', year: 'numeric' })}{hover.p.note ? ` · ${hover.p.note}` : ''}</div>
+          {hover.p.href && !onPick && <div className="muted tip-hint">{t('Click to open the run')}</div>}
         </div>
       )}
     </div>

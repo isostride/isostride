@@ -1,4 +1,5 @@
 import type { DataFolder, FolderEntry } from './folder';
+import { IMPORT_REASONS, importReason } from './manifest';
 
 /** DataFolder over a File System Access API directory handle (Chrome, Edge, Opera). */
 export class BrowserFolder implements DataFolder {
@@ -40,7 +41,7 @@ export class BrowserFolder implements DataFolder {
   async readBytes(path: string): Promise<Uint8Array> {
     const [d, name] = this.split(path);
     const dir = await this.dir(d, false);
-    if (!dir) throw new Error(`Not found: ${path}`);
+    if (!dir) throw new Error(importReason(IMPORT_REASONS.notFound, { path }));
     const file = await (await dir.getFileHandle(name)).getFile();
     return new Uint8Array(await file.arrayBuffer());
   }

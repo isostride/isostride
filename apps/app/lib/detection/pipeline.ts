@@ -2,7 +2,7 @@ import { PATHS, readJson, writeJson, type DataFolder, readRunFile } from '@/lib/
 import { resample, type TrackPoint } from '@/lib/geo';
 import { type IndexedRun, type RunFile, type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { detectRouteSegments } from './segments';
-import { RECOMMENDATIONS_PATH, asRule, fromRecommendation, matchesRunFilter, readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
+import { RECOMMENDATIONS_PATH, SAVED_WORDS, asRule, basisOf, fromRecommendation, matchesRunFilter, readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
 import { detectInstances } from './detect';
 import { MIN_ROUTE_INSTANCES, MIN_STRUCTURE_WORKOUTS, recommend } from './recommend';
 
@@ -49,7 +49,7 @@ export async function runBlocks(folder: DataFolder): Promise<BlocksReport> {
     const accepted = runs.flatMap((run) => detectInstances(def, run, rows.get(run.id)!, tracks.get(run.id)!)).filter((i) => i.status === 'accepted');
     const enough = rec.params.type === 'route' ? accepted.length >= MIN_ROUTE_INSTANCES : new Set(accepted.map((i) => i.runId)).size >= MIN_STRUCTURE_WORKOUTS;
     // Kept in the one model: a rule.
-    if (enough) recommendations.push({ ...rec, params: { type: 'rule', ...asRule(rec.params, rec.tolerances) }, accepted: accepted.length, basis: `${rec.basis}; ${accepted.length} meet the conditions` });
+    if (enough) recommendations.push({ ...rec, params: { type: 'rule', ...asRule(rec.params, rec.tolerances) }, accepted: accepted.length, basis: basisOf({ ...rec, accepted: accepted.length }, SAVED_WORDS) });
   }
   await writeJson(folder, RECOMMENDATIONS_PATH, { algorithmVersion: ALGORITHM_VERSION, recommendations });
 

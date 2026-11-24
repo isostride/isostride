@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { runInWorker, useOpenFolder, watchJob } from '@/lib/client';
 import { unseenFitFiles } from '@/lib/fs';
+import { tn } from '@/lib/i18n';
 
 /** The least time between two looks at the folder, ms: focus and visibility often come together. */
 const SETTLE = 2000;
@@ -33,7 +34,7 @@ function useAutoImport(): string | null {
       try {
         if ((await unseenFitFiles(folder)).length && !jobRunning()) {
           const done = await runInWorker('import', handle);
-          if (alive && done.imported) setNotice(`Imported ${done.imported} new run${done.imported === 1 ? '' : 's'} from the folder.`);
+          if (alive && done.imported) setNotice(tn(done.imported, 'Imported {n} new run from the folder.', 'Imported {n} new runs from the folder.'));
         }
       } catch {
         // The folder could not be read now (permission, a file being written): the next look tries again.

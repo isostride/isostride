@@ -7,6 +7,7 @@ export type RangeMetric = string;
 /** The metrics of a stretch of a run: those of its blocks, and the elevation. */
 export function rangeMetricsOf(run: RunFile): RangeMetric[] {
   const own = blockMetricsOf(Object.keys(run.windows.values));
+  // i18n-ignore: a metric's key
   return run.windows.values.altitude ? [...own, 'altitude'] : own;
 }
 

@@ -4,13 +4,14 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget } from '@/components';
-import { readChartSettings, runInWorker, useChartSettings, useOpenFolder } from '@/lib/client';
+import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, SCREEN_LEAVE, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget } from '@/components';
+import { readChartSettings, runInWorker, useChartSettings, useLocale, useOpenFolder } from '@/lib/client';
+import { msg, number, t, tn } from '@/lib/i18n';
 import { readGear, readRunTags, writeRunTags, type Gear, type RunTag, type RunTagsFile } from '@/lib/gear';
 import { TagEditor } from './TagEditor';
 import { PATHS, readJson, readRunFile } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
-import { efficiencyOf, rangeStats, readDefinitions, zoneShares, type BlockInstance } from '@/lib/blocks';
+import { asRule, efficiencyOf, rangeStats, readDefinitions, reasonText, shownName, zoneShares, type BlockInstance, type Rule } from '@/lib/blocks';
 import { date, duration, km, pace, time } from '@/lib/format';
 import { LOAD_MODELS, readSettings, zoneOf, zoneTint } from '@/lib/settings';
 import { PinButton } from '../dashboard/PinButton';
@@ -30,9 +31,9 @@ const MIN_CHART = 180;
 const MAX_CHART = 560;
 
 /** The key of a run's remembered view in the browser. */
-const viewKey = (id: string) => `strideprism.runView.${id}`;
+const viewKey = (id: string) => `strideprism.runView.${id}`; // i18n-ignore
 /** The key of the view a run was left with before its link was written: the link it was left at, and the view. */
-const leftKey = (id: string) => `strideprism.runViewLeft.${id}`;
+const leftKey = (id: string) => `strideprism.runViewLeft.${id}`; // i18n-ignore
 
 /**
  * The browser's own key of the history entry shown (the Navigation API of the Chromium browsers the
@@ -68,12 +69,13 @@ function RunOf() {
 
 /** Run: metrics over time on 10 s windows, the route, laps and quality-flagged windows. */
 function RunPage() {
+  const lang = useLocale();
   const params = useSearchParams();
   const id = params.get('id') ?? '';
   const { folder, handle } = useOpenFolder();
   const router = useRouter();
   // The back link: the screen the run was opened from, as it was left (requirement "Back to the previous screen").
-  const [back, setBack] = useState<{ href: string; label: string; viaHistory: boolean }>({ href: '/', label: 'Runs', viaHistory: false });
+  const [back, setBack] = useState<{ href: string; label: string; viaHistory: boolean }>({ href: '/', label: msg('Runs'), viaHistory: false });
   useEffect(() => { setBack(backTarget(window.sessionStorage)); }, []);
   const goBack = (e: MouseEvent) => { if (back.viaHistory && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); router.back(); } };
   const [run, setRun] = useState<RunFile | null | undefined>(undefined);
@@ -85,7 +87,9 @@ function RunPage() {
   /** read again after the run's tags are saved */
   const [tagsSaved, setTagsSaved] = useState(0);
   const [cursor, setCursor] = useState<number | null>(null);
-  const [blocks, setBlocks] = useState<(BlockInstance & { name: string })[]>([]);
+  /** the efforts of segments in this run, each with its segment's saved name and rule (its name shown in the language in use) */
+  const [found, setFound] = useState<(BlockInstance & { saved: string; rule: Rule | null })[]>([]);
+  const blocks = useMemo(() => found.map((b) => ({ ...b, name: b.rule ? shownName(b.saved, b.rule) : b.saved })), [found, lang]);
   /** the zones of the metrics, from the settings */
   const [zones, setZones] = useState<Record<string, number[]>>({});
   // The run's load by the model of Settings, and the form that morning (requirement "Load model chosen in Settings").
@@ -166,7 +170,7 @@ function RunPage() {
   /** the history entry the run is shown in, read as it opens (at its close the browser is in the next one) */
   const entry = useRef<string | null>(null);
   useEffect(() => { entry.current = entryKey(); }, []);
-  // A link to another screen clicked: the link of this one is no longer written (the router, still loading
+  // A link to another screen clicked, or another screen chosen in the search: the link of this one is no longer written (the router, still loading
   // the next screen, would take that write for a return here and stay); the view goes into the run's
   // memory as the screen closes.
   const leaving = useRef(false);
@@ -177,13 +181,16 @@ function RunPage() {
       if (a && !a.target && new URL(a.href, location.href).pathname !== location.pathname) leaving.current = true;
     };
     document.addEventListener('click', click, true);
-    return () => document.removeEventListener('click', click, true);
+    // Left from the search (⌘K): the same.
+    const leave = () => { leaving.current = true; };
+    window.addEventListener(SCREEN_LEAVE, leave);
+    return () => { document.removeEventListener('click', click, true); window.removeEventListener(SCREEN_LEAVE, leave); };
   }, []);
   useEffect(() => {
     const view: RunView = { range: zoom, slots, focus, layout, axis, smooth, blocks: showBlocks, map: mapLed ? mapCam : null };
     const query = viewToParams(id, view).toString();
     unsaved.current = query;
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       if (leaving.current) return;
       unsaved.current = null;
       if (location.search !== `?${query}`) window.history.replaceState(null, '', `${location.pathname}?${query}`);
@@ -193,7 +200,7 @@ function RunPage() {
         localStorage.setItem(SLOTS_KEY, JSON.stringify(slots));
       } catch { /* not kept */ }
     }, 250);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [id, zoom, slots, focus, layout, axis, smooth, showBlocks, mapLed, mapCam]);
   useEffect(() => () => {
     if (!unsaved.current) return;
@@ -214,9 +221,12 @@ function RunPage() {
       setEffort(row && row.load !== null && row.load !== undefined ? { load: row.load, estimated: !!row.loadEstimated, unit: model.unit, model: model.name, form: row.form ?? 0 } : null);
     }).catch(() => setZones({}));
     (async () => {
-      const names = new Map((await readDefinitions(folder)).map((d) => [d.id, d.name]));
+      const defs = new Map((await readDefinitions(folder)).map((d) => [d.id, d]));
       const all = (await readJson<{ instances: BlockInstance[] }>(folder, PATHS.blockInstances))?.instances ?? [];
-      setBlocks(all.filter((i) => i.runId === id).map((i) => ({ ...i, name: names.get(i.definitionId) ?? i.definitionId })).sort((a, b) => a.start - b.start));
+      setFound(all.filter((i) => i.runId === id).map((i) => {
+        const d = defs.get(i.definitionId);
+        return { ...i, saved: d?.name ?? i.definitionId, rule: d ? asRule(d.params, d.tolerances) : null };
+      }).sort((a, b) => a.start - b.start));
     })();
   }, [folder, id, tagsSaved]);
   // The run's tags edited here as on the Runs list: saved, the context recomputed, the screen read again.
@@ -240,7 +250,7 @@ function RunPage() {
     w.start.forEach((s, i) => {
       if (w.flags.stopped[i] || w.flags.grade[i] || w.flags.missingSignal[i]) flagged.push({ from: s, to: s + WINDOW_SECONDS });
     });
-    const laps = run.laps.map((l, i) => ({ from: l.start, to: l.end, label: `Lap ${i + 1} · ${km(l.distance)} km · ${duration(l.duration)}`, short: `Lap ${i + 1} · ${km(l.distance)} km` }));
+    const laps = run.laps.map((l, i) => ({ from: l.start, to: l.end, label: t('Lap {n} · {km} km · {time}', { n: i + 1, km: km(l.distance), time: duration(l.duration) }), short: t('Lap {n} · {km} km', { n: i + 1, km: km(l.distance) }) }));
     const wseries = seriesOf(run);
     const hr = (run.samples.values.heartRate ?? []).filter((v): v is number => v !== null);
     const avgHr = hr.length ? Math.round(hr.reduce((a, b) => a + b, 0) / hr.length) : null;
@@ -253,7 +263,8 @@ function RunPage() {
     const total = last > 0 ? last : w.start.length ? w.start[w.start.length - 1] + WINDOW_SECONDS : 1;
     const dmap = distanceMap(run.samples.t, run.samples.distance);
     return { w, x, wx, total, dmap, flagged, laps, series, wseries, avgHr, gain: alt.length ? Math.round(gain) : null };
-  }, [run]);
+    // The laps' names follow the language.
+  }, [run, lang]);
 
   // The statistics of the selection, the range shown; with none, of the whole run.
   const stats = useMemo(() => {
@@ -261,12 +272,12 @@ function RunPage() {
     const [from, to] = zoom ?? [0, view.total];
     // The lowest and highest values second by second, as the chart draws them.
     const r = rangeStats(run, from, to);
-    return { ...r, metrics: withSecondExtremes(r.metrics, view.x, view.series, from, to), what: zoom ? 'Selection' : 'Whole run' };
+    return { ...r, metrics: withSecondExtremes(r.metrics, view.x, view.series, from, to), what: zoom ? msg('Selection') : msg('Whole run') };
   }, [run, view, zoom]);
 
 
-  if (run === undefined) return <div className="page muted">Loading…</div>;
-  if (!run || !view) return <div className="page">Run not found. <Link href="/" className="muted">← Runs</Link></div>;
+  if (run === undefined) return <div className="page muted">{t('Loading…')}</div>;
+  if (!run || !view) return <div className="page">{t('Run not found.')} <Link href="/" className="muted">← {t('Runs')}</Link></div>;
   const { x, laps, series, total, dmap } = view;
   /** the x axis drawn: by distance only when the run has one */
   const xAxis = axis === 'distance' && dmap.max > 0 ? 'distance' : 'time';
@@ -302,10 +313,10 @@ function RunPage() {
   });
   const colourOf = (k: WindowKey) => lines.find((l) => l.key === k)?.color;
   // The tooltip's head: the time, the distance and the lap.
-  const head = (t: number) => {
-    const i = run.samples.t.findIndex((s) => s >= t);
-    const lap = run.laps.findIndex((l) => t >= l.start && t < l.end);
-    return `${clock(t)}${i >= 0 && run.samples.distance[i] !== null ? ` · ${km(run.samples.distance[i]!)} km` : ''}${lap >= 0 ? ` · lap ${lap + 1}` : ''}`;
+  const head = (at: number) => {
+    const i = run.samples.t.findIndex((s) => s >= at);
+    const lap = run.laps.findIndex((l) => at >= l.start && at < l.end);
+    return `${clock(at)}${i >= 0 && run.samples.distance[i] !== null ? ` · ${km(run.samples.distance[i]!)} km` : ''}${lap >= 0 ? ` · ${t('lap {n}', { n: lap + 1 })}` : ''}`;
   };
   const zoomed = zoom !== null;
   // The lap the selection is, if it is one.
@@ -319,12 +330,12 @@ function RunPage() {
   // The key figures of the range ("popraw widget selection ... malo tam informacji").
   const covered = stats ? run.laps.flatMap((l, i) => (Math.min(l.end, stats.to) - Math.max(l.start, stats.from) > 1 ? [i + 1] : [])) : [];
   const figures: [string, string, string][] = stats ? [
-    ['time', 'time', duration(stats.seconds)],
-    ['moving', 'moving time', duration(stats.moving)],
-    ['distance', 'distance', stats.distance !== null ? `${km(stats.distance)} km` : '–'],
-    ['elevation', 'elevation', stats.ascent !== null ? `+${Math.round(stats.ascent)} / −${Math.round(stats.descent ?? 0)} m` : '–'],
-    ['laps', covered.length > 1 ? 'laps' : 'lap', covered.length === 0 ? '–' : covered.length === 1 ? `${covered[0]} of ${run.laps.length}` : `${covered[0]}–${covered[covered.length - 1]} of ${run.laps.length}`],
-    ['share', 'of the run', `${Math.round(((stats.to - stats.from) / total) * 100)} %`],
+    ['time', t('time'), duration(stats.seconds)],
+    ['moving', t('moving time'), duration(stats.moving)],
+    ['distance', t('distance'), stats.distance !== null ? `${km(stats.distance)} km` : '–'],
+    ['elevation', t('elevation'), stats.ascent !== null ? `+${Math.round(stats.ascent)} / −${Math.round(stats.descent ?? 0)} m` : '–'],
+    ['laps', covered.length > 1 ? t('laps') : t('lap'), covered.length === 0 ? '–' : t('{lap} of {n}', { lap: covered.length === 1 ? covered[0] : `${covered[0]}–${covered[covered.length - 1]}`, n: run.laps.length })],
+    ['share', t('of the run'), `${Math.round(((stats.to - stats.from) / total) * 100)} %`],
   ] : [];
   // The time in zones of each metric shown that has zones.
   const zoneBars: { line: RunLine; shares: number[] }[] = stats ? lines.flatMap((l) => {
@@ -337,50 +348,50 @@ function RunPage() {
     <div ref={pageRef} className="page run-page">
       <div className="page-head run-head">
         <div>
-          <div className="eyebrow"><Link href={back.href} onClick={goBack}>← {back.label}</Link>{title && <span> · {date(run.startTime)} · {time(run.startTime)}</span>}</div>
+          <div className="eyebrow"><Link href={back.href} onClick={goBack}>← {t(back.label)}</Link>{title && <span> · {date(run.startTime)} · {time(run.startTime)}</span>}</div>
           <h1>{title ?? <>{date(run.startTime)} <span className="muted">· {time(run.startTime)}</span></>}</h1>
         </div>
         <dl className="run-figures">
-          <div><dt>distance</dt><dd>{km(run.distance)} km</dd></div>
-          <div><dt>moving time</dt><dd>{duration(run.duration)}</dd></div>
-          <div><dt>average pace</dt><dd>{pace(run.distance / run.duration)} /km</dd></div>
-          <div><dt>average heart rate</dt><dd>{view.avgHr ?? '–'}{view.avgHr ? ' bpm' : ''}</dd></div>
-          <div><dt>elevation gain</dt><dd>{view.gain ?? '–'}{view.gain !== null ? ' m' : ''}</dd></div>
-          {effort && <div className="run-load" title={`${effort.model}${effort.estimated ? ', estimated from the duration: the run lacks what the model needs' : ''}; form that morning ${effort.form > 0 ? '+' : ''}${effort.form}`}><dt>load</dt><dd>{Math.round(effort.load)}{effort.estimated ? '*' : ''} {effort.unit}</dd></div>}
-          {effort && <div><dt>form that morning</dt><dd>{effort.form > 0 ? '+' : ''}{effort.form}</dd></div>}
+          <div><dt>{t('distance')}</dt><dd>{km(run.distance)} km</dd></div>
+          <div><dt>{t('moving time')}</dt><dd>{duration(run.duration)}</dd></div>
+          <div><dt>{t('average pace')}</dt><dd>{pace(run.distance / run.duration)} /km</dd></div>
+          <div><dt>{t('average heart rate')}</dt><dd>{view.avgHr ?? '–'}{view.avgHr ? ' bpm' : ''}</dd></div>
+          <div><dt>{t('elevation gain')}</dt><dd>{view.gain ?? '–'}{view.gain !== null ? ' m' : ''}</dd></div>
+          {effort && <div className="run-load" title={(effort.estimated ? t('{model}, estimated from the duration: the run lacks what the model needs; form that morning {form}', { model: t(effort.model), form: `${effort.form > 0 ? '+' : ''}${number(effort.form)}` }) : t('{model}; form that morning {form}', { model: t(effort.model), form: `${effort.form > 0 ? '+' : ''}${number(effort.form)}` }))}><dt>{t('load')}</dt><dd>{Math.round(effort.load)}{effort.estimated ? '*' : ''} {effort.unit}</dd></div>}
+          {effort && <div><dt>{t('form that morning')}</dt><dd>{effort.form > 0 ? '+' : ''}{number(effort.form)}</dd></div>}
         </dl>
         <span className="spacer" />
         <span className="chip">{run.device}</span>
-        <span className="chip">{run.laps.length} laps</span>
-        {run.temperature !== null && <span className="chip">{run.temperature} °C</span>}
-        {[tagged.workoutType, tagged.techniqueCue].filter(Boolean).map((t) => <span key={t} className="chip run-tag">{t}</span>)}
+        <span className="chip">{tn(run.laps.length, '{n} lap', '{n} laps')}</span>
+        {run.temperature !== null && <span className="chip">{number(run.temperature)} °C</span>}
+        {[tagged.workoutType, tagged.techniqueCue].filter(Boolean).map((tag) => <span key={tag} className="chip run-tag">{tag}</span>)}
         {tagged.note && <span className="muted small run-note" title={tagged.note}>✉ {tagged.note}</span>}
-        <button type="button" className="btn" onClick={() => void editTags()} title="The run's title, workout type, technique cue, shoes and a note">Tags and note</button>
-        <Link className="btn" href={`/compare?items=r:${run.id}:0`} title="Open this run in Compare, beside your segments and other runs">Compare this run</Link>
+        <button type="button" className="btn" onClick={() => void editTags()} title={t("The run's title, workout type, technique cue, shoes and a note")}>{t('Tags and note')}</button>
+        <Link className="btn" href={`/compare?items=r:${run.id}:0`} title={t('Open this run in Compare, beside your segments and other runs')}>{t('Compare this run')}</Link>
       </div>
-      {tagEdit && <TagEditor title={title ?? `${date(run.startTime)} ${time(run.startTime)}`} tag={tagEdit.file.tags[id] ?? {}} gear={tagEdit.gear} dictionary={tagEdit.file.dictionary} onSave={(t) => void saveTags(t)} onCancel={() => setTagEdit(null)} />}
+      {tagEdit && <TagEditor title={title ?? `${date(run.startTime)} ${time(run.startTime)}`} tag={tagEdit.file.tags[id] ?? {}} gear={tagEdit.gear} dictionary={tagEdit.file.dictionary} onSave={(tag) => void saveTags(tag)} onCancel={() => setTagEdit(null)} />}
       <div className="card run-board pin-host">
         <PinButton folder={folder} kind="run" target={run.id} name={title ?? `${date(run.startTime)} ${time(run.startTime)}`} opts={slots.filter((k) => k !== null).join(',')} />
         <div className="metrics-bar">
-          <div className="metric-picker" role="group" aria-label="Metrics shown">
+          <div className="metric-picker" role="group" aria-label={t('Metrics shown')}>
             {METRICS.filter((m) => has(m.key)).map((m) => {
               const on = slots.includes(m.key);
               return (
-                <button key={m.key} className={`pill ${on ? 'on' : ''}`} aria-pressed={on} disabled={!on && free < 0} title={!on && free < 0 ? `Up to ${SLOT_COUNT} metrics at once: turn one off first` : undefined} onClick={() => toggle(m.key)}>
+                <button key={m.key} className={`pill ${on ? 'on' : ''}`} aria-pressed={on} disabled={!on && free < 0} title={!on && free < 0 ? t('Up to {n} metrics at once: turn one off first', { n: SLOT_COUNT }) : undefined} onClick={() => toggle(m.key)}>
                   {on && <i className="key-line" style={{ background: colourOf(m.key) }} />}{m.title}
                 </button>
               );
             })}
           </div>
-          <span className="chart-summary muted small">{layout === 'bands' ? 'Bands' : 'Overlaid'} · by {xAxis}{showBlocks && blocks.length ? ` · ${blocks.length} segment${blocks.length > 1 ? 's' : ''}` : ''}</span>
+          <span className="chart-summary muted small">{layout === 'bands' ? t('Bands') : t('Overlaid')} · {xAxis === 'distance' ? t('by distance') : t('by time')}{showBlocks && blocks.length ? ` · ${tn(blocks.length, '{n} segment', '{n} segments')}` : ''}</span>
           <span className="readout sr-only" aria-live="polite">
-            {zoomed ? `${clock(domain[0])}–${clock(domain[1])} of ${clock(total)}` : `Whole run · ${clock(total)}`}
+            {zoomed ? t('{range} of {total}', { range: `${clock(domain[0])}–${clock(domain[1])}`, total: clock(total) }) : `${t('Whole run')} · ${clock(total)}`}
           </span>
           {/* Clear selection, top right of the chart (the runner's request: "chce miec clear selection w prawym gornym rogu"): there while a stretch is selected. */}
           {selection && (
-            <button className="btn sm clear-selection" title="Clear the selection and show the whole run" onClick={clear}>
+            <button className="btn sm clear-selection" title={t('Clear the selection and show the whole run')} onClick={clear}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-              Clear selection
+              {t('Clear selection')}
             </button>
           )}
         </div>
@@ -392,10 +403,10 @@ function RunPage() {
               marks={Object.fromEntries(shownStats.map(({ line, v }) => [line.key, v]))} hot={hot} />
             {/* The efforts of the runner's segments in this run, under the chart: pointed at, lit on it; clicked, selected. */}
             {blocks.length > 0 && (
-              <div className="run-efforts" role="group" aria-label="Efforts of your segments in this run">
-                <span className="muted small">Your segments here</span>
+              <div className="run-efforts" role="group" aria-label={t('Efforts of your segments in this run')}>
+                <span className="muted small">{t('Your segments here')}</span>
                 {blocks.map((b) => (
-                  <button key={b.id} type="button" className={`run-block${b.status === 'accepted' ? '' : ' rejected'}`} title={b.reasons.length ? `Not counted: ${b.reasons.join(' · ')}` : 'Select it on the chart'}
+                  <button key={b.id} type="button" className={`run-block${b.status === 'accepted' ? '' : ' rejected'}`} title={b.reasons.length ? t('Not counted: {reasons}', { reasons: b.reasons.map(reasonText).join(' · ') }) : t('Select it on the chart')}
                     onMouseEnter={() => setPointed(b.id)} onMouseLeave={() => setPointed(null)} onFocus={() => setPointed(b.id)} onBlur={() => setPointed(null)} onClick={() => select({ from: b.start, to: b.end })}>
                     <span className="dot" style={{ background: b.status === 'accepted' ? 'var(--ok)' : 'var(--muted)' }} />
                     <b>{b.name}</b><span className="muted"> · min {Math.floor(b.start / 60)}–{Math.ceil(b.end / 60)} · {pace(b.metrics.speed)} /km</span>
@@ -404,18 +415,18 @@ function RunPage() {
               </div>
             )}
             <div className="legend chart-foot">
-              <span><i style={{ background: 'var(--surface-2)' }} />alternate laps</span>
-              {(showBlocks || pointed) && <span><i style={{ background: 'var(--band)', borderTop: '2px solid var(--series-1)' }} />effort of a segment (top line: accepted)</span>}
-              <span>each line on its own scale · drag to select · scroll to zoom at the pointer · what is shown is the selection</span>
+              <span><i style={{ background: 'var(--surface-2)' }} />{t('alternate laps')}</span>
+              {(showBlocks || pointed) && <span><i style={{ background: 'var(--band)', borderTop: '2px solid var(--series-1)' }} />{t('effort of a segment (top line: accepted)')}</span>}
+              <span>{t('each line on its own scale · drag to select · scroll to zoom at the pointer · what is shown is the selection')}</span>
             </div>
           </div>
           <div className="run-side">
             <RouteMap lat={run.samples.lat} lon={run.samples.lon} t={run.samples.t} cursor={cursor} selection={null} onSelect={select} view={zoom ? { from: zoom[0], to: zoom[1] } : null} follow={!mapLed} onView={fromMap} onFit={() => setMapLed(false)} camera={start.map} onCamera={setMapCam} onExpand={() => setBigMap(true)} />
             <div className="laps-panel">
-              <div className="laps-head"><h3>Laps</h3><span className="muted tnum">{run.laps.length}</span><span className="muted small laps-hint">click one to show it</span></div>
-              <div className="run-list" role="region" aria-label="Laps of the run" tabIndex={0}>
-                <table className="data laps-table" aria-label="Laps">
-                  <thead><tr><th>Lap</th><th className="num">km</th><th className="num">Time</th><th>Pace</th></tr></thead>
+              <div className="laps-head"><h3>{t('Laps')}</h3><span className="muted tnum">{run.laps.length}</span><span className="muted small laps-hint">{t('click one to show it')}</span></div>
+              <div className="run-list" role="region" aria-label={t('Laps of the run')} tabIndex={0}>
+                <table className="data laps-table" aria-label={t('Laps')}>
+                  <thead><tr><th>{t('Lap')}</th><th className="num">km</th><th className="num">{t('Time')}</th><th>{t('Pace')}</th></tr></thead>
                   <tbody>
                     {run.laps.map((l, i) => {
                       const v = l.duration ? l.distance / l.duration : 0;
@@ -441,20 +452,20 @@ function RunPage() {
       {stats && (
         <div className="card range-stats">
           <div className="range-head">
-            <h3>{stats.what}</h3>
+            <h3>{t(stats.what)}</h3>
             <span className="muted tnum range-span">{clock(stats.from)}–{clock(stats.to)}</span>
             {selection && stats.decoupling !== null && (
-              <span className="chip tnum decoupling" title="Decoupling of pace from heart rate: the efficiency (speed per heartbeat) of the selection's first half against its second; above 5 % the heart rate drifted up against the pace">
-                Pa:HR {stats.decoupling >= 0 ? '+' : '−'}{Math.abs(stats.decoupling).toFixed(1)} %
+              <span className="chip tnum decoupling" title={t("Decoupling of pace from heart rate: the efficiency (speed per heartbeat) of the selection's first half against its second; above 5 % the heart rate drifted up against the pace")}>
+                {t('Pa:HR {value} %', { value: `${stats.decoupling >= 0 ? '+' : '−'}${number(Math.abs(stats.decoupling), 1)}` })}
               </span>
             )}
             <span className="spacer" />
             {selection && (
-              <Link className="btn sm primary" title="Compare this part with the efforts like it in your other runs: the same route, or the same distance, terrain and pace" href={`/compare?similar=${encodeURIComponent(`${id}~${selection.from}~${selection.to}`)}`}>
-                Compare similar
+              <Link className="btn sm primary" title={t('Compare this part with the efforts like it in your other runs: the same route, or the same distance, terrain and pace')} href={`/compare?similar=${encodeURIComponent(`${id}~${selection.from}~${selection.to}`)}`}>
+                {t('Compare similar')}
               </Link>
             )}
-            {!selection && <span className="muted small">Select a part of the run on the chart, the map or a lap to see its statistics.</span>}
+            {!selection && <span className="muted small">{t('Select a part of the run on the chart, the map or a lap to see its statistics.')}</span>}
           </div>
           <div className="range-body">
           <div className="range-side">
@@ -464,14 +475,14 @@ function RunPage() {
           </div>
           {shownStats.length ? (
             // The table scrolls sideways on a narrow screen: the region takes the focus, so the keyboard can scroll it.
-            <div className="table-scroll" tabIndex={0} role="region" aria-label="Statistics of the part shown">
-            <table className="data stats-grid" aria-label="Statistics">
+            <div className="table-scroll" tabIndex={0} role="region" aria-label={t('Statistics of the part shown')}>
+            <table className="data stats-grid" aria-label={t('Statistics')}>
               <thead>
                 <tr>
-                  <th scope="col">Metric</th>
-                  <th scope="col" className="num">Min</th><th scope="col" className="num">Avg</th><th scope="col" className="num">Max</th>
-                  {selection && <th scope="col" className="num" title="The least-squares change of the metric per 10 minutes over the selection">Trend /10 min</th>}
-                  {zoneBars.length > 0 && <th scope="col" title="The share of the moving time in each zone (Settings)">Zones</th>}
+                  <th scope="col">{t('Metric')}</th>
+                  <th scope="col" className="num">{t('Min')}</th><th scope="col" className="num">{t('Avg')}</th><th scope="col" className="num">{t('Max')}</th>
+                  {selection && <th scope="col" className="num" title={t('The least-squares change of the metric per 10 minutes over the selection')}>{t('Trend /10 min')}</th>}
+                  {zoneBars.length > 0 && <th scope="col" title={t('The share of the moving time in each zone (Settings)')}>{t('Zones')}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -489,7 +500,7 @@ function RunPage() {
                       const zb = zoneBars.find((z) => z.line.key === line.key);
                       if (!zb) return <span className="muted">–</span>;
                       return (
-                        <div className="zone-bar" role="img" aria-label={`${line.title} time in zones: ${zb.shares.map((p, i) => `Z${i + 1} ${Math.round(p * 100)} %`).join(', ')}`}>
+                        <div className="zone-bar" role="img" aria-label={t('{metric} time in zones: {shares}', { metric: line.title, shares: zb.shares.map((p, i) => `Z${i + 1} ${Math.round(p * 100)} %`).join(', ') })}>
                           {zb.shares.map((p, i) => p > 0 && (
                             <span key={i} className="zone-share" style={{ width: `${p * 100}%`, background: zoneTint(i, zb.shares.length, 35) }} title={`Z${i + 1} · ${Math.round(p * 100)} %`}>
                               {p >= 0.18 ? `Z${i + 1} ${Math.round(p * 100)}%` : ''}
@@ -504,7 +515,7 @@ function RunPage() {
             </table>
             </div>
           ) : (
-            <div className="muted small range-foot">Turn a metric on above the chart to see its statistics here.</div>
+            <div className="muted small range-foot">{t('Turn a metric on above the chart to see its statistics here.')}</div>
           )}
           </div>
         </div>

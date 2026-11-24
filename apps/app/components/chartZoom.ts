@@ -3,6 +3,7 @@
  * time drawn kept inside the run, zoomed around a time that keeps its place, moved, and the
  * round ticks of a time axis and of a pace scale.
  */
+import { number } from '@/lib/i18n';
 
 /** The range of time drawn, s since the start of the run. */
 export type Domain = [number, number];
@@ -100,7 +101,7 @@ export function kmTicks(a: number, b: number, count = 6): number[] {
 }
 
 /** A distance as a tick: 2 km, 2.5 km, 2.25 km. */
-export const kmLabel = (m: number) => `${Number((m / 1000).toFixed(2))} km`;
+export const kmLabel = (m: number) => `${number(Number((m / 1000).toFixed(2)))} km`;
 
 /**
  * The zoom factor of one wheel event: above 1 out, below 1 in. It grows with the square root of

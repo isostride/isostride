@@ -6,9 +6,11 @@ import { newGearId, readGear, renameTag, writeGear, type Gear, type GearType, re
 import { readDefinitions, renameInDefinitions, writeDefinitions } from '@/lib/blocks';
 import { PATHS, readJson } from '@/lib/fs';
 import { EditButton, EditDialog, useConfirm } from '@/components';
+import { msg, number, t, tn } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 
-const TYPE_LABEL: Record<GearType, string> = { shoes: 'Shoes', hrSensor: 'Heart rate sensor' };
+/** The kinds of gear, as keys shown with t(). */
+const TYPE_LABEL: Record<GearType, string> = { shoes: msg('Shoes'), hrSensor: msg('Heart rate sensor') };
 
 /**
  * The Gears and Tags tabs of Settings (requirement "Settings in tabs"): the register of shoes and
@@ -42,7 +44,7 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
     await runInWorker('context', handle);
     const after = await readJson<RunsIndex>(folder, PATHS.runsIndex);
     const changed = (after?.runs ?? []).filter((r) => before.get(r.id) !== `${r.shoesId}|${r.hrSensorId}`).length;
-    setSaved(`${what} · ${changed} run${changed === 1 ? '' : 's'} reassigned`);
+    setSaved(`${what} · ${tn(changed, '{n} run reassigned', '{n} runs reassigned')}`);
     await load();
   };
 
@@ -69,7 +71,7 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
 
   const add = () => {
     if (!draft.name || !draft.from) return;
-    saveGear([...gear, { ...draft, id: newGearId() }], `Added ${draft.name}`);
+    saveGear([...gear, { ...draft, id: newGearId() }], t('Added {name}', { name: draft.name }));
     setDraft({ name: '', type: draft.type, from: '', to: null });
   };
   /** The rules of the segments that name what is renamed follow it. */
@@ -86,7 +88,7 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
     if (!g || !name || !editing.from) return;
     setEditing(null);
     if (name !== g.name) await renameInRules(g.type === 'shoes' ? 'shoes' : 'heartRateSources', g.name, name);
-    await saveGear(gear.map((x) => (x.id === g.id ? { ...editing, name } : x)), name !== g.name ? `Renamed ${g.name} to ${name}` : `Updated ${g.name}`);
+    await saveGear(gear.map((x) => (x.id === g.id ? { ...editing, name } : x)), name !== g.name ? t('Renamed {from} to {to}', { from: g.name, to: name }) : t('Updated {name}', { name: g.name }));
   };
   const renameTagTo = async (kind: TagKind, from: string, to: string) => {
     if (!tags) return;
@@ -94,21 +96,22 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
     if (next === tags) return;
     await renameInRules(kind, from, to.trim());
     await saveTags(next);
-    setSaved(`Renamed ${from} to ${to.trim()}`);
+    setSaved(t('Renamed {from} to {to}', { from, to: to.trim() }));
   };
   const remove = async (g: Gear) => {
     const n = counts.get(g.id) ?? 0;
-    if (!(await confirm({ title: 'Delete this gear?', message: `“${g.name}” goes from your gear; its ${n} run${n === 1 ? '' : 's'} no longer carry it.`, confirm: 'Delete', danger: true }))) return;
+    if (!(await confirm({ title: t('Delete this gear?'), message: tn(n, '“{name}” goes from your gear; its {n} run no longer carry it.', '“{name}” goes from your gear; its {n} runs no longer carry it.', { name: g.name }), confirm: t('Delete'), danger: true }))) return;
     setEditing(null);
-    await saveGear(gear.filter((x) => x.id !== g.id), `Deleted ${g.name}`);
+    await saveGear(gear.filter((x) => x.id !== g.id), t('Deleted {name}', { name: g.name }));
   };
   const removeTag = async (kind: TagKind, v: string) => {
     if (!tags) return;
     const n = counts.get(v) ?? 0;
-    const list = kind === 'workoutTypes' ? 'workout types' : 'technique cues';
-    if (!(await confirm({ title: 'Delete this tag?', message: `“${v}” goes from the ${list} to choose from. ${n ? `The ${n} run${n === 1 ? '' : 's'} tagged with it keep it until you change them.` : 'No run is tagged with it.'}`, confirm: 'Delete', danger: true }))) return;
+    const goes = kind === 'workoutTypes' ? t('“{name}” goes from the workout types to choose from.', { name: v }) : t('“{name}” goes from the technique cues to choose from.', { name: v });
+    const kept = n ? tn(n, 'The {n} run tagged with it keep it until you change them.', 'The {n} runs tagged with it keep it until you change them.') : t('No run is tagged with it.');
+    if (!(await confirm({ title: t('Delete this tag?'), message: `${goes} ${kept}`, confirm: t('Delete'), danger: true }))) return;
     await saveTags({ ...tags, dictionary: { ...tags.dictionary, [kind]: tags.dictionary[kind].filter((x) => x !== v) } });
-    setSaved(`Deleted ${v}`);
+    setSaved(t('Deleted {name}', { name: v }));
   };
 
   return (
@@ -117,63 +120,63 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
       {saved && <div className="banner">✓ {saved}</div>}
 
       {/* Drawn once the runs are read: the time line of the gear spans their dates, not a guess first (layout shift 0). */}
-      {part === 'gear' && index !== undefined && <div className="card gear-card" role="region" aria-label="Gears">
-        <h3 className="gear-title">Gears</h3>
+      {part === 'gear' && index !== undefined && <div className="card gear-card" role="region" aria-label={t('Gears')}>
+        <h3 className="gear-title">{t('Gears')}</h3>
         <div className="gear-row gear-span muted">
           <span />
           <div><span>{first}</span><span>{last}</span></div>
         </div>
-        {gear.length === 0 && <div className="muted" style={{ padding: '8px 0 16px' }}>No gear yet. Add your shoes and heart rate sensors with the dates you used them; runs get them by date.</div>}
+        {gear.length === 0 && <div className="muted" style={{ padding: '8px 0 16px' }}>{t('No gear yet. Add your shoes and heart rate sensors with the dates you used them; runs get them by date.')}</div>}
         {gear.map((g) => (
           <div key={g.id} className="gear-row">
             <div>
               {/* The name as text, wrapped when long ("nazwa sie nie miesci"). */}
               <div className="gear-name-row"><span aria-hidden="true">{g.type === 'shoes' ? '👟' : '♥'}</span><span className="gear-name-text">{g.name}</span></div>
-              <div className="muted" style={{ fontSize: 12 }}>{counts.get(g.id) ?? 0} runs</div>
+              <div className="muted" style={{ fontSize: 12 }}>{tn(counts.get(g.id) ?? 0, '{n} run', '{n} runs')}</div>
             </div>
             <div>
               <div style={{ position: 'relative', height: 14, background: 'var(--surface-2)', borderRadius: 7 }}>
                 <div style={{ position: 'absolute', left: `${pos(g.from)}%`, right: `${100 - pos(g.to ?? last)}%`, top: 0, bottom: 0, borderRadius: 7, background: g.type === 'shoes' ? 'var(--series-1)' : 'var(--err)', opacity: 0.85 }} />
               </div>
               <div className="gear-dates">
-                <span className="muted small">from {g.from}{g.to ? ` to ${g.to}` : ''}</span>
-                {g.to === null && <span className="chip">in use</span>}
+                <span className="muted small">{g.to ? t('from {from} to {to}', { from: g.from, to: g.to }) : t('from {from}', { from: g.from })}</span>
+                {g.to === null && <span className="chip">{t('in use')}</span>}
                 <span style={{ flex: 1 }} />
                 <EditButton name={g.name} onClick={() => setEditing({ ...g })} />
               </div>
             </div>
           </div>
         ))}
-        <form className="gear-add" aria-label="Add gear" onSubmit={(e) => { e.preventDefault(); add(); }}>
-          <input className="input" aria-label="Gear name" placeholder="Name, e.g. Shoes A" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-          <select className="select" aria-label="Gear type" value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as GearType })}>
-            {(Object.keys(TYPE_LABEL) as GearType[]).map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
+        <form className="gear-add" aria-label={t('Add gear')} onSubmit={(e) => { e.preventDefault(); add(); }}>
+          <input className="input" aria-label={t('Gear name')} placeholder={t('Name, e.g. Shoes A')} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+          <select className="select" aria-label={t('Gear type')} value={draft.type} onChange={(e) => setDraft({ ...draft, type: e.target.value as GearType })}>
+            {(Object.keys(TYPE_LABEL) as GearType[]).map((type) => <option key={type} value={type}>{t(TYPE_LABEL[type])}</option>)}
           </select>
-          <label className="muted">from <input type="date" value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} /></label>
-          <label className="muted">to <input type="date" value={draft.to ?? ''} onChange={(e) => setDraft({ ...draft, to: e.target.value || null })} /></label>
-          <button type="submit" className="btn primary" disabled={!draft.name || !draft.from}>Add gear</button>
+          <label className="muted">{t('from')} <input type="date" value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} /></label>
+          <label className="muted">{t('to')} <input type="date" value={draft.to ?? ''} onChange={(e) => setDraft({ ...draft, to: e.target.value || null })} /></label>
+          <button type="submit" className="btn primary" disabled={!draft.name || !draft.from}>{t('Add gear')}</button>
         </form>
       </div>}
       {part === 'gear' && editing && (() => {
         const g = gear.find((x) => x.id === editing.id)!;
         return (
-          <EditDialog kind="gear" kindLabel={TYPE_LABEL[g.type]} title={g.name} onSave={() => void saveEdit()} onCancel={() => setEditing(null)} onDelete={() => void remove(g)} canSave={!!editing.name.trim() && !!editing.from}>
-            <label className="edit-field">Name<input className="input" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></label>
-            <span className="edit-hint">{counts.get(g.id) ?? 0} runs by its dates. Runs get the gear in use on their day.</span>
+          <EditDialog kind="gear" kindLabel={t(TYPE_LABEL[g.type])} title={g.name} onSave={() => void saveEdit()} onCancel={() => setEditing(null)} onDelete={() => void remove(g)} canSave={!!editing.name.trim() && !!editing.from}>
+            <label className="edit-field">{t('Name')}<input className="input" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></label>
+            <span className="edit-hint">{tn(counts.get(g.id) ?? 0, '{n} run by its dates. Runs get the gear in use on their day.', '{n} runs by its dates. Runs get the gear in use on their day.')}</span>
             <div className="edit-row">
-              <label className="edit-field">In use from<input className="input" type="date" value={editing.from} onChange={(e) => setEditing({ ...editing, from: e.target.value })} /></label>
-              <label className="edit-field">To (empty: in use)<input className="input" type="date" value={editing.to ?? ''} onChange={(e) => setEditing({ ...editing, to: e.target.value || null })} /></label>
+              <label className="edit-field">{t('In use from')}<input className="input" type="date" value={editing.from} onChange={(e) => setEditing({ ...editing, from: e.target.value })} /></label>
+              <label className="edit-field">{t('To (empty: in use)')}<input className="input" type="date" value={editing.to ?? ''} onChange={(e) => setEditing({ ...editing, to: e.target.value || null })} /></label>
             </div>
           </EditDialog>
         );
       })()}
 
       {part === 'tags' && tags && (
-        <div className="card gear-card" role="region" aria-label="Tags">
-          <h3 className="gear-title">Tags</h3>
-          <TagList label="Workout type" values={tags.dictionary.workoutTypes} counts={counts}
+        <div className="card gear-card" role="region" aria-label={t('Tags')}>
+          <h3 className="gear-title">{t('Tags')}</h3>
+          <TagList label={t('Workout type')} newLabel={t('New workout type')} values={tags.dictionary.workoutTypes} counts={counts}
             onAdd={(v) => saveTags({ ...tags, dictionary: { ...tags.dictionary, workoutTypes: [...tags.dictionary.workoutTypes, v] } })} onRename={(from, to) => renameTagTo('workoutTypes', from, to)} onDelete={(v) => void removeTag('workoutTypes', v)} />
-          <TagList label="Technique cue" values={tags.dictionary.techniqueCues} counts={counts}
+          <TagList label={t('Technique cue')} newLabel={t('New technique cue')} values={tags.dictionary.techniqueCues} counts={counts}
             onAdd={(v) => saveTags({ ...tags, dictionary: { ...tags.dictionary, techniqueCues: [...tags.dictionary.techniqueCues, v] } })} onRename={(from, to) => renameTagTo('techniqueCues', from, to)} onDelete={(v) => void removeTag('techniqueCues', v)} />
         </div>
       )}
@@ -186,7 +189,7 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
  * Enter, left with Cancel or Esc, the tag deleted with Delete after asking (deleting is in the editor,
  * as for every list: "w samym edit jest usuwanie"); a name added with Add or Enter.
  */
-function TagList({ label, values, counts, onAdd, onRename, onDelete }: { label: string; values: string[]; counts: Map<string, number>; onAdd: (v: string) => void; onRename: (from: string, to: string) => void; onDelete: (v: string) => void }) {
+function TagList({ label, newLabel, values, counts, onAdd, onRename, onDelete }: { label: string; newLabel: string; values: string[]; counts: Map<string, number>; onAdd: (v: string) => void; onRename: (from: string, to: string) => void; onDelete: (v: string) => void }) {
   const [text, setText] = useState('');
   /** the tag being renamed, and its new name as typed */
   const [editing, setEditing] = useState<{ from: string; to: string } | null>(null);
@@ -199,20 +202,20 @@ function TagList({ label, values, counts, onAdd, onRename, onDelete }: { label: 
       <span className="tag-label muted">{label}</span>
       {editing && (
         <EditDialog kind="tag" kindLabel={label} title={editing.from} onSave={save} onCancel={() => setEditing(null)} onDelete={() => { const v = editing.from; setEditing(null); onDelete(v); }} canSave={!!editing.to.trim() && !taken(editing.to)}>
-          <label className="edit-field">Name<input className="input" value={editing.to} aria-invalid={taken(editing.to)} onChange={(e) => setEditing({ ...editing, to: e.target.value })} /></label>
-          {taken(editing.to) ? <span className="edit-hint zone-err">{label} has “{editing.to.trim()}” already.</span>
-            : <span className="edit-hint">Runs tagged with it, and segments whose rules name it, take the new name.</span>}
+          <label className="edit-field">{t('Name')}<input className="input" value={editing.to} aria-invalid={taken(editing.to)} onChange={(e) => setEditing({ ...editing, to: e.target.value })} /></label>
+          {taken(editing.to) ? <span className="edit-hint zone-err">{t('{list} has “{name}” already.', { list: label, name: editing.to.trim() })}</span>
+            : <span className="edit-hint">{t('Runs tagged with it, and segments whose rules name it, take the new name.')}</span>}
         </EditDialog>
       )}
       {values.map((v) => (
         <span key={v} className="chip">
-          {v} · {counts.get(v) ?? 0}{' '}
+          {v} · {number(counts.get(v) ?? 0)}{' '}
           <EditButton small name={v} onClick={() => setEditing({ from: v, to: v })} />
         </span>
       ))}
-      <form className="tag-new" aria-label={`Add to ${label}`} onSubmit={(e) => { e.preventDefault(); add(); }}>
-        <input aria-label={`New ${label.toLowerCase()}`} placeholder="New tag" value={text} onChange={(e) => setText(e.target.value)} className="tag-add" />
-        <button type="submit" className="btn sm" disabled={!adding}>Add</button>
+      <form className="tag-new" aria-label={t('Add to {list}', { list: label })} onSubmit={(e) => { e.preventDefault(); add(); }}>
+        <input aria-label={newLabel} placeholder={t('New tag')} value={text} onChange={(e) => setText(e.target.value)} className="tag-add" />
+        <button type="submit" className="btn sm" disabled={!adding}>{t('Add')}</button>
       </form>
     </div>
   );

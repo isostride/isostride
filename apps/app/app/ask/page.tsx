@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect } from 'react';
+import { t } from '@/lib/i18n';
 import { STATS, encodeRule, ruleOf, type RuleShape, type Stat } from '@/lib/blocks';
 
 export default function AskRedirectWrapper() {
@@ -22,5 +23,5 @@ function AskRedirect() {
     if (shape.type === 'run' && p.get('metric')) q.set('m', p.get('metric')!);
     router.replace(`/compare?${q.toString()}`);
   }, [p, router]);
-  return <div className="page muted">Opening in Compare…</div>;
+  return <div className="page muted">{t('Opening in Compare…')}</div>;
 }

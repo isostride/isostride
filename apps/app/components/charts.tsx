@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState, type PointerEvent } from '
 import { MIN_SPAN, wheelFactor } from './chartZoom';
 import { fitCamera, panCamera, project, visibleRange, zoomCamera, type Camera, type RoutePoint } from './mapCamera';
 import { useMapTiles } from '@/lib/client';
+import { t } from '@/lib/i18n';
 
 type Band = { from: number; to: number };
 
@@ -126,7 +127,7 @@ const pathOf = (cam: Camera, pts: RoutePoint[], size = MAP_SIZE) => pts.map((p, 
  * halo under the line, the start as a ring, the end as a dot, the cursor as a marker. The wheel
  * zooms around the pointer and a drag pans; the range of time in view goes to the chart.
  */
-export function RouteMap({ lat, lon, t, cursor, selection = null, onSelect, view = null, follow = true, onView, onFit, camera = null, onCamera, size = MAP_SIZE, colorAt = null, hint, controls = false, onExpand, valueAt = null }: RouteMapProps) {
+export function RouteMap({ lat, lon, t: times, cursor, selection = null, onSelect, view = null, follow = true, onView, onFit, camera = null, onCamera, size = MAP_SIZE, colorAt = null, hint, controls = false, onExpand, valueAt = null }: RouteMapProps) {
   /** the point of the route under the pointer, with its value: [x, y] in the map, and where the tooltip goes in the frame */
   const [probe, setProbe] = useState<{ x: number; y: number; t: number; left: number; top: number } | null>(null);
   const MAP = size;
@@ -137,9 +138,9 @@ export function RouteMap({ lat, lon, t, cursor, selection = null, onSelect, view
   const [tiles] = useMapTiles();
   const pts = useMemo(() => {
     const out: RoutePoint[] = [];
-    for (let i = 0; i < lat.length; i++) if (lat[i] !== null && lon[i] !== null) out.push([lat[i]!, lon[i]!, t[i]]);
+    for (let i = 0; i < lat.length; i++) if (lat[i] !== null && lon[i] !== null) out.push([lat[i]!, lon[i]!, times[i]]);
     return out;
-  }, [lat, lon, t]);
+  }, [lat, lon, times]);
   // The points the map fits: those run in the range shown, or the whole route.
   const inView = useMemo(() => (view ? pts.filter((p) => p[2] >= view.from && p[2] <= view.to) : []), [pts, view?.from, view?.to]);
   // Following the chart, the camera fits the range shown, at once; moved by hand, it is the runner's.
@@ -182,7 +183,7 @@ export function RouteMap({ lat, lon, t, cursor, selection = null, onSelect, view
     return () => el.removeEventListener('wheel', wheel);
   }, [pts.length]);
 
-  if (!pts.length || !cam) return <div className="card empty">No GPS in this run.</div>;
+  if (!pts.length || !cam) return <div className="card empty">{t('No GPS in this run.')}</div>;
   const proj = (la: number, lo: number) => project(cam, MAP, la, lo);
   const d = pathOf(cam, pts, MAP);
   const dView = inView.length >= 2 && inView.length < pts.length ? pathOf(cam, inView, MAP) : '';
@@ -277,7 +278,7 @@ export function RouteMap({ lat, lon, t, cursor, selection = null, onSelect, view
   const route = tiles ? 'var(--accent)' : 'var(--series-1)';
   return (
     <div ref={wrapRef} className="card map">
-      <svg ref={svgRef} viewBox={`0 0 ${MAP} ${MAP}`} width="100%" role="img" aria-label="Route" data-zoom={cam.z.toFixed(2)} onPointerDown={down} onPointerMove={hover} onPointerLeave={() => setProbe(null)} style={{ cursor: onSelect ? 'crosshair' : 'grab', display: 'block', userSelect: 'none', touchAction: controls ? 'none' : undefined }}>
+      <svg ref={svgRef} viewBox={`0 0 ${MAP} ${MAP}`} width="100%" role="img" aria-label={t('Route')} data-zoom={cam.z.toFixed(2)} onPointerDown={down} onPointerMove={hover} onPointerLeave={() => setProbe(null)} style={{ cursor: onSelect ? 'crosshair' : 'grab', display: 'block', userSelect: 'none', touchAction: controls ? 'none' : undefined }}>
         <defs>
           <pattern id={grid} width="16" height="16" patternUnits="userSpaceOnUse">
             <circle cx="1" cy="1" r="1" fill="var(--axis)" />
@@ -314,25 +315,25 @@ export function RouteMap({ lat, lon, t, cursor, selection = null, onSelect, view
       {probe && probed && (
         <div className="tooltip route-tip" role="status" style={{ left: probe.left > 200 ? probe.left - 14 : probe.left + 14, top: probe.top - 10, transform: probe.left > 200 ? 'translate(-100%, -100%)' : 'translate(0, -100%)' }}>
           <div className="tip-value">{probed}</div>
-          <div className="muted">at {clockOf(probe.t)}</div>
+          <div className="muted">{t('at {time}', { time: clockOf(probe.t) })}</div>
         </div>
       )}
       {onExpand && (
-        <button type="button" className="btn sm map-expand" onClick={onExpand} aria-label="Expand map" title="The map made large, its route coloured by a metric">
+        <button type="button" className="btn sm map-expand" onClick={onExpand} aria-label={t('Expand map')} title={t('The map made large, its route coloured by a metric')}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" /></svg>
-          Expand
+          {t('Expand')}
         </button>
       )}
-      <span className="map-hint" aria-live="polite">{onSelect && first !== null ? 'Now click the end of the segment' : hint ?? (onSelect ? 'Scroll to zoom · drag to move · click two points to select' : 'Scroll to zoom · drag to move')}</span>
+      <span className="map-hint" aria-live="polite">{onSelect && first !== null ? t('Now click the end of the segment') : hint ?? (onSelect ? t('Scroll to zoom · drag to move · click two points to select') : t('Scroll to zoom · drag to move'))}</span>
       {controls && (
-        <div className="map-zoom" role="group" aria-label="Zoom of the map">
-          <button type="button" className="btn sm icon" aria-label="Zoom in" onClick={() => zoomBy(0.5)}>+</button>
-          <button type="button" className="btn sm icon" aria-label="Zoom out" onClick={() => zoomBy(2)}>−</button>
-          <button type="button" className="btn sm" onClick={() => { setManual(null); onCamera?.(null); }} disabled={!manual} title="The whole route in view">Fit</button>
+        <div className="map-zoom" role="group" aria-label={t('Zoom of the map')}>
+          <button type="button" className="btn sm icon" aria-label={t('Zoom in')} onClick={() => zoomBy(0.5)}>+</button>
+          <button type="button" className="btn sm icon" aria-label={t('Zoom out')} onClick={() => zoomBy(2)}>−</button>
+          <button type="button" className="btn sm" onClick={() => { setManual(null); onCamera?.(null); }} disabled={!manual} title={t('The whole route in view')}>{t('Fit')}</button>
         </div>
       )}
-      {!follow && manual && onFit && <button type="button" className="map-fit btn sm" onClick={() => { setManual(null); onCamera?.(null); onFit(); }} title="Fit the map to the range the chart shows">Fit route</button>}
-      {tiles && <a className="map-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>}
+      {!follow && manual && onFit && <button type="button" className="map-fit btn sm" onClick={() => { setManual(null); onCamera?.(null); onFit(); }} title={t('Fit the map to the range the chart shows')}>{t('Fit route')}</button>}
+      {tiles && <a className="map-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">{t('© OpenStreetMap contributors')}</a>}
     </div>
   );
 }

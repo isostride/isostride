@@ -1,20 +1,27 @@
 import { mean, sd, linearFit } from '@/lib/stats';
-import type { BlockInstance, BlockMetric } from '@/lib/blocks';
+import { reasonText, type BlockInstance, type BlockMetric } from '@/lib/blocks';
+import { msg, t } from '@/lib/i18n';
 import { isPace, metricInfo, secondsPerKm, type MetricInfo } from '@/lib/kernel';
 
-/** A metric's name, from the catalog of metrics (ADR "Metrics from the file"). */
-export const metricLabel = (metric: BlockMetric, catalog?: readonly MetricInfo[] | null): string => metricInfo(metric, catalog).name;
+/** A metric's name, from the catalog of metrics (ADR "Metrics from the file"), in the language in use. */
+export const metricLabel = (metric: BlockMetric, catalog?: readonly MetricInfo[] | null): string => t(metricInfo(metric, catalog).name);
 
 
-/** Context fields a trend can be filtered by and an A/B comparison split by. */
+/** Context fields a trend can be filtered by and an A/B comparison split by (labels shown through t()). */
 export const CONTEXT_FIELDS = {
-  shoes: { label: 'Shoes', get: (i: BlockInstance) => i.context.run.shoes },
-  heartRateSource: { label: 'Heart rate sensor', get: (i: BlockInstance) => i.context.run.heartRateSource },
-  device: { label: 'Watch', get: (i: BlockInstance) => i.context.run.device },
-  workoutType: { label: 'Workout type', get: (i: BlockInstance) => i.context.run.workoutType },
-  techniqueCue: { label: 'Technique cue', get: (i: BlockInstance) => i.context.run.techniqueCue },
+  shoes: { label: msg('Shoes'), get: (i: BlockInstance) => i.context.run.shoes },
+  heartRateSource: { label: msg('Heart rate sensor'), get: (i: BlockInstance) => i.context.run.heartRateSource },
+  device: { label: msg('Watch'), get: (i: BlockInstance) => i.context.run.device },
+  workoutType: { label: msg('Workout type'), get: (i: BlockInstance) => i.context.run.workoutType },
+  techniqueCue: { label: msg('Technique cue'), get: (i: BlockInstance) => i.context.run.techniqueCue },
 } as const;
 export type ContextField = keyof typeof CONTEXT_FIELDS;
+
+/** A context value as shown: the watch's own heart rate sensor, "wrist (COROS PACE 4)", in the language in use; any other (a name) as it is. */
+export function contextValue(v: string): string {
+  const wrist = /^wrist \((.*)\)$/.exec(v);
+  return wrist ? t('wrist ({device})', { device: wrist[1] }) : v;
+}
 export type ContextFilter = Partial<Record<ContextField, string | null>>;
 
 /** The value an instance has for a metric: pace in s/km for speed, else the mean. */
@@ -51,15 +58,15 @@ export function selectInstances(all: BlockInstance[], definitionId: string, metr
   const mine = all.filter((i) => i.definitionId === definitionId).sort((a, b) => a.runStart.localeCompare(b.runStart) || a.start - b.start);
   for (const i of mine) {
     const reasons = [...i.reasons];
-    if (valueOf(i, metric) === null) reasons.push(`${metricLabel(metric).toLowerCase()}: not recorded`);
+    if (valueOf(i, metric) === null) reasons.push(t('{metric}: not recorded', { metric: metricLabel(metric).toLowerCase() }));
     for (const [field, want] of Object.entries(filter) as [ContextField, string | null | undefined][]) {
       if (want === undefined) continue;
       const have = CONTEXT_FIELDS[field].get(i);
-      if (have !== want) reasons.push(`filtered out: ${CONTEXT_FIELDS[field].label.toLowerCase()} is ${have ?? 'not set'}`);
+      if (have !== want) reasons.push(t('filtered out: {field} is {value}', { field: t(CONTEXT_FIELDS[field].label).toLowerCase(), value: have ?? t('not set') }));
     }
     // Nesting: one fragment of a run enters a result once.
     const overlap = included.find((o) => o.runId === i.runId && i.start < o.end && o.start < i.end);
-    if (!reasons.length && overlap) reasons.push(`overlaps an included effort of the same run (min ${Math.floor(overlap.start / 60)}–${Math.ceil(overlap.end / 60)})`);
+    if (!reasons.length && overlap) reasons.push(t('overlaps an included effort of the same run (min {from}–{to})', { from: Math.floor(overlap.start / 60), to: Math.ceil(overlap.end / 60) }));
     if (reasons.length) rejected.push({ instance: i, reasons });
     else included.push(i);
   }
@@ -100,9 +107,10 @@ export function firstUsableMetric(all: BlockInstance[], definitionId: string, or
   return order.find((m) => n.get(m)! >= enough) ?? order.find((m) => n.get(m)! > 0) ?? order[0];
 }
 
-/** The most common reasons instances were left out, e.g. "pace (12)"; the condition's name only. */
+/** The most common reasons instances were left out, e.g. "pace (12)"; the condition's name only, in the language in use. */
 export function reasonSummary(rejected: Rejected[], top = 3): string[] {
   const count = new Map<string, number>();
-  for (const r of rejected) for (const reason of new Set(r.reasons.map((x) => x.split(':')[0]))) count.set(reason, (count.get(reason) ?? 0) + 1);
+  // The matching's reasons (kept in English) read in the language in use, then named by their condition.
+  for (const r of rejected) for (const reason of new Set(r.reasons.map((x) => reasonText(x).split(':')[0]))) count.set(reason, (count.get(reason) ?? 0) + 1);
   return [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, top).map(([k, n]) => `${k} (${n})`);
 }

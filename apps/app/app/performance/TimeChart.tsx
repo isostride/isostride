@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type MouseEvent } from 'react';
+import { t } from '@/lib/i18n';
 import { Key, TipRow, WashGradient, columnPath, coverTicks, dayLabel, monthLabel, monthTicks, tickDecimals, useSvgId, useWidth } from '@/components';
 
 /** One series of a time chart: bars (stacked by `stack`), a line, or dots, its values by point. */
@@ -53,7 +54,7 @@ export function TimeChart({ label, times, series, format, tick = format, height 
   const [box, width] = useWidth();
   const [hover, setHover] = useState<number | null>(null);
   const washId = useSvgId('tc-wash');
-  if (!times.length) return <div ref={box} className="muted small" style={{ padding: 12 }}>No data yet.</div>;
+  if (!times.length) return <div ref={box} className="muted small" style={{ padding: 12 }}>{t('No data yet.')}</div>;
   const t0 = Math.min(...times);
   const t1 = Math.max(...times);
   const bars = series.filter((s) => s.kind === 'bar');

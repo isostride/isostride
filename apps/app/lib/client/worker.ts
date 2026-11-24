@@ -2,6 +2,7 @@
 
 import type { BlockDefinition, BlockInstance } from '@/lib/blocks';
 import type { CurvePoint, CurveSource } from '@/lib/curve';
+import { t } from '@/lib/i18n';
 import type { WorkerEvent, WorkerJob, WorkerRequest } from '@/workers';
 
 export type DoneEvent = Extract<WorkerEvent, { type: 'done' }>;
@@ -75,34 +76,34 @@ function start(request: WorkerRequest, onProgress?: Progress, signal?: AbortSign
 /** Runs one job in a fresh Processing Worker; resolves when it is done. */
 export async function runInWorker(job: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures'>, handle: FileSystemDirectoryHandle, onProgress?: Progress): Promise<DoneEvent> {
   const m = await start({ type: job, handle }, onProgress);
-  if (m.type !== 'done') throw new Error(`unexpected ${m.type}`);
+  if (m.type !== 'done') throw new Error(t('unexpected {type}', { type: m.type }));
   return m;
 }
 
 /** The instances of blocks that are not kept (being built, or living in a link), computed now in the Processing Worker. */
 export async function instancesInWorker(defs: BlockDefinition[], handle: FileSystemDirectoryHandle, onProgress?: Progress, signal?: AbortSignal): Promise<Record<string, BlockInstance[]>> {
   const m = await start({ type: 'instances', handle, defs }, onProgress, signal);
-  if (m.type !== 'instances') throw new Error(`unexpected ${m.type}`);
+  if (m.type !== 'instances') throw new Error(t('unexpected {type}', { type: m.type }));
   return m.instances;
 }
 
 /** The pace curves of the stretches given, computed in the Processing Worker (it reads each run named once). */
 export async function curvesInWorker(sources: CurveSource[], handle: FileSystemDirectoryHandle, onProgress?: Progress, signal?: AbortSignal): Promise<Record<string, CurvePoint[]>> {
   const m = await start({ type: 'curve', handle, sources }, onProgress, signal);
-  if (m.type !== 'curves') throw new Error(`unexpected ${m.type}`);
+  if (m.type !== 'curves') throw new Error(t('unexpected {type}', { type: m.type }));
   return m.curves;
 }
 
 /** The stretches of other runs like a selected one, found in the Processing Worker (requirement "Similar stretches of a selection"). */
 export async function similarInWorker(query: SimilarQuery, handle: FileSystemDirectoryHandle, onProgress?: Progress, signal?: AbortSignal): Promise<SimilarResult> {
   const m = await start({ type: 'similar', handle, query }, onProgress, signal);
-  if (m.type !== 'similar') throw new Error(`unexpected ${m.type}`);
+  if (m.type !== 'similar') throw new Error(t('unexpected {type}', { type: m.type }));
   return m.result;
 }
 
 /** The curves by distance of stretches of runs (efforts), keyed `${runId}:${from}`, from the Processing Worker. */
 export async function figuresInWorker(stretches: SimilarQuery[], handle: FileSystemDirectoryHandle, signal?: AbortSignal): Promise<Record<string, EffortFigures>> {
   const m = await start({ type: 'figures', handle, stretches }, undefined, signal);
-  if (m.type !== 'figures') throw new Error(`unexpected ${m.type}`);
+  if (m.type !== 'figures') throw new Error(t('unexpected {type}', { type: m.type }));
   return m.figures;
 }

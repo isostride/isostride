@@ -1,3 +1,5 @@
+import { dateText, number } from '@/lib/i18n';
+
 /** min:ss per km from m/s */
 export function pace(speed: number | null | undefined): string {
   if (!speed || speed <= 0) return '–';
@@ -14,14 +16,15 @@ export function duration(seconds: number): string {
   return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
 }
 
+/** Kilometres with two decimals, in the language in use (5.24, 5,24). */
 export function km(meters: number): string {
-  return (meters / 1000).toFixed(2);
+  return number(meters / 1000, 2);
 }
 
 export function date(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  return dateText(iso, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export function time(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return dateText(iso, { hour: '2-digit', minute: '2-digit' });
 }

@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { InstancePanel, Key, ProfileChart, useMetrics, ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useWidth } from '@/components';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
-import { unitOf, wordsOf, MIN_AB_INSTANCES, abCsv, byField, computeAb, describeAb, firstUsableMetric, meanProfile, type AbResult, instancesCsv, CONTEXT_FIELDS, valueOf, type ContextField } from '@/lib/compare';
+import { unitOf, wordsOf, MIN_AB_INSTANCES, abCsv, byField, computeAb, contextValue, describeAb, firstUsableMetric, hash, meanProfile, type AbResult, instancesCsv, CONTEXT_FIELDS, valueOf, type ContextField } from '@/lib/compare';
+import { dateText, number, t } from '@/lib/i18n';
 
 /** Ground contact time first: the A/B screen's usual question is a change of shoes or technique. */
 
@@ -62,7 +63,8 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
   const [va, vb] = pair && activeField && values[activeField].includes(pair[0]) && values[activeField].includes(pair[1]) ? pair : activeField ? [values[activeField][0], values[activeField][1]] : ['', ''];
 
   const result: AbResult | null = useMemo(
-    () => (activeField ? computeAb(all, defId, metric, byField(activeField, va, vb), [va, vb], {}, corrected) : null),
+    // Named in the language in use; the bootstrap's seed from the values themselves, so a verdict is the same in every language.
+    () => (activeField ? computeAb(all, defId, metric, byField(activeField, va, vb), [contextValue(va), contextValue(vb)], {}, corrected, hash(defId + metric + [va, vb].join('|'))) : null),
     [all, defId, metric, activeField, va, vb, corrected],
   );
 
@@ -74,7 +76,7 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
     URL.revokeObjectURL(a.href);
   };
 
-  if (!item) return <div className="card empty">A/B splits the efforts of a segment in two: add All runs or a segment with <b>+ Add segment or run</b> (a single run has no two groups).</div>;
+  if (!item) return <div className="card empty">{t('A/B splits the efforts of a segment in two: add All runs or a segment with')} <b>{t('+ Add segment or run')}</b> {t('(a single run has no two groups).')}</div>;
 
   const included = result ? [...result.a.points, ...result.b.points].map((p) => p.instance) : [];
   const base = item.label.replace(/[^\w-]+/g, '_');
@@ -85,34 +87,34 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
     <>
       <div className="toolbar">
         {items.length > 1 && (
-          <select className="select small" aria-label="Item to split" value={item.id} onChange={(e) => onChoose(e.target.value)}>
+          <select className="select small" aria-label={t('Item to split')} value={item.id} onChange={(e) => onChoose(e.target.value)}>
             {items.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
           </select>
         )}
-        <div className="metric-picker" role="group" aria-label="Metric">{METRICS.map((x) => <button key={x.key} className={`pill ${metric === x.key ? 'on' : ''}`} aria-pressed={metric === x.key} title={x.name} onClick={() => setMetric(x.key)}>{x.short}</button>)}</div>
+        <div className="metric-picker" role="group" aria-label={t('Metric')}>{METRICS.map((x) => <button key={x.key} className={`pill ${metric === x.key ? 'on' : ''}`} aria-pressed={metric === x.key} title={x.name} onClick={() => setMetric(x.key)}>{x.short}</button>)}</div>
         <div className="segmented">
-          <button className={!corrected ? 'on' : ''} onClick={() => setCorrected(false)}>Raw</button>
-          <button className={corrected ? 'on' : ''} onClick={() => setCorrected(true)}>Corrected</button>
+          <button className={!corrected ? 'on' : ''} onClick={() => setCorrected(false)}>{t('Raw')}</button>
+          <button className={corrected ? 'on' : ''} onClick={() => setCorrected(true)}>{t('Corrected')}</button>
         </div>
         {fields.length > 0 && (
           <>
-            <span className="muted small">Split by</span>
-            <select className="select small" aria-label="Split by" value={activeField} onChange={(e) => { setField(e.target.value as ContextField); setPair(null); }}>
-              {fields.map((f) => <option key={f} value={f}>{CONTEXT_FIELDS[f].label}</option>)}
+            <span className="muted small">{t('Split by')}</span>
+            <select className="select small" aria-label={t('Split by')} value={activeField} onChange={(e) => { setField(e.target.value as ContextField); setPair(null); }}>
+              {fields.map((f) => <option key={f} value={f}>{t(CONTEXT_FIELDS[f].label)}</option>)}
             </select>
-            <select className="select small" aria-label="Group A" value={va} onChange={(e) => setPair([e.target.value, vb])}>{values[activeField].map((v) => <option key={v}>{v}</option>)}</select>
+            <select className="select small" aria-label={t('Group A')} value={va} onChange={(e) => setPair([e.target.value, vb])}>{values[activeField].map((v) => <option key={v} value={v}>{contextValue(v)}</option>)}</select>
             <span className="muted small">vs</span>
-            <select className="select small" aria-label="Group B" value={vb} onChange={(e) => setPair([va, e.target.value])}>{values[activeField].map((v) => <option key={v}>{v}</option>)}</select>
+            <select className="select small" aria-label={t('Group B')} value={vb} onChange={(e) => setPair([va, e.target.value])}>{values[activeField].map((v) => <option key={v} value={v}>{contextValue(v)}</option>)}</select>
           </>
         )}
         <span className="spacer" />
-        {result && <button className="btn" onClick={() => { download(`${base}-ab.csv`, abCsv(result, item.label)); download(`${base}-ab-instances.csv`, instancesCsv(included)); }}>Export A/B CSV</button>}
-        {result && <button className="btn" onClick={() => setPanel(true)}>Efforts: {included.length} in · {result.rejected.length} left out</button>}
+        {result && <button className="btn" onClick={() => { download(`${base}-ab.csv`, abCsv(result, item.label)); download(`${base}-ab-instances.csv`, instancesCsv(included)); }}>{t('Export A/B CSV')}</button>}
+        {result && <button className="btn" onClick={() => setPanel(true)}>{t('Efforts: {in} in · {out} left out', { in: included.length, out: result.rejected.length })}</button>}
       </div>
 
       {!result ? (
         <div className="card empty">
-          {computing ? 'Reading the runs…' : 'No context field splits this item’s efforts yet.'} Register two pairs of shoes (or tag runs) in the Gears tab of <Link href="/settings?tab=gears">Settings</Link>; each effort carries the shoes of its run.
+          {computing ? t('Reading the runs…') : t('No context field splits this item’s efforts yet.')} {t('Register two pairs of shoes (or tag runs) in the Gears tab of')} <Link href="/settings?tab=gears">{t('Settings')}</Link>{t('; each effort carries the shoes of its run.')}
         </div>
       ) : (
         <>
@@ -121,7 +123,7 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
             const d = describeAb(result, metric, MIN_AB_INSTANCES, wordsOf(metric, known.catalog, known.directions));
             return (
               <div className="card result">
-                <div className="muted small">{m.name}{corrected ? ' · corrected for pace' : ''} · {result.b.label} against {result.a.label}</div>
+                <div className="muted small">{m.name}{corrected ? ` · ${t('corrected for pace')}` : ''} · {t('{b} against {a}', { a: result.a.label, b: result.b.label })}</div>
                 <div className={`verdict ${d.change ? 'is-change' : ''}`}>{d.headline}</div>
                 <div className="explain">{d.sentence}</div>
                 <DifferencePlot r={result} metric={metric} />
@@ -130,19 +132,19 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
           })()}
 
           <div className="card chart" style={{ marginTop: 12 }}>
-            <h3 className="chart-title">Timeline <span className="muted">· do the groups take turns? A difference is fair only when they do.</span></h3>
+            <h3 className="chart-title">{t('Timeline')} <span className="muted">· {t('do the groups take turns? A difference is fair only when they do.')}</span></h3>
             <Timeline r={result} format={m.fmt} tick={m.tick} minSpan={m.minSpan} invert={m.invert} onPick={(i) => { setFocus(i); setPanel(true); }} />
           </div>
 
           <div className="card chart" style={{ marginTop: 12 }}>
-            <h3 className="chart-title">Inside the segment, minute by minute <span className="muted">· the mean of each group</span></h3>
-            <ProfileChart lines={[{ id: 'a', label: result.a.label, values: meanProfile(result.a.points, metric) }, { id: 'b', label: result.b.label, values: meanProfile(result.b.points, metric) }]} format={m.fmt} tick={m.tick} minSpan={m.minSpan} invert={m.invert} colors={AB} ariaLabel="Per-minute profile of the two groups" />
+            <h3 className="chart-title">{t('Inside the segment, minute by minute')} <span className="muted">· {t('the mean of each group')}</span></h3>
+            <ProfileChart lines={[{ id: 'a', label: result.a.label, values: meanProfile(result.a.points, metric) }, { id: 'b', label: result.b.label, values: meanProfile(result.b.points, metric) }]} format={m.fmt} tick={m.tick} minSpan={m.minSpan} invert={m.invert} colors={AB} ariaLabel={t('Per-minute profile of the two groups')} />
           </div>
 
           {panel && (
             <>
               <div className="sheet-backdrop" onClick={() => setPanel(false)} style={{ background: 'transparent' }} />
-              <InstancePanel included={included} rejected={result.rejected} group={byField(activeField!, va, vb)} groupLabel={{ A: va, B: vb }} value={(i) => { const v = valueOf(i, metric); return v === null ? '–' : m.fmt(v); }} focus={focus} onFocus={setFocus} onClose={() => setPanel(false)} />
+              <InstancePanel included={included} rejected={result.rejected} group={byField(activeField!, va, vb)} groupLabel={{ A: result.a.label, B: result.b.label }} value={(i) => { const v = valueOf(i, metric); return v === null ? '–' : m.fmt(v); }} focus={focus} onFocus={setFocus} onClose={() => setPanel(false)} />
             </>
           )}
         </>
@@ -172,18 +174,18 @@ function DifferencePlot({ r, metric }: { r: AbResult; metric: BlockMetric }) {
   const pace = unit === 's/km';
   return (
     <div ref={box} style={{ marginTop: 10 }}>
-      <svg width={width} height={H} role="img" aria-label="Difference and interval" style={{ display: 'block' }}>
+      <svg width={width} height={H} role="img" aria-label={t('Difference and interval')} style={{ display: 'block' }}>
         {noise > 0 && (
           <g>
             <rect x={x(-noise)} width={x(noise) - x(-noise)} y={mid - 18} height={36} fill="var(--surface-2)" />
-            <text x={x(noise) + 6} y={mid - 8} fontSize="11" fill="var(--muted)">noise ±{Math.round(noise * 10) / 10} {unit}</text>
+            <text x={x(noise) + 6} y={mid - 8} fontSize="11" fill="var(--muted)">{t('noise ±{value}', { value: `${number(Math.round(noise * 10) / 10)} ${unit}` })}</text>
           </g>
         )}
         <line x1={L} x2={width - R} y1={H - 26} y2={H - 26} stroke="var(--axis)" />
-        {ticks.map((t) => (
-          <g key={t}>
-            <line x1={x(t)} x2={x(t)} y1={H - 26} y2={H - 22} stroke="var(--axis)" />
-            <text x={x(t)} y={H - 10} fontSize="11" textAnchor="middle" fill="var(--muted)" className="tnum">{t > 0 ? '+' : ''}{t.toFixed(tickDecimals(ticks))}</text>
+        {ticks.map((v) => (
+          <g key={v}>
+            <line x1={x(v)} x2={x(v)} y1={H - 26} y2={H - 22} stroke="var(--axis)" />
+            <text x={x(v)} y={H - 10} fontSize="11" textAnchor="middle" fill="var(--muted)" className="tnum">{v > 0 ? '+' : ''}{number(v, tickDecimals(ticks))}</text>
           </g>
         ))}
         <line x1={x(0)} x2={x(0)} y1={mid - 24} y2={H - 26} stroke="var(--muted)" />
@@ -197,9 +199,9 @@ function DifferencePlot({ r, metric }: { r: AbResult; metric: BlockMetric }) {
         <circle cx={x(r.difference)} cy={mid} r="6" fill="var(--series-2)" stroke="var(--surface)" strokeWidth="2" />
       </svg>
       <div className="axis-ends small muted">
-        <span>← {r.b.label} {pace ? 'faster' : 'lower'}</span>
-        <span>{unit}, {r.b.label} − {r.a.label}{r.ci ? ' · whisker: 95% interval' : ''}</span>
-        <span>{r.b.label} {pace ? 'slower' : 'higher'} →</span>
+        <span>← {pace ? t('{b} faster', { b: r.b.label }) : t('{b} lower', { b: r.b.label })}</span>
+        <span>{unit}, {r.b.label} − {r.a.label}{r.ci ? ` · ${t('whisker: 95% interval')}` : ''}</span>
+        <span>{pace ? t('{b} slower', { b: r.b.label }) : t('{b} higher', { b: r.b.label })} →</span>
       </div>
     </div>
   );
@@ -224,7 +226,7 @@ function Timeline({ r, format, tick, minSpan, invert, onPick }: { r: AbResult; f
   return (
     <div ref={box}>
       <div className="chart-legend">{labels.map((l, g) => <Key key={l} kind="dot" color={AB[g]} label={l} />)}</div>
-      <svg width={width} height={H} role="img" aria-label="Timeline of the two groups" style={{ display: 'block' }}>
+      <svg width={width} height={H} role="img" aria-label={t('Timeline of the two groups')} style={{ display: 'block' }}>
         {ticks.map((v) => (
           <g key={v}>
             <line x1={L} x2={width - R} y1={y(v)} y2={y(v)} stroke="var(--grid)" />
@@ -237,7 +239,7 @@ function Timeline({ r, format, tick, minSpan, invert, onPick }: { r: AbResult; f
           <g key={p.instance.id} style={{ cursor: 'pointer' }} onClick={() => onPick(p.instance)}>
             <circle cx={x(Date.parse(p.instance.runStart))} cy={y(val(p))} r={12} fill="transparent" />
             <circle cx={x(Date.parse(p.instance.runStart))} cy={y(val(p))} r={4.5} fill={AB[g]} stroke="var(--surface)" strokeWidth="2" />
-            <title>{`${labels[g]} · ${new Date(p.instance.runStart).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })} · ${format(val(p))}`}</title>
+            <title>{`${labels[g]} · ${dateText(p.instance.runStart, { day: 'numeric', month: 'short', year: 'numeric' })} · ${format(val(p))}`}</title>
           </g>
         ))}
       </svg>

@@ -994,3 +994,23 @@ Q: (użytkownik) teraz przegladnij cala aplikacje pod katem telefonu ... sporo e
 A: (model) Done: every screen, tab, view, dialog and wizard step gone through on a phone 412 px and 360 px wide. Fixed: the wizard (its card as wide as its widest content, Next off the screen; the zones' names squeezed beside their fields; the steps in two lines), the tab bar ("Performance" cut), a new segment's rule (names cut, choices and dates wider than the dialog), the tables of Runs, Efforts and the curve's bests (secondary columns left out on a phone), the run's statistics (the metric's name kept in view), the Performance map (read down the screen instead of 900 px sideways), the tabs of Settings and Performance, the theme's choice in Display, the Data folder's figures two to a line. The phone test "Screens fit a phone" now also fails on a card or dialog holding content wider than itself and walks every step of the wizard first (scenario "Setup wizard fits a phone").
 Q: (użytkownik) link do changelog jest do https://github.com/isostride/isostride/blob/master/CHANGELOG.md ... a nie powinien byc do release note ?
 A: (model) Done: Release notes (in Settings, About) and release notes (in the site's footer) lead to the GitHub release of the version shown, e.g. https://github.com/isostride/isostride/releases/tag/v0.1, with the notes the deploy takes from CHANGELOG.md; a build without a version leads to all the releases.
+Q: (użytkownik) ok ... w miedzyczasie zajmi sie kolejnym feature - wersjami jezykowymi .... chce angielski i polski i kolejne w przyszlosci
+Q: (model) Wersje językowe (angielski i polski): co ma być tłumaczone? [Aplikacja i strona / Tylko aplikacja]
+A: (użytkownik) Tylko aplikacja
+Q: (model) Jak wybierany jest język? [Z przeglądarki + przełącznik: na start język przeglądarki (pl → polski, inny → angielski), zmiana w Settings › Display i w wizardzie; zapamiętany w tej przeglądarce / Tylko przełącznik]
+A: (użytkownik) Z przeglądarki + przełącznik (Recommended)
+Q: (model) Czy liczby i daty mają iść za językiem? [Tak, za językiem: po polsku 5,24 km, 24 lis 2026, poniedziałek jako pierwszy dzień / Nie, jak teraz]
+A: (użytkownik) Tak, za językiem (Recommended)
+Q: (model) Co przetłumaczyć w pierwszej wersji? [Wszystko od razu: cały interfejs razem z objaśnieniami modeli (Why?, założenia) i komunikatami; test pilnuje, że żaden tekst nie zostaje nieprzetłumaczony / Najpierw interfejs]
+A: (użytkownik) Wszystko od razu (Recommended)
+A: (użytkownik) ustawienia jezyka w settings i w wizard
+A: (użytkownik) w miedzyczasie chce tez polskiej wersji jezykowej glownej strony
+A: (użytkownik) teksty na stronie wygladaja sztucznie jakby linijka po linijce tlumaczone ....
+A: (model) Done (app): every text of the app in English and Polish through lib/i18n (the English text is the key; Polish in lib/i18n/pl/, a file per part); the language from the browser at first, chosen in Settings › Display and in the wizard's Display step, kept in this browser, the page hidden until it is in its language; numbers and dates in the language (5,24 km, 24 lis 2026), counts in Polish forms (1 bieg, 3 biegi, 5 biegów); names saved in the data folder stay as saved and are shown in the language in use. The integration test "No text left untranslated" fails on a shown text outside a translation or a key without Polish.
+A: (model) Done (site): the site in Polish at /pl (its own html lang, title, description, links between the two for search engines), EN and PL in the header, a first visit from a browser in Polish taken to /pl, the choice kept; the Polish written anew in plain Polish, not sentence by sentence from the English (after "teksty na stronie wygladaja sztucznie"); the screenshots at first those of the English app (Polish ones below).
+Q: (użytkownik) jedna rzecz nie zwiazana w tekscie: IsoStride: otwarta platforma do analizy biegów. IsoStride - uzyj tu kolorow
+A: (model) Done: the name IsoStride in the heading of the site (both languages) in the gradient of the logo (indigo, violet, pink), lighter in the dark theme for its contrast. (no requirement)
+A: (użytkownik) pamietaj o screensjota polskich w wersji polskiej strony
+A: (model) Done: the Polish page shows screenshots of the app in Polish (apps/site/public/shots/pl), taken from the same demo data as the English ones by the screenshot script with SHOTS_LANG=pl; its share image too.
+Q: (użytkownik) aha ... strone glowna pokazuj tylko w trybie jasnym ...
+A: (model) Done: the site is light only: its dark scheme taken out (color-scheme light, the browser bar in its light colour); the site test checks it stays light with the system in dark. (no requirement)

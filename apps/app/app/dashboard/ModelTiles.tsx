@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { useLocale } from '@/lib/client';
 import { PATHS, readJson, type DataFolder } from '@/lib/fs';
+import { t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import { formSeries, performanceReport, type LoadSummary, type ModelKey } from '@/lib/load';
 import { readSettings, type SettingsFile } from '@/lib/settings';
@@ -30,22 +32,24 @@ export function ModelTiles({ folder, models, render }: {
       .then(([index, sums, settings]) => setData({ runs: index?.runs ?? [], summaries: sums?.runs ?? {}, settings }))
       .catch(() => undefined);
   }, [folder]);
+  const locale = useLocale();
   const report = useMemo(() => {
     if (!data) return null;
     const today = localDay(new Date());
     const days = formSeries(data.runs.filter((r) => typeof r.load === 'number').map((r) => ({ startTime: r.startTime, load: r.load as number })), data.settings.performance, today);
     return performanceReport({ rows: data.runs, summaries: data.summaries, performance: data.settings.performance, hrZones: data.settings.zones.heartRate ?? [], zonesOwn: !data.settings.defaults, days, today });
-  }, [data]);
+    // locale: the report's texts are built in the language in use.
+  }, [data, locale]);
 
   return (
     <>
       {models.map((key) => {
         const m = report?.models.find((x) => x.key === key);
-        return render(`model:${key}`, m?.name ?? 'Model', !report ? <p className="muted small">Reading the runs…</p> : !m ? <p className="muted small">This model is not there any more.</p> : (
+        return render(`model:${key}`, m ? t(m.name) : t('Model'), !report ? <p className="muted small">{t('Reading the runs…')}</p> : !m ? <p className="muted small">{t('This model is not there any more.')}</p> : (
           <div className="dash-model">
             <div className="dash-big tnum">{saysNow(m.key, report.now)}</div>
             <TrustChip trust={m.trust} />
-            <Link className="row-open" href={performanceHref(m.where.tab, m.where.view)}>Performance →</Link>
+            <Link className="row-open" href={performanceHref(m.where.tab, m.where.view)}>{t('Performance →')}</Link>
           </div>
         ));
       })}

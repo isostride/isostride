@@ -824,6 +824,33 @@
     ] },
     { "element": "88e05112-347d-4f97-a369-1f5c3bfb5222", "name": "Setup wizard fits a phone", "tests": [
       "e2e/mobile.spec.ts › Layout that fits a phone › Screens fit a phone"
+    ] },
+    { "element": "f2252e81-ddb1-469c-a537-c2ff29fab823", "name": "Text shown in the language chosen", "tests": [
+      "tests/unit/i18n.test.ts › App in English and Polish › Text shown in the language chosen"
+    ] },
+    { "element": "e328e3bb-a714-4afa-b75a-1987721655e0", "name": "Counts in the forms of the language", "tests": [
+      "tests/unit/i18n.test.ts › App in English and Polish › Counts in the forms of the language"
+    ] },
+    { "element": "a8c9d796-f84e-4fdf-b29c-bb2c7aa9ea0a", "name": "Numbers and dates in the language chosen", "tests": [
+      "tests/unit/i18n.test.ts › App in English and Polish › Numbers and dates in the language chosen"
+    ] },
+    { "element": "196f7e8c-101a-4894-81d0-8dda000cf48c", "name": "Language from the browser", "tests": [
+      "tests/unit/i18n.test.ts › App in English and Polish › Language from the browser"
+    ] },
+    { "element": "e232efa1-7487-41b7-9e39-9c67ce298813", "name": "Every shown text goes through a translation", "tests": [
+      "tests/integration/texts.test.ts › No text left untranslated › Every shown text goes through a translation"
+    ] },
+    { "element": "70cc131c-f3ec-4235-a952-09f71c009021", "name": "Every text has its translation", "tests": [
+      "tests/integration/texts.test.ts › No text left untranslated › Every text has its translation"
+    ] },
+    { "element": "166494b3-11bf-4194-977e-60681fc6cdd8", "name": "App in Polish from the browser", "tests": [
+      "e2e/languages.spec.ts › App in English and Polish › App in Polish from the browser"
+    ] },
+    { "element": "961feea9-55c8-4ef8-8e18-3ef6ab1ed842", "name": "Site in Polish from the browser", "tests": [
+      "e2e/languages.spec.ts › App in English and Polish › App in Polish from the browser"
+    ] },
+    { "element": "93d8b496-d74a-4602-806f-776bea01c341", "name": "Site says the same in Polish", "tests": [
+      "tests/unit/site.test.ts › Site in plain statements › Site says the same in Polish"
     ] }
   ]
 }

@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
-import { useFolder, useNarrowMenu, useTheme } from '@/lib/client';
+import { useFolder, useLocale, useNarrowMenu, useStartLocale, useTheme } from '@/lib/client';
+import { msg, t } from '@/lib/i18n';
 import { APP_COMMIT, APP_VERSION, versionLabel } from '@/lib/kernel';
 import { Logo } from './Logo';
 import { Welcome } from './Welcome';
@@ -38,9 +39,9 @@ function HistoryNav() {
     return () => { cancelAnimationFrame(pending); nav.removeEventListener('currententrychange', later); };
   }, []);
   return (
-    <div className="history-nav" role="group" aria-label="History">
-      <button type="button" aria-label="Back" title="Back" disabled={!can.back} onClick={() => history.back()}><Icon d={ICONS.back} size={16} /></button>
-      <button type="button" aria-label="Forward" title="Forward" disabled={!can.forward} onClick={() => history.forward()}><Icon d={ICONS.forward} size={16} /></button>
+    <div className="history-nav" role="group" aria-label={t('History')}>
+      <button type="button" aria-label={t('Back')} title={t('Back')} disabled={!can.back} onClick={() => history.back()}><Icon d={ICONS.back} size={16} /></button>
+      <button type="button" aria-label={t('Forward')} title={t('Forward')} disabled={!can.forward} onClick={() => history.forward()}><Icon d={ICONS.forward} size={16} /></button>
     </div>
   );
 }
@@ -70,13 +71,13 @@ const ICONS = {
 };
 
 const NAV = [
-  { href: '/dashboard', label: 'Dashboard', ico: ICONS.dashboard },
-  { href: '/', label: 'Runs', ico: ICONS.runs },
-  { href: '/segments', label: 'Segments', ico: ICONS.blocks },
-  { href: '/compare', label: 'Compare', ico: ICONS.analysis },
-  { href: '/performance', label: 'Performance', ico: ICONS.performance },
+  { href: '/dashboard', label: msg('Dashboard'), ico: ICONS.dashboard },
+  { href: '/', label: msg('Runs'), ico: ICONS.runs },
+  { href: '/segments', label: msg('Segments'), ico: ICONS.blocks },
+  { href: '/compare', label: msg('Compare'), ico: ICONS.analysis },
+  { href: '/performance', label: msg('Performance'), ico: ICONS.performance },
   // At the bottom of the side menu ("na sam dol przenies settings").
-  { href: '/settings', label: 'Settings', ico: ICONS.settings, end: true },
+  { href: '/settings', label: msg('Settings'), ico: ICONS.settings, end: true },
 ];
 
 /** Records each address shown in the tab's trail of screens, for the Run screen's back link. */
@@ -103,6 +104,9 @@ function ScreenTrail() {
  * "pod logiem nie chce popup ale normalna strone"); back and forward sit beside the logo.
  */
 export function Shell({ children }: { children: ReactNode }) {
+  // The app in its language from the first paint (requirement "Language chosen"); the menu follows a change.
+  useStartLocale();
+  useLocale();
   const { state } = useFolder();
   const path = usePathname();
   const [collapsed] = useNarrowMenu();
@@ -120,26 +124,26 @@ export function Shell({ children }: { children: ReactNode }) {
       <Suspense fallback={null}><ScreenTrail /></Suspense>
       <aside className="sidebar">
         <div className="brand-row">
-          <Link className={`brand ${path.startsWith('/folder') ? 'active' : ''}`} href="/folder" title="Data folder: import, recompute, change" aria-current={path.startsWith('/folder') ? 'page' : undefined}>
+          <Link className={`brand ${path.startsWith('/folder') ? 'active' : ''}`} href="/folder" title={t('Data folder: import, recompute, change')} aria-current={path.startsWith('/folder') ? 'page' : undefined}>
             <Logo size={36} />
             <span className="label brand-text">
               <span className="brand-name">Iso<i className="brand-dot">Stride</i></span>
-              <span className="brand-version" title={`Version ${APP_VERSION}${APP_COMMIT ? `, commit ${APP_COMMIT}` : ''}`}>{versionLabel(APP_VERSION)}</span>
+              <span className="brand-version" title={APP_COMMIT ? t('Version {version}, commit {commit}', { version: APP_VERSION, commit: APP_COMMIT }) : t('Version {version}', { version: APP_VERSION })}>{versionLabel(APP_VERSION)}</span>
             </span>
           </Link>
           <HistoryNav />
         </div>
-        <button className="search" onClick={() => window.dispatchEvent(new Event('open-palette'))} title="Search runs, segments, screens (⌘K)">
+        <button className="search" onClick={() => window.dispatchEvent(new Event('open-palette'))} title={t('Search runs, segments, screens (⌘K)')}>
           <Icon d={ICONS.search} size={15} />
-          <span className="label">Search…</span><span className="kbd label">⌘K</span>
+          <span className="label">{t('Search…')}</span><span className="kbd label">⌘K</span>
         </button>
-        <nav className="nav" aria-label="Screens">
+        <nav className="nav" aria-label={t('Screens')}>
           {NAV.map((n) => (
             // Named by the screen alone (its facts hidden from the name); the facts describe it.
-            <Link key={n.href} href={n.href} className={`nav-item ${active(n.href) ? 'active' : ''} ${'end' in n ? 'nav-end' : ''}`} title={n.label} aria-describedby={facts[n.href] ? `nav-sub-${n.label}` : undefined} aria-current={active(n.href) ? 'page' : undefined}>
+            <Link key={n.href} href={n.href} className={`nav-item ${active(n.href) ? 'active' : ''} ${'end' in n ? 'nav-end' : ''}`} title={t(n.label)} aria-describedby={facts[n.href] ? `nav-sub-${n.label}` : undefined} aria-current={active(n.href) ? 'page' : undefined}>
               <Icon d={n.ico} />
               <span className="label nav-text">
-                <span>{n.label}</span>
+                <span>{t(n.label)}</span>
                 {/* Its line held from the start, empty until the facts are read, so the menu never moves (layout shift 0). */}
                 <small className="nav-sub" id={`nav-sub-${n.label}`} aria-hidden="true">{facts[n.href] ?? '\u00a0'}</small>
               </span>

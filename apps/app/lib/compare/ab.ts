@@ -1,4 +1,5 @@
 import { bootstrapDiff, mean, sd } from '@/lib/stats';
+import { t } from '@/lib/i18n';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 import { CONTEXT_FIELDS, correctForPace, selectInstances, sourceOf, type ContextField, type ContextFilter, type Rejected } from './select';
 import { hash, type Verdict } from './trend';
@@ -68,7 +69,7 @@ export function computeAb(
   const grouped: BlockInstance[] = [];
   for (const i of sel.included) {
     if (groupOf(i)) grouped.push(i);
-    else rejected.push({ instance: i, reasons: [`in neither group (${labels[0]} or ${labels[1]})`] });
+    else rejected.push({ instance: i, reasons: [t('in neither group ({a} or {b})', { a: labels[0], b: labels[1] })] });
   }
   const corr = correctForPace(grouped, metric);
   const a = corr.filter((c) => groupOf(c.instance) === 'A');
@@ -91,12 +92,12 @@ export function computeAb(
   if (!a.length || !b.length) return result;
 
   if (!interleaved(a.map((p) => p.instance.runStart), b.map((p) => p.instance.runStart))) {
-    warnings.push(`${labels[0]} and ${labels[1]} do not interleave in time, so the difference may be the fitness trend. Rotate between them for a few weeks.`);
+    warnings.push(t('{a} and {b} do not interleave in time, so the difference may be the fitness trend. Rotate between them for a few weeks.', { a: labels[0], b: labels[1] }));
   }
   // Mixing devices inside a group confounds; groups that are each one device (a split by device) do not.
   const sources = new Set(grouped.map((i) => sourceOf(i, metric)));
   const mixed = [a, b].some((g) => new Set(g.map((p) => sourceOf(p.instance, metric))).size > 1);
-  if (mixed) warnings.push(`The groups mix devices (${[...sources].join(', ')}); filter by one to compare like with like.`);
+  if (mixed) warnings.push(t('The groups mix devices ({devices}); filter by one to compare like with like.', { devices: [...sources].join(', ') }));
 
   const pooled = Math.sqrt(((a.length - 1) * sd(va) ** 2 + (b.length - 1) * sd(vb) ** 2) / Math.max(1, a.length + b.length - 2));
   result.noise = pooled;

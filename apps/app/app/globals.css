@@ -1961,3 +1961,8 @@ table.data tr.reference > td { background: color-mix(in srgb, var(--accent) 9%, 
   table.data th, table.data td { padding-left: 6px; padding-right: 6px; }
   table.runs-table td:first-child { white-space: normal; }
 }
+
+/* A page in another language than English stays hidden until the app has put it in that language (the
+   head script of the layout marks it; the app takes the mark away); after 1.5 s it shows whatever happens. */
+html[data-lang-pending] body { visibility: hidden; animation: lang-reveal 0s 1.5s forwards; }
+@keyframes lang-reveal { to { visibility: visible; } }

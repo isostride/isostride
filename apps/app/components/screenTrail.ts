@@ -1,3 +1,5 @@
+import { msg } from '@/lib/i18n';
+
 /**
  * The trail of screens in a browser tab (requirement "Back to the previous screen"): the Run
  * screen's back link returns to the screen the run was opened from, as it was left. The App
@@ -10,12 +12,18 @@ export interface TrailStore {
   setItem(key: string, value: string): void;
 }
 
+/**
+ * Sent before a screen is left without a link (the search, ⌘K): the screen being left stops writing its
+ * address, which the router, still loading the next screen, would take for a return and stay on it.
+ */
+export const SCREEN_LEAVE = 'isostride.screen-leave';
+
 const BACK = 'strideprism.backTo';
 const PREV = 'strideprism.prevPage';
 
-/** The screens a back link can name, by path. */
+/** The screens a back link can name, by path: keys of their names, shown through t(). */
 export const SCREEN_NAMES: Record<string, string> = {
-  '/': 'Runs', '/compare': 'Compare', '/performance': 'Performance', '/settings': 'Settings',
+  '/': msg('Runs'), '/compare': msg('Compare'), '/performance': msg('Performance'), '/settings': msg('Settings'),
 };
 
 const pathOf = (url: string) => url.split('?')[0] || '/';
@@ -43,5 +51,5 @@ export function backTarget(store: TrailStore): { href: string; label: string; vi
     const href = store.getItem(BACK);
     if (href && SCREEN_NAMES[pathOf(href)]) return { href, label: SCREEN_NAMES[pathOf(href)], viaHistory: store.getItem(PREV) === href };
   } catch { /* no storage */ }
-  return { href: '/', label: 'Runs', viaHistory: false };
+  return { href: '/', label: msg('Runs'), viaHistory: false };
 }

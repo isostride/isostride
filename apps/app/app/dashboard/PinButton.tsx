@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { addTile, hasTile, readDashboard, removeTile, writeDashboard, type TileKind } from '@/lib/dashboard';
 import type { DataFolder } from '@/lib/fs';
+import { t } from '@/lib/i18n';
 
 /**
  * Pin to the Dashboard, in the corner of a card (the runner's "Pin na kazdej karcie-widgecie" and
@@ -19,8 +20,8 @@ export function PinButton({ folder, kind, target: id, name, opts }: { folder: Da
     setPinned(!on);
   };
   return (
-    <button type="button" className={`pin-btn${pinned ? ' pinned' : ''}`} disabled={pinned === null} aria-pressed={!!pinned} aria-label={`Pin ${name} to the dashboard`}
-      title={pinned ? 'On the Dashboard: press to take it off' : 'Pin to the Dashboard'} onClick={toggle}>
+    <button type="button" className={`pin-btn${pinned ? ' pinned' : ''}`} disabled={pinned === null} aria-pressed={!!pinned} aria-label={t('Pin {name} to the dashboard', { name })}
+      title={pinned ? t('On the Dashboard: press to take it off') : t('Pin to the Dashboard')} onClick={toggle}>
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
         <path d="M9 3h6l-1 6 4 4v2h-5v6l-1 1-1-1v-6H6v-2l4-4z" fill={pinned ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
       </svg>

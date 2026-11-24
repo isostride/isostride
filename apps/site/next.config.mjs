@@ -9,5 +9,7 @@ const nextConfig = {
   // The version of the app deployed with it, for the footer.
   env: buildInfo(),
   distDir: process.env.NEXT_DIST_DIR || '.next',
+  // A root layout per language (/ English, /pl Polish): the page of an unknown address stands alone.
+  experimental: { globalNotFound: true },
 };
 export default nextConfig;

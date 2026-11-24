@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, type RefObject, useLayoutEffect } from 'react';
+import { dateText } from '@/lib/i18n';
 
 /**
  * The shared pieces of every chart: real-pixel sizing (so text is never stretched), round axis
@@ -148,8 +149,8 @@ export function monthTicks(t0: number, t1: number): number[] {
   return out;
 }
 
-export const monthLabel = (t: number) => new Date(t).toLocaleDateString(undefined, { month: 'short' });
-export const dayLabel = (t: number) => new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+export const monthLabel = (t: number) => dateText(t, { month: 'short' });
+export const dayLabel = (t: number) => dateText(t, { day: 'numeric', month: 'short' });
 
 /**
  * A small bar inside a table cell: how large a value is against the others of its column (a

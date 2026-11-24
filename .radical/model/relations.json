@@ -499,6 +499,12 @@
     "targetId": "f0ce90cd-4cf5-47df-bc6f-d44ce24ec168"
   },
   {
+    "id": "0fd4a3bc-517e-44ee-afd6-6cc5ec66c9b5",
+    "relationType": "verifies",
+    "sourceId": "a8c9d796-f84e-4fdf-b29c-bb2c7aa9ea0a",
+    "targetId": "fd4d31ab-6d98-4756-914f-954876020b2c"
+  },
+  {
     "id": "0fe15946-8440-438b-b1d3-a188b5fe14a6",
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
@@ -915,6 +921,12 @@
     "targetId": "9217b16e-906d-4e84-ad35-12d9985b6c0f"
   },
   {
+    "id": "198d210d-b4d7-4185-a86a-8a0a9571aa6e",
+    "relationType": "implements",
+    "sourceId": "e33c968e-d259-4fcd-92de-9dc619ba5771",
+    "targetId": "f1caed16-5140-4c23-8191-35d22546562a"
+  },
+  {
     "id": "19b9e840-9fd4-4238-b598-897859a19c44",
     "relationType": "verifies",
     "sourceId": "aa326b0c-6268-4a06-919c-2df55b327a96",
@@ -1067,6 +1079,12 @@
     "targetId": "39491f93-4fcc-4f9c-960b-e12750deef8f"
   },
   {
+    "id": "1f9af834-d4e3-4b57-a799-4bb7bee42efe",
+    "relationType": "verifies",
+    "sourceId": "93d8b496-d74a-4602-806f-776bea01c341",
+    "targetId": "3c2bf7b7-2a97-4c4a-bbb5-ac02a23c0800"
+  },
+  {
     "id": "1fc15cf5-bc7a-472a-aa0a-0ac101431d40",
     "relationType": "satisfies",
     "sourceId": "3614e7f4-9407-407b-a23b-56e0b424d992",
@@ -1214,6 +1232,12 @@
     "targetId": "45572cbe-87cb-4089-ae6d-83edb67bb724"
   },
   {
+    "id": "234e7864-b47f-4ab8-9d7c-8326f345edeb",
+    "relationType": "constrains",
+    "sourceId": "f1caed16-5140-4c23-8191-35d22546562a",
+    "targetId": "361100a3-1a33-4ea5-b346-f6169bd4574a"
+  },
+  {
     "id": "235a775c-b675-4497-b3c5-bf17def927eb",
     "relationType": "verifies",
     "sourceId": "e003051b-4ea5-47e0-9dc6-dac8e3e20615",
@@ -1322,6 +1346,12 @@
     "relationType": "traces-to",
     "sourceId": "f266c9f7-6a1e-4cb1-85d6-66de049e38e4",
     "targetId": "f3de29b6-3564-4a94-96f5-ea8dd99f97ec"
+  },
+  {
+    "id": "25a86b85-2873-41b1-9fea-18cf42abc708",
+    "relationType": "verifies",
+    "sourceId": "961feea9-55c8-4ef8-8e18-3ef6ab1ed842",
+    "targetId": "3c2bf7b7-2a97-4c4a-bbb5-ac02a23c0800"
   },
   {
     "id": "25f1b4ae-465f-46ea-ac12-358e2f184f09",
@@ -1585,6 +1615,12 @@
     "targetId": "645425d9-d9a4-4adf-bae2-392cc0fdc84f"
   },
   {
+    "id": "2d5005d6-e383-4009-812a-48e0fc0b4192",
+    "relationType": "traces-to",
+    "sourceId": "35787f5a-a2a4-44b4-bdc7-c1ae2bf9f9fb",
+    "targetId": "f1caed16-5140-4c23-8191-35d22546562a"
+  },
+  {
     "id": "2d7f269a-4677-4de2-a7d2-3fba253e114a",
     "relationType": "emits",
     "sourceId": "df4990c9-dd90-49cc-9eca-6507c3d5dd66",
@@ -1607,6 +1643,12 @@
     "relationType": "verifies",
     "sourceId": "4f0cddbc-e222-42f9-bd63-ca73494e743d",
     "targetId": "31ec5c9f-dc19-4487-a84b-67fbd381ead5"
+  },
+  {
+    "id": "2e48186f-101b-47dc-b821-c33f278816a2",
+    "relationType": "verifies",
+    "sourceId": "e232efa1-7487-41b7-9e39-9c67ce298813",
+    "targetId": "782e1f6e-9b72-449b-84ad-0c5ee7af58df"
   },
   {
     "id": "2e81f1ba-5b2f-4945-a014-7b7ad3e56782",
@@ -1709,6 +1751,12 @@
     "relationType": "verifies",
     "sourceId": "3828b443-8b56-40b5-b1d9-11cc7e92ba6b",
     "targetId": "c9bfc538-85b3-4df2-8fa4-cf33ae76f68d"
+  },
+  {
+    "id": "32085fb0-17bd-480f-8ab3-4fc695c15c61",
+    "relationType": "satisfies",
+    "sourceId": "c72b5772-c80f-4e76-95de-c7ed8a022f88",
+    "targetId": "3c2bf7b7-2a97-4c4a-bbb5-ac02a23c0800"
   },
   {
     "id": "321c5d5c-162d-4144-99dd-139150f72a07",
@@ -2094,6 +2142,13 @@
     "targetId": "645425d9-d9a4-4adf-bae2-392cc0fdc84f"
   },
   {
+    "id": "4053adc4-a928-4006-991e-7dc0a480607b",
+    "quote": "chce tez polskiej wersji jezykowej glownej strony",
+    "relationType": "derives",
+    "sourceId": "3c2bf7b7-2a97-4c4a-bbb5-ac02a23c0800",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "40b88abc-e323-4f6f-9051-31f29456b595",
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
@@ -2231,6 +2286,13 @@
     "relationType": "satisfies",
     "sourceId": "a694fdc9-58ad-462b-a996-c49812b6da79",
     "targetId": "b277147e-4dc1-40fe-8a58-9004d82b2740"
+  },
+  {
+    "id": "4487b6fc-53dd-4270-bd1f-0627dc71cac6",
+    "quote": "Tak, za językiem (Recommended)",
+    "relationType": "derives",
+    "sourceId": "fd4d31ab-6d98-4756-914f-954876020b2c",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "44e74f52-3f46-4cd5-ab9b-dc7875a45c26",
@@ -2436,6 +2498,18 @@
     "targetId": "f887a415-078c-4b2b-a508-463ef2387383"
   },
   {
+    "id": "4b740a6c-9e4a-473b-b7c3-e51429c8a3cb",
+    "relationType": "verifies",
+    "sourceId": "196f7e8c-101a-4894-81d0-8dda000cf48c",
+    "targetId": "35787f5a-a2a4-44b4-bdc7-c1ae2bf9f9fb"
+  },
+  {
+    "id": "4b8373bd-7895-4bf8-a367-235eb6fbeb5b",
+    "relationType": "satisfies",
+    "sourceId": "361100a3-1a33-4ea5-b346-f6169bd4574a",
+    "targetId": "fd4d31ab-6d98-4756-914f-954876020b2c"
+  },
+  {
     "id": "4b8dd48f-f6f8-46ff-9df9-9cb0da930df2",
     "relationType": "realises",
     "sourceId": "a694fdc9-58ad-462b-a996-c49812b6da79",
@@ -2532,6 +2606,12 @@
     "relationType": "satisfies",
     "sourceId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1",
     "targetId": "50f43965-aa7d-4a46-b639-0ce52c2bfa4d"
+  },
+  {
+    "id": "4fb7e831-c6c7-470d-a455-5971ed10570d",
+    "relationType": "verifies",
+    "sourceId": "166494b3-11bf-4194-977e-60681fc6cdd8",
+    "targetId": "fd4d31ab-6d98-4756-914f-954876020b2c"
   },
   {
     "id": "508437e4-89c3-46c9-ade8-a5ee4c3244db",
@@ -3122,6 +3202,12 @@
     "targetId": "7e820091-6148-431b-b28d-880efea10233"
   },
   {
+    "id": "65a733e3-c213-44a9-ae8d-f85ba6ba1176",
+    "relationType": "verifies",
+    "sourceId": "166494b3-11bf-4194-977e-60681fc6cdd8",
+    "targetId": "35787f5a-a2a4-44b4-bdc7-c1ae2bf9f9fb"
+  },
+  {
     "id": "65ced3e7-54b4-4526-825b-24a987e4bb35",
     "relationType": "verifies",
     "sourceId": "61510b95-6f18-42f5-aa34-236b993702f6",
@@ -3561,6 +3647,13 @@
     "targetId": "e6909b1e-ea15-4395-b4e5-0ecdb64eef5b"
   },
   {
+    "id": "74e3db91-459a-4942-ba8f-6926081af95c",
+    "quote": "chce angielski i polski i kolejne w przyszlosci",
+    "relationType": "derives",
+    "sourceId": "782e1f6e-9b72-449b-84ad-0c5ee7af58df",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "74eee54b-8058-4c02-badf-630e98b7622c",
     "relationType": "satisfies",
     "sourceId": "51a7ebbe-fcd8-46e0-892f-61d495c6fc97",
@@ -3616,6 +3709,12 @@
     "relationType": "interacts",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
     "targetId": "ae98bcc0-d501-45fc-b39d-c304e5a7b242"
+  },
+  {
+    "id": "76c385f7-b16d-4603-9191-629a8e248cd0",
+    "relationType": "verifies",
+    "sourceId": "f2252e81-ddb1-469c-a537-c2ff29fab823",
+    "targetId": "782e1f6e-9b72-449b-84ad-0c5ee7af58df"
   },
   {
     "id": "76d0aaf6-10ad-4e54-93ce-79169357da96",
@@ -4241,6 +4340,12 @@
     "targetId": "a5a8aff6-8927-434e-bd7d-6a4a6f338bac"
   },
   {
+    "id": "8985145a-38b4-43d4-a0fb-3e4804470ac1",
+    "relationType": "verifies",
+    "sourceId": "70cc131c-f3ec-4235-a952-09f71c009021",
+    "targetId": "782e1f6e-9b72-449b-84ad-0c5ee7af58df"
+  },
+  {
     "id": "8987460c-b047-4d9b-a64b-5fb15a6e7df5",
     "relationType": "satisfies",
     "sourceId": "3614e7f4-9407-407b-a23b-56e0b424d992",
@@ -4735,6 +4840,12 @@
     "relationType": "satisfies",
     "sourceId": "cbb5fc4a-220e-4316-97b6-63afe40c8cc8",
     "targetId": "84a81738-ab66-4624-bec0-3b893f7e7939"
+  },
+  {
+    "id": "99ffead8-14f9-4ec8-8ea0-b410d841e35e",
+    "relationType": "satisfies",
+    "sourceId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1",
+    "targetId": "35787f5a-a2a4-44b4-bdc7-c1ae2bf9f9fb"
   },
   {
     "id": "9a3e794d-f9a5-4de1-a484-0e7f39509a15",
@@ -5494,6 +5605,12 @@
     "targetId": "564584c7-63b4-467a-a057-2ccd77cc6fe2"
   },
   {
+    "id": "b3dd4e61-922e-4444-88ba-a0d60ccec104",
+    "relationType": "traces-to",
+    "sourceId": "fd4d31ab-6d98-4756-914f-954876020b2c",
+    "targetId": "f1caed16-5140-4c23-8191-35d22546562a"
+  },
+  {
     "event": "2d616620-c32d-4865-9ec3-35cd2941687a",
     "id": "b405985b-c231-4ed7-b8b2-48a42501396d",
     "relationType": "transition",
@@ -5963,6 +6080,12 @@
     "relationType": "verifies",
     "sourceId": "e0555ad8-2a1d-4143-9ff5-5d5c7a198792",
     "targetId": "b38fe7b8-cf1c-4a98-8f3e-84a9e3d0badb"
+  },
+  {
+    "id": "c0cee878-9cac-4683-a763-532613b32b75",
+    "relationType": "satisfies",
+    "sourceId": "361100a3-1a33-4ea5-b346-f6169bd4574a",
+    "targetId": "782e1f6e-9b72-449b-84ad-0c5ee7af58df"
   },
   {
     "id": "c10414df-49df-434f-8c8f-310e7603019c",
@@ -6816,6 +6939,12 @@
     "targetId": "67c05609-df7a-4838-bc6b-0180d42142d6"
   },
   {
+    "id": "dc3bdea5-f89f-49d9-8f15-166d39e6d6ad",
+    "relationType": "verifies",
+    "sourceId": "e328e3bb-a714-4afa-b75a-1987721655e0",
+    "targetId": "fd4d31ab-6d98-4756-914f-954876020b2c"
+  },
+  {
     "id": "dc87eda3-9219-4375-be94-d02af59aa80a",
     "relationType": "implements",
     "sourceId": "027b71b3-7b37-4e61-b765-489c9b4e9ecc",
@@ -6826,6 +6955,12 @@
     "relationType": "satisfies",
     "sourceId": "989ddea4-2268-46b9-a61d-ef102ca319a6",
     "targetId": "f38be323-1d87-49bf-bcaa-54521f704865"
+  },
+  {
+    "id": "dd2ad44a-dea2-4b87-aa84-8c75fba351b8",
+    "relationType": "verifies",
+    "sourceId": "166494b3-11bf-4194-977e-60681fc6cdd8",
+    "targetId": "782e1f6e-9b72-449b-84ad-0c5ee7af58df"
   },
   {
     "id": "dd65bef3-685c-49fb-8475-2572a2928758",
@@ -7557,6 +7692,12 @@
     "targetId": "398fc27a-5680-40ee-a73f-6d2fba9f980f"
   },
   {
+    "id": "f3659cd9-890b-49fe-8fe2-7b1ee264f25b",
+    "relationType": "traces-to",
+    "sourceId": "782e1f6e-9b72-449b-84ad-0c5ee7af58df",
+    "targetId": "f1caed16-5140-4c23-8191-35d22546562a"
+  },
+  {
     "id": "f3821d22-5fa9-4fab-8714-723a5383af30",
     "quote": "On first launch the user picks the data folder\nThe folder is picked once",
     "relationType": "derives",
@@ -7921,6 +8062,13 @@
     "relationType": "illustrates",
     "sourceId": "8b8003c2-e262-4787-95d6-4576f080cdf3",
     "targetId": "0cc6539e-3293-4327-970f-e394a053c69a"
+  },
+  {
+    "id": "fdcd24f1-e799-4441-affd-5f9fedd50b71",
+    "quote": "ustawienia jezyka w settings i w wizard",
+    "relationType": "derives",
+    "sourceId": "35787f5a-a2a4-44b4-bdc7-c1ae2bf9f9fb",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "fe3760a5-aded-4276-be1d-86acdbce04a9",

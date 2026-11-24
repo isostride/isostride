@@ -1,4 +1,5 @@
 import { Decoder, Profile, Stream } from '@garmin/fitsdk';
+import { IMPORT_REASONS, importReason } from '@/lib/fs';
 import { KNOWN_METRICS, nameOfField, unknownMetric, type Lap, type MetricInfo, type Samples, type Series } from '@/lib/kernel';
 
 /**
@@ -44,6 +45,7 @@ function unitOf(unit: string): string {
 /** "Form Power" → "dev.formPower". */
 function developerKey(name: string): string {
   const words = name.replace(/[^A-Za-z0-9]+/g, ' ').trim().split(' ').filter(Boolean);
+  // A metric's key, not a text. i18n-ignore
   return `dev.${words.map((w, i) => (i ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase())).join('') || 'field'}`;
 }
 
@@ -72,7 +74,7 @@ export interface ParsedRun {
   sources: Record<string, string>;
 }
 
-/** Why a file could not be imported; shown to the runner on the Runs screen. */
+/** Why a file could not be imported (one of IMPORT_REASONS); shown to the runner on the Data folder screen, in the language in use. */
 export class FitImportError extends Error {
   constructor(readonly reason: string) {
     super(reason);
@@ -91,9 +93,9 @@ function num(v: unknown): number | null {
 /** Reads one FIT file of a run (COROS, Garmin or any watch) into a run. Throws FitImportError when it is not a readable run. */
 export function parseFit(bytes: Uint8Array): ParsedRun {
   const stream = Stream.fromByteArray(Array.from(bytes));
-  if (!Decoder.isFIT(stream)) throw new FitImportError('not a FIT file');
+  if (!Decoder.isFIT(stream)) throw new FitImportError(IMPORT_REASONS.notFit);
   const decoder = new Decoder(stream);
-  if (!decoder.checkIntegrity()) throw new FitImportError('damaged FIT file (integrity check failed)');
+  if (!decoder.checkIntegrity()) throw new FitImportError(IMPORT_REASONS.damaged);
 
   const { messages, errors } = decoder.read({
     applyScaleAndOffset: true,
@@ -103,14 +105,14 @@ export function parseFit(bytes: Uint8Array): ParsedRun {
     convertDateTimesToDates: true,
     mergeHeartRates: true,
   });
-  if (errors.length) throw new FitImportError(`unreadable FIT file: ${String(errors[0])}`);
+  if (errors.length) throw new FitImportError(importReason(IMPORT_REASONS.unreadable, { error: String(errors[0]) }));
 
   const session = (messages.sessionMesgs?.[0] ?? null) as Mesg | null;
-  if (!session) throw new FitImportError('no session in the file');
-  if (session.sport !== 'running') throw new FitImportError(`not a run (sport: ${String(session.sport ?? 'unknown')})`);
+  if (!session) throw new FitImportError(IMPORT_REASONS.noSession);
+  if (session.sport !== 'running') throw new FitImportError(importReason(IMPORT_REASONS.notRun, { sport: String(session.sport ?? 'unknown') }));
 
   const records = (messages.recordMesgs ?? []) as Mesg[];
-  if (!records.length) throw new FitImportError('no samples in the file');
+  if (!records.length) throw new FitImportError(IMPORT_REASONS.noSamples);
 
   const start = session.startTime as Date;
   const startMs = start.getTime();

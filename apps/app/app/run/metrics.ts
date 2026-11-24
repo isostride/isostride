@@ -1,6 +1,7 @@
 import { efficiencyOf } from '@/lib/blocks';
 import { isPace, metricSeries, secondsPerKm, type MetricInfo, type RunFile } from '@/lib/kernel';
 import { metricView, rollingMean } from '@/components';
+import { msg, t } from '@/lib/i18n';
 
 /**
  * The metrics of a run's chart and its lines for drawing, shared by the Run screen and its widget on
@@ -26,13 +27,13 @@ export const mmss = (v: number) => { const r = Math.round(v); return `${Math.flo
 /** The known metrics in the order of the picker; the first four show by default; a run's others follow by name. */
 const ORDER = ['speed', 'heartRate', 'cadence', 'groundContactTime', 'efficiency', 'effortPace', 'verticalOscillation', 'stepLength', 'power', 'legSpringStiffness', 'altitude'];
 /** The run chart's own short names and notes of the known metrics. */
-const SHORT: Record<string, string> = { heartRate: 'HR', groundContactTime: 'GCT', efficiency: 'Effic.', effortPace: 'Effort', verticalOscillation: 'Vert. osc.', stepLength: 'Step', legSpringStiffness: 'LSS', altitude: 'Elev.' };
-const UNIT: Record<string, string> = { efficiency: 'm per heartbeat, 1 min means', effortPace: 'min/km, grade-adjusted' };
+const SHORT: Record<string, string> = { heartRate: msg('HR'), groundContactTime: msg('GCT'), efficiency: msg('Effic.'), effortPace: msg('Effort'), verticalOscillation: msg('Vert. osc.'), stepLength: msg('Step'), legSpringStiffness: msg('LSS'), altitude: msg('Elev.') };
+const UNIT: Record<string, string> = { efficiency: msg('m per heartbeat, 1 min means'), effortPace: msg('min/km, grade-adjusted') };
 
 /** A metric of a run's chart, from the run's own metrics (their names and units as its file gives them). */
 export function runMetric(key: WindowKey, catalog?: readonly MetricInfo[] | null): RunMetric {
   const v = metricView(key, catalog);
-  return { key, title: v.title, short: SHORT[key] ?? v.short, unit: UNIT[key] ?? v.unit, format: v.fmt, tick: v.tick, minSpan: v.minSpan, invert: v.invert, steps: v.steps };
+  return { key, title: v.title, short: SHORT[key] ? t(SHORT[key]) : v.short, unit: UNIT[key] ? t(UNIT[key]) : v.unit, format: v.fmt, tick: v.tick, minSpan: v.minSpan, invert: v.invert, steps: v.steps };
 }
 
 /** The metrics a run can show (requirement "Every metric offered everywhere"): the known ones in their order, then its others by name. */

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
+import { t } from '@/lib/i18n';
 
 /** What is edited: the glyph in the dialog's head. */
 export type EditKind = 'gear' | 'tag' | 'analysis' | 'run' | 'segment';
@@ -32,7 +33,7 @@ export function EditGlyph({ kind }: { kind: EditKind }) {
  * saved before Save; Enter saves, Esc or a click beside it cancels; the first field takes the focus
  * and Tab stays within the dialog. Deleting asks first: the caller's onDelete does.
  */
-export function EditDialog({ kind, kindLabel, title, children, onSave, onCancel, onDelete, saveLabel = 'Save', canSave = true }: {
+export function EditDialog({ kind, kindLabel, title, children, onSave, onCancel, onDelete, saveLabel, canSave = true }: {
   kind: EditKind;
   /** the kind as read above the name, e.g. "Shoes", "Workout type" */
   kindLabel: string;
@@ -43,6 +44,7 @@ export function EditDialog({ kind, kindLabel, title, children, onSave, onCancel,
   onCancel: () => void;
   /** offered only for what can be deleted; it asks before deleting */
   onDelete?: () => void;
+  /** the Save button's word, already in the language in use; Save by default */
   saveLabel?: string;
   canSave?: boolean;
 }) {
@@ -69,7 +71,7 @@ export function EditDialog({ kind, kindLabel, title, children, onSave, onCancel,
   }, []);
   return (
     <div className="edit-backdrop" onClick={onCancel}>
-      <form ref={box} tabIndex={-1} className="edit-dialog" role="dialog" aria-modal="true" aria-label={`Edit ${title}`}
+      <form ref={box} tabIndex={-1} className="edit-dialog" role="dialog" aria-modal="true" aria-label={t('Edit {name}', { name: title })}
         onClick={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); if (canSave) onSave(); }}>
         <header className="edit-head">
           <EditGlyph kind={kind} />
@@ -77,16 +79,16 @@ export function EditDialog({ kind, kindLabel, title, children, onSave, onCancel,
             <span className="edit-kind">{kindLabel}</span>
             <h2>{title}</h2>
           </div>
-          <button type="button" className="edit-close" aria-label="Close" onClick={onCancel}>✕</button>
+          <button type="button" className="edit-close" aria-label={t('Close')} onClick={onCancel}>✕</button>
         </header>
         <div className="edit-body">{children}</div>
         <footer className="edit-foot">
           {onDelete && (
-            <button type="button" className="btn danger edit-delete" onClick={onDelete}>Delete</button>
+            <button type="button" className="btn danger edit-delete" onClick={onDelete}>{t('Delete')}</button>
           )}
           <span className="spacer" />
-          <button type="button" className="btn" onClick={onCancel}>Cancel</button>
-          <button type="submit" className="btn primary" disabled={!canSave}>{saveLabel}</button>
+          <button type="button" className="btn" onClick={onCancel}>{t('Cancel')}</button>
+          <button type="submit" className="btn primary" disabled={!canSave}>{saveLabel ?? t('Save')}</button>
         </footer>
       </form>
     </div>
@@ -100,7 +102,7 @@ export function EditDialog({ kind, kindLabel, title, children, onSave, onCancel,
  */
 export function EditButton({ name, onClick, disabled = false, small = false }: { name: string; onClick: (e: MouseEvent<HTMLButtonElement>) => void; disabled?: boolean; small?: boolean }) {
   return (
-    <button type="button" className={`edit-btn ${small ? 'small' : ''}`} aria-label={`Edit ${name}`} title="Edit" disabled={disabled} onClick={onClick}>
+    <button type="button" className={`edit-btn ${small ? 'small' : ''}`} aria-label={t('Edit {name}', { name })} title={t('Edit')} disabled={disabled} onClick={onClick}>
       <svg viewBox="0 0 24 24" width={small ? 13 : 15} height={small ? 13 : 15} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z" /><path d="M13.5 6.5l4 4" />
       </svg>

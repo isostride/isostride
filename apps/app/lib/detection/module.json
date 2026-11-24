@@ -4,6 +4,7 @@
     "lib/blocks",
     "lib/fs",
     "lib/geo",
+    "lib/i18n",
     "lib/kernel"
   ],
   "runs": "worker"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { number, t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import { DECOUPLING_MIN, EF_TREND_DAYS, efficiencyNow, efficiencyRuns, trailingMean, type LoadSummary } from '@/lib/load';
 import { TimeChart } from './TimeChart';
@@ -14,38 +15,38 @@ const DECOUPLING_GOOD = 5;
  */
 export function EfficiencyTab({ part, runs, summaries, hrZones }: { part: 'ef' | 'decoupling'; runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; hrZones: number[] }) {
   const points = useMemo(() => efficiencyRuns(runs, summaries, hrZones), [runs, summaries, hrZones]);
-  if (!points.length) return <div className="card empty">No run with a heart rate yet.</div>;
+  if (!points.length) return <div className="card empty">{t('No run with a heart rate yet.')}</div>;
   const now = efficiencyNow(points);
   if (part === 'ef') {
     const trend = trailingMean(points, (p) => (p.easy ? p.ef : null), EF_TREND_DAYS);
     return (
       <div className="card chart">
-        <dl className="form-figures" aria-label="Efficiency now">
-          <div><dt>Efficiency, easy runs</dt><dd className="tnum">{now.ef !== null ? now.ef.toFixed(2) : '–'} <span className="unit">m/beat</span></dd><dd className="muted sub">{now.ef !== null && now.before !== null ? `${now.ef >= now.before ? '+' : '−'}${Math.abs(((now.ef - now.before) / now.before) * 100).toFixed(1)} % vs the ${EF_TREND_DAYS} days before` : ''}</dd></div>
-          <div><dt>Easy runs</dt><dd className="tnum">{points.filter((p) => p.easy).length} <span className="unit">of {points.length}</span></dd></div>
+        <dl className="form-figures" aria-label={t('Efficiency now')}>
+          <div><dt>{t('Efficiency, easy runs')}</dt><dd className="tnum">{now.ef !== null ? number(now.ef, 2) : '–'} <span className="unit">{t('m/beat')}</span></dd><dd className="muted sub">{now.ef !== null && now.before !== null ? t('{change} % vs the {days} days before', { change: `${now.ef >= now.before ? '+' : '−'}${number(Math.abs(((now.ef - now.before) / now.before) * 100), 1)}`, days: EF_TREND_DAYS }) : ''}</dd></div>
+          <div><dt>{t('Easy runs')}</dt><dd className="tnum">{number(points.filter((p) => p.easy).length)} <span className="unit">{t('of {total}', { total: number(points.length) })}</span></dd></div>
         </dl>
-        <h3 className="chart-title">Efficiency factor</h3>
-        <TimeChart label="Efficiency factor over time" times={points.map((p) => Date.parse(p.startTime))} height={240}
+        <h3 className="chart-title">{t('Efficiency factor')}</h3>
+        <TimeChart label={t('Efficiency factor over time')} times={points.map((p) => Date.parse(p.startTime))} height={240}
           series={[
-            { key: 'ef', label: 'run (filled: easy)', color: 'var(--series-1)', kind: 'dots', values: points.map((p) => p.ef), hollow: points.map((p) => !p.easy) },
-            { key: 'trend', label: `easy runs, ${EF_TREND_DAYS}-day mean`, color: 'var(--series-2)', kind: 'line', values: trend },
+            { key: 'ef', label: t('run (filled: easy)'), color: 'var(--series-1)', kind: 'dots', values: points.map((p) => p.ef), hollow: points.map((p) => !p.easy) },
+            { key: 'trend', label: t('easy runs, {days}-day mean', { days: EF_TREND_DAYS }), color: 'var(--series-2)', kind: 'line', values: trend },
           ]}
-          format={(v) => `${v.toFixed(2)} m/beat`} tick={(v) => v.toFixed(2)} />
+          format={(v) => `${number(v, 2)} ${t('m/beat')}`} tick={(v) => number(v, 2)} />
       </div>
     );
   }
   const long = points.filter((p) => p.decoupling !== null);
-  if (!long.length) return <div className="card empty">No run of {DECOUPLING_MIN / 60} minutes or more yet.</div>;
+  if (!long.length) return <div className="card empty">{t('No run of {minutes} minutes or more yet.', { minutes: number(DECOUPLING_MIN / 60) })}</div>;
   return (
     <div className="card chart">
-      <dl className="form-figures" aria-label="Decoupling now">
-        <div><dt>Decoupling, long runs</dt><dd className="tnum">{now.decoupling !== null ? `${now.decoupling.toFixed(1)} %` : '–'}</dd></div>
-        <div><dt>Long runs</dt><dd className="tnum">{long.length}</dd></div>
+      <dl className="form-figures" aria-label={t('Decoupling now')}>
+        <div><dt>{t('Decoupling, long runs')}</dt><dd className="tnum">{now.decoupling !== null ? `${number(now.decoupling, 1)} %` : '–'}</dd></div>
+        <div><dt>{t('Long runs')}</dt><dd className="tnum">{number(long.length)}</dd></div>
       </dl>
-      <h3 className="chart-title">Aerobic decoupling</h3>
-      <TimeChart label="Aerobic decoupling over time" times={long.map((p) => Date.parse(p.startTime))} height={220} zero guide={{ value: DECOUPLING_GOOD, label: `${DECOUPLING_GOOD} %` }}
-        series={[{ key: 'dec', label: 'decoupling', color: 'var(--series-4)', kind: 'dots', values: long.map((p) => p.decoupling) }]}
-        format={(v) => `${v.toFixed(1)} %`} tick={(v) => `${v} %`} />
+      <h3 className="chart-title">{t('Aerobic decoupling')}</h3>
+      <TimeChart label={t('Aerobic decoupling over time')} times={long.map((p) => Date.parse(p.startTime))} height={220} zero guide={{ value: DECOUPLING_GOOD, label: `${number(DECOUPLING_GOOD)} %` }}
+        series={[{ key: 'dec', label: t('decoupling'), color: 'var(--series-4)', kind: 'dots', values: long.map((p) => p.decoupling) }]}
+        format={(v) => `${number(v, 1)} %`} tick={(v) => `${number(v)} %`} />
     </div>
   );
 }

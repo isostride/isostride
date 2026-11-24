@@ -1,3 +1,5 @@
+import { msg } from '@/lib/i18n';
+
 /**
  * The performance model's settings (the author's request of 20 Nov 2026: "chce aby model byl
  * ustawiany przez uzytkownika w ustawieniach"), kept in user/settings.json with the zones.
@@ -6,11 +8,12 @@
 /** How a run's load is computed (the author chose "TRIMP Edwardsa, TRIMP Banistera, rTSS (tempo), Power TSS (CP)"). */
 export type LoadModel = 'trimpBanister' | 'trimpEdwards' | 'rtss' | 'powerTss';
 
+/** Each load model: its name and what it is (texts shown through t() where shown), and the unit of its load. */
 export const LOAD_MODELS: { key: LoadModel; name: string; unit: string; about: string }[] = [
-  { key: 'trimpBanister', name: 'Banister TRIMP', unit: 'TRIMP', about: 'minutes weighted by the heart rate reserve, exponentially (Banister 1991)' },
-  { key: 'trimpEdwards', name: 'Edwards TRIMP', unit: 'TRIMP', about: 'minutes in each heart rate zone times the zone’s number (Edwards 1993)' },
-  { key: 'rtss', name: 'rTSS', unit: 'rTSS', about: 'hours × (normalised effort pace ÷ threshold pace)² × 100' },
-  { key: 'powerTss', name: 'Power TSS', unit: 'TSS', about: 'hours × (normalised power ÷ critical power)² × 100' },
+  { key: 'trimpBanister', name: msg('Banister TRIMP'), unit: 'TRIMP', about: msg('minutes weighted by the heart rate reserve, exponentially (Banister 1991)') },
+  { key: 'trimpEdwards', name: msg('Edwards TRIMP'), unit: 'TRIMP', about: msg('minutes in each heart rate zone times the zone’s number (Edwards 1993)') },
+  { key: 'rtss', name: msg('rTSS'), unit: 'rTSS', about: msg('hours × (normalised effort pace ÷ threshold pace)² × 100') },
+  { key: 'powerTss', name: msg('Power TSS'), unit: 'TSS', about: msg('hours × (normalised power ÷ critical power)² × 100') },
 ];
 
 export interface PerformanceSettings {
