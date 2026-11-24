@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PATHS, readJson, writeJson } from '@/lib/fs';
-import { APP_VERSION, versionLabel } from '@/lib/kernel';
+import { APP_VERSION, REPO_URL, releaseNotesUrl, versionLabel } from '@/lib/kernel';
 import { NodeFolder } from '../support/nodeFolder';
 
 const ROOT = path.resolve(import.meta.dirname, '../../../..');
@@ -32,6 +32,9 @@ describe('App version shown', () => {
     expect(notesOf(read('CHANGELOG.md'), version)).toBeTruthy();
     // Shown without a patch of 0.
     expect([versionLabel('0.1.0'), versionLabel('0.1.2'), versionLabel('1.0.0'), versionLabel('10.20.0')]).toEqual(['0.1', '0.1.2', '1.0', '10.20']);
+    // The release notes of a version, as shown; all the releases for a build without a version.
+    expect(releaseNotesUrl('0.1.0')).toBe(`${REPO_URL}/releases/tag/v0.1`);
+    expect(releaseNotesUrl('0.0.0')).toBe(`${REPO_URL}/releases`);
     // Every object written to the data folder says which version wrote it; anything else as it is.
     const folder = new NodeFolder(path.join(dir, 'f'));
     await writeJson(folder, PATHS.settings, { schemaVersion: 1 });
