@@ -64,11 +64,12 @@ test.describe('Site without layout shift', () => {
   });
 
   test('Site gives the app version', async ({ page }) => {
-    // The footer names the version of the app deployed with it (requirement "App version shown") and its changelog.
+    // The footer names the version of the app deployed with it (requirement "App version shown") and the release notes of that version.
     const version = JSON.parse(fs.readFileSync(path.resolve(ROOT, '../../package.json'), 'utf8')).version as string;
     await page.goto(SITE);
     const foot = page.locator('footer.foot');
     await expect(foot).toContainText(`IsoStride ${version.replace(/^(\d+\.\d+)\.0$/, '$1')} ·`);
-    await expect(foot.getByRole('link', { name: 'changelog' })).toHaveAttribute('href', /\/blob\/master\/CHANGELOG\.md$/);
+    const tag = `v${version.replace(/^(\d+\.\d+)\.0$/, '$1')}`;
+    await expect(foot.getByRole('link', { name: 'release notes' })).toHaveAttribute('href', `https://github.com/isostride/isostride/releases/tag/${tag}`);
   });
 });

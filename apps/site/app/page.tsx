@@ -203,7 +203,7 @@ export default function Home() {
       </main>
 
       <footer className="foot">
-        <span>© {new Date().getFullYear()} IsoStride {VERSION} · <a href={REPO_URL}>source on GitHub</a> (MIT) · <a href={`${REPO_URL}/blob/master/CHANGELOG.md`}>changelog</a></span>
+        <span>© {new Date().getFullYear()} IsoStride {VERSION} · <a href={REPO_URL}>source on GitHub</a> (MIT) · <a href={VERSION === '0.0.0' ? `${REPO_URL}/releases` : `${REPO_URL}/releases/tag/v${VERSION}`}>release notes</a></span>
         <a href={APP_URL}>{APP_HOST}</a>
       </footer>
     </>

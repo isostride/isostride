@@ -145,10 +145,10 @@ function RunsPage() {
         {runs.length === 0 ? (
           <div className="empty">{index ? 'No runs yet.' : 'Nothing imported yet.'} Put your COROS FIT files in this folder (or its fit/ subfolder), then open the <Link href="/folder">Data folder</Link> screen (the IsoStride logo) and press <b>Import folder</b>.</div>
         ) : (
-          <table className="data">
+          <table className="data runs-table">
             <thead>
               <tr>
-                <th>Date</th><th>Start</th><th>Title</th><th className="num">Distance km</th><th className="num">Time</th><th className="num">Pace /km</th><th className="num">Avg HR</th><th>HR from</th><th>Shoes</th><th>Tags</th><th className="num">Load{loadUnit ? ` ${loadUnit}` : ''}</th><th />
+                <th>Date</th><th className="wide-col">Start</th><th className="wide-col">Title</th><th className="num">Distance km</th><th className="num">Time</th><th className="num">Pace /km</th><th className="num wide-col">Avg HR</th><th className="wide-col">HR from</th><th className="wide-col">Shoes</th><th className="wide-col">Tags</th><th className="num wide-col">Load{loadUnit ? ` ${loadUnit}` : ''}</th><th className="wide-col" />
               </tr>
             </thead>
             <tbody>
@@ -156,20 +156,21 @@ function RunsPage() {
                 <Fragment key={r.id}>
                   <tr className="row" onClick={() => router.push(`/run?id=${r.id}`)}>
                     <td className="strong">{date(r.startTime)}</td>
-                    <td className="muted">{time(r.startTime)}</td>
-                    <td>{r.title ? <span className="title-cell">{r.title}</span> : <span className="muted">–</span>}</td>
+                    <td className="muted wide-col">{time(r.startTime)}</td>
+                    <td className="wide-col">{r.title ? <span className="title-cell">{r.title}</span> : <span className="muted">–</span>}</td>
                     <td className="num"><CellBar share={r.distance / longest} />{km(r.distance)}</td>
                     <td className="num">{duration(r.duration)}</td>
                     <td className="num strong">{pace(r.avgSpeed)}</td>
-                    <td className="num">{r.avgHeartRate ?? '–'}</td>
-                    <td><span className="chip">{(r.heartRateSource ?? r.device).replace('COROS ', '')}</span></td>
-                    <td>{r.shoes ? <span className="chip" title={r.shoesOverridden ? 'set for this run' : 'by date'}>{r.shoes}{r.shoesOverridden ? ' ✎' : ''}</span> : <span className="muted">–</span>}</td>
-                    <td>
+                    <td className="num wide-col">{r.avgHeartRate ?? '–'}</td>
+                    <td className="wide-col"><span className="chip">{(r.heartRateSource ?? r.device).replace('COROS ', '')}</span></td>
+                    <td className="wide-col">{r.shoes ? <span className="chip" title={r.shoesOverridden ? 'set for this run' : 'by date'}>{r.shoes}{r.shoesOverridden ? ' ✎' : ''}</span> : <span className="muted">–</span>}</td>
+                    <td className="wide-col">
                       {[r.workoutType, r.techniqueCue].filter(Boolean).map((t) => <span key={t} className="chip" style={{ marginRight: 4 }}>{t}</span>)}
                       {r.note && <span className="muted" title={r.note}>✉</span>}
                     </td>
-                    <td className="num muted" title={r.loadEstimated ? 'estimated from the duration: the run lacks what the load model needs' : undefined}>{r.load === null || r.load === undefined ? '–' : `${Math.round(r.load)}${r.loadEstimated ? '*' : ''}`}</td>
-                    <td>
+                    <td className="num muted wide-col" title={r.loadEstimated ? 'estimated from the duration: the run lacks what the load model needs' : undefined}>{r.load === null || r.load === undefined ? '–' : `${Math.round(r.load)}${r.loadEstimated ? '*' : ''}`}</td>
+                    {/* On a phone the run's own screen edits its tags (Tags and note): the column left out. */}
+                    <td className="wide-col">
                       <EditButton name={r.title ?? `${date(r.startTime)} ${time(r.startTime)}`} onClick={(e) => { e.stopPropagation(); setEditing(editing === r.id ? null : r.id); }} />
                     </td>
                   </tr>
