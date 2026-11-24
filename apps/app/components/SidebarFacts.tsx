@@ -51,7 +51,7 @@ export function SidebarFacts({ folder, path, onFacts }: { folder: DataFolder; pa
         '/segments': `${tn(kept, '{n} kept', '{n} kept')}${suggested ? ` · ${tn(suggested, '{n} suggested', '{n} suggested')}` : ''}`,
         '/compare': analyses ? tn(analyses, '{n} saved analysis', '{n} saved analyses') : t('Trends, efforts, A/B'),
         '/performance': form === null ? t('Load, capacity, models') : t('Form {form} today', { form: `${form >= 0 ? '+' : '−'}${number(Math.abs(Math.round(form)))}` }),
-        '/settings': t('Zones, gear, models'),
+        '/settings': t('Data, models, zones'),
       });
     })().catch(() => undefined);
     return () => { live = false; };

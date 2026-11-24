@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addFromPicker, fitFiles, importAll, nav, openWithFolder, recordMeasure } from './support';
+import { addFromPicker, fitFiles, importAll, nav, openData, openWithFolder, recordMeasure } from './support';
 
 
 const bg = (page: import('@playwright/test').Page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
@@ -30,13 +30,23 @@ test.describe('Journeys', () => {
     await openWithFolder(page, await fitFiles(30, '2026-05-01'));
     await importAll(page);
 
-    // The Data screen, under the logo: the folder and what it holds, import, recompute, another folder.
+    // The logo opens a splash: the app, what it is and its version; Esc closes it.
     await page.locator('.sidebar .brand').click();
-    await expect(page).toHaveURL(/\/data$/);
-    // A link kept from before the screen was named Data (/folder) leads to it.
-    await page.goto('/folder');
-    await expect(page).toHaveURL(/\/data$/);
-    await page.getByRole('heading', { name: 'Data', exact: true }).waitFor();
+    const splash = page.getByRole('dialog', { name: 'IsoStride' });
+    await expect(splash).toContainText('An open platform for analysing your runs');
+    await expect(splash).toContainText(/Version \d+\.\d+/);
+    await expect(splash.getByRole('link', { name: 'Release notes' })).toHaveAttribute('href', /\/releases/);
+    await page.keyboard.press('Escape');
+    await expect(splash).toHaveCount(0);
+    // The Data tab, the first of Settings: the folder and what it holds, recompute, another folder.
+    await openData(page);
+    await expect(page).toHaveURL(/\/settings$/);
+    // Links kept from when it was a screen of its own (/folder, then /data) lead to it.
+    for (const old of ['/folder', '/data']) {
+      await page.goto(old);
+      await expect(page).toHaveURL(/\/settings$/);
+      await expect(page.getByRole('tab', { name: 'Data', exact: true })).toHaveAttribute('aria-selected', 'true');
+    }
     const facts = page.getByLabel('What the folder holds');
     await expect(page.locator('.folder-name')).toContainText('data');
     await expect(facts).toContainText(/Runs\d+/);
@@ -57,13 +67,13 @@ test.describe('Journeys', () => {
     await page.getByRole('alertdialog', { name: 'Recompute everything?' }).getByRole('button', { name: 'Recompute' }).click();
     await expect(page.getByText(/^Recomputed \d+ runs/)).toBeVisible({ timeout: 60_000 });
     // Back and forward through the screens seen.
-    await nav(page, 'Settings');
-    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+    await nav(page, 'Performance');
+    await expect(page.getByRole('heading', { name: 'Performance', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Back' }).click();
-    await expect(page.getByRole('heading', { name: 'Data', exact: true })).toBeVisible();
+    await expect(page.getByLabel('What the folder holds')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Forward' })).toBeEnabled();
     await page.getByRole('button', { name: 'Forward' }).click();
-    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Performance', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Forward' })).toBeDisabled();
     await page.getByRole('button', { name: 'Back' }).click();
 

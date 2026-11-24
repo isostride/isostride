@@ -37,10 +37,10 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
     await tabTo(page, 'button', 'Skip setup');
     await page.keyboard.press('Enter');
     await page.waitForURL(/\/dashboard$/);
-    // The logo leads to the Data screen, where the import (by itself) is seen to end.
-    await tabTo(page, 'link', /^IsoStride/);
+    // Settings opens on its Data tab, where the import (by itself) is seen to end.
+    await tabTo(page, 'link', /Settings$/);
     await page.keyboard.press('Enter');
-    await page.getByRole('heading', { name: 'Data', exact: true }).waitFor();
+    await page.getByLabel('What the folder holds').waitFor();
     await importDone(page);
     // Block definition: on the Analysis screen, the picker opens with the search focused; Enter takes the first block found in the runs.
     await tabTo(page, 'link', /Compare$/);

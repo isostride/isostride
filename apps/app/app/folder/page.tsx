@@ -3,10 +3,11 @@
 import { useEffect } from 'react';
 
 /**
- * The Data screen's address before it was named Data (the runner's request of 24 Nov 2026: "w jezyku
- * polskim uri jest ciagle /folder"): a link kept from then opens /data, with what it asked (?action=import).
+ * The Data screen's first address (the runner's request of 24 Nov 2026: "w jezyku polskim uri jest
+ * ciagle /folder"), then /data, now the first tab of Settings ("przesun je cale pod settings ... jako
+ * pierwzza zakladka"): a link kept from then opens Settings, on that tab.
  */
 export default function FolderMoved() {
-  useEffect(() => { window.location.replace(`/data${window.location.search}`); }, []);
+  useEffect(() => { window.location.replace('/settings'); }, []);
   return null;
 }

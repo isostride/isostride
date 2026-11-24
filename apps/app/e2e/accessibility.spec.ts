@@ -5,8 +5,10 @@ import { addFromPicker, nav, openPicker, openRun, recordMeasure, setUpWithBlock 
 /** WCAG 2.2 AA rules axe checks automatically (ADR "Built with React"). */
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
-async function serious(page: Page, screen: string) {
-  const { violations } = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+/** The serious violations of a screen, or of a dialog over it (`within`: the page behind is dimmed). */
+async function serious(page: Page, screen: string, within?: string) {
+  const axe = new AxeBuilder({ page }).withTags(TAGS);
+  const { violations } = await (within ? axe.include(within) : axe).analyze();
   return violations
     .filter((v) => v.impact === 'serious' || v.impact === 'critical')
     .map((v) => `${screen}: ${v.id} (${v.impact}) ${v.nodes.length}× ${v.nodes[0]?.target.join(' ')}`);
@@ -25,10 +27,6 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
         await page.waitForTimeout(200);
         found.push(...(await serious(page, `${screen} (${scheme})`)));
       }
-      // The Data screen, under the logo.
-      await page.locator('.sidebar .brand').click();
-      await page.getByRole('heading', { level: 1, name: 'Data', exact: true }).waitFor();
-      found.push(...(await serious(page, `Data (${scheme})`)));
       // The A/B tab of Analysis, on the block taken.
       await nav(page, 'Compare');
       await addFromPicker(page, /^1\.6 km northeast/);
@@ -55,11 +53,17 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       }
       await nav(page, 'Settings');
       // The tabs of Settings, each.
-      for (const tab of ['Models', 'Metrics', 'Gears', 'Tags', 'Look & feel', 'Language & region', 'About']) {
+      for (const tab of ['Data', 'Models', 'Metrics', 'Gears', 'Tags', 'Look & feel', 'Language & region', 'About']) {
         await page.getByRole('tab', { name: tab, exact: true }).click();
         await page.getByRole('tabpanel').getByRole('region', { name: tab }).waitFor();
         found.push(...(await serious(page, `Settings · ${tab} (${scheme})`)));
       }
+      // The splash the logo opens.
+      await page.locator('.sidebar .brand').click();
+      await page.getByRole('dialog', { name: 'IsoStride' }).waitFor();
+      await page.waitForTimeout(300);
+      found.push(...(await serious(page, `Splash (${scheme})`, '.splash')));
+      await page.keyboard.press('Escape');
       // The picker of the Analysis screen: its list.
       await nav(page, 'Compare');
       const dialog = await openPicker(page);

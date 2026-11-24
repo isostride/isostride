@@ -95,16 +95,16 @@ test.describe('App in English and Polish', () => {
     await page.getByRole('radio', { name: 'English' }).click();
     await page.reload();
     await expect(html).toHaveAttribute('lang', 'en');
-    await expect(page.locator('.sidebar a[href="/"]')).toContainText('Runs');
+    await expect(page.locator('.sidebar .nav a[href="/"]')).toContainText('Runs');
     await page.getByRole('radio', { name: 'Polski' }).click();
-    await expect(page.locator('.sidebar a[href="/"]')).toContainText('Biegi');
-    for (const tab of ['models', 'metrics', 'gears', 'tags', 'display', 'language', 'about']) {
+    await expect(page.locator('.sidebar .nav a[href="/"]')).toContainText('Biegi');
+    for (const tab of ['data', 'models', 'metrics', 'gears', 'tags', 'display', 'language', 'about']) {
       await page.goto(`/settings?tab=${tab}`);
       await check(`Settings · ${tab}`);
     }
 
     // The screens: no English the dictionary translates; distances with a decimal comma, dates in Polish.
-    await page.locator('.sidebar a[href="/"]').click();
+    await page.locator('.sidebar .nav a[href="/"]').click();
     await page.locator('.cal-week').first().waitFor();
     await check('Runs');
     await expect(page.locator('.calendar')).toContainText(/(listopad|październik) 2026/i);
@@ -112,7 +112,7 @@ test.describe('App in English and Polish', () => {
     await page.locator('.run-figures').waitFor();
     await expect(page.locator('.run-figures dd').first()).toHaveText(/^\d+,\d{2} km$/);
     await check('Run');
-    for (const [href, screen] of [['/segments', 'Segments'], ['/compare', 'Compare'], ['/performance', 'Performance'], ['/data', 'Data']] as const) {
+    for (const [href, screen] of [['/segments', 'Segments'], ['/compare', 'Compare'], ['/performance', 'Performance'], ['/settings', 'Data']] as const) {
       await page.goto(href);
       await page.waitForTimeout(1500);
       await check(screen);

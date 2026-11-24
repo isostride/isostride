@@ -186,15 +186,11 @@ test.describe('Layout that fits a phone', () => {
 
     // Settings: its tabs.
     await nav(page, 'Settings');
-    for (const tab of ['Models', 'Metrics', 'Gears', 'Tags', 'Look & feel', 'Language & region', 'About']) {
+    for (const tab of ['Data', 'Models', 'Metrics', 'Gears', 'Tags', 'Look & feel', 'Language & region', 'About']) {
       await page.getByRole('tab', { name: tab, exact: true }).click();
       await page.getByRole('region', { name: tab }).waitFor();
       await check(`Settings · ${tab}`, tab !== 'Tags');
     }
-    // The Data screen, from the logo in the top bar.
-    await page.locator('.sidebar .brand').click();
-    await page.getByRole('heading', { name: 'Data', exact: true }).waitFor();
-    await check('Data', true);
 
     // Fitness function "No screen wider than a phone" (ADR "Look and feel").
     await recordMeasure('phoneScreensWiderThanScreen', wide.length);

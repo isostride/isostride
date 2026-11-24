@@ -42,7 +42,7 @@ test('Every screen holds still', async ({ page }) => {
   const run = await page.evaluate(async () => { const r = await (await (await (await (await navigator.storage.getDirectory()).getDirectoryHandle('data')).getDirectoryHandle('.isostride')).getDirectoryHandle('derived')).getFileHandle('runs-index.json'); return JSON.parse(await (await r.getFile()).text()).runs.at(-1).id; });
   const urls = ['/dashboard', '/', `/run?id=${run}`, '/segments', '/compare', compare, `${compare}&tab=segments`, `${compare}&tab=ab`, `${compare}&tab=curve`,
     '/performance', ...['load&view=form', 'load&view=weekly', 'load&view=intensity', 'capacity&view=efforts', 'capacity&view=critical', 'capacity&view=predictions', 'aerobic&view=efficiency', 'aerobic&view=decoupling', 'aerobic&view=vo2', 'response&view=hr', 'response&view=vdot'].map((t) => `/performance?tab=${t}`),
-    '/settings', ...['models', 'metrics', 'gears', 'tags', 'display', 'about'].map((t) => `/settings?tab=${t}`), '/data', '/setup', '/nothing-here'];
+    '/settings', ...['models', 'metrics', 'gears', 'tags', 'display', 'about'].map((t) => `/settings?tab=${t}`), '/setup', '/nothing-here'];
   // A slow machine: the CPU four times slower, so what comes late on a slow computer (or on CI) comes
   // late here too, and moves the page here if it would there.
   const cdp = await page.context().newCDPSession(page);
