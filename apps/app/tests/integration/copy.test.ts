@@ -113,5 +113,19 @@ describe('Phone reads from a copy', () => {
     expect(await app.fill()).toBe(0);
     expect(await new MirroredFolder(runner, new NodeFolder(await fs.mkdtemp(path.join(os.tmpdir(), 'copy-')))).fill(() => true)).toBe(0);
   });
+
+  it('A file left empty in the copy read from the folder and mended', async () => {
+    // A tab closed while the copy filled left an empty file in it: the screen read it and stayed blank (CI, 24 Nov 2026).
+    const runner = await makeDataFolder([FILES.pace4]);
+    await importFolder(runner);
+    const copy = new NodeFolder(await fs.mkdtemp(path.join(os.tmpdir(), 'copy-')));
+    await copy.writeText(PATHS.runsIndex, '');
+    const app = new MirroredFolder(runner, copy);
+    expect((await readJson<RunsIndex>(app, PATHS.runsIndex))!.runs).toHaveLength(1);
+    expect(JSON.parse((await copy.readText(PATHS.runsIndex))!).runs).toHaveLength(1);
+    // An empty file in the folder itself reads as missing, not as a failure.
+    await runner.writeText(PATHS.gear, '');
+    expect(await readJson(runner, PATHS.gear)).toBeNull();
+  });
 });
 

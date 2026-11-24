@@ -57,7 +57,8 @@ export class MirroredFolder implements DataFolder {
     if (this.copyOnly(path)) return this.copy.readText(path).catch(() => null);
     let kept: string | null = null;
     await this.toCopy(async () => { kept = await this.copy.readText(path); });
-    if (kept !== null) return kept;
+    // An empty file in the copy is a writing cut off (a tab closed while the copy filled): read from the folder, and the copy mended.
+    if (kept !== null && kept !== '') return kept;
     const text = await this.folder.readText(path);
     if (text !== null && this.copied(path)) await this.toCopy(() => this.copy.writeText(path, text));
     return text;

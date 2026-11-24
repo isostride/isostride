@@ -902,7 +902,8 @@
       "tests/unit/copy.test.ts › Copy in the browser › One copy a folder in the browser’s storage, removed when the folder is left",
       "tests/unit/copy.test.ts › Copy in the browser › The folder read through its copy when the device keeps one",
       "tests/integration/copy.test.ts › Phone reads from a copy › The kept results of the jobs in the copy alone",
-      "tests/integration/copy.test.ts › Phone reads from a copy › The copy filled in the background with what it lacks, newest runs first"
+      "tests/integration/copy.test.ts › Phone reads from a copy › The copy filled in the background with what it lacks, newest runs first",
+      "tests/integration/copy.test.ts › Phone reads from a copy › A file left empty in the copy read from the folder and mended"
     ] }
   ]
 }

@@ -1149,3 +1149,4 @@ Q: (model) Wypchnąć jako PR?
 A: (użytkownik) tak
 A: (użytkownik) znowu blad na git
 A: (model) The copy's end-to-end test failed again in CI on its last step (no run shown after the copy was dropped), 12 of 12 passing here: the app opens itself again when it drops a copy, and the test's own reload may cross it. The last step now looks for the runs again until they show (45 s at most) and, stuck without them, writes the screen, the address and the copies to the run's log.
+A: (model) The log of the stuck test showed the real fault: the Runs screen blank (no run, no facts in the menu), one copy. The browser makes a file before it writes it; a write cut off (a page left, a tab closed while the copy fills) leaves an empty file, which the copy then gave back and whose JSON failed, so the screen never showed. Fixed: an empty file in the copy is read from the folder and the copy mended; an empty JSON file anywhere reads as missing.
