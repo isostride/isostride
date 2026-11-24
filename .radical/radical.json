@@ -821,6 +821,9 @@
       "e2e/block-definition.spec.ts › Every block on one screen › Block built from a rule with a live count",
       "e2e/metrics.spec.ts",
       "e2e/run.spec.ts › Run chart › Run tagged from its screen"
+    ] },
+    { "element": "88e05112-347d-4f97-a369-1f5c3bfb5222", "name": "Setup wizard fits a phone", "tests": [
+      "e2e/mobile.spec.ts › Layout that fits a phone › Screens fit a phone"
     ] }
   ]
 }

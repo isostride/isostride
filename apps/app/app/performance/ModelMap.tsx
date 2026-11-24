@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { ModelGroup, ModelKey, ModelReport, Trust } from '@/lib/load';
 import { TRUST_LABEL, WhyButton, WhyDialog, shortName, type Models } from './Assumptions';
 import { TABS, performanceHref } from './structure';
@@ -191,7 +191,7 @@ export function ModelMap({ models, by: models_, says, byLoad }: { models: ModelR
             <div key={`band-${g}`} className={`map-lane lane-${g}`} style={{ gridColumn: '1 / -1', gridRow: `${laneStart[i]} / span ${rows[i]}` }} aria-hidden="true" />
           ))}
           {LANES.map((g, i) => (
-            <div key={`head-${g}`} className="map-lane-head" style={{ gridColumn: 1, gridRow: `${laneStart[i]} / span ${rows[i]}` }}>
+            <div key={`head-${g}`} className="map-lane-head" style={{ gridColumn: 1, gridRow: `${laneStart[i]} / span ${rows[i]}`, '--order': i * 100 } as CSSProperties}>
               <Link href={performanceHref(g)}>{lane(g).name}</Link>
               <span className="muted">{lane(g).evidence?.split(':')[g === 'response' ? 0 : 1]?.trim()}</span>
               <span className="map-tally">{tally(g).map(([t, n]) => <span key={t}><i className={`trust-dot ${t}`} aria-hidden="true" />{n} {TRUST_LABEL[t].toLowerCase()}</span>)}</span>
@@ -210,7 +210,7 @@ export function ModelMap({ models, by: models_, says, byLoad }: { models: ModelR
               <div key={m.key} ref={(el) => { if (el) nodes.current.set(m.key, el); else nodes.current.delete(m.key); }}
                 data-model={m.key} data-trust={m.trust}
                 className={`map-node map-${m.trust}${chain && !chain.has(m.key) ? ' faded' : ''}${active === m.key ? ' on' : ''}${open === m.key ? ' why-open' : ''}`}
-                style={{ gridColumn: 3 + s.col * 2, gridRow: laneStart[s.lane] + s.row }}
+                style={{ gridColumn: 3 + s.col * 2, gridRow: laneStart[s.lane] + s.row, '--order': s.lane * 100 + 1 + s.col * 10 + s.row } as CSSProperties}
                 onMouseEnter={() => setActive(m.key)} onMouseLeave={() => setActive(null)} onFocus={() => setActive(m.key)} onBlur={() => setActive(null)}>
                 <Link className="map-link" href={performanceHref(m.where.tab, m.where.view)}>
                   <span className="map-name" title={m.name}>{mapName(m)}</span>

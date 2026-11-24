@@ -102,17 +102,17 @@ export function CurveTab({ metric, items, bests, missingPower }: {
             <span className="muted small">the efforts the curve comes from; open one to see it in its run</span>
           </div>
           <table className="data curve-bests" aria-label="Curve bests" onMouseLeave={() => setFocusBest(null)}>
-            <thead><tr>{lines.length > 1 && <th>Item</th>}<th>Length</th><th className="num">{metric === 'power' ? 'Power' : 'Pace'}</th><th className="num">Estimate</th><th>Gap</th><th>Run</th><th>In the run</th><th /></tr></thead>
+            <thead><tr>{lines.length > 1 && <th>Item</th>}<th>Length</th><th className="num">{metric === 'power' ? 'Power' : 'Pace'}</th><th className="num wide-col">Estimate</th><th>Gap</th><th className="wide-col">Run</th><th className="wide-col">In the run</th><th /></tr></thead>
             <tbody>
               {bestRows.map(({ line, p, estimate }) => (
                 <tr key={`${line.key}${p.duration}`} className={focusBest?.key === line.key && focusBest.duration === p.duration ? 'focus' : ''} onMouseEnter={() => setFocusBest({ key: line.key, duration: p.duration })}>
                   {lines.length > 1 && <td><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ItemKey shape={line.shape} color={line.color} />{line.label}</span></td>}
                   <td className="strong">{p.duration < 60 ? `${p.duration} s` : p.duration < 3600 ? `${p.duration / 60} min` : `${p.duration / 3600} h`}</td>
                   <td className="num tnum">{curveFmt(p.value)}</td>
-                  <td className="num tnum muted">{estimate === null ? '–' : curveFmt(estimate)}</td>
+                  <td className="num tnum muted wide-col">{estimate === null ? '–' : curveFmt(estimate)}</td>
                   <td className="muted">{estimate === null ? '' : <><CellBar tone="quiet" share={Math.abs(p.value - estimate) / widestGap} />{curveGap(p.value, estimate)}</>}</td>
-                  <td>{date(p.date)}{p.title ? <span className="muted"> · {p.title}</span> : null}</td>
-                  <td className="muted">{mmss(p.from)}–{mmss(p.to)}</td>
+                  <td className="wide-col">{date(p.date)}{p.title ? <span className="muted"> · {p.title}</span> : null}</td>
+                  <td className="muted wide-col">{mmss(p.from)}–{mmss(p.to)}</td>
                   <td className="num"><Link className="row-open" href={runHref(p.runId, p.from, p.to)}>Open run →</Link></td>
                 </tr>
               ))}
