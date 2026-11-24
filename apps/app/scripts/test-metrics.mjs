@@ -26,13 +26,15 @@ const e2eCount = pw ? pw.stats.expected + pw.stats.unexpected + pw.stats.flaky +
 const all = unit.length + integration.length + e2eCount;
 const pct = (n) => Math.round((1000 * n) / all) / 10;
 
+/** The unit tests over the limit, named in the log (a failure says which, not only how many). */
+const slow = (unitRun ? unitRun.testResults.flatMap((f) => f.assertionResults.map((t) => ({ ...t, file: f.name }))) : unit).filter((t) => (t.duration ?? 0) > unitLimitMs);
 const m = {
   testsUnit: unit.length,
   testsIntegration: integration.length,
   testsE2e: e2eCount,
   unitSharePercent: pct(unit.length),
   e2eSharePercent: pct(e2eCount),
-  unitOver100ms: (unitRun ? unitRun.testResults.flatMap((f) => f.assertionResults) : unit).filter((t) => (t.duration ?? 0) > unitLimitMs).length,
+  unitOver100ms: slow.length,
   unitLimitMs: Math.round(unitLimitMs),
   machineFactor: machine?.factor ?? 1,
   unitNetworkCalls: unit.filter((t) => (t.failureMessages ?? []).some((x) => x.includes('unit tests touch no network'))).length,
@@ -46,3 +48,4 @@ if (timing.testsSeconds != null) m.testsSeconds = timing.testsSeconds;
 for (const [k, v] of Object.entries(m)) if (v === null) delete m[k];
 fs.writeFileSync('reports/measures-tests.json', JSON.stringify(m, null, 2));
 console.log(m);
+for (const t of slow) console.log(`unit test over ${Math.round(unitLimitMs)} ms: ${Math.round(t.duration)} ms ${(t.file ?? '').replace(/^.*\/apps\/app\//, '')} › ${t.fullName ?? t.title}`);

@@ -51,6 +51,15 @@ test('Every screen holds still', async ({ page }) => {
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
   const results = [];
   for (const u of urls) results.push(await measure(page, u));
+  // Runs as a list too (the view kept in the browser), and the Dashboard reached from it in the menu
+  // ("jak wchodze na runs to widze shift ... wszystkich kolumn", "tytul dashboard sie przesuwa").
+  await page.evaluate(() => localStorage.setItem('strideprism.runsView', 'list'));
+  results.push({ ...(await measure(page, '/')), url: '/ (list)' });
+  await page.evaluate(() => { (window as any).__shifts = []; });
+  await nav(page, 'Dashboard');
+  await page.waitForTimeout(2500);
+  const menu = (await page.evaluate(() => (window as any).__shifts as { v: number; t: number; s: string }[])).filter((x) => x.v > 0);
+  results.push({ url: '/dashboard (from the menu)', total: menu.reduce((a, b) => a + b.v, 0), what: menu.map((x) => `${x.v.toExponential(2)} at ${x.t} ms: ${x.s}`) });
   await recordMeasure('screensClsMax', Math.max(...results.map((r) => r.total)));
   expect(results.filter((r) => r.total > 0)).toEqual([]);
 });

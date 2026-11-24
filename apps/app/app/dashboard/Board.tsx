@@ -15,6 +15,7 @@ import type { IndexedRun, RunFile, RunsIndex } from '@/lib/kernel';
 import { formSeries, type ModelKey } from '@/lib/load';
 import { TABS, performanceHref, type Tab } from '../performance/structure';
 import { readSettings } from '@/lib/settings';
+import { DashboardHead, todayText } from './Head';
 
 /** The tiles resting on the models: loaded only when the Dashboard has one. */
 const ModelTiles = dynamic(() => import('./ModelTiles').then((m) => m.ModelTiles), { ssr: false });
@@ -96,7 +97,7 @@ export function DashboardPage() {
 
   const change = useCallback((next: Tile[]) => { setTiles(next); writeDashboard(folder, next).catch(() => undefined); }, [folder]);
 
-  if (!tiles || !data) return <div className="page wide-page"><div className="page-head"><h1>{t('Dashboard')}</h1></div><p className="muted small" role="status">{t('Reading your data…')}</p></div>;
+  if (!tiles || !data) return <div className="page wide-page dashboard-page"><DashboardHead /><p className="muted small" role="status">{t('Reading your data…')}</p></div>;
 
   /**
    * A tile's frame: its title, and in Customize its moves, its width and its removal. A tile takes
@@ -132,7 +133,7 @@ export function DashboardPage() {
     <div className="page wide-page dashboard-page">
       <div className="page-head">
         <div>
-          <div className="eyebrow">{dateText(today, { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+          <div className="eyebrow">{todayText(today)}</div>
           <h1>{t('Dashboard')}</h1>
         </div>
         <span className="spacer" />

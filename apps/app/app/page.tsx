@@ -52,6 +52,8 @@ function RunsPage() {
   // The unit of the load model chosen in Settings (requirement "Load model chosen in Settings").
   const [loadUnit, setLoadUnit] = useState('');
   const [editing, setEditing] = useState<string | null>(null);
+  /** the folder read: until then nothing is drawn, so nothing comes in above what was drawn */
+  const [loaded, setLoaded] = useState(false);
   /** the calendar of weeks (the default) or the table of runs */
   const [view, setView] = useState<'calendar' | 'list'>('calendar');
   useEffect(() => { try { if (localStorage.getItem(VIEW_KEY) === 'list') setView('list'); } catch { /* the default */ } }, []);
@@ -67,13 +69,17 @@ function RunsPage() {
   }, [search]);
   const match = (r: IndexedRun) => matchesSearch(r, search);
 
+  // Everything the screen shows read first, then set at once: the list and its columns drawn once, not
+  // widening as the gear, the tags and the load's unit come in one after another (layout shift 0:
+  // "jak wchodze na runs to widze shift ... wszystkich kolumn").
   const load = useCallback(async () => {
-    setIndex(await readJson<RunsIndex>(folder, PATHS.runsIndex));
-    setManifest(await readManifest(folder));
-    setGear(await readGear(folder));
-    setTags(await readRunTags(folder));
-    const s = await readSettings(folder);
-    setLoadUnit(LOAD_MODELS.find((m) => m.key === s.performance.load)?.unit ?? '');
+    const [i, m, g, tg, s] = await Promise.all([readJson<RunsIndex>(folder, PATHS.runsIndex), readManifest(folder), readGear(folder), readRunTags(folder), readSettings(folder)]);
+    setIndex(i);
+    setManifest(m);
+    setGear(g);
+    setTags(tg);
+    setLoadUnit(LOAD_MODELS.find((x) => x.key === s.performance.load)?.unit ?? '');
+    setLoaded(true);
   }, [folder]);
 
   const saveTag = async (runId: string, tag: RunTag) => {
@@ -150,7 +156,7 @@ function RunsPage() {
         <RunsToolbar search={search} onSearch={setSearch} found={runs.filter(match).length} total={runs.length}
           types={[...new Set(runs.map((r) => r.workoutType).filter((type): type is string => !!type))].sort()} months={view === 'calendar' ? monthsOf(weeks).map((m) => m.month) : []} />
       )}
-      {runs.length > 0 && view === 'calendar' ? <Calendar weeks={weeks} match={match} searching={isSearching(search)} loadUnit={loadUnit} /> : (
+      {!loaded ? null : runs.length > 0 && view === 'calendar' ? <Calendar weeks={weeks} match={match} searching={isSearching(search)} loadUnit={loadUnit} /> : (
       <div className="card">
         {runs.length === 0 ? (
           <div className="empty">{index ? t('No runs yet.') : t('Nothing imported yet.')} {t('Put your COROS FIT files in this folder (or its fit/ subfolder), then open the')} <Link href="/folder">{t('Data folder')}</Link> {t('screen (the IsoStride logo) and press')} <b>{t('Import folder')}</b>.</div>
