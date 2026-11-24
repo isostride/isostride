@@ -1083,3 +1083,5 @@ A: (model) Done (site, both languages): the runs come in as FIT files exported b
 A: (użytkownik) jest ok wypchij
 A: (model) Done (found by the check): the site keeps its plain statement "There is no server and no account." (requirement "Site in plain statements"); COROS is named after it in the same answer. (no requirement)
 A: (użytkownik) no to nie uruchamiaj raz jeszcze ...
+A: (użytkownik) zobavz na git
+A: (model) Done (found by CI on PR #16): the links to the runs added, in a notice, were under 24 px high (WCAG 2.2 target size); each is now at least 24 px. The notice was on screen while CI's accessibility test scanned, and had gone by the time it scanned locally. (no requirement)
