@@ -1092,3 +1092,10 @@ A: (model) Also: a run the folder already holds (the same start, to 2 s) is kept
 Q: (model) Czy usunąć tę datę z Twojego folderu? Czy wypchnąć poprawkę (commit, push, PR)?
 A: (użytkownik) tak
 A: (model) Done: "since" taken out of the folder's coros.json (the run fetched kept), so the next fetch looks at the whole 30 days and downloads only the runs the folder does not hold.
+Q: (użytkownik) widze biegi oznaczone jako new ... czcionka czarna na niebieskim to nie super pomysl, dodaktowo ... jak dlugo beda oznaczone jako niew?
+A: (model) Done: the New badge in the accent on its soft tint (and "N new files" on the Data screen too): the gradient with --on-accent read near black on light blue in the dark theme.
+Q: (model) Jak długo bieg ma być oznaczony jako New? Dziś: aż go otworzysz albo klikniesz „Mark as seen”, bez limitu czasu. [Do otwarcia, najdłużej 7 dni / Do pierwszego obejrzenia Runs / Zostaw jak jest]
+A: (użytkownik) Do otwarcia, najdłużej 7 dni (Recommended)
+A: (model) Done: a run stays New until it is opened or marked as seen, 7 days after its import at most (new-runs.json keeps when each was marked; a file of before counts from the run's start); the Runs screen says "a week at most".
+Q: (model) Dołożyć te zmiany do PR #17 i wypchnąć?
+A: (użytkownik) tak

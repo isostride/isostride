@@ -162,7 +162,7 @@ function RunsPage() {
       {loaded && runs.some((r) => fresh.has(r.id)) && (
         <div className="new-runs-bar">
           <span className="new-chip">{t('New')}</span>
-          <span className="muted small">{tn(runs.filter((r) => fresh.has(r.id)).length, '{n} run added since you last looked; it stays marked until you open it.', '{n} runs added since you last looked; each stays marked until you open it.')}</span>
+          <span className="muted small">{tn(runs.filter((r) => fresh.has(r.id)).length, '{n} run added since you last looked; it stays marked until you open it, a week at most.', '{n} runs added since you last looked; each stays marked until you open it, a week at most.')}</span>
           <button type="button" className="link-button small" onClick={async () => { await markRunsSeen(folder, 'all'); setFresh(new Set()); }}>{t('Mark as seen')}</button>
         </div>
       )}

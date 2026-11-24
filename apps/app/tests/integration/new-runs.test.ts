@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { markRunsSeen, readNewRuns } from '@/lib/fs';
+import { NEW_FOR_MS, markRunsNew, markRunsSeen, readNewRuns } from '@/lib/fs';
 import { addedRuns, importFolder, recomputeEverything } from '@/lib/pipeline';
 import { FILES, addFile, makeDataFolder } from '../support/fixtures';
 
@@ -29,5 +29,18 @@ describe('New runs marked new', () => {
     expect(await readNewRuns(folder)).toEqual([added[1]]);
     await markRunsSeen(folder, 'all');
     expect(await readNewRuns(folder)).toEqual([]);
+  });
+
+  it('A run not opened stays new a week at most', async () => {
+    // "Do otwarcia, najdłużej 7 dni": marked now, new for 7 days, then no longer.
+    const folder = await makeDataFolder([]);
+    const now = Date.UTC(2026, 10, 24, 12);
+    await markRunsNew(folder, ['20261123-195626'], now);
+    expect(await readNewRuns(folder, now + NEW_FOR_MS - 1000)).toEqual(['20261123-195626']);
+    expect(await readNewRuns(folder, now + NEW_FOR_MS)).toEqual([]);
+    // A file of before, without the times: a run counts from its start, which its id gives.
+    await folder.writeText('.isostride/user/new-runs.json', JSON.stringify({ runs: ['20261123-195626'] }));
+    expect(await readNewRuns(folder, Date.UTC(2026, 10, 25))).toEqual(['20261123-195626']);
+    expect(await readNewRuns(folder, Date.UTC(2026, 11, 1))).toEqual([]);
   });
 });
