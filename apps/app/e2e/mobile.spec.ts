@@ -55,11 +55,10 @@ test.describe('Layout that fits a phone', () => {
     // The steps in one line: their numbers, the current one's name.
     const steps = page.getByRole('list', { name: 'Steps' });
     expect(new Set(await steps.getByRole('listitem').evaluateAll((ls) => ls.map((l) => Math.round(l.getBoundingClientRect().y)))).size).toBe(1);
-    await step('Your runs').getByRole('button', { name: /^Import/ }).click();
-    await step('Your runs').getByText(/^Imported \d+/).waitFor({ timeout: 90_000 });
+    await step('Your runs').getByText(/^Imported: each new file/).waitFor({ timeout: 90_000 });
     await check('Setup · Your runs', true);
     const next = page.getByRole('button', { name: 'Next', exact: true });
-    for (const name of ['You', 'Zones', 'Gear', 'Load model', 'Display', 'Done']) {
+    for (const name of ['You', 'Zones', 'Gear', 'Load model', 'Look & feel', 'Done']) {
       await next.click();
       await step(name).waitFor();
       await step(name).locator('details:not([open]) > summary').evaluateAll((ss) => ss.forEach((s) => (s as HTMLElement).click()));
@@ -117,13 +116,13 @@ test.describe('Layout that fits a phone', () => {
     // The theme is set in Settings, not in the bars: the top bar holds the logo and the search only.
     await expect(page.locator('.sidebar').getByRole('radiogroup', { name: 'Theme' })).toHaveCount(0);
     await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
-    await page.getByRole('tab', { name: 'Display', exact: true }).click();
+    await page.getByRole('tab', { name: 'Look & feel', exact: true }).click();
     await page.getByRole('radiogroup', { name: 'Theme' }).getByRole('radio', { name: 'Dark' }).click();
     await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(29, 31, 35)');
     await page.locator('.sidebar').getByRole('link', { name: /Runs$/ }).click();
     await check('Runs · dark', true);
     await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
-    await page.getByRole('tab', { name: 'Display', exact: true }).click();
+    await page.getByRole('tab', { name: 'Look & feel', exact: true }).click();
     await page.getByRole('radiogroup', { name: 'Theme' }).getByRole('radio', { name: 'Light' }).click();
     await page.locator('.sidebar').getByRole('link', { name: /Runs$/ }).click();
 
@@ -187,15 +186,15 @@ test.describe('Layout that fits a phone', () => {
 
     // Settings: its tabs.
     await nav(page, 'Settings');
-    for (const tab of ['Models', 'Metrics', 'Gears', 'Tags', 'Display', 'About']) {
+    for (const tab of ['Models', 'Metrics', 'Gears', 'Tags', 'Look & feel', 'Language & region', 'About']) {
       await page.getByRole('tab', { name: tab, exact: true }).click();
       await page.getByRole('region', { name: tab }).waitFor();
       await check(`Settings · ${tab}`, tab !== 'Tags');
     }
-    // The Data folder screen, from the logo in the top bar.
+    // The Data screen, from the logo in the top bar.
     await page.locator('.sidebar .brand').click();
-    await page.getByRole('heading', { name: 'Data folder' }).waitFor();
-    await check('Data folder', true);
+    await page.getByRole('heading', { name: 'Data', exact: true }).waitFor();
+    await check('Data', true);
 
     // Fitness function "No screen wider than a phone" (ADR "Look and feel").
     await recordMeasure('phoneScreensWiderThanScreen', wide.length);

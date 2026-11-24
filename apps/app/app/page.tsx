@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useOpenFolder, runInWorker, watchJob } from '@/lib/client';
 import { locale, localeTag, msg, number, t, tn } from '@/lib/i18n';
-import { PATHS, readJson, isOutdated, readManifest, type Manifest } from '@/lib/fs';
+import { PATHS, readJson, isOutdated, markRunsSeen, readManifest, readNewRuns, type Manifest } from '@/lib/fs';
 import { type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { date, duration, km, pace, time } from '@/lib/format';
 import { readGear, type Gear, readRunTags, writeRunTags, type RunTag, type RunTagsFile } from '@/lib/gear';
@@ -52,6 +52,8 @@ function RunsPage() {
   // The unit of the load model chosen in Settings (requirement "Load model chosen in Settings").
   const [loadUnit, setLoadUnit] = useState('');
   const [editing, setEditing] = useState<string | null>(null);
+  /** the runs an import added that the runner has not opened (requirement "New runs marked new") */
+  const [fresh, setFresh] = useState<Set<string>>(new Set());
   /** the folder read: until then nothing is drawn, so nothing comes in above what was drawn */
   const [loaded, setLoaded] = useState(false);
   /** the calendar of weeks (the default) or the table of runs */
@@ -73,8 +75,9 @@ function RunsPage() {
   // widening as the gear, the tags and the load's unit come in one after another (layout shift 0:
   // "jak wchodze na runs to widze shift ... wszystkich kolumn").
   const load = useCallback(async () => {
-    const [i, m, g, tg, s] = await Promise.all([readJson<RunsIndex>(folder, PATHS.runsIndex), readManifest(folder), readGear(folder), readRunTags(folder), readSettings(folder)]);
+    const [i, m, g, tg, s, n] = await Promise.all([readJson<RunsIndex>(folder, PATHS.runsIndex), readManifest(folder), readGear(folder), readRunTags(folder), readSettings(folder), readNewRuns(folder)]);
     setIndex(i);
+    setFresh(new Set(n));
     setManifest(m);
     setGear(g);
     setTags(tg);
@@ -114,7 +117,7 @@ function RunsPage() {
   useEffect(() => {
     if (params.get('action') === 'import' && !actionDone.current) {
       actionDone.current = true;
-      router.replace('/folder?action=import');
+      router.replace('/data?action=import');
     }
   });
 
@@ -140,7 +143,7 @@ function RunsPage() {
 
       {isOutdated(manifest) && (
         <div className="banner warn">
-          {t('⚠ Data in this folder was built with algorithm v{old}; this app is v{now}: recompute it on the', { old: manifest!.algorithmVersion, now: ALGORITHM_VERSION })} <Link href="/folder">{t('Data folder')}</Link> {t('screen, under the IsoStride logo.')}
+          {t('⚠ The data of this folder were built with algorithm v{old}; this app is v{now}: they are rebuilt by themselves now.', { old: manifest!.algorithmVersion, now: ALGORITHM_VERSION })}
         </div>
       )}
       {progress && (
@@ -156,10 +159,17 @@ function RunsPage() {
         <RunsToolbar search={search} onSearch={setSearch} found={runs.filter(match).length} total={runs.length}
           types={[...new Set(runs.map((r) => r.workoutType).filter((type): type is string => !!type))].sort()} months={view === 'calendar' ? monthsOf(weeks).map((m) => m.month) : []} />
       )}
-      {!loaded ? null : runs.length > 0 && view === 'calendar' ? <Calendar weeks={weeks} match={match} searching={isSearching(search)} loadUnit={loadUnit} /> : (
+      {loaded && runs.some((r) => fresh.has(r.id)) && (
+        <div className="new-runs-bar">
+          <span className="new-chip">{t('New')}</span>
+          <span className="muted small">{tn(runs.filter((r) => fresh.has(r.id)).length, '{n} run added since you last looked; it stays marked until you open it.', '{n} runs added since you last looked; each stays marked until you open it.')}</span>
+          <button type="button" className="link-button small" onClick={async () => { await markRunsSeen(folder, 'all'); setFresh(new Set()); }}>{t('Mark as seen')}</button>
+        </div>
+      )}
+      {!loaded ? null : runs.length > 0 && view === 'calendar' ? <Calendar weeks={weeks} match={match} searching={isSearching(search)} loadUnit={loadUnit} fresh={fresh} /> : (
       <div className="card">
         {runs.length === 0 ? (
-          <div className="empty">{index ? t('No runs yet.') : t('Nothing imported yet.')} {t('Put your COROS FIT files in this folder (or its fit/ subfolder), then open the')} <Link href="/folder">{t('Data folder')}</Link> {t('screen (the IsoStride logo) and press')} <b>{t('Import folder')}</b>.</div>
+          <div className="empty">{index ? t('No runs yet.') : t('Nothing imported yet.')} {t('Put your FIT files in this folder (or its fit/ subfolder): they are imported by themselves. The')} <Link href="/data">{t('Data')}</Link> {t('screen (the IsoStride logo) shows the import and the files that could not be read.')}</div>
         ) : (
           <table className="data runs-table">
             <thead>
@@ -171,7 +181,7 @@ function RunsPage() {
               {runs.filter(match).map((r) => (
                 <Fragment key={r.id}>
                   <tr className="row" onClick={() => router.push(`/run?id=${r.id}`)}>
-                    <td className="strong">{date(r.startTime)}</td>
+                    <td className="strong">{date(r.startTime)}{fresh.has(r.id) && <span className="new-chip">{t('New')}</span>}</td>
                     <td className="muted wide-col">{time(r.startTime)}</td>
                     <td className="wide-col">{r.title ? <span className="title-cell">{r.title}</span> : <span className="muted">–</span>}</td>
                     <td className="num"><CellBar share={r.distance / longest} />{km(r.distance)}</td>
@@ -265,7 +275,7 @@ function WeeksAtAGlance({ weeks, runs, totalKm, since }: { weeks: LogWeek[]; run
  * The calendar of runs ("moze kalendarz ?"): a row per week, newest first, Monday to Sunday, each
  * run a tile in its day opening the run, the month named where it begins, the week's totals at the end.
  */
-function Calendar({ weeks, match, searching, loadUnit }: { weeks: LogWeek[]; match: (r: IndexedRun) => boolean; searching: boolean; loadUnit: string }) {
+function Calendar({ weeks, match, searching, loadUnit, fresh }: { weeks: LogWeek[]; match: (r: IndexedRun) => boolean; searching: boolean; loadUnit: string; fresh: Set<string> }) {
   const today = new Date();
   const todayDay = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   // The weeks grouped by month ("miesiac pokazuj lepiej ... pogrupowac wiersze").
@@ -299,8 +309,8 @@ function Calendar({ weeks, match, searching, loadUnit }: { weeks: LogWeek[]; mat
                     // A run the search did not find: a thin bar, still a way to it.
                     <Link key={r.id} href={`/run?id=${r.id}`} className="run-tile dim" aria-label={t('{km} km, not found by the search', { km: kmOf(r.distance) })} title={`${kmOf(r.distance)} km`} />
                   ) : (
-                    <Link key={r.id} href={`/run?id=${r.id}`} className="run-tile" title={[r.title, r.workoutType, r.note].filter(Boolean).join(' · ') || undefined}>
-                      <b className="tnum">{kmOf(r.distance)} km</b>
+                    <Link key={r.id} href={`/run?id=${r.id}`} className={`run-tile ${fresh.has(r.id) ? 'new' : ''}`} title={[r.title, r.workoutType, r.note].filter(Boolean).join(' · ') || undefined}>
+                      <b className="tnum">{kmOf(r.distance)} km{fresh.has(r.id) && <span className="new-chip">{t('New')}</span>}</b>
                       <span className="tnum">{duration(r.duration)} · {pace(r.avgSpeed)}</span>
                       {(r.title || r.workoutType) && <span className="run-tile-tag">{r.title ?? r.workoutType}</span>}
                     </Link>

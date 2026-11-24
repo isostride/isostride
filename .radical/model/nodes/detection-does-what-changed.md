@@ -1,0 +1,11 @@
+---
+id: "31c48696-639f-4365-978a-a6cfca0472b5"
+type: "adr"
+label: "Detection does what changed"
+alternatives: "Detecting from scratch in the background without waiting: the same CPU and memory, only hidden. A database of runs in IndexedDB: against ADR \"Folder via File System Access\" (the data in the runner's folder)."
+consequences: "A run added reads its file and those passing a route it changed (131 runs: 1.0 s instead of 2.4–3.9 s); a workout type changed, a block kept or a refresh with nothing new read none or few (0.03–0.16 s instead of 3.4–5.4 s). The kept files are bookkeeping: a recompute rebuilds them, the algorithm version drops them. tests/integration/blocks.test.ts holds the result equal to a detection from scratch after a run added, blocks kept, new shoes and a workout type changed; a new field a rule reads must enter the run's fingerprint."
+context: "The review of 24 Nov 2026 (\"przegladnij wszystko pod katem wydajnosci ... czy nie przeliczasz rzeczy wielokrotnie\") measured on 131 runs: a run added, a workout type changed or a block kept detected the route segments, every block in every run and the suggestions again from every run file (130 files, 2.4–5.4 s; ~15–30 s at 500 runs, the segments growing faster than the runs). An import that added nothing (a duplicate, a file that cannot be read) did the same. The results kept on demand (derived/cache) were all dropped by a note or a block changed, which they do not read."
+date: "2026-11-24"
+decision: "We will detect only what changed, with the same result as a detection from scratch: each run's track every 10 m kept in derived/tracks/ (the segments found without the run files, and again only when the runs are other ones, through a grid of cells); the instances of a block in a run kept with fingerprints of the block and of the run as detection reads it, detected again only when one changed; the facts, paces and counts of the suggestions kept for each run in derived/blocks-cache.json, a count keyed by the fields its filter reads; a block that cannot find anything in a run from its track alone (a route not passed) does not read the run. An import that adds nothing computes nothing; the data stamp moves only when the runs or their context change in anything but a note."
+status: "accepted"
+---

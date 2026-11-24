@@ -1,9 +1,8 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useDataVersion, useWidth } from '@/components';
+import { useDataVersion, useWidth, eager } from '@/components';
 import { readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile } from '@/lib/blocks';
 import { useLocale, useOpenFolder } from '@/lib/client';
 import type { SavedAnalysesFile, SavedAnalysis } from '@/lib/compare';
@@ -18,11 +17,11 @@ import { readSettings } from '@/lib/settings';
 import { DashboardHead, todayText } from './Head';
 
 /** The tiles resting on the models: loaded only when the Dashboard has one. */
-const ModelTiles = dynamic(() => import('./ModelTiles').then((m) => m.ModelTiles), { ssr: false });
+const ModelTiles = eager(() => import('./ModelTiles').then((m) => m.ModelTiles));
 /** The widgets pinned from their cards, as on their screens: each loaded only when the Dashboard has one. */
-const RunWidget = dynamic(() => import('../run/RunWidget').then((m) => m.RunWidget), { ssr: false });
-const CompareWidget = dynamic(() => import('../compare/CompareWidget').then((m) => m.CompareWidget), { ssr: false });
-const PerformanceView = dynamic(() => import('../performance/Body').then((m) => m.Body), { ssr: false });
+const RunWidget = eager(() => import('../run/RunWidget').then((m) => m.RunWidget));
+const CompareWidget = eager(() => import('../compare/CompareWidget').then((m) => m.CompareWidget));
+const PerformanceView = eager(() => import('../performance/Body').then((m) => m.Body));
 
 /** The models a tile can show, by key, as Performance names them (keys, shown with t()). */
 const MODELS: [string, string][] = [

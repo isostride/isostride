@@ -1,15 +1,14 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useState } from 'react';
-import { useMetrics } from '@/components';
+import { useMetrics, eager } from '@/components';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 import { reasonSummary, selectInstances, valueOf } from '@/lib/compare';
 import type { DataFolder } from '@/lib/fs';
 import { t } from '@/lib/i18n';
 
-const EffortsChart = dynamic(() => import('./EffortsChart').then((m) => m.EffortsChart), { ssr: false });
-const SegmentsTable = dynamic(() => import('./SegmentsTable').then((m) => m.SegmentsTable), { ssr: false, loading: () => <div className="muted small" style={{ padding: 18 }}>{t('Loading the efforts…')}</div> });
+const EffortsChart = eager(() => import('./EffortsChart').then((m) => m.EffortsChart));
+const SegmentsTable = eager(() => import('./SegmentsTable').then((m) => m.SegmentsTable), () => <div className="muted small" style={{ padding: 18 }}>{t('Loading the efforts…')}</div>);
 
 const keyOfEffort = (e: BlockInstance) => `${e.runId}:${e.start}`;
 

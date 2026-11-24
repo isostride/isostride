@@ -2,3 +2,4 @@
 export * from './browserFolder';
 export * from './folder';
 export * from './manifest';
+export * from './newRuns';

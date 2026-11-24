@@ -85,7 +85,7 @@ export const CONTENT: Record<Lang, Content> = {
         'Most running apps are training logs. They record what you did: the calendar, the weekly totals, the plan. Their tools for analysing and comparing the data are limited.',
         'The tools that go deeper are mostly closed services: you upload your runs, you cannot see how a figure is computed, and you cannot add a model of your own. Open tools of this kind for running are hard to find.',
         'IsoStride is built for that part only. You can look at any metric in the file, follow the same segment across months, compare one group of efforts with another, and run the performance models on your own history, with the code open and the data on your disk.',
-        'It does not replace your training log. It does not plan training, does not sync with your watch and has no feed or sharing. Keep your log where it is, and export the FIT files when you want to analyse them.',
+        'It does not replace your training log. It does not plan training and has no feed or sharing. Keep your log where it is, and bring your runs in as FIT files: exported by hand, or fetched from your COROS account.',
       ],
     },
     local: {
@@ -93,9 +93,10 @@ export const CONTENT: Record<Lang, Content> = {
       lead: 'Runs are health data, with the places where you live and train. IsoStride is built so that they never leave your computer.',
       qa: [
         ['Where is my data?', 'In a folder you choose on your disk. IsoStride reads the FIT files there and writes what it computes next to them, in .isostride/, as JSON files you can open, copy or delete.'],
-        ['What is sent to a server?', 'Nothing. There is no server and no account. The app is a static web page; your files are read by your browser and never uploaded. The map background is the one thing that needs the network, and it is off until you switch it on.'],
+        ['What is sent to a server?', 'Nothing. There is no server and no account. The app is a static web page; your files are read by your browser and never uploaded. The network is used only for the map background, off until you switch it on, and for COROS if you connect it: then your browser talks to COROS directly and downloads your runs from it.'],
         ['Can I check that?', 'Yes. The code is on GitHub, with its tests. You can read it, build it and run it yourself.'],
         ['Which watches?', 'Any watch that exports FIT files. It is tested on files from COROS and Garmin; files from Suunto, Wahoo or Polar should read too, and if one does not, an issue with the file helps.'],
+        ['Can it fetch my runs from COROS?', 'Yes. On the Data screen, under Integrations, connect your COROS account: you sign in on COROS’s own page, and IsoStride downloads the FIT files of your runs into your folder, the last 30 days first, then what is new each time you fetch. The sign-in stays in your browser, and the files go straight from COROS to your disk. COROS allows 50 files a day, so a long history comes in over a few days.'],
       ],
     },
     diagram: {
@@ -148,9 +149,9 @@ export const CONTENT: Record<Lang, Content> = {
     start: {
       h2: 'Getting started',
       steps: [
-        'Export your runs as FIT files (COROS: Training Hub, Export; Garmin Connect: Export Original) and put them in one folder.',
+        'Export your runs as FIT files (COROS: Training Hub, Export; Garmin Connect: Export Original) and put them in one folder. With COROS you can skip this: connect your account in the app and it fetches them.',
         <>Open {APP} in Chrome, Edge or Opera on a desktop. Safari and Firefox cannot give a web page access to a folder.</>,
-        <>Choose the folder and import. To run the app yourself, clone the {REPO('repository')} and run <code>npm install</code>, then <code>npm run dev</code>.</>,
+        <>Choose the folder: the runs are imported by themselves, and so is every new file you add. To run the app yourself, clone the {REPO('repository')} and run <code>npm install</code>, then <code>npm run dev</code>.</>,
       ],
     },
     foot: { source: <>{GH} (MIT)</>, notes: 'release notes' },
@@ -182,7 +183,7 @@ export const CONTENT: Record<Lang, Content> = {
         'Większość aplikacji biegowych to dzienniki treningowe. Zapisują, co zrobiłeś: kalendarz, kilometry w tygodniu, plan. Z samymi danymi niewiele jednak pozwalają zrobić.',
         'Narzędzia do głębszej analizy to zwykle zamknięte serwisy. Wysyłasz do nich swoje biegi, nie wiesz, jak liczone są wyniki, i nie dodasz własnego modelu. Otwartych narzędzi tego typu dla biegaczy właściwie nie ma.',
         'IsoStride zajmuje się wyłącznie analizą. Obejrzysz w nim każdą metrykę zapisaną w pliku, prześledzisz ten sam odcinek na przestrzeni miesięcy, porównasz jedną grupę wysiłków z inną i policzysz modele wydolności na własnej historii. Kod jest otwarty, a dane zostają na Twoim dysku.',
-        'To nie jest zamiennik dziennika treningowego. IsoStride nie planuje treningów, nie łączy się z zegarkiem i nie ma części społecznościowej. Prowadź dziennik tam, gdzie zawsze, a pliki FIT eksportuj wtedy, gdy chcesz się im przyjrzeć.',
+        'To nie jest zamiennik dziennika treningowego. IsoStride nie planuje treningów i nie ma części społecznościowej. Prowadź dziennik tam, gdzie zawsze. Biegi trafiają do IsoStride jako pliki FIT: eksportujesz je sam albo aplikacja pobiera je z Twojego konta COROS.',
       ],
     },
     local: {
@@ -190,9 +191,10 @@ export const CONTENT: Record<Lang, Content> = {
       lead: 'Biegi to dane o zdrowiu, a przy okazji mapa miejsc, w których mieszkasz i trenujesz. Dlatego IsoStride nigdzie ich nie wysyła.',
       qa: [
         ['Gdzie są moje dane?', 'W folderze, który sam wskażesz na dysku. IsoStride czyta z niego pliki FIT, a wyniki zapisuje obok, w podfolderze .isostride/, jako zwykłe pliki JSON. Możesz je otworzyć, skopiować albo usunąć.'],
-        ['Czy coś trafia na serwer?', 'Nie. Nie ma serwera ani kont. Aplikacja to statyczna strona, a pliki czyta Twoja przeglądarka i nigdzie ich nie wysyła. Internetu potrzebuje tylko podkład mapy, a ten jest domyślnie wyłączony.'],
+        ['Czy coś trafia na serwer?', 'Nie. Nie ma serwera ani kont. Aplikacja to statyczna strona, a pliki czyta Twoja przeglądarka i nigdzie ich nie wysyła. Internetu potrzebuje tylko podkład mapy, domyślnie wyłączony, i COROS, jeśli go połączysz. Wtedy przeglądarka łączy się bezpośrednio z COROS i pobiera z niego Twoje biegi.'],
         ['Jak mogę to sprawdzić?', 'Cały kod, razem z testami, jest na GitHubie. Możesz go przejrzeć, zbudować i uruchomić u siebie.'],
         ['Jakie zegarki są obsługiwane?', 'Każdy, który eksportuje pliki FIT. Aplikację testujemy na plikach z COROS i Garmina; pliki z Suunto, Wahoo czy Polara też powinny się wczytać. Jeśli któryś nie zadziała, zgłoś to na GitHubie i dołącz plik.'],
+        ['Czy biegi mogą przyjść prosto z COROS?', 'Tak. Na ekranie Dane, w sekcji Integracje, połącz swoje konto COROS. Logujesz się na stronie samego COROS, a IsoStride pobiera pliki FIT Twoich biegów do folderu: najpierw z ostatnich 30 dni, potem przy każdym pobraniu to, co nowe. Logowanie zostaje w przeglądarce, a pliki trafiają z COROS prosto na Twój dysk. COROS daje 50 plików dziennie, więc dłuższa historia spłynie w kilka dni.'],
       ],
     },
     diagram: {
@@ -253,9 +255,9 @@ export const CONTENT: Record<Lang, Content> = {
     start: {
       h2: 'Jak zacząć',
       steps: [
-        'Wyeksportuj biegi jako pliki FIT (COROS: Training Hub → Export; Garmin Connect: Export Original) i zapisz je w jednym folderze.',
+        'Wyeksportuj biegi jako pliki FIT (COROS: Training Hub → Export; Garmin Connect: Export Original) i zapisz je w jednym folderze. Z COROS możesz ten krok pominąć: połącz konto w aplikacji, a ona sama je pobierze.',
         <>Otwórz {APP} w Chrome, Edge lub Operze na komputerze. Safari i Firefox nie dają stronom internetowym dostępu do folderów.</>,
-        <>Wskaż folder i zaimportuj biegi. Jeśli wolisz uruchomić aplikację u siebie, sklonuj {REPO('repozytorium')} i wpisz <code>npm install</code>, a potem <code>npm run dev</code>.</>,
+        <>Wskaż folder: biegi zaimportują się same, tak jak każdy nowy plik, który do niego dodasz. Jeśli wolisz uruchomić aplikację u siebie, sklonuj {REPO('repozytorium')} i wpisz <code>npm install</code>, a potem <code>npm run dev</code>.</>,
       ],
     },
     foot: { source: <>{GH_PL} (MIT)</>, notes: 'informacje o wydaniu' },

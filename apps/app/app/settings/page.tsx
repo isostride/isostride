@@ -5,18 +5,17 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { runInWorker, useLocale, useOpenFolder } from '@/lib/client';
 import { msg, number, t } from '@/lib/i18n';
-import dynamic from 'next/dynamic';
 import { GearTags } from './GearTags';
-import { AboutCard, ChartsCard, DisplayCard } from './DeviceCards';
-import { METRICS_CHANGED, useMetrics } from '@/components';
+import { AboutCard, ChartsCard, DisplayCard, LanguageCard } from './DeviceCards';
+import { METRICS_CHANGED, useMetrics, eager } from '@/components';
 import { metricInfo } from '@/lib/kernel';
 
 /** The thresholds of the models' checks: loaded with their tab. */
-const ModelsCard = dynamic(() => import('./ModelsCard').then((m) => m.ModelsCard), { ssr: false });
+const ModelsCard = eager(() => import('./ModelsCard').then((m) => m.ModelsCard));
 import { DEFAULT_ZONES, zoneMetricsOf, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneRanges, zoneTint, zonesFromMaxHr, type ZoneMetric } from '@/lib/settings';
 
 /** The values of the models (heart rates, thresholds, time constants): loaded with the Models tab. */
-const PerformanceCard = dynamic(() => import('../performance/PerformanceCard').then((m) => m.PerformanceCard), { ssr: false });
+const PerformanceCard = eager(() => import('../performance/PerformanceCard').then((m) => m.PerformanceCard));
 
 /** A value of a metric as the runner reads it: pace as m:ss, others as they are. */
 const show = (m: ZoneMetric, v: number) => (m.pace ? `${Math.floor(v / 60)}:${String(Math.round(v % 60)).padStart(2, '0')}` : number(v));
@@ -41,15 +40,15 @@ function ZoneChips({ m, boundaries }: { m: ZoneMetric; boundaries: number[] }) {
 }
 
 /**
- * The Settings tabs (requirement "Settings in tabs"), kept in the link (tab=metrics, gears, tags,
+ * The Settings tabs (requirement "Settings in tabs"), kept in the link (tab=metrics, gears, tags, language,
  * display, about; Models first: "w settings - tab models daj jako pierwsze"; About a tab of its own:
  * "about to osobny tab"): the zones inside Metrics, as zones are of a metric; the charts inside
  * Display ("metrics (w srodku zones) ... gears ... tags ... displays (w srodku charts) i models").
  */
-type Tab = 'metrics' | 'gears' | 'tags' | 'display' | 'models' | 'about';
-const TABS: [Tab, string][] = [['models', 'Models'], ['metrics', 'Metrics'], ['gears', 'Gears'], ['tags', 'Tags'], ['display', 'Display'], ['about', 'About']];
+type Tab = 'metrics' | 'gears' | 'tags' | 'display' | 'language' | 'models' | 'about';
+const TABS: [Tab, string][] = [['models', 'Models'], ['metrics', 'Metrics'], ['gears', 'Gears'], ['tags', 'Tags'], ['display', 'Look & feel'], ['language', 'Language & region'], ['about', 'About']];
 /** A tab's name in the language in use (TABS keeps the English as plain text: the test of the links reads it there). */
-const tabName = (tab: Tab): string => ({ models: t('Models'), metrics: t('Metrics'), gears: t('Gears'), tags: t('Tags'), display: t('Display'), about: t('About') })[tab];
+const tabName = (tab: Tab): string => ({ models: t('Models'), metrics: t('Metrics'), gears: t('Gears'), tags: t('Tags'), display: t('Look & feel'), language: t('Language & region'), about: t('About') })[tab];
 /** The tabs of links made before (tab=zones, gear, charts): the tab that holds them now. */
 const MOVED: Record<string, Tab> = { zones: 'metrics', gear: 'gears', charts: 'display' };
 
@@ -95,6 +94,7 @@ function SettingsPage() {
         {/* The thresholds' card below the load model's once that is drawn, so it is not pushed down (layout shift 0). */}
         {tab === 'models' && <section className="models-tab" aria-label={t('Models')}><PerformanceCard onReady={onPerformanceDrawn} />{performanceDrawn && <ModelsCard />}</section>}
         {tab === 'display' && <div className="models-tab"><DisplayCard /><ChartsCard /></div>}
+        {tab === 'language' && <LanguageCard />}
         {tab === 'about' && <AboutCard />}
       </div>
     </div>

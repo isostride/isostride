@@ -11,10 +11,10 @@ import type { RunsIndex } from '@/lib/kernel';
 import { LOAD_SUMMARY_VERSION, autoMaxHr, criticalByRun, type LoadSummary } from '@/lib/load';
 import { DEFAULT_PERFORMANCE, DEFAULT_ZONES, LOAD_MODELS, zoneMetricsOf, formatBoundaries, parseBoundaries, parsePerformance, readSettings, writeSettings, writeSetup, zonesFromMaxHr, zonesFromPace, zonesFromPower, type LoadModel, type PerformanceSettings, type ZoneMetric } from '@/lib/settings';
 import { LoadModelChoice } from '../performance/LoadModelPicker';
-import { ChartsCard, DisplayCard } from '../settings/DeviceCards';
+import { ChartsCard, DisplayCard, LanguageCard } from '../settings/DeviceCards';
 import { SetupSteps, useMetrics } from '@/components';
 
-const STEPS = [msg('Your runs'), msg('You'), msg('Zones'), msg('Gear'), msg('Load model'), msg('Display'), msg('Done')] as const;
+const STEPS = [msg('Your runs'), msg('You'), msg('Zones'), msg('Gear'), msg('Load model'), msg('Look & feel'), msg('Done')] as const;
 /** The zones in groups, every metric's shown ("chodzi mi tez o strefy ... np. vertical oscillation, ground contact"). */
 const ZONE_GROUPS: [string, string[]][] = [
   [msg('Heart rate and pace'), ['heartRate', 'speed', 'effortPace']],
@@ -77,7 +77,6 @@ export function Wizard() {
   const [step, setStep] = useState(0);
   const [have, setHave] = useState<Have | null>(null);
   const [job, setJob] = useState<JobState | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const [p, setP] = useState<PerformanceSettings>(DEFAULT_PERFORMANCE);
   const [texts, setTexts] = useState({ restHr: '60', maxHr: '', thresholdPace: '', thresholdPower: '', fitnessDays: '42', fatigueDays: '7' });
   const [gear, setGear] = useState<Gear[]>([]);
@@ -114,19 +113,15 @@ export function Wizard() {
       setSavedZones({ texts: z, defaults: !!s.defaults });
     }).catch(() => undefined);
     readGear(folder).then((g) => { setGear(g); setGearSaved(JSON.stringify(g)); }).catch(() => undefined);
-    return watchJob((j) => setJob(j && j.job === 'import' ? j : null));
+    // The runs are imported by themselves (components/AutoImport): their progress shown, the step read again when it ends.
+    let was = false;
+    return watchJob((j) => {
+      const mine = j && j.job === 'import' ? j : null;
+      setJob(mine);
+      if (mine) was = true;
+      else if (was) { was = false; read().catch(() => undefined); }
+    });
   }, [folder, read]);
-
-  const importRuns = async () => {
-    setMessage(null);
-    try {
-      const m = await runInWorker('import', handle);
-      setMessage(`${tn(m.imported, 'Imported {n} run', 'Imported {n} runs')}${m.duplicates ? t(', {n} duplicate', { n: number(m.duplicates) }) : ''}${m.errors ? t(', {n} could not be read', { n: number(m.errors) }) : ''}.`);
-      await read();
-    } catch (e) {
-      setMessage(t('Import failed: {error}', { error: t(e instanceof Error ? e.message : String(e)) }));
-    }
-  };
 
   const rest = num(texts.restHr);
   const max = num(texts.maxHr);
@@ -213,12 +208,12 @@ export function Wizard() {
                 <div><dt>{t('Runs imported')}</dt><dd className="tnum">{number(have.runs.length)}</dd></div>
               </dl>
             )}
-            {have && have.fitFiles === 0 && <p className="small">{t("No FIT file here yet: copy your watch's FIT files into the folder, then import them here or from the Data folder screen.")}</p>}
+            {have && have.fitFiles === 0 && <p className="small">{t("No FIT file here yet: copy your watch's FIT files into the folder; they are imported by themselves.")}</p>}
             {have && have.fitFiles > 0 && (
               <div className="setup-actions">
-                <button type="button" className="btn primary" disabled={job !== null} onClick={importRuns}>{have.runs.length ? t('Import new files') : tn(have.fitFiles, 'Import {n} file', 'Import {n} files')}</button>
-                {job && <span className="muted small" role="status">{t('Importing · {done} / {total} files', { done: number(job.done), total: job.total ? number(job.total) : '…' })}</span>}
-                {!job && message && <span className="small" role="status">{message}</span>}
+                <span className="muted small" role="status">
+                  {job ? t('Importing · {done} / {total} files', { done: number(job.done), total: job.total ? number(job.total) : '…' }) : have.runs.length ? t('Imported: each new file is imported by itself when the app opens or you come back to it.') : t('Importing…')}
+                </span>
               </div>
             )}
           </>
@@ -322,9 +317,10 @@ export function Wizard() {
 
         {step === 5 && (
           <>
-            <h2>{t('Display')}</h2>
+            <h2>{t('Look & feel')}</h2>
             <p className="muted">{t('How the app and the run chart look on this device; kept in this browser and applied at once.')}</p>
             <div className="setup-device">
+              <LanguageCard />
               <DisplayCard />
               <ChartsCard />
             </div>

@@ -33,7 +33,7 @@ test.describe('Run chart', () => {
     await openRun(page);
     await page.getByRole('group', { name: 'Scale shown' }).getByRole('button', { name: /^Heart rate/ }).click();
     await nav(page, 'Settings');
-    await expect(page.getByRole('tab', { name: 'Display', exact: true })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Look & feel', exact: true })).toBeVisible();
     await expect(page).toHaveURL(/\/settings/);
     // Back on the run: the view as it was left.
     await page.goBack();

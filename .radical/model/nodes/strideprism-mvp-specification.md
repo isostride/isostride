@@ -899,7 +899,7 @@ A: (użytkownik) wylacz serwery developersk
 A: (model) Done: the dev servers of the app (3000) and of the site (3002) stopped.
 Q: (użytkownik) usun ta ikonke folderu ... w ekranie data folder .. daj path do folderu
 Q: (model) Przeglądarka nie podaje stronie pełnej ścieżki wybranego folderu, tylko jego nazwę (np. „isostride”). Co pokazać na ekranie Data folder?
-A: (użytkownik) Ścieżka wpisana raz
+A: (użytkownik) Ścieżka wpisana raz (superseded)
 A: (model) Done on the branch folder-path: the folder's line out of the side menu; on the Data folder screen the path, typed once, kept in this browser, forgotten when another folder is chosen (requirement "Folder path typed once").
 Q: (użytkownik) czy w modelu radical jest webvitals ? chodzi mi o layout shift ?
 A: (model) Yes: requirement "Core Web Vitals met" (CLS at most 0.1 in the lab on every pull request), fitness functions "Lab budget holds" and "Interaction latency in lab", measured by e2e/vitals.spec.ts on 4 screens of the app; the site not measured; last CLS 0.003.
@@ -1016,3 +1016,72 @@ Q: (użytkownik) aha ... strone glowna pokazuj tylko w trybie jasnym ...
 A: (model) Done: the site is light only: its dark scheme taken out (color-scheme light, the browser bar in its light colour); the site test checks it stays light with the system in dark. (no requirement)
 Q: (użytkownik) zrob ale dodaktowo popraw kilka rzeczy: 1. jak wchodze na runs to widze shift ... wszystkich kolumn po kolumnie pierwzzej data 2. jak wchodze na dashboard to tytul dashboard sie przesuwa ... bo chyba data powyzej jest pobierana pozniej 3.
 A: (model) Done (1): the Runs screen read the index, then the manifest, the gear, the tags and the settings one after another, drawing the list (first a card saying nothing was imported) before the rest came in above it and widened its columns; it now reads them together and draws once. (2): the Dashboard's head held no line for today's date while its data was read, so its title moved down when the date came; the line is now there from the start. The test "Every screen holds still" now measures Runs as a list and the Dashboard reached from the menu too. Also: the check of the tests names a unit test over its time limit in the log. (3) left empty by the runner.
+Q: (użytkownik) coros ma mcp api ... czy moge go uzyw w aplikacji aby zgrac pliki od uzytkownika z coros do folderu?
+A: (model) Technicznie tak, nawet bez backendu: oficjalny serwer COROS (https://mcp.coros.com/mcp) loguje użytkownika przez OAuth 2.0 z PKCE, klienta rejestruje się samemu (registration_endpoint), CORS przepuszcza wywołania z przeglądarki, a narzędzia downloadActivityFitFiles / queryActivityFitFileDownloadUrls dają pliki FIT. Ograniczenia: 50 plików na użytkownika na 24 h, 5–10 na wywołanie, brak webhooków (trzeba pytać), dokumentacja pisze o platformach AI, a regulaminu dla zwykłych aplikacji nie podaje; Partner API (webhooki) jest dla firm. (no requirement)
+A: (użytkownik) zrob prototyp
+A: (użytkownik) Nie udało się połączyć z COROS: Failed to execute 'fetch' on 'Window': Illegal invocation
+A: (model) Done: the MCP client called the browser's fetch as a method of its own object, which the browser refuses; it now calls it as a plain function, and the unit test's fake fetch refuses the same way. (no requirement)
+Q: (użytkownik) jak cos zaimprotujesz to chcialbym wiedziec co coztsalo dodnane ... albo znaczek new ... albo w notify
+A: (model) Done: every import (by itself, by the runner, after a fetch from COROS) names the runs it added in its notice or message, each as its day, start and distance leading to the run (at most 3, the rest counted); the runs added to a folder that held runs are marked New on the Runs screen, in the calendar and the list, with a line saying how many and Mark as seen, until the run is opened (kept in .isostride/user/new-runs.json).
+Q: (użytkownik) w biedzyczasie .. zmien nazwe data folder ... na data ....
+A: (model) Done: the screen under the logo is named Data (Dane in Polish): its heading, the logo's hint, the command palette and the links to it; the wizard's first step, where the folder is chosen, keeps the name Data folder.
+A: (użytkownik) w jezyku polskim uri jest ciagle /folder
+A: (model) Done: the Data screen's address is /data in every language (the logo, the links, the command palette, Import folder); /folder, kept in links from before, leads on to /data with what it asked (?action=import).
+A: (użytkownik) w data ... wyszczegolni sekcje integracje ... i tam daj coros
+A: (model) Done: the Data screen has a section Integrations (Integracje), "services your runs can be fetched from into this folder", below the folder and the files that could not be imported; COROS is its first card.
+A: (użytkownik) wybor jezyka jest w display ... powinnien byc w internationalization ? arbo languages ? co proponujesz
+Q: (model) Gdzie ma być wybór języka? Teraz jest w Settings › Display, razem z motywem i mapą. [Zakładka Language & region: nowa zakładka Settings › Language & region (Język i region): język, a z nim liczby i daty (5,24 km, 24 lis 2026); miejsce na kolejne ustawienia regionalne, np. km/mile albo pierwszy dzień tygodnia / Zakładka Languages / Zostaw w Display]
+A: (użytkownik) Zakładka Language & region (Recommended)
+Q: (użytkownik) czy przycisk import folder ma sens ? myslalem ze aplikacja sama pobierze wszystkie pliki z folderu
+Q: (model) Czy usunąć przycisk Import folder i importować wszystko samemu? [Usuń, wszystko samo: po wybraniu folderu aplikacja od razu wczytuje wszystkie pliki, także za pierwszym razem; potem nowe przy otwarciu i przy powrocie do okna; pliki, które się nie wczytały, próbuje ponownie przy otwarciu aplikacji; na ekranie Data zostają postęp, liczby, Recompute everything i Change folder / Usuń przycisk, pierwszy import w kreatorze / Zostaw przycisk]
+A: (użytkownik) Usuń, wszystko samo (Recommended)
+A: (model) Done: the import is by itself from the folder's choice on (every file the first time, each new one when the app opens or comes back into view, a file that failed tried again when the app opens); Import folder is gone from the Data screen, the command palette and the wizard, whose step Your runs shows the import's progress. The language is chosen in Settings › Language & region (and the wizard's Display step).
+Q: (użytkownik) po co jest recomute everything
+A: (model) Buduje od nowa z plików FIT wszystkie dane pochodne (okna, segmenty, obciążenia, krzywe, indeks), zostawiając sprzęt, tagi i segmenty. Potrzebny: gdy nowa wersja aplikacji liczy inaczej (ostrzeżenie o starszym algorytmie), gdy dane pochodne się popsuły, gdy zmienił się plik FIT już zaimportowany. Przy zmianie algorytmu aplikacja mogłaby przeliczać sama, a przycisk zostałby awaryjny, schowany niżej.
+Q: (model) Czy przeliczanie po zmianie algorytmu ma być samoczynne, jak import? Wtedy przycisk „Recompute everything” zostałby tylko jako awaryjny, schowany niżej.
+A: (użytkownik) tak
+A: (model) Done: a folder built by an older algorithm is rebuilt by itself when the app opens, said in a notice ("Rebuilt {n} runs for this version of the app."); Recompute everything stays for a repair, under Repair at the foot of the folder's card.
+A: (użytkownik) dodatkowo widok data .. nie jest na cala szerokosc .. tekst sie zawija popraw
+A: (użytkownik) usun tez , bo jest bezsenesu [the field "Where is it on your disk?" with Save]
+A: (użytkownik) change folder daj osobny niebieskim kolorem
+A: (użytkownik) to daj do zakladki rozwijanej jako logs ???
+Q: (model) Co dokładnie schować w rozwijanej sekcji „Logs” na ekranie Data? [Pliki z błędem i duplikaty / Teksty objaśnień / Repair / Recompute / Historia importów]
+A: (użytkownik) Pliki z błędem i duplikaty, Repair / Recompute, Teksty objaśnień
+A: (model) Done: the Data screen's folder card names the folder and offers Change folder… at its top right in the accent; the field for the folder's path is gone; the six figures stand in one row (three, then two, on narrower screens); Logs, folded until opened, holds how the import works, the files that could not be read, the duplicates (each leading to the run it repeats) and Recompute everything.
+A: (użytkownik) logs zrobiles ... ale nigdzie nie widac ze moge je rozwinac
+A: (użytkownik) mam teraz strzalke i hide/show naraz zostaw strzalke
+A: (model) Done: Logs carries a chevron that turns when it opens (no Show / Hide), its line lit when pointed at. (no requirement)
+A: (użytkownik) display sekcja ... zmien na look & feel
+A: (model) Done: Display is named Look & feel (Wygląd in Polish): the tab of Settings, its card, the wizard's step and the command palette; its link stays ?tab=display, so links made before still open it.
+A: (użytkownik) takie komunikaty chce jako notification ... w prawym dolnym rogu ... przez chwile ... 10 sekund ... ???
+A: (użytkownik) tak samo jak import nowego pliku
+A: (model) Done: what a job of the Data screen did (a recompute, its failure) and what COROS did (connected, fetched and imported, stopped, disconnected, a failure) is said in the notice at the bottom right for 10 s, as the import by itself says it, with the runs added named under it; the cards keep only the progress of a job running.
+A: (użytkownik) wystarczy np. 5 sekund i jeszcze dismiss
+A: (model) Done: a notice stays 5 s, and its × (Close, Zamknij) takes it away at once.
+A: (użytkownik) kolor czarny ? moze cos innego ?
+Q: (model) Jaki kolor mają mieć powiadomienia w prawym dolnym rogu (teraz czarne)? [Jasna karta z akcentem: biała karta (w ciemnym motywie ciemna powierzchnia) z cieniem, pasek i ikona w kolorze akcentu, tekst zwykły / Gradient marki / Granat jak menu]
+A: (użytkownik) Jasna karta z akcentem (Recommended)
+A: (model) Done: the notice is a light card (the dark surface in the dark theme) with a stripe and its icon in the accent, the runs added as links in the accent, × at its right. (no requirement)
+Q: (użytkownik) czy jak jakis plik bedzie zaimportowany to tez uzyje tej notyfikacji?
+A: (model) Tak: import pliku (sam, po wybraniu folderu, przy powrocie do okna, po pobraniu z COROS) używa tego samego powiadomienia: „Imported N new runs from the folder.” z listą dodanych biegów. (no requirement)
+A: (model) Done (found by the check): a file that is not a run (a hike) or holds no samples is not tried again when the app opens, only a file that may have been cut short; before, every opening imported the hike again and the Runs screen moved under the job's progress.
+A: (użytkownik) usun label prototype przy coros import
+A: (model) Done: the COROS card carries no Prototype label. (no requirement)
+Q: (użytkownik) dodaktowo przegladnij wszystko pod katem wydajnosci ... czy nie przeliczasz rzeczy wielokrotnie itp
+A: (model) Done (first part of the review): an import that adds nothing to a folder imported before computes nothing again (before, a look that found a file it could not read, or a duplicate, detected every segment over every run again: ~20 s at 500 runs); the jobs that write the folder's data run one after another (a fetch from COROS and the import by itself no longer write at once); number and date formatters are made once per language and options; each run's search text is made once; the run's chart lines are computed again only when what they show changes, not on each move of the pointer; the import by itself reads the manifest and lists the folder once per look. Left for a decision: segments and blocks detected only for the runs added (today all runs each time a run is added, ~15–30 s at 500 runs), one worker kept with the runs it read, a shared cache of the files read by the screens, the cache of results kept when a change does not touch them. (no requirement)
+Q: (model) Robić te cztery, w tej kolejności? 1. segmenty i bloki liczone tylko dla nowych biegów, 2. jeden stały proces liczący, który pamięta wczytane biegi, 3. wspólna pamięć odczytanych plików dla ekranów, 4. wyniki liczone w tle przeżywają zmiany, które ich nie dotyczą.
+A: (użytkownik) tak zrob 1-4
+A: (model) Done (1–4, ADRs "Detection does what changed" and "One reading worker, files kept"): (1) each run's track kept in derived/tracks/, the segments found again only when the runs are other ones (and 3.5× faster at 524 runs through a grid of cells), the instances of a block in a run and the suggestions' paces and counts kept with fingerprints, detected again only where a block or a run changed, a route not passed by a run not reading it; the result equal to a detection from scratch (integration test); (2) the reading jobs in one worker that stays, keeping the last 150 run files it read while the data stay as they are, a job given up stopping at its next file; (3) a folder keeps the texts of the files it read with their time and size and reads a file again only when it changed; (4) a note or a block changed no longer drops the results kept. On 131 runs: a workout type changed 3.4 s → 0.04 s, a refresh with nothing new 5.4 s → 0.03 s, a segment kept 3.6 s → 0.16 s, a run added 2.4–3.9 s → 1.0–1.2 s.
+Q: (użytkownik) otwarcie dashboardu w ktorym mamy capacity best efforst ... zajmuje czas
+A: (użytkownik) tak samo jak otwieranie compare i saved analysises ... widze ze pojawia sie na liscie po chwili
+A: (model) Done: measured in the browser, the wait was not computing (the files read in 0–2 ms, no job) but the parts of a screen whose script loads apart (next/dynamic): React 19 holds a Suspense boundary's content back about 300 ms after its fallback, and the Dashboard (its tiles, then the Performance view) and Compare (the screen, then its saved analyses) had two one inside the other. Every such part now loads its script when first drawn and shows as soon as it came, by a change of state (components/eager.tsx). First opening from the menu: the Dashboard with Best efforts 816 → 114 ms, Compare with its saved analyses 810 → 115 ms; every tab and dialog loaded apart gains the same on its first opening. (no requirement)
+A: (użytkownik) teraz jest ok ... wypchnij gdy bedzie gotowy
+A: (model) Done (found by the check before the push): the unit test "Only React" read the whole model (some 500 files) each time and went over its 100 ms with the nodes added; it reads the decision records only when the package declares another framework. The run chart's zoom test missed its 2 px once under the full run (2.47 px) and passed 4 times of 4 alone. (no requirement)
+A: (użytkownik) ok ... dodaj jeszcze informacje na stronie o mozliwoasci importu z coros
+A: (użytkownik) pokaz strone zanim wypchniesz
+A: (model) Done (site, both languages): the runs come in as FIT files exported by hand or fetched from the runner's COROS account (no longer "does not sync with your watch"); a question "Can it fetch my runs from COROS?" (Integrations on the Data screen, COROS's own sign-in, the last 30 days then what is new, the sign-in in the browser, files straight to the disk, 50 a day); "What is sent to a server?" names COROS as the one other use of the network; getting started: COROS can skip the export, the folder's runs import by themselves. Shown locally before the push. (no requirement)
+A: (użytkownik) jest ok wypchij
+A: (model) Done (found by the check): the site keeps its plain statement "There is no server and no account." (requirement "Site in plain statements"); COROS is named after it in the same answer. (no requirement)
+A: (użytkownik) no to nie uruchamiaj raz jeszcze ...
+A: (użytkownik) zobavz na git
+A: (model) Done (found by CI on PR #16): the links to the runs added, in a notice, were under 24 px high (WCAG 2.2 target size); each is now at least 24 px. The notice was on screen while CI's accessibility test scanned, and had gone by the time it scanned locally. (no requirement)

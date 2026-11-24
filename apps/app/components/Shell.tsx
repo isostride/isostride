@@ -1,9 +1,9 @@
 'use client';
 
+import { eager } from './eager';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import dynamic from 'next/dynamic';
 import { useFolder, useLocale, useNarrowMenu, useStartLocale, useTheme } from '@/lib/client';
 import { msg, t } from '@/lib/i18n';
 import { APP_COMMIT, APP_VERSION, versionLabel } from '@/lib/kernel';
@@ -13,11 +13,11 @@ import { CommandPalette } from './CommandPalette';
 import { recordAddress } from './screenTrail';
 
 /** The automatic import, loaded after the screen: it waits for the folder anyway (requirement "New runs imported by themselves"). */
-const AutoImport = dynamic(() => import('./AutoImport').then((m) => m.AutoImport), { ssr: false });
+const AutoImport = eager(() => import('./AutoImport').then((m) => m.AutoImport));
 /** The facts of the side menu and this week's running: loaded after the screen. */
-const SidebarFacts = dynamic(() => import('./SidebarFacts').then((m) => m.SidebarFacts), { ssr: false });
+const SidebarFacts = eager(() => import('./SidebarFacts').then((m) => m.SidebarFacts));
 /** Whether the setup wizard opens by itself: looked at after the screen shows, so no screen's script grows. */
-const SetupGate = dynamic(() => import('./SetupGate').then((m) => m.SetupGate), { ssr: false });
+const SetupGate = eager(() => import('./SetupGate').then((m) => m.SetupGate));
 
 /**
  * Back and forward through the screens seen in this tab (the runner's request: "dodaj back/forward
@@ -116,6 +116,9 @@ export function Shell({ children }: { children: ReactNode }) {
 
   const cycleTheme = useCallback(() => setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light'), [theme, setTheme]);
 
+  // COROS's sign-in comes back to a window of its own (app/coros), and the old address of the Data
+  // screen (app/folder) only leads on to it: neither needs the folder.
+  if (path.startsWith('/coros') || path.startsWith('/folder')) return <>{children}</>;
   if (state.status !== 'open') return <Welcome />;
 
   const active = (href: string) => (href === '/' ? path === '/' || path.startsWith('/run') : path.startsWith(href));
@@ -124,7 +127,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <Suspense fallback={null}><ScreenTrail /></Suspense>
       <aside className="sidebar">
         <div className="brand-row">
-          <Link className={`brand ${path.startsWith('/folder') ? 'active' : ''}`} href="/folder" title={t('Data folder: import, recompute, change')} aria-current={path.startsWith('/folder') ? 'page' : undefined}>
+          <Link className={`brand ${path.startsWith('/data') ? 'active' : ''}`} href="/data" title={t('Data: import, recompute, change')} aria-current={path.startsWith('/data') ? 'page' : undefined}>
             <Logo size={36} />
             <span className="label brand-text">
               <span className="brand-name">Iso<i className="brand-dot">Stride</i></span>

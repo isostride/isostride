@@ -5,7 +5,8 @@ import { ALGORITHM_VERSION } from '@/lib/kernel';
  * Results computed once and kept (the author's request of 21 Nov 2026: "chce aby przeliczanie
  * bylo raz i dane cache-owane"): what is computed from the run files on demand (the segments of a
  * rule, the curves) is written to derived/cache/, under the data stamp. The stamp changes when the
- * runs or their context change (an import with new runs, gear, tags, the load model, the blocks),
+ * runs or their context change (an import with new runs, gear, tags, the load model; not a note
+ * alone, nor the blocks, which the results do not read: "tak zrob 1-4"),
  * and a change drops the whole cache.
  */
 

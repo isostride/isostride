@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { PATHS, listFitFiles, readJson, readManifest, unseenFitFiles } from '@/lib/fs';
+import { PATHS, failedFitFiles, listFitFiles, readJson, readManifest, unseenFitFiles } from '@/lib/fs';
 import { importFolder } from '@/lib/pipeline';
 import { type RunFile, type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { metricKeyOfField, parseFit } from '@/lib/ingest';
@@ -42,9 +42,9 @@ describe('Import FIT files', () => {
 describe('New runs imported by themselves', () => {
   it('Unseen files found after the first import', async () => {
     const folder = await makeDataFolder([FILES.pace3, FILES.pace4]);
-    // The FIT files of the folder (in fit/), and none counted as unseen before the first import.
+    // The FIT files of the folder (in fit/), all of them unseen before the first import (which is by itself).
     expect(await listFitFiles(folder)).toEqual([`fit/${FILES.pace3}`, `fit/${FILES.pace4}`]);
-    expect(await unseenFitFiles(folder)).toEqual([]);
+    expect(await unseenFitFiles(folder)).toEqual([`fit/${FILES.pace3}`, `fit/${FILES.pace4}`]);
     await importFolder(folder);
     expect(await unseenFitFiles(folder)).toEqual([]);
     // A run dropped into the folder is unseen until the next import, which reads only it.
@@ -54,6 +54,41 @@ describe('New runs imported by themselves', () => {
     expect(report.imported).toBe(1);
     expect(report.skipped).toBe(2);
     expect(await unseenFitFiles(folder)).toEqual([]);
+  });
+
+  it('A file that could not be read tried again when the app opens', async () => {
+    const folder = await makeDataFolder([FILES.pace4]);
+    await folder.writeBytes('fit/broken.fit', new TextEncoder().encode('not a FIT file'));
+    await importFolder(folder);
+    // Not unseen (the looks while the app is in use leave it), but found for the look when the app opens.
+    expect(await unseenFitFiles(folder)).toEqual([]);
+    expect(await failedFitFiles(folder)).toEqual(['fit/broken.fit']);
+    await addFile(folder, FILES.pace3, 'broken.fit');
+    expect((await importFolder(folder)).imported).toBe(1);
+    expect(await failedFitFiles(folder)).toEqual([]);
+  });
+
+  it('An import that adds nothing reads no run again', async () => {
+    // The review of 24 Nov 2026 ("czy nie przeliczasz rzeczy wielokrotnie"): a look that finds a file it
+    // cannot read, or a duplicate, used to detect every segment over every run again.
+    const folder = await makeDataFolder([FILES.pace4, FILES.pace3]);
+    await importFolder(folder);
+    await folder.writeBytes('fit/broken.fit', new TextEncoder().encode('not a FIT file'));
+    const read = folder.readText.bind(folder);
+    const runsRead: string[] = [];
+    folder.readText = async (p: string) => { if (p.startsWith(`${PATHS.runs}/`)) runsRead.push(p); return read(p); };
+    const report = await importFolder(folder);
+    expect(report.imported).toBe(0);
+    await recordMeasure('emptyImportRunFilesRead', runsRead.length);
+    expect(runsRead).toEqual([]);
+  });
+
+  it('A file that is not a run not tried again', async () => {
+    // A hike is read once: read again at every opening, it would still be no run (and the import would run for nothing).
+    const folder = await makeDataFolder([FILES.pace4, FILES.hike]);
+    await importFolder(folder);
+    expect((await readManifest(folder))!.files[`fit/${FILES.hike}`].status).toBe('error');
+    expect(await failedFitFiles(folder)).toEqual([]);
   });
 });
 

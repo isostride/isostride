@@ -4,6 +4,7 @@
     "lib/blocks",
     "lib/client",
     "lib/compare",
+    "lib/format",
     "lib/fs",
     "lib/i18n",
     "lib/kernel",

@@ -45,18 +45,15 @@ export function ChartsCard() {
 }
 
 /**
- * How the app looks and what it may fetch (the runner's request of 21 Nov 2026: "ustawienia schema
- * - light/dark i online/offline przenies do settings"): the theme, and the map background from the
- * network. Kept in this browser, not in the data folder: they belong to the device, not the runs.
+ * The language of the app, and with it its numbers and dates (requirement "Language chosen"), in a tab
+ * of its own, Language & region ("wybor jezyka jest w display ... powinnien byc w internationalization
+ * ? arbo languages ?"), where other regional choices may come. Kept in this browser.
  */
-export function DisplayCard() {
-  const [theme, setTheme] = useTheme();
-  const [mapTiles, setMapTiles] = useMapTiles();
-  const [narrow, setNarrow] = useNarrowMenu();
+export function LanguageCard() {
   const [language, setLanguage] = useLanguage();
   return (
-    <section className="card display-card" aria-label={t('Display')}>
-      <div className="settings-head"><div><h2>{t('Display')}</h2><p className="muted small">{t('Kept in this browser: they belong to the device, not to the data folder.')}</p></div></div>
+    <section className="card display-card" aria-label={t('Language & region')}>
+      <div className="settings-head"><div><h2>{t('Language & region')}</h2><p className="muted small">{t('Kept in this browser: they belong to the device, not to the data folder.')}</p></div></div>
       {/* The language (requirement "Language chosen": "ustawienia jezyka w settings i w wizard"): each named in itself, so it is found whatever the language in use. */}
       <div className="display-row">
         <div>
@@ -69,6 +66,22 @@ export function DisplayCard() {
           ))}
         </div>
       </div>
+    </section>
+  );
+}
+
+/**
+ * How the app looks and what it may fetch (the runner's request of 21 Nov 2026: "ustawienia schema
+ * - light/dark i online/offline przenies do settings"): the theme, the map background from the
+ * network and the side menu; the language has a tab of its own (LanguageCard). Kept in this browser.
+ */
+export function DisplayCard() {
+  const [theme, setTheme] = useTheme();
+  const [mapTiles, setMapTiles] = useMapTiles();
+  const [narrow, setNarrow] = useNarrowMenu();
+  return (
+    <section className="card display-card" aria-label={t('Look & feel')}>
+      <div className="settings-head"><div><h2>{t('Look & feel')}</h2><p className="muted small">{t('Kept in this browser: they belong to the device, not to the data folder.')}</p></div></div>
       <div className="display-row">
         <div>
           <div className="display-name">{t('Theme')}</div>

@@ -25,10 +25,10 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
         await page.waitForTimeout(200);
         found.push(...(await serious(page, `${screen} (${scheme})`)));
       }
-      // The Data folder screen, under the logo.
+      // The Data screen, under the logo.
       await page.locator('.sidebar .brand').click();
-      await page.getByRole('heading', { level: 1, name: 'Data folder' }).waitFor();
-      found.push(...(await serious(page, `Data folder (${scheme})`)));
+      await page.getByRole('heading', { level: 1, name: 'Data', exact: true }).waitFor();
+      found.push(...(await serious(page, `Data (${scheme})`)));
       // The A/B tab of Analysis, on the block taken.
       await nav(page, 'Compare');
       await addFromPicker(page, /^1\.6 km northeast/);
@@ -55,7 +55,7 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       }
       await nav(page, 'Settings');
       // The tabs of Settings, each.
-      for (const tab of ['Models', 'Metrics', 'Gears', 'Tags', 'Display', 'About']) {
+      for (const tab of ['Models', 'Metrics', 'Gears', 'Tags', 'Look & feel', 'Language & region', 'About']) {
         await page.getByRole('tab', { name: tab, exact: true }).click();
         await page.getByRole('tabpanel').getByRole('region', { name: tab }).waitFor();
         found.push(...(await serious(page, `Settings · ${tab} (${scheme})`)));

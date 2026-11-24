@@ -22,7 +22,7 @@ test.describe('Map background', () => {
 
     // Switched on in Settings (Display): tiles from tile.openstreetmap.org only, under the route, with the attribution.
     await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
-    await page.getByRole('tab', { name: 'Display', exact: true }).click();
+    await page.getByRole('tab', { name: 'Look & feel', exact: true }).click();
     await page.getByRole('checkbox', { name: /Map background/ }).check();
     await page.goBack();
     await map.waitFor();
@@ -38,7 +38,7 @@ test.describe('Map background', () => {
     await page.getByRole('img', { name: 'Route' }).waitFor();
     await expect(page.getByRole('img', { name: 'Route' }).locator('.map-tiles image').first()).toBeAttached();
     await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
-    await page.getByRole('tab', { name: 'Display', exact: true }).click();
+    await page.getByRole('tab', { name: 'Look & feel', exact: true }).click();
     await expect(page.getByRole('checkbox', { name: /Map background/ })).toBeChecked();
   });
 });

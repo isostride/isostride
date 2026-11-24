@@ -277,3 +277,78 @@ describe('Recommendations found unaided', () => {
     expect((await recs(year)).some(isTempo)).toBe(true);
   });
 });
+
+describe('Blocks detected where something changed', () => {
+  /** What detection wrote, without what it kept to do less next time. */
+  const written = async (folder: NodeFolder) => {
+    const instances = (await readJson<BlockInstancesFile>(folder, PATHS.blockInstances))!;
+    return {
+      segments: (await readJson<{ segments: unknown }>(folder, PATHS.segments))!.segments,
+      instances: instances.instances,
+      recommendations: (await readJson<{ recommendations: unknown }>(folder, RECOMMENDATIONS_PATH))!.recommendations,
+    };
+  };
+  /** The same folder's detection from scratch: its kept tracks, segments, instances and counts dropped. */
+  const fromScratch = async (folder: NodeFolder) => {
+    const now = await written(folder);
+    for (const p of [PATHS.tracks, PATHS.segments, PATHS.blockInstances, PATHS.blocksCache]) await folder.remove(p);
+    await runBlocks(folder);
+    const scratch = await written(folder);
+    return { now, scratch };
+  };
+
+  it('Only what changed detected again, the same as from scratch', async () => {
+    // The review of 24 Nov 2026 ("czy nie przeliczasz rzeczy wielokrotnie", then "tak zrob 1-4"): a run
+    // added, a block kept, a tag changed each read only the run files they touch.
+    const files = (await fitFixtures()).filter((f) => f >= '2026-08-03').sort();
+    const folder = await makeDataFolder(files.slice(0, -2));
+    await importFolder(folder);
+    const recs = (await readJson<{ recommendations: Recommendation[] }>(folder, RECOMMENDATIONS_PATH))!.recommendations;
+    expect(recs.length).toBeGreaterThan(2);
+
+    // Nothing changed: no run file read.
+    const unchanged = (await runBlocks(folder)).runsRead;
+    await recordMeasure('blocksUnchangedRunFilesRead', unchanged);
+    expect(unchanged).toBe(0);
+    let differing = 0;
+    const same = (s: { now: unknown; scratch: unknown }) => { if (JSON.stringify(s.now) !== JSON.stringify(s.scratch)) differing++; expect(s.now).toEqual(s.scratch); };
+    // A run added: its file read, few others (those passing a suggested route of it).
+    await addFile(folder, files.at(-2)!);
+    await importFolder(folder);
+    let state = await fromScratch(folder);
+    same(state);
+
+    // Blocks kept from the suggestions: their instances detected; then one block more, only it.
+    await writeDefinitions(folder, recs.slice(0, 2).map((r) => fromRecommendation(r, 'active')));
+    const kept = await runBlocks(folder);
+    expect(kept.runsRead).toBeLessThan(files.length - 1);
+    await writeDefinitions(folder, [...(await readDefinitions(folder)), fromRecommendation(recs[2], 'active')]);
+    await runBlocks(folder);
+    state = await fromScratch(folder);
+    same(state);
+
+    // New shoes, which no kept block filters by: the context written into the instances, and the next
+    // detection reads no run again for it.
+    const { writeGear } = await import('@/lib/gear');
+    const { refreshContext: refresh } = await import('@/lib/pipeline');
+    await writeGear(folder, [{ id: 's', name: 'Shoes S', type: 'shoes', from: '2026-01-01', to: null }]);
+    expect(await refresh(folder)).toBe('rejoined');
+    const afterShoes = (await runBlocks(folder)).runsRead;
+    await recordMeasure('blocksNewShoesRunFilesRead', afterShoes);
+    expect(afterShoes).toBe(0);
+
+    // A run added with blocks kept, then a field detection reads changed in one run.
+    await addFile(folder, files.at(-1)!);
+    const added = await importFolder(folder);
+    expect(added.imported).toBe(1);
+    const index = (await readJson<RunsIndex>(folder, PATHS.runsIndex))!;
+    const id = index.runs[2].id;
+    await fs.writeFile(path.join(folder.root, PATHS.runTags), JSON.stringify({ schemaVersion: 1, tags: { [id]: { workoutType: 'tempo' } } }));
+    const { refreshContext } = await import('@/lib/pipeline');
+    await refreshContext(folder);
+    state = await fromScratch(folder);
+    same(state);
+    expect(state.now.instances.length).toBeGreaterThan(0);
+    await recordMeasure('blocksDifferingFromScratch', differing);
+  });
+});

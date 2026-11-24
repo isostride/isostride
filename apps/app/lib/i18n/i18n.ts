@@ -96,7 +96,7 @@ export const msg = <T extends string>(text: T): T => text;
 
 /** A number in the language in use: 5.24 in English, 5,24 in Polish; digits fixed when given. */
 export function number(v: number, digits?: number, opts: Intl.NumberFormatOptions = {}): string {
-  return new Intl.NumberFormat(localeTag(), {
+  return formatter(numberFormats, Intl.NumberFormat, {
     useGrouping: false,
     ...(digits === undefined ? { maximumFractionDigits: 20 } : { minimumFractionDigits: digits, maximumFractionDigits: digits }),
     ...opts,
@@ -105,7 +105,27 @@ export function number(v: number, digits?: number, opts: Intl.NumberFormatOption
 
 /** A date (or time) in the language in use: options as for toLocaleDateString. */
 export function dateText(d: Date | string | number, opts: Intl.DateTimeFormatOptions): string {
-  return new Date(d).toLocaleString(localeTag(), opts);
+  const date = new Date(d);
+  // As toLocaleString: a date that is none reads "Invalid Date" (the formatter would throw), no options give the date and the time.
+  if (Number.isNaN(date.getTime())) return String(date);
+  return formatter<Intl.DateTimeFormatOptions, Intl.DateTimeFormat>(dateFormats, Intl.DateTimeFormat, Object.keys(opts).length ? opts : DATE_AND_TIME).format(date);
+}
+
+/**
+ * The formatters made so far, by language and options: making one costs tens of µs, and a screen of
+ * 500 runs formats thousands of numbers and dates (the review of 24 Nov 2026: "czy nie przeliczasz
+ * rzeczy wielokrotnie").
+ */
+const numberFormats = new Map<string, Intl.NumberFormat>();
+/** What toLocaleString shows with no options: the date and the time. */
+const DATE_AND_TIME: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
+const dateFormats = new Map<string, Intl.DateTimeFormat>();
+function formatter<O extends object, F>(made: Map<string, F>, Make: new (tag: string, opts: O) => F, opts: O): F {
+  const tag = localeTag();
+  const key = `${tag} ${JSON.stringify(opts)}`;
+  let f = made.get(key);
+  if (!f) made.set(key, (f = new Make(tag, opts)));
+  return f;
 }
 
 /** The dictionary of a language once loaded, for the check of the texts. */
