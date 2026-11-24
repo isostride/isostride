@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, type MouseEvent } from 'react';
 import { ItemKey, Mark, coverTicks, ensureSpan, tickDecimals, useWidth, type Shape } from '@/components';
+import { number, t } from '@/lib/i18n';
 
 const M = { l: 52, r: 16, b: 26 };
 
@@ -19,7 +20,7 @@ export interface CurveLine {
   estimateAt?: (duration: number) => number;
 }
 
-const durationLabel = (d: number) => (d < 60 ? `${d} s` : d < 3600 ? `${+(d / 60).toFixed(1)} min` : `${+(d / 3600).toFixed(1)} h`);
+const durationLabel = (d: number) => (d < 60 ? `${number(d)} s` : d < 3600 ? `${number(+(d / 60).toFixed(1))} min` : `${number(+(d / 3600).toFixed(1))} h`);
 
 /**
  * A curve of bests by length of time on a logarithmic axis, one line per item (Analysis: the
@@ -51,7 +52,7 @@ export function CurveChart({ label, lines, durations, format, tick, gap, higherI
     return { d0: Math.min(...ds), d1: Math.max(...ds) || 1, lo: ticks[0] ?? lo0, hi: ticks[ticks.length - 1] ?? hi0, ticks };
     // pts follows lines.
   }, [lines, minSpan]);
-  if (!scale) return <div ref={box} className="muted small" style={{ padding: 12 }}>No run with an effort yet: add a run or the runs matching a period.</div>;
+  if (!scale) return <div ref={box} className="muted small" style={{ padding: 12 }}>{t('No run with an effort yet: add a run or the runs matching a period.')}</div>;
   const { d0, d1, lo, hi, ticks } = scale;
   const x = (d: number) => M.l + ((Math.log(d) - d0) / (d1 - d0 || 1)) * (width - M.l - M.r);
   const durationAt = (px: number) => Math.exp(d0 + ((px - M.l) / (width - M.l - M.r)) * (d1 - d0 || 1));
@@ -109,12 +110,12 @@ export function CurveChart({ label, lines, durations, format, tick, gap, higherI
       {hover && (
         <div className="tooltip" style={{ left: hover.mx > width - 300 ? hover.mx - 288 : hover.mx + 16, top: 8 }}>
           <div className="tip-value">{durationLabel(hover.duration)}</div>
-          {lines.map((l) => l.estimateAt && <div key={l.key}><ItemKey shape={l.shape} color={l.color} /> estimate {format(l.estimateAt(hover.duration))}</div>)}
+          {lines.map((l) => l.estimateAt && <div key={l.key}><ItemKey shape={l.shape} color={l.color} /> {t('estimate {value}', { value: format(l.estimateAt(hover.duration)) })}</div>)}
           {hover.near && (
             <div style={{ marginTop: 4 }}>
-              <div><ItemKey shape={hover.near.l.shape} color={hover.near.l.color} /> {durationLabel(hover.near.p.duration)} · measured {format(hover.near.p.value)}{hover.near.l.estimateAt ? ` · ${gap(hover.near.p.value, hover.near.l.estimateAt(hover.near.p.duration))}` : ''}</div>
+              <div><ItemKey shape={hover.near.l.shape} color={hover.near.l.color} /> {durationLabel(hover.near.p.duration)} · {t('measured {value}', { value: format(hover.near.p.value) })}{hover.near.l.estimateAt ? ` · ${gap(hover.near.p.value, hover.near.l.estimateAt(hover.near.p.duration))}` : ''}</div>
               <div className="muted">{hover.near.p.note}</div>
-              {hover.near.p.href && <div className="muted tip-hint">Click to open the run</div>}
+              {hover.near.p.href && <div className="muted tip-hint">{t('Click to open the run')}</div>}
             </div>
           )}
         </div>

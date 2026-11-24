@@ -5,5 +5,7 @@ export * from './logical';
 export * from './profile';
 export * from './range';
 export * from './rule';
+export * from './shown';
 export * from './structure';
 export * from './types';
+export * from './words';

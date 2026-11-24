@@ -11,11 +11,11 @@
   --signal: #4f5fe6; --signal-soft: rgba(79, 95, 230, 0.14); --noise: #a3a9b4;
   --brand-1: #4f46e5; --brand-2: #7c3aed; --brand-3: #db2777;
   --head-1: #312e81; --head-2: #5b21b6; --bar-1: #4f46e5; --bar-2: #db2777;
+  /* the name IsoStride in the heading: the logo's gradient */
+  --mark-1: #4f46e5; --mark-2: #7c3aed; --mark-3: #db2777;
   --serif: 'Iowan Old Style', 'Charter', 'Bitstream Charter', 'Sitka Text', Cambria, Georgia, serif;
-  color-scheme: light dark;
-}
-@media (prefers-color-scheme: dark) {
-  :root { --paper: #1d1f23; --surface: #26292e; --ink: #e9ebef; --ink-2: #c7ccd5; --muted: #a0a7b3; --rule: rgba(255, 255, 255, 0.1); --signal: #9aa5ff; --signal-soft: rgba(154, 165, 255, 0.16); --noise: #6c727d; --head-1: #a5b0ff; --head-2: #d0a8ff; --bar-1: #a5b0ff; --bar-2: #f0a3c8; }
+  /* The site is light only ("strone glowna pokazuj tylko w trybie jasnym"), whatever the system's scheme. */
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -37,6 +37,9 @@ p { margin: 0; }
 /* The source on GitHub: its mark, after the button to the app. */
 .gh { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-left: -14px; border-radius: 8px; color: var(--ink-2); }
 .gh:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+/* The page in the other language: its short name (EN, PL), the size of a touch target. */
+.lang { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; height: 44px; margin-left: -14px; border-radius: 8px; color: var(--ink-2); font-size: 14px; font-weight: 600; letter-spacing: 0.04em; text-decoration: none; }
+.lang:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
 
 .btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid var(--ink); border-radius: 6px; font-weight: 600; font-size: 15px; text-decoration: none; white-space: nowrap; }
 .btn:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
@@ -46,6 +49,9 @@ p { margin: 0; }
 h1, h2 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.01em; }
 .hero { padding: 72px 0 44px; }
 .hero h1 { text-wrap: balance; margin: 0; max-width: 24ch; font-size: clamp(38px, 5.6vw, 64px); line-height: 1.06; }
+/* The name in the heading in the colours of the logo ("IsoStride - uzyj tu kolorow"). */
+.wordmark { background: linear-gradient(100deg, var(--mark-1), var(--mark-2) 55%, var(--mark-3)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: var(--mark-2); }
+@media (forced-colors: active) { .wordmark { background: none; -webkit-text-fill-color: currentColor; } }
 .lead { margin-top: 24px; max-width: 62ch; font-size: 19px; color: var(--ink-2); }
 .lead.small { font-size: 17px; margin-top: 0; }
 .cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; margin-top: 32px; }
@@ -123,7 +129,7 @@ code { white-space: nowrap; font: 0.92em ui-monospace, SFMono-Regular, Menlo, mo
   .top nav { display: none; }
   .top { justify-content: flex-end; gap: 14px; }
   .top .brand { margin-right: auto; }
-  .gh { margin-left: -6px; }
+  .gh, .lang { margin-left: -6px; }
   .hero { padding: 44px 0 32px; }
   .data, .rows div, .shots, .invite { grid-template-columns: 1fr; }
   .invite-links { grid-auto-flow: column; justify-content: start; }

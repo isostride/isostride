@@ -6,6 +6,7 @@
     "lib/format",
     "lib/fs",
     "lib/gear",
+    "lib/i18n",
     "lib/kernel",
     "lib/settings"
   ],

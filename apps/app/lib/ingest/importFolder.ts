@@ -1,5 +1,5 @@
 import { ALGORITHM_VERSION, KNOWN_METRICS, SCHEMA_VERSION, type MetricInfo, type MetricsFile, type Windows, type Lap, type Samples, type RunFile, type RunIndexRow, type RunsIndex } from '@/lib/kernel';
-import { PATHS, listFitFiles, readJson, writeJson, type DataFolder, emptyManifest, readManifest, writeManifest, type Manifest } from '@/lib/fs';
+import { IMPORT_REASONS, PATHS, importReason, listFitFiles, readJson, writeJson, type DataFolder, emptyManifest, readManifest, writeManifest, type Manifest } from '@/lib/fs';
 import { buildWindows } from '@/lib/prepare';
 import { FitImportError, parseFit, runId } from './parseFit';
 
@@ -101,7 +101,7 @@ export async function importRuns(folder: DataFolder, opts: ImportOptions = {}): 
         report.imported++;
       }
     } catch (e) {
-      const reason = e instanceof FitImportError ? e.reason : `could not import: ${e instanceof Error ? e.message : String(e)}`;
+      const reason = e instanceof FitImportError ? e.reason : importReason(IMPORT_REASONS.failed, { error: e instanceof Error ? e.message : String(e) });
       manifest.files[file] = { status: 'error', reason };
       outcome = { file, status: 'error', reason, seconds: 0 };
       report.errors++;

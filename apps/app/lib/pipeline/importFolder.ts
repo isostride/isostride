@@ -30,7 +30,7 @@ export async function refreshContext(folder: DataFolder): Promise<'detected' | '
   const detect = needsDetection(await readDefinitions(folder), changedFields(before, after));
   if (detect) await runBlocks(folder); else await rejoinInstances(folder);
   await bumpStamp(folder);
-  return detect ? 'detected' : 'rejoined';
+  return detect ? 'detected' : 'rejoined'; // i18n-ignore: what was done, for the code
 }
 
 /** After block definitions change: the blocks again. */

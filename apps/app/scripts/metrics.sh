@@ -67,6 +67,8 @@ fi
 [ -f reports/measures-coverage.json ] && sh ../../radical.sh sense json reports/measures-coverage.json --folder ../../.radical/model --metric coverage.new_code=/newCodeCoveragePercent@% >/dev/null
 [ -f reports/measures-nightly.json ] && sh ../../radical.sh sense json reports/measures-nightly.json --folder ../../.radical/model \
   --metric tests.shuffled_runs.failed=/shuffledRunsFailed --metric tests.flaky.unquarantined=/flakyUnquarantined >/dev/null
+# Languages: texts outside a translation, keys without one (tests/integration/texts.test.ts).
+sense --metric i18n.texts.untranslated=/untranslatedTexts --metric i18n.translations.missing=/missingTranslations
 sense --metric quarantine.overdue=/quarantineOverdue --metric quarantine.incomplete=/quarantineIncomplete
 sense --metric e2e.journeys.covered=/journeysCoveredPercent@%
 # Frontend stack.

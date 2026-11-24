@@ -3,6 +3,7 @@
   "uses": [
     "lib/fs",
     "lib/geo",
+    "lib/i18n",
     "lib/kernel"
   ],
   "runs": "both"

@@ -4,6 +4,7 @@
  * shows (its segments and runs, metrics, tab and curve, as its link carries them) can be kept under a
  * name and opened again. Kept in the data folder, user/analyses.json, beside the segments.
  */
+import { t } from '@/lib/i18n';
 
 export interface SavedAnalysis {
   id: string;
@@ -32,7 +33,7 @@ export function analysisQuery(query: string): string {
 /** The name a new analysis is offered: its items' names joined, or "Analysis" with none. */
 export function defaultAnalysisName(labels: string[]): string {
   const named = labels.filter((l) => l.trim());
-  if (!named.length) return 'Analysis';
+  if (!named.length) return t('Analysis');
   const text = named.join(' + ');
   return text.length > 60 ? `${text.slice(0, 59).trimEnd()}…` : text;
 }
@@ -42,7 +43,7 @@ export function defaultAnalysisName(labels: string[]): string {
  * top. A name already used by another analysis gets " (2)", " (3)"… so the list tells them apart.
  */
 export function upsertAnalysis(list: SavedAnalysis[], a: { id?: string; name: string; query: string }, now = new Date()): { list: SavedAnalysis[]; saved: SavedAnalysis } {
-  const base = a.name.trim() || 'Analysis';
+  const base = a.name.trim() || t('Analysis');
   const taken = new Set(list.filter((x) => x.id !== a.id).map((x) => x.name));
   let name = base;
   for (let n = 2; taken.has(name); n++) name = `${base} (${n})`;

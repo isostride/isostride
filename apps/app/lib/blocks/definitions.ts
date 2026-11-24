@@ -3,6 +3,8 @@ import { DEFAULT_TOLERANCES, LOGICAL_HR_SKIP, RULE_TOLERANCES, type RefPoint, ty
 import { EMPTY_CONDITIONS, EMPTY_FILTER, asRuleDefinition, ruleName, ruleOf } from './rule';
 import { PROFILE_MIN_SCORE, SIMILAR_PACE_WITHIN, type ProfileKey } from './profile';
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
+import { tagName } from './logical';
+import { SAVED_WORDS, routeName, type Words } from './words';
 
 /** user/block-definitions.json: the runner's definitions and the recommendations they rejected. */
 /** The definitions, with a default for each tolerance an older file lacks (and none it no longer has); a criteria block of an older file reads as the rule it was. */
@@ -74,9 +76,6 @@ export function fromRecommendation(rec: Recommendation, status: 'active' | 'reje
 
 export const RECOMMENDATIONS_PATH = `${PATHS.derived}/recommendations.json`;
 
-
-const COMPASS = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
-
 function fmt(sec: number): string {
   // Rounded first: 299.6 s is 5:00, not 4:60.
   const r = Math.round(sec);
@@ -85,6 +84,19 @@ function fmt(sec: number): string {
 
 /** A pace band around a pace, s/km: within SIMILAR_PACE_WITHIN of it, to the whole second. */
 const likePace = (pace: number) => ({ paceMin: Math.round(pace * (1 - SIMILAR_PACE_WITHIN)), paceMax: Math.round(pace * (1 + SIMILAR_PACE_WITHIN)) });
+
+/** "5.2 km north-bound, pace 4:45–5:15": the name of a route segment kept from a selection; English unless given the words of the language in use. */
+export function routeSegmentName(length: number, heading: number, band: { paceMin: number; paceMax: number } | null, w: Words = SAVED_WORDS): string {
+  const route = routeName(length, heading, w);
+  return band ? w.t('{route}, pace {from}–{to}', { route, from: fmt(band.paceMin), to: fmt(band.paceMax) }) : w.t('{route}, any pace', { route });
+}
+
+/** "Like 3.0 km, 25 m up, pace 4:50": the name of a profile segment kept from a selection; English unless given the words of the language in use. */
+export function profileSegmentName(key: ProfileKey, w: Words = SAVED_WORDS): string {
+  const climb = key.altitude ? Math.round(key.altitude.reduce((s, a, i, xs) => s + (i && a > xs[i - 1] ? a - xs[i - 1] : 0), 0)) : null;
+  const vars = { km: w.num(key.distance / 1000, 1), climb: w.num(climb ?? 0), pace: fmt(key.pace) };
+  return climb === null ? w.t('Like {km} km, pace {pace}', vars) : w.t('Like {km} km, {climb} m up, pace {pace}', vars);
+}
 
 /**
  * A route block of every pass over a track at any pace, the general conditions off: what the Find
@@ -96,7 +108,7 @@ export function definitionFromRoute(track: RefPoint[], pace: number | null = nul
   const band = pace ? likePace(pace) : null;
   return {
     id: newDefinitionId(), origin: 'manual', status: 'active', createdAt: now.toISOString(),
-    name: `${(length / 1000).toFixed(1)} km ${COMPASS[Math.round(heading / 45) % 8]}-bound, ${band ? `pace ${fmt(band.paceMin)}–${fmt(band.paceMax)}` : 'any pace'}`,
+    name: routeSegmentName(length, heading, band),
     // The pace band is the rule's own condition, shown and changed in the editor ("jak klikne edit to wszystko jest puste").
     params: { type: 'rule', ...ruleOf({ type: 'route', track, length, heading }), conditions: { ...EMPTY_CONDITIONS, ...band } },
     tolerances: { ...RULE_TOLERANCES },
@@ -105,10 +117,9 @@ export function definitionFromRoute(track: RefPoint[], pace: number | null = nul
 
 /** A profile block: in each run, the stretch most like the profile from the same score, on any route, the general conditions off. */
 export function definitionFromProfile(key: ProfileKey, now = new Date()): BlockDefinition {
-  const climb = key.altitude ? Math.round(key.altitude.reduce((s, a, i, xs) => s + (i && a > xs[i - 1] ? a - xs[i - 1] : 0), 0)) : null;
   return {
     id: newDefinitionId(), origin: 'manual', status: 'active', createdAt: now.toISOString(),
-    name: `Like ${(key.distance / 1000).toFixed(1)} km${climb === null ? '' : `, ${climb} m up`}, pace ${fmt(key.pace)}`,
+    name: profileSegmentName(key),
     params: { type: 'rule', ...ruleOf({ type: 'profile', key, minScore: PROFILE_MIN_SCORE }), conditions: { ...EMPTY_CONDITIONS, ...likePace(key.pace) } },
     tolerances: { ...RULE_TOLERANCES },
   };
@@ -123,7 +134,7 @@ export function renameInDefinitions(definitions: BlockDefinition[], field: 'work
   return definitions.map((d) => {
     const p = d.params;
     if (p.type === 'rule' && p.runs[field].includes(from)) return { ...d, params: { ...p, runs: { ...p.runs, [field]: p.runs[field].map((v) => (v === from ? to : v)) } } };
-    if (p.type === 'tag' && field === 'workoutTypes' && p.workoutType === from) return { ...d, name: d.name === `Workout: ${from}` ? `Workout: ${to}` : d.name, params: { ...p, workoutType: to } };
+    if (p.type === 'tag' && field === 'workoutTypes' && p.workoutType === from) return { ...d, name: d.name === tagName(from) ? tagName(to) : d.name, params: { ...p, workoutType: to } };
     return d;
   });
 }

@@ -1,6 +1,6 @@
 import { metricSeries, type IndexedRun, type RunFile, type Series } from '@/lib/kernel';
 
-import { MIN_SECONDS, blockMetricsOf, efficiencyOf, STANDING_WINDOW, type BlockDefinition, type BlockInstance, type BlockMetric, type Tolerances } from '@/lib/blocks';
+import { MIN_SECONDS, REASONS, SAVED_WORDS, blockMetricsOf, efficiencyOf, STANDING_WINDOW, type BlockDefinition, type BlockInstance, type BlockMetric, type Tolerances } from '@/lib/blocks';
 
 const STOPPED_SPEED = 0.5;
 /** seconds between two samples above which the watch was paused */
@@ -29,10 +29,12 @@ export function stopTimes(t: number[], speed: Series): number[] {
  * falls within STANDING_WINDOW s before it (up to 2 s after, for the sample that resumes).
  */
 export function startKind(t: number[], speed: Series, start: number, stops = stopTimes(t, speed)): 'standing' | 'flying' {
+  // i18n-ignore: a kind of start, not a text
   if (start <= (t[0] ?? 0) + STANDING_WINDOW) return 'standing';
   let lo = 0;
   let hi = stops.length;
   while (lo < hi) { const mid = (lo + hi) >> 1; if (stops[mid] < start - STANDING_WINDOW) lo = mid + 1; else hi = mid; }
+  // i18n-ignore: a kind of start, not a text
   return lo < stops.length && stops[lo] <= start + 2 ? 'standing' : 'flying';
 }
 
@@ -99,7 +101,7 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
   const tol: Tolerances = def.tolerances;
   const reasons: string[] = [];
   const begins = startKind(s.t, speedSeries, start);
-  if (tol.start !== 'any' && begins !== tol.start) reasons.push(`start: ${begins}, the segment needs a ${tol.start} start`);
+  if (tol.start !== 'any' && begins !== tol.start) reasons.push(begins === 'standing' ? REASONS.standingNeedsFlying : REASONS.flyingNeedsStanding);
   // Heart rate from the block's own heart rate start, when it has one: the same in every instance.
   // Efficiency (metres per heartbeat) from the same samples as the heart rate.
   const hrIdx = tol.hrSkip !== null ? moving.filter((i) => s.t[i] >= start + tol.hrSkip!) : moving;
@@ -112,15 +114,15 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
   metrics.efficiency = eff === null ? null : round(eff, 4);
   profile.efficiency = (profile.speed ?? []).map((sp, k) => { const e = efficiencyOf(sp, profile.heartRate?.[k] ?? null); return e === null ? null : round(e, 4); });
   if (tol.paceMin !== null && tol.paceMax !== null && (pace < tol.paceMin || pace > tol.paceMax))
-    reasons.push(`pace: ${fmtPace(pace)} outside ${fmtPace(tol.paceMin)}–${fmtPace(tol.paceMax)}`);
-  if (grade > tol.gradeMax) reasons.push(`grade: effort pace differs by ${pct(grade)}, limit ${pct(tol.gradeMax)}`);
-  if (cv >= tol.cvMax) reasons.push(`pace steadiness: CV ${cv.toFixed(2)}, limit ${tol.cvMax}`);
+    reasons.push(say(REASONS.pace, { pace: fmtPace(pace), from: fmtPace(tol.paceMin), to: fmtPace(tol.paceMax) }));
+  if (grade > tol.gradeMax) reasons.push(say(REASONS.grade, { grade: pct(grade), limit: pct(tol.gradeMax) }));
+  if (cv >= tol.cvMax) reasons.push(say(REASONS.steadiness, { cv: cv.toFixed(2), limit: tol.cvMax }));
   // One decision per run (the author's decision of 19 Nov 2026): no metric is left out of an
   // instance on its own; a fragment too short for any meaningful mean is rejected as a whole.
-  if (duration < MIN_SECONDS.block) reasons.push(`effort ${Math.round(duration)} s, minimum ${MIN_SECONDS.block} s`);
+  if (duration < MIN_SECONDS.block) reasons.push(say(REASONS.short, { seconds: Math.round(duration), minimum: MIN_SECONDS.block }));
   if (tol.effortBeforeMax !== null) {
-    if (effortBefore === null) reasons.push('effort before it: less than 1 min of data');
-    else if (Math.abs(effortBefore) > tol.effortBeforeMax) reasons.push(`effort before it: ${pct(Math.abs(effortBefore))}, limit ${pct(tol.effortBeforeMax)}`);
+    if (effortBefore === null) reasons.push(REASONS.noEffortBefore);
+    else if (Math.abs(effortBefore) > tol.effortBeforeMax) reasons.push(say(REASONS.effortBefore, { effort: pct(Math.abs(effortBefore)), limit: pct(tol.effortBeforeMax) }));
   }
 
   // Lap number (1-based): given for structure blocks, else the lap the block starts in.
@@ -165,8 +167,12 @@ function round(x: number, d = 0): number {
   const f = 10 ** d;
   return Math.round(x * f) / f;
 }
-function pct(x: number): string {
-  return `${Math.round(x * 100)}%`;
+/** A reason in English, as the instances file keeps it; a screen shows it with reasonText (lib/blocks). */
+const say = (key: string, vars: Record<string, string | number>) => SAVED_WORDS.t(key, vars);
+
+/** A share in whole percent, its sign left to the reason's text. */
+function pct(x: number): number {
+  return Math.round(x * 100);
 }
 export function fmtPace(secPerKm: number): string {
   const m = Math.floor(secPerKm / 60);

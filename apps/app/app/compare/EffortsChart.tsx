@@ -5,6 +5,7 @@ import { clock, ensureSpan, niceTicks, robustExtent, smoothPaths, useMetrics, us
 import { figuresInWorker, type EffortFigures } from '@/lib/client';
 import { date } from '@/lib/format';
 import type { DataFolder } from '@/lib/fs';
+import { number, t, tn } from '@/lib/i18n';
 import { readSettings, zoneColor, zoneRanges } from '@/lib/settings';
 
 /** An effort chosen on the Efforts tab: where it is, and whether it is the selection compared from. */
@@ -67,12 +68,12 @@ export function EffortsChart({ efforts, handle, folder }: { efforts: ChartEffort
     let k = 0;
     return [...efforts].sort((a, b) => Number(b.reference) - Number(a.reference)).flatMap((e) => {
       const f = figures[`${e.runId}:${e.from}`];
-      return f ? [{ e, f, color: e.reference ? 'var(--text)' : `var(--series-${++k})`, name: e.reference ? `This selection · ${date(f.runStart)}` : date(f.runStart) }] : [];
+      return f ? [{ e, f, color: e.reference ? 'var(--text)' : `var(--series-${++k})`, name: e.reference ? t('This selection · {date}', { date: date(f.runStart) }) : date(f.runStart) }] : [];
     });
   }, [figures, efforts]);
 
   // The width is read from a box that is there from the first render, the chart's or its message.
-  if (!figures || !lines.length) return <div ref={box} className="card effort-chart muted small" role="status">{figures ? 'No distance in these efforts to draw.' : 'Reading the efforts…'}</div>;
+  if (!figures || !lines.length) return <div ref={box} className="card effort-chart muted small" role="status">{figures ? t('No distance in these efforts to draw.') : t('Reading the efforts…')}</div>;
 
   // The plot spans the card, less its padding.
   const w = Math.max(320, width - 28);
@@ -102,7 +103,7 @@ export function EffortsChart({ efforts, handle, folder }: { efforts: ChartEffort
     return { m, view, ys, top, py, paths, stripes, ticks: niceTicks(lo, hi, 3).filter((t) => t >= lo && t <= hi) };
   });
   const xTicks = niceTicks(0, axis === 'distance' ? xMax / 1000 : xMax / 60, 6).map((v) => (axis === 'distance' ? v * 1000 : v * 60)).filter((v) => v <= xMax);
-  const xLabel = (v: number) => (axis === 'distance' ? `${+(v / 1000).toFixed(2)} km` : clock(v));
+  const xLabel = (v: number) => (axis === 'distance' ? `${number(+(v / 1000).toFixed(2))} km` : clock(v));
   /** Each effort's value of a metric nearest the cursor. */
   const at = (i: number, ys: (number | null)[]) => {
     if (cursor === null) return null;
@@ -117,37 +118,38 @@ export function EffortsChart({ efforts, handle, folder }: { efforts: ChartEffort
     setCursor(x >= 0 && x <= xMax ? x : null);
   };
 
+  const shownNames = shown.map((m) => METRICS.find((x) => x.key === m)!.short).join(', ');
   return (
     <div ref={box} className="card effort-chart">
       <div className="effort-chart-head">
-        <span className="chart-title">Efforts compared</span>
+        <span className="chart-title">{t('Efforts compared')}</span>
         <span className="spacer" />
-        <div className="segmented" role="radiogroup" aria-label="Along">
-          {(['distance', 'time'] as const).map((a) => <button key={a} type="button" role="radio" aria-checked={axis === a} className={axis === a ? 'on' : ''} onClick={() => setAxis(a)}>{a === 'distance' ? 'Distance' : 'Time'}</button>)}
+        <div className="segmented" role="radiogroup" aria-label={t('Along')}>
+          {(['distance', 'time'] as const).map((a) => <button key={a} type="button" role="radio" aria-checked={axis === a} className={axis === a ? 'on' : ''} onClick={() => setAxis(a)}>{a === 'distance' ? t('Distance') : t('Time')}</button>)}
         </div>
-        <label className="setting inline"><input type="checkbox" checked={smoothed} onChange={(e) => setSmoothed(e.target.checked)} /> Smoothed</label>
+        <label className="setting inline"><input type="checkbox" checked={smoothed} onChange={(e) => setSmoothed(e.target.checked)} /> {t('Smoothed')}</label>
       </div>
       <div className="effort-chart-metrics">
-        <div className="metric-picker" role="group" aria-label="Metrics drawn">
+        <div className="metric-picker" role="group" aria-label={t('Metrics drawn')}>
           {METRICS.filter((x) => has(x.key)).map((x) => (
             <button key={x.key} type="button" className={`pill ${metrics.includes(x.key) ? 'on' : ''}`} aria-pressed={metrics.includes(x.key)}
               onClick={() => setMetrics((ms) => (ms.includes(x.key) ? (ms.length > 1 ? ms.filter((y) => y !== x.key) : ms) : METRICS.map((y) => y.key).filter((y) => y === x.key || ms.includes(y))))}>{x.short}</button>
           ))}
         </div>
       </div>
-      <div className="effort-legend" role="list" aria-label="Efforts drawn">
+      <div className="effort-legend" role="list" aria-label={t('Efforts drawn')}>
         {lines.map((l) => <span key={`${l.e.runId}:${l.e.from}`} role="listitem"><i style={{ background: l.color }} aria-hidden="true" />{l.name}</span>)}
       </div>
       <div className="effort-plot">
-        <svg role="img" aria-label={`${shown.map((m) => METRICS.find((x) => x.key === m)!.short).join(', ')} of ${lines.length} effort${lines.length === 1 ? '' : 's'}, by ${axis}`} width={w} height={H}
+        <svg role="img" aria-label={axis === 'distance' ? tn(lines.length, '{metrics} of {n} effort, by distance', '{metrics} of {n} efforts, by distance', { metrics: shownNames }) : tn(lines.length, '{metrics} of {n} effort, by time', '{metrics} of {n} efforts, by time', { metrics: shownNames })} width={w} height={H}
           onMouseMove={move} onMouseLeave={() => setCursor(null)}>
           {bands.map((b) => (
             <g key={b.m} className="effort-band" data-metric={b.m}>
               {b.stripes.map((s) => <rect key={s.z} x={PAD.l} y={s.y} width={w - PAD.l - PAD.r} height={s.h} fill={zoneColor(s.z, s.n)} opacity={0.14} className="zone-stripe" />)}
-              {b.ticks.map((t) => (
-                <g key={t}>
-                  <line x1={PAD.l} x2={w - PAD.r} y1={b.py(t)} y2={b.py(t)} stroke="var(--grid)" />
-                  <text x={PAD.l - 6} y={b.py(t) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{b.view.tick(t)}</text>
+              {b.ticks.map((v) => (
+                <g key={v}>
+                  <line x1={PAD.l} x2={w - PAD.r} y1={b.py(v)} y2={b.py(v)} stroke="var(--grid)" />
+                  <text x={PAD.l - 6} y={b.py(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{b.view.tick(v)}</text>
                 </g>
               ))}
               <text x={PAD.l} y={b.top + 12} fontSize="11.5" fontWeight="650" fill="var(--text)">{b.view.short}</text>
@@ -182,14 +184,14 @@ function EffortsFigures({ lines, metrics }: { lines: { e: ChartEffort; f: Effort
     return v.length ? { avg: v.reduce((a, b) => a + b, 0) / v.length, min: Math.min(...v), max: Math.max(...v) } : null;
   };
   return (
-    <div className="table-scroll" tabIndex={0} role="region" aria-label="Figures of the efforts drawn">
+    <div className="table-scroll" tabIndex={0} role="region" aria-label={t('Figures of the efforts drawn')}>
       <table className="data effort-figures">
         <thead>
           <tr>
-            <th scope="col">Effort</th>
-            <th scope="col" className="num">Time</th>
-            <th scope="col" className="num">Distance</th>
-            <th scope="col" className="num">Climb</th>
+            <th scope="col">{t('Effort')}</th>
+            <th scope="col" className="num">{t('Time')}</th>
+            <th scope="col" className="num">{t('Distance')}</th>
+            <th scope="col" className="num">{t('Climb')}</th>
             {metrics.map((m) => <th key={m} scope="col" className="num">{view(m).short}</th>)}
           </tr>
         </thead>
@@ -198,7 +200,7 @@ function EffortsFigures({ lines, metrics }: { lines: { e: ChartEffort; f: Effort
             <tr key={`${l.e.runId}:${l.e.from}`} className={l.e.reference ? 'reference' : ''}>
               <td><span className="effort-name"><i style={{ background: l.color }} aria-hidden="true" />{l.name}</span></td>
               <td className="num tnum">{clock(l.f.moving)}</td>
-              <td className="num tnum">{(l.f.distance / 1000).toFixed(2)} km</td>
+              <td className="num tnum">{number(l.f.distance / 1000, 2)} km</td>
               <td className="num tnum">{l.f.ascent === null ? '–' : `${l.f.ascent} m`}</td>
               {metrics.map((m) => {
                 const mv = view(m);

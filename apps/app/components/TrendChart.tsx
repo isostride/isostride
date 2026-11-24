@@ -2,7 +2,8 @@
 
 import { useMemo, useState, type MouseEvent } from 'react';
 import type { BlockInstance } from '@/lib/blocks';
-import type { TrendResult } from '@/lib/compare';
+import { contextValue, type TrendResult } from '@/lib/compare';
+import { dateText, t } from '@/lib/i18n';
 import { Key, ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useWidth } from './chartKit';
 
 /** Categorical series colours, in their validated order: colour follows the series (the device), never its rank. */
@@ -64,8 +65,8 @@ export function TrendChart({ trend, format, tick = format, invert, markers, sele
   if (!scale)
     return (
       <div ref={box} className="card empty">
-        No accepted instances for this metric and filter.
-        {emptyReasons && emptyReasons.length > 0 && <div className="small" style={{ marginTop: 6 }}>Left out most often for: {emptyReasons.join(' · ')}. Open Efforts for each one&apos;s reason, or try another metric.</div>}
+        {t('No accepted instances for this metric and filter.')}
+        {emptyReasons && emptyReasons.length > 0 && <div className="small" style={{ marginTop: 6 }}>{t("Left out most often for: {reasons}. Open Efforts for each one's reason, or try another metric.", { reasons: emptyReasons.join(' · ') })}</div>}
       </div>
     );
   const { t0, t1, lo, hi, ticks } = scale;
@@ -107,9 +108,9 @@ export function TrendChart({ trend, format, tick = format, invert, markers, sele
   return (
     <div ref={box} className="card chart" style={{ position: 'relative' }}>
       {trend.series.length > 1 && (
-        <div className="chart-legend">{trend.series.map((s, si) => <Key key={s.source} kind="dot" color={SERIES[si % SERIES.length]} label={s.source} />)}</div>
+        <div className="chart-legend">{trend.series.map((s, si) => <Key key={s.source} kind="dot" color={SERIES[si % SERIES.length]} label={contextValue(s.source)} />)}</div>
       )}
-      <svg width={width} height={H} onMouseMove={move} onMouseLeave={() => setHover(null)} onClick={() => hover && onSelect(hover.i)} style={{ cursor: hover ? 'pointer' : 'default', display: 'block' }} role="img" aria-label="Trend">
+      <svg width={width} height={H} onMouseMove={move} onMouseLeave={() => setHover(null)} onClick={() => hover && onSelect(hover.i)} style={{ cursor: hover ? 'pointer' : 'default', display: 'block' }} role="img" aria-label={t('Trend')}>
         {ticks.map((v) => (
           <g key={v}>
             <line x1={M.l} x2={width - M.r} y1={y(v)} y2={y(v)} stroke="var(--grid)" />
@@ -154,7 +155,7 @@ export function TrendChart({ trend, format, tick = format, invert, markers, sele
         {hover && <circle cx={hover.x} cy={hover.y} r={8} fill="none" stroke="var(--text)" strokeWidth="1.5" />}
       </svg>
       {hover && <Tooltip h={hover} format={format} width={width} />}
-      <div className="chart-note">Band: the noise between efforts (±1 standard deviation) around the fitted line. Click points to compare their profiles below.</div>
+      <div className="chart-note">{t('Band: the noise between efforts (±1 standard deviation) around the fitted line. Click points to compare their profiles below.')}</div>
     </div>
   );
 }
@@ -166,8 +167,8 @@ function Tooltip({ h, format, width }: { h: Hover; format: (v: number) => string
   return (
     <div className="tooltip" style={{ left, top: Math.max(4, h.y - 20) }}>
       <div className="tip-value"><i className="key-dot" style={{ background: h.color }} /> {format(h.v)}</div>
-      <div>{new Date(h.i.runStart).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}, minute {c.before.minuteOfRun} of the run</div>
-      <div className="muted">pace {pace} /km · {c.run.shoes ?? 'no shoes set'} · {c.run.heartRateSource}</div>
+      <div>{t('{date}, minute {minute} of the run', { date: dateText(h.i.runStart, { day: 'numeric', month: 'short', year: 'numeric' }), minute: c.before.minuteOfRun })}</div>
+      <div className="muted">{t('pace {pace} /km', { pace })} · {c.run.shoes ?? t('no shoes set')} · {contextValue(c.run.heartRateSource)}</div>
     </div>
   );
 }
@@ -185,10 +186,10 @@ interface ProfileProps {
 }
 
 /** Per-minute profiles inside the block, overlaid (spec F13): minute of the block on x. */
-export function ProfileChart({ lines, format, tick = format, minSpan = 0, invert, colors = SERIES, ariaLabel = 'Per-minute profiles' }: ProfileProps) {
+export function ProfileChart({ lines, format, tick = format, minSpan = 0, invert, colors = SERIES, ariaLabel }: ProfileProps) {
   const [box, width] = useWidth();
   const vals = lines.flatMap((l) => l.values).filter((v): v is number => v !== null);
-  if (!vals.length) return <div ref={box} className="muted small" style={{ padding: 12 }}>Click points on the chart above to overlay their per-minute profiles.</div>;
+  if (!vals.length) return <div ref={box} className="muted small" style={{ padding: 12 }}>{t('Click points on the chart above to overlay their per-minute profiles.')}</div>;
   const n = Math.max(...lines.map((l) => l.values.length));
   const span = Math.max(...vals) - Math.min(...vals) || Math.abs(vals[0]) * 0.05 || 1;
   const [lo0, hi0] = ensureSpan(Math.min(...vals) - span * 0.1, Math.max(...vals) + span * 0.1, minSpan);
@@ -206,7 +207,7 @@ export function ProfileChart({ lines, format, tick = format, minSpan = 0, invert
   return (
     <div ref={box}>
       <div className="chart-legend">{lines.map((l, li) => <Key key={l.id} color={colors[li % colors.length]} label={l.label} />)}</div>
-      <svg width={width} height={h} role="img" aria-label={ariaLabel} style={{ display: 'block' }}>
+      <svg width={width} height={h} role="img" aria-label={ariaLabel ?? t('Per-minute profiles')} style={{ display: 'block' }}>
         {ticks.map((v) => (
           <g key={v}>
             <line x1={M.l} x2={width - M.r} y1={y(v)} y2={y(v)} stroke="var(--grid)" />
@@ -217,7 +218,7 @@ export function ProfileChart({ lines, format, tick = format, minSpan = 0, invert
         {Array.from({ length: n }, (_, k) => k).filter((k) => k % every === 0 && x(k) < width - M.r - 110).map((k) => (
           <text key={k} x={x(k)} y={h - 8} fontSize="11" fill="var(--muted)" textAnchor="middle" className="tnum">{k + 1}</text>
         ))}
-        <text x={width - M.r} y={h - 8} fontSize="11" fill="var(--muted)" textAnchor="end">min of the effort</text>
+        <text x={width - M.r} y={h - 8} fontSize="11" fill="var(--muted)" textAnchor="end">{t('min of the effort')}</text>
         {lines.map((l, li) => {
           let d = '';
           l.values.forEach((v, k) => { if (v !== null) d += `${d ? 'L' : 'M'}${x(k).toFixed(1)},${y(v).toFixed(1)}`; });

@@ -1,10 +1,12 @@
+import { msg } from '@/lib/i18n';
 import type { ModelGroup, ModelKey } from '@/lib/load';
 
 /**
  * The Performance screen by the evidence its models rest on (requirement "Performance structured
  * by evidence"): an overview, a tab per group with its views, and what to do. The load model is
  * chosen at the top of Load, its values set in Settings › Models (the runner's "tak" to it: "mam
- * wrazenie ze wszystkie modele sa pomieszane").
+ * wrazenie ze wszystkie modele sa pomieszane"). The names and the evidence are keys, shown through t();
+ * an evidence keeps its colon in every language (the map of the models shows the part after it).
  */
 export type Tab = 'overview' | ModelGroup;
 
@@ -16,35 +18,36 @@ export interface View {
 }
 
 export const TABS: { key: Tab; name: string; /** the evidence a group's models rest on */ evidence?: string; views: View[] }[] = [
-  { key: 'overview', name: 'Overview', views: [] },
+  { key: 'overview', name: msg('Overview'), views: [] },
   {
-    key: 'load', name: 'Load', evidence: 'what you did: from every run', views: [
-      { key: 'form', name: 'Form', models: ['load', 'form', 'acwr'] },
-      { key: 'weekly', name: 'Weekly load', models: ['load', 'weekly'] },
-      { key: 'intensity', name: 'Intensity', models: ['intensity'] },
+    key: 'load', name: msg('Load'), evidence: msg('what you did: from every run'), views: [
+      { key: 'form', name: msg('Form'), models: ['load', 'form', 'acwr'] },
+      { key: 'weekly', name: msg('Weekly load'), models: ['load', 'weekly'] },
+      { key: 'intensity', name: msg('Intensity'), models: ['intensity'] },
     ],
   },
   {
-    key: 'capacity', name: 'Capacity', evidence: 'what you can do: from your all-out efforts', views: [
-      { key: 'efforts', name: 'Best efforts', models: ['efforts', 'powerEfforts'] },
-      { key: 'critical', name: 'Critical speed and power', models: ['cs', 'cp'] },
-      { key: 'predictions', name: 'Predictions and VDOT', models: ['predictions', 'vdot'] },
+    key: 'capacity', name: msg('Capacity'), evidence: msg('what you can do: from your all-out efforts'), views: [
+      { key: 'efforts', name: msg('Best efforts'), models: ['efforts', 'powerEfforts'] },
+      { key: 'critical', name: msg('Critical speed and power'), models: ['cs', 'cp'] },
+      { key: 'predictions', name: msg('Predictions and VDOT'), models: ['predictions', 'vdot'] },
     ],
   },
   {
-    key: 'aerobic', name: 'Aerobic', evidence: 'how efficiently you run: from everyday runs and their heart rate', views: [
-      { key: 'efficiency', name: 'Efficiency', models: ['ef'] },
-      { key: 'decoupling', name: 'Decoupling', models: ['decoupling'] },
-      { key: 'vo2', name: 'VO2max from heart rate', models: ['vo2hr', 'uth'] },
+    key: 'aerobic', name: msg('Aerobic'), evidence: msg('how efficiently you run: from everyday runs and their heart rate'), views: [
+      { key: 'efficiency', name: msg('Efficiency'), models: ['ef'] },
+      { key: 'decoupling', name: msg('Decoupling'), models: ['decoupling'] },
+      { key: 'vo2', name: msg('VO2max from heart rate'), models: ['vo2hr', 'uth'] },
     ],
   },
   {
-    key: 'response', name: 'Response', evidence: 'how load turns into performance: from your loads and a measure of performance', views: [
-      { key: 'hr', name: 'On VO2max from heart rate', models: ['fittedHr'] },
-      { key: 'vdot', name: 'On VDOT', models: ['fittedVdot'] },
+    key: 'response', name: msg('Response'), evidence: msg('how load turns into performance: from your loads and a measure of performance'), views: [
+      { key: 'hr', name: msg('On VO2max from heart rate'), models: ['fittedHr'] },
+      { key: 'vdot', name: msg('On VDOT'), models: ['fittedVdot'] },
     ],
   },
 ];
 
 /** The link of a tab and view of the Performance screen. */
+// i18n-ignore
 export const performanceHref = (tab: string, view?: string) => `/performance${tab === 'overview' ? '' : `?tab=${tab}${view ? `&view=${view}` : ''}`}`;

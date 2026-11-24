@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { ItemKey, useMetrics } from '@/components';
-import { changesByMetric, describeDelta, describeTrend, formatAmount, percentChange, wordsOf, type TrendResult } from '@/lib/compare';
+import { changesByMetric, contextValue, describeDelta, describeTrend, formatAmount, percentChange, wordsOf, type TrendResult } from '@/lib/compare';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
+import { t, tn } from '@/lib/i18n';
 
 
 /** A segment of the comparison as the verdicts show it. */
@@ -38,9 +39,9 @@ export function TrendVerdicts({ rows, metrics, all, corrected, trendsBy }: {
     <>
       {rows.length > 0 && (
         <div className="card" style={{ marginTop: 12, overflowX: 'auto' }}>
-          <table className="data changes" aria-label="Changes">
+          <table className="data changes" aria-label={t('Changes')}>
             <thead>
-              <tr><th>Segment</th>{metrics.map((mt) => <th key={mt}>{view(mt).short}</th>)}</tr>
+              <tr><th>{t('Segment')}</th>{metrics.map((mt) => <th key={mt}>{view(mt).short}</th>)}</tr>
             </thead>
             <tbody>
               {rows.map((i) => (
@@ -49,7 +50,7 @@ export function TrendVerdicts({ rows, metrics, all, corrected, trendsBy }: {
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ItemKey shape={i.shape} color={i.color} />{i.label}</span>
                     <div className="attrs">
                       {i.attributes.map((a) => <span key={a} className="chip">{a}</span>)}
-                      <Link className="muted small" href={i.abHref}>Compare A/B →</Link>
+                      <Link className="muted small" href={i.abHref}>{t('Compare A/B →')}</Link>
                     </div>
                   </td>
                   {i.pending
@@ -57,11 +58,11 @@ export function TrendVerdicts({ rows, metrics, all, corrected, trendsBy }: {
                     : changesByMetric(all, i.defId, metrics, corrected).map((c) => (
                       <td key={c.metric}>
                         {c.change === null ? (
-                          <span className="muted small">{c.n ? `${c.n} efforts, too few` : 'no efforts'}</span>
+                          <span className="muted small">{c.n ? tn(c.n, '{n} effort, too few', '{n} efforts, too few') : t('no efforts')}</span>
                         ) : (
                           <div className="kpi">
                             <div className={`kpi-v ${c.verdict === 'change' ? 'change-yes' : ''}`}>{describeDelta(c.metric, c.change, wordsOf(c.metric, catalog, directions))}{c.start ? <span className="kpi-pct">{percentChange(c.change, c.start)}</span> : null}</div>
-                            <div className="kpi-sub muted small"><span className={`verdict-chip ${c.verdict === 'change' ? 'yes' : 'no'}`}>{c.verdict === 'change' ? 'change' : 'no detectable change'}</span> · noise ±{formatAmount(c.metric, c.noise!, wordsOf(c.metric, catalog, directions))} · {c.n} efforts</div>
+                            <div className="kpi-sub muted small"><span className={`verdict-chip ${c.verdict === 'change' ? 'yes' : 'no'}`}>{c.verdict === 'change' ? t('change') : t('no detectable change')}</span> · {t('noise ±{value}', { value: formatAmount(c.metric, c.noise!, wordsOf(c.metric, catalog, directions)) })} · {tn(c.n, '{n} effort', '{n} efforts')}</div>
                           </div>
                         )}
                       </td>
@@ -70,18 +71,18 @@ export function TrendVerdicts({ rows, metrics, all, corrected, trendsBy }: {
               ))}
             </tbody>
           </table>
-          <div className="chart-note" style={{ padding: '0 12px 10px' }}>Each cell: the fitted change from the first to the last effort, whether it is beyond the noise, and the efforts it rests on.</div>
+          <div className="chart-note" style={{ padding: '0 12px 10px' }}>{t('Each cell: the fitted change from the first to the last effort, whether it is beyond the noise, and the efforts it rests on.')}</div>
         </div>
       )}
 
       {rows.map((i) => (
         <details key={i.id} className="card result" style={{ marginTop: 12 }}>
-          <summary><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ItemKey shape={i.shape} color={i.color} />{i.label}: the verdicts in words</span></summary>
+          <summary><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ItemKey shape={i.shape} color={i.color} />{t('{name}: the verdicts in words', { name: i.label })}</span></summary>
           {metrics.flatMap((mt) => (trendsBy.get(mt)?.get(i.id)?.series ?? []).map((s) => {
             const d = describeTrend(s, mt, view(mt).fmt, wordsOf(mt, catalog, directions));
             return (
               <div key={mt + s.source} className="result-row">
-                <div className="muted small">{view(mt).name}{(trendsBy.get(mt)?.get(i.id)?.series.length ?? 0) > 1 ? ` · ${s.source}` : ''}</div>
+                <div className="muted small">{view(mt).name}{(trendsBy.get(mt)?.get(i.id)?.series.length ?? 0) > 1 ? ` · ${contextValue(s.source)}` : ''}</div>
                 <div className={`verdict ${d.change ? 'is-change' : ''}`}>{d.headline}</div>
                 <div className="explain">{d.sentence}</div>
               </div>

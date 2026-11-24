@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { EditDialog } from '@/components';
 import type { Gear, RunTag, RunTagsFile } from '@/lib/gear';
+import { t } from '@/lib/i18n';
 
 /**
  * What the runner says about one run: its title, the shoes worn when not those of the date, the
@@ -19,32 +20,32 @@ export function TagEditor({ title, tag, gear, dictionary, onSave, onCancel }: {
   onSave: (t: RunTag) => void;
   onCancel: () => void;
 }) {
-  const [t, setT] = useState<RunTag>(tag);
-  const set = (k: keyof RunTag, v: string) => setT({ ...t, [k]: v || undefined });
+  const [draft, setDraft] = useState<RunTag>(tag);
+  const set = (k: keyof RunTag, v: string) => setDraft({ ...draft, [k]: v || undefined });
   return (
-    <EditDialog kind="run" kindLabel="Tags and note" title={title} onSave={() => onSave(t)} onCancel={onCancel}>
-      <label className="edit-field">Title<input className="input" value={t.title ?? ''} placeholder="e.g. COROS test" onChange={(e) => set('title', e.target.value)} /></label>
+    <EditDialog kind="run" kindLabel={t('Tags and note')} title={title} onSave={() => onSave(draft)} onCancel={onCancel}>
+      <label className="edit-field">{t('Title')}<input className="input" value={draft.title ?? ''} placeholder={t('e.g. COROS test')} onChange={(e) => set('title', e.target.value)} /></label>
       <div className="edit-row">
-        <label className="edit-field">Type
-          <select className="select" value={t.workoutType ?? ''} onChange={(e) => set('workoutType', e.target.value)}>
+        <label className="edit-field">{t('Type')}
+          <select className="select" value={draft.workoutType ?? ''} onChange={(e) => set('workoutType', e.target.value)}>
             <option value="">–</option>
             {dictionary.workoutTypes.map((v) => <option key={v}>{v}</option>)}
           </select>
         </label>
-        <label className="edit-field">Technique cue
-          <select className="select" value={t.techniqueCue ?? ''} onChange={(e) => set('techniqueCue', e.target.value)}>
+        <label className="edit-field">{t('Technique cue')}
+          <select className="select" value={draft.techniqueCue ?? ''} onChange={(e) => set('techniqueCue', e.target.value)}>
             <option value="">–</option>
             {dictionary.techniqueCues.map((v) => <option key={v}>{v}</option>)}
           </select>
         </label>
       </div>
-      <label className="edit-field">Shoes worn
-        <select className="select" value={t.shoesOverride ?? ''} onChange={(e) => set('shoesOverride', e.target.value)}>
-          <option value="">As by the date</option>
+      <label className="edit-field">{t('Shoes worn')}
+        <select className="select" value={draft.shoesOverride ?? ''} onChange={(e) => set('shoesOverride', e.target.value)}>
+          <option value="">{t('As by the date')}</option>
           {gear.filter((g) => g.type === 'shoes').map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
         </select>
       </label>
-      <label className="edit-field">Note<textarea className="input" rows={3} value={t.note ?? ''} onChange={(e) => set('note', e.target.value)} /></label>
+      <label className="edit-field">{t('Note')}<textarea className="input" rows={3} value={draft.note ?? ''} onChange={(e) => set('note', e.target.value)} /></label>
     </EditDialog>
   );
 }

@@ -1,4 +1,5 @@
 import type { IndexedRun } from '@/lib/kernel';
+import { LOCALES } from '@/lib/i18n';
 import { localDay } from './weeks';
 
 /**
@@ -17,14 +18,22 @@ export const NO_SEARCH: RunSearch = { text: '', type: null, minKm: null, maxKm: 
 
 export const isSearching = (s: RunSearch) => s.text.trim() !== '' || s.type !== null || s.minKm !== null || s.maxKm !== null;
 
-/** What the words of a search look through: the run's title, note, tags, gear, watch and its date. */
+/** The names of a day's month and weekday in a language: the month alone and as in a date ("listopad", "24 listopada"), short, the weekday. */
+const dayNames = (d: Date, tag: string) => [
+  d.toLocaleDateString(tag, { month: 'long' }), d.toLocaleDateString(tag, { day: 'numeric', month: 'long' }),
+  d.toLocaleDateString(tag, { month: 'short' }), d.toLocaleDateString(tag, { weekday: 'long' }),
+];
+
+/**
+ * What the words of a search look through: the run's title, note, tags, gear, watch and its date,
+ * its month and weekday named in every language of the app ("november", "listopad", "wtorek").
+ */
 function haystack(r: IndexedRun): string {
   const day = localDay(r.startTime);
   const d = new Date(`${day}T12:00:00`);
   const words = [
     r.title, r.note, r.workoutType, r.techniqueCue, r.shoes, r.device, r.heartRateSource,
-    day, d.toLocaleDateString('en-GB', { month: 'long' }), d.toLocaleDateString('en-GB', { month: 'short' }),
-    d.toLocaleDateString('en-GB', { weekday: 'long' }), String(d.getFullYear()),
+    day, ...dayNames(d, 'en-GB'), ...LOCALES.filter((l) => l.key !== 'en').flatMap((l) => dayNames(d, l.tag)), String(d.getFullYear()),
   ];
   return words.filter(Boolean).join(' ').toLowerCase();
 }

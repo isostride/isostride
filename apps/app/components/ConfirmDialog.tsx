@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { t } from '@/lib/i18n';
 
 /** What a confirmation asks: a title, what will happen, the word on the button that does it. */
 export interface ConfirmOptions {
@@ -43,7 +44,7 @@ function ConfirmDialog({ options, onAnswer }: { options: ConfirmOptions; onAnswe
         <h2 id="confirm-title">{options.title}</h2>
         <p id="confirm-message">{options.message}</p>
         <div className="confirm-actions">
-          <button ref={cancel} type="button" className="btn" onClick={() => onAnswer(false)}>Cancel</button>
+          <button ref={cancel} type="button" className="btn" onClick={() => onAnswer(false)}>{t('Cancel')}</button>
           <button ref={ok} type="button" className={`btn ${options.danger ? 'danger-solid' : 'primary'}`} onClick={() => onAnswer(true)}>{options.confirm}</button>
         </div>
       </div>

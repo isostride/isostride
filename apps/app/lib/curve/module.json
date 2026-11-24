@@ -3,6 +3,7 @@
   "uses": [
     "lib/blocks",
     "lib/fs",
+    "lib/i18n",
     "lib/kernel",
     "lib/stats"
   ],

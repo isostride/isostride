@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { runInWorker, useOpenFolder, watchJob, type JobState } from '@/lib/client';
+import { runInWorker, useLocale, useOpenFolder, watchJob, type JobState } from '@/lib/client';
 import { PATHS, listFitFiles, readJson } from '@/lib/fs';
+import { dateText, msg, number, t, tn } from '@/lib/i18n';
 import { dayOf, newGearId, readGear, writeGear, type Gear, type GearType } from '@/lib/gear';
 import type { RunsIndex } from '@/lib/kernel';
 import { LOAD_SUMMARY_VERSION, autoMaxHr, criticalByRun, type LoadSummary } from '@/lib/load';
@@ -13,13 +14,13 @@ import { LoadModelChoice } from '../performance/LoadModelPicker';
 import { ChartsCard, DisplayCard } from '../settings/DeviceCards';
 import { SetupSteps, useMetrics } from '@/components';
 
-const STEPS = ['Your runs', 'You', 'Zones', 'Gear', 'Load model', 'Display', 'Done'] as const;
+const STEPS = [msg('Your runs'), msg('You'), msg('Zones'), msg('Gear'), msg('Load model'), msg('Display'), msg('Done')] as const;
 /** The zones in groups, every metric's shown ("chodzi mi tez o strefy ... np. vertical oscillation, ground contact"). */
 const ZONE_GROUPS: [string, string[]][] = [
-  ['Heart rate and pace', ['heartRate', 'speed', 'effortPace']],
-  ['Power', ['power']],
-  ['Running form', ['cadence', 'groundContactTime', 'verticalOscillation', 'stepLength', 'legSpringStiffness']],
-  ['Other', ['efficiency', 'altitude']],
+  [msg('Heart rate and pace'), ['heartRate', 'speed', 'effortPace']],
+  [msg('Power'), ['power']],
+  [msg('Running form'), ['cadence', 'groundContactTime', 'verticalOscillation', 'stepLength', 'legSpringStiffness']],
+  [msg('Other'), ['efficiency', 'altitude']],
 ];
 const num = (t: string): number | null => (t.trim() !== '' && Number.isFinite(Number(t)) ? Number(t) : null);
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
@@ -28,7 +29,11 @@ const paceOf = (t: string): number | null | undefined => {
   const m = t.trim().match(/^(\d{1,2}):(\d{2})$/);
   return m ? Number(m[1]) * 60 + Number(m[2]) : undefined;
 };
-const GEAR_NAME: Record<GearType, string> = { shoes: 'Shoes', hrSensor: 'Heart rate strap' };
+const GEAR_NAME: Record<GearType, string> = { shoes: msg('Shoes'), hrSensor: msg('Heart rate strap') };
+/** A day of the gear (yyyy-mm-dd), in the language in use, read as a local day. */
+const day = (d: string) => dateText(`${d}T00:00`, { day: 'numeric', month: 'short', year: 'numeric' });
+/** The model whose name a hint shows, as the load models name it. */
+const modelNamed = (key: LoadModel) => t(LOAD_MODELS.find((m) => m.key === key)?.name ?? key);
 
 /** A value of a step: its name and what it is for on the left, its field on the right. */
 function Row({ label, hint, children }: { label: string; hint: string; children: ReactNode }) {
@@ -59,12 +64,14 @@ interface Have {
  * Skip leaves everything as it is.
  */
 export function Wizard() {
+  // Renders again in a language chosen in the Display step, its state kept.
+  useLocale();
   // Every metric of the folder's runs (requirement "Every metric offered everywhere"): the known ones
   // in their groups, the others under Other.
   const ZONE_METRICS = zoneMetricsOf(useMetrics().catalog);
   const ALL = ZONE_METRICS.map((m) => m.key);
   const grouped = ZONE_GROUPS.slice(0, -1).flatMap(([, ks]) => ks);
-  const groups: [string, string[]][] = [...ZONE_GROUPS.slice(0, -1), ['Other', ALL.filter((k) => !grouped.includes(k))]];
+  const groups: [string, string[]][] = [...ZONE_GROUPS.slice(0, -1), [msg('Other'), ALL.filter((k) => !grouped.includes(k))]];
   const { folder, handle } = useOpenFolder();
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -114,10 +121,10 @@ export function Wizard() {
     setMessage(null);
     try {
       const m = await runInWorker('import', handle);
-      setMessage(`Imported ${m.imported} run${m.imported === 1 ? '' : 's'}${m.duplicates ? `, ${m.duplicates} duplicate` : ''}${m.errors ? `, ${m.errors} could not be read` : ''}.`);
+      setMessage(`${tn(m.imported, 'Imported {n} run', 'Imported {n} runs')}${m.duplicates ? t(', {n} duplicate', { n: number(m.duplicates) }) : ''}${m.errors ? t(', {n} could not be read', { n: number(m.errors) }) : ''}.`);
       await read();
     } catch (e) {
-      setMessage(`Import failed: ${e instanceof Error ? e.message : String(e)}`);
+      setMessage(t('Import failed: {error}', { error: t(e instanceof Error ? e.message : String(e)) }));
     }
   };
 
@@ -143,72 +150,74 @@ export function Wizard() {
 
   const skip = async () => { await writeSetup(folder, 'skipped'); router.push('/dashboard'); };
   const finish = async () => {
-    setSaving('Saving…');
+    setSaving(t('Saving…'));
     const s = await readSettings(folder);
     // The zones as shown; the defaults left as they were are not saved as the runner's own.
     const z = zonesDefault ? undefined : Object.fromEntries(ALL.map((k) => [k, parsedZones[k] ?? []]));
     await writeSettings(folder, { schemaVersion: 1, ...(z ? { zones: z } : {}), performance: parsePerformance({ ...s.performance, load: p.load, sex: p.sex, restHr: rest ?? s.performance.restHr, maxHr: max, thresholdPace: tPace ?? null, thresholdPower: tPower, fitnessDays: fitness, fatigueDays: fatigue, confirmed: true }) });
     if (JSON.stringify(gear) !== gearSaved) await writeGear(folder, gear);
-    if (have?.runs.length) { setSaving('Recomputing the loads…'); await runInWorker('context', handle); }
+    if (have?.runs.length) { setSaving(t('Recomputing the loads…')); await runInWorker('context', handle); }
     await writeSetup(folder, 'done');
     router.push('/dashboard');
   };
 
   const canNext = step === 1 ? !badYou : step === 2 ? badZones.length === 0 : step === 4 ? !badModel : true;
-  const count = (t: GearType) => gear.filter((g) => g.type === t).length;
+  const count = (ty: GearType) => gear.filter((g) => g.type === ty).length;
   /** What a metric's zones can be filled from: the maximum heart rate, the critical speed or power, the common bands. */
   const paceRef = tPace ?? (have?.cs ? 1000 / have.cs : null);
   const powerRef = tPower ?? have?.cp ?? null;
   const fillFor = (k: string): [string, string, number[]] | null => {
-    if (k === 'heartRate' && maxForZones) return ['From max HR', `from your maximum, ${maxForZones}: 60, 70, 80, 90 %`, zonesFromMaxHr(maxForZones)];
-    if ((k === 'speed' || k === 'effortPace') && paceRef) return ['From threshold pace', `from your threshold pace, ${mmss(paceRef)} /km: 129, 114, 106, 99 % (Friel)`, zonesFromPace(paceRef)];
-    if (k === 'power' && powerRef) return ['From critical power', `from your critical power, ${Math.round(powerRef)} W: 80, 90, 100, 115 % (Stryd)`, zonesFromPower(powerRef)];
-    if (DEFAULT_ZONES[k]) return ['Typical', k === 'cadence' ? 'common cadence bands' : "the bands of Garmin's running dynamics, from many runners", DEFAULT_ZONES[k]];
+    if (k === 'heartRate' && maxForZones) return [t('From max HR'), t('from your maximum, {max}: {percents} %', { max: number(maxForZones), percents: '60, 70, 80, 90' }), zonesFromMaxHr(maxForZones)];
+    if ((k === 'speed' || k === 'effortPace') && paceRef) return [t('From threshold pace'), t('from your threshold pace, {pace} /km: {percents} % (Friel)', { pace: mmss(paceRef), percents: '129, 114, 106, 99' }), zonesFromPace(paceRef)];
+    if (k === 'power' && powerRef) return [t('From critical power'), t('from your critical power, {power} W: {percents} % (Stryd)', { power: number(Math.round(powerRef)), percents: '80, 90, 100, 115' }), zonesFromPower(powerRef)];
+    if (DEFAULT_ZONES[k]) return [t('Typical'), k === 'cadence' ? t('common cadence bands') : t("the bands of Garmin's running dynamics, from many runners"), DEFAULT_ZONES[k]];
     return null;
   };
   const ZONE_ROW = (m: ZoneMetric) => {
     const fill = fillFor(m.key);
     return (
       <label key={m.key} className="form-row setup-zone">
-        <span className="form-row-label"><span>{m.title} zones</span><small>{m.unit}{fill ? ` · ${fill[1]}` : ' · no common bands: yours, or none'}</small></span>
+        <span className="form-row-label"><span>{t('{metric} zones', { metric: t(m.title) })}</span><small>{m.unit ? t(m.unit) : m.unit} · {fill ? fill[1] : t('no common bands: yours, or none')}</small></span>
         <span className="form-row-input">
-          <input className="input setup-zone-input" aria-label={`${m.title} zones`} aria-invalid={parsedZones[m.key] === null} value={zones[m.key] ?? ''} placeholder={m.pace ? 'e.g. 6:00, 5:15, 4:45, 4:15' : 'none'} onChange={(e) => setZones((z) => ({ ...z, [m.key]: e.target.value }))} />
-          {fill && <button type="button" className="btn sm" aria-label={`${fill[0]}: ${m.title}`} onClick={() => setZones((z) => ({ ...z, [m.key]: formatBoundaries(m.key, fill[2]) }))}>{fill[0]}</button>}
+          <input className="input setup-zone-input" aria-label={t('{metric} zones', { metric: t(m.title) })} aria-invalid={parsedZones[m.key] === null} value={zones[m.key] ?? ''} placeholder={m.pace ? t('e.g. {example}', { example: '6:00, 5:15, 4:45, 4:15' }) : t('none')} onChange={(e) => setZones((z) => ({ ...z, [m.key]: e.target.value }))} />
+          {fill && <button type="button" className="btn sm" aria-label={`${fill[0]}: ${t(m.title)}`} onClick={() => setZones((z) => ({ ...z, [m.key]: formatBoundaries(m.key, fill[2]) }))}>{fill[0]}</button>}
         </span>
       </label>
     );
   };
   const modelName = LOAD_MODELS.find((m) => m.key === p.load)?.name;
+  // The Done step's sentence around its link to Settings, split where the link goes.
+  const doneText = t("Saved into your data folder; everything can be changed later in {settings}. Left there as they are: your tags (made as you tag runs) and the thresholds of the models' checks (their defaults suit most runners).").split('{settings}');
 
   return (
     <div className="page wide-page setup-page">
       <div className="page-head">
         <div>
-          <div className="eyebrow">Set up IsoStride · a few steps, all can be changed later in Settings</div>
-          <h1>Setup</h1>
+          <div className="eyebrow">{t('Set up IsoStride · a few steps, all can be changed later in Settings')}</div>
+          <h1>{t('Setup')}</h1>
         </div>
         <span className="spacer" />
-        <button type="button" className="btn ghost" onClick={skip}>Skip setup</button>
+        <button type="button" className="btn ghost" onClick={skip}>{t('Skip setup')}</button>
       </div>
       {/* The data folder, the first step, is behind: it was chosen to get here. */}
       <SetupSteps at={step + 1} />
 
-      <section className="card setup-card" aria-label={STEPS[step]}>
+      <section className="card setup-card" aria-label={t(STEPS[step])}>
         {step === 0 && (
           <>
-            <h2>Your runs</h2>
-            <p className="muted">IsoStride reads the FIT files your watch saves, in the folder <b>{folder.name}</b> or its fit/ subfolder. Nothing leaves this computer.</p>
-            {!have ? <p className="muted small" role="status">Looking at the folder…</p> : (
+            <h2>{t('Your runs')}</h2>
+            <p className="muted">{t('IsoStride reads the FIT files your watch saves, in the folder')} <b>{folder.name}</b> {t('or its fit/ subfolder. Nothing leaves this computer.')}</p>
+            {!have ? <p className="muted small" role="status">{t('Looking at the folder…')}</p> : (
               <dl className="setup-facts">
-                <div><dt>FIT files</dt><dd className="tnum">{have.fitFiles}</dd></div>
-                <div><dt>Runs imported</dt><dd className="tnum">{have.runs.length}</dd></div>
+                <div><dt>{t('FIT files')}</dt><dd className="tnum">{number(have.fitFiles)}</dd></div>
+                <div><dt>{t('Runs imported')}</dt><dd className="tnum">{number(have.runs.length)}</dd></div>
               </dl>
             )}
-            {have && have.fitFiles === 0 && <p className="small">No FIT file here yet: copy your watch&apos;s FIT files into the folder, then import them here or from the Data folder screen.</p>}
+            {have && have.fitFiles === 0 && <p className="small">{t("No FIT file here yet: copy your watch's FIT files into the folder, then import them here or from the Data folder screen.")}</p>}
             {have && have.fitFiles > 0 && (
               <div className="setup-actions">
-                <button type="button" className="btn primary" disabled={job !== null} onClick={importRuns}>{have.runs.length ? 'Import new files' : `Import ${have.fitFiles} file${have.fitFiles === 1 ? '' : 's'}`}</button>
-                {job && <span className="muted small" role="status">Importing · {job.done} / {job.total || '…'} files</span>}
+                <button type="button" className="btn primary" disabled={job !== null} onClick={importRuns}>{have.runs.length ? t('Import new files') : tn(have.fitFiles, 'Import {n} file', 'Import {n} files')}</button>
+                {job && <span className="muted small" role="status">{t('Importing · {done} / {total} files', { done: number(job.done), total: job.total ? number(job.total) : '…' })}</span>}
                 {!job && message && <span className="small" role="status">{message}</span>}
               </div>
             )}
@@ -217,22 +226,22 @@ export function Wizard() {
 
         {step === 1 && (
           <>
-            <h2>You</h2>
-            <p className="muted">Your heart rate makes the load of a run and the heart rate models yours. Left empty, the maximum is the highest your runs reached.</p>
+            <h2>{t('You')}</h2>
+            <p className="muted">{t('Your heart rate makes the load of a run and the heart rate models yours. Left empty, the maximum is the highest your runs reached.')}</p>
             <div className="form-rows setup-rows">
               <label className="form-row">
-                <span className="form-row-label"><span>Resting heart rate</span><small>Measured lying down on waking; 60 until set</small></span>
-                <span className="form-row-input"><input className="input" inputMode="numeric" aria-label="Resting heart rate" aria-invalid={rest === null || rest < 25 || rest > 120} value={texts.restHr} onChange={(e) => setTexts((t) => ({ ...t, restHr: e.target.value }))} /><span className="muted small">bpm</span></span>
+                <span className="form-row-label"><span>{t('Resting heart rate')}</span><small>{t('Measured lying down on waking; 60 until set')}</small></span>
+                <span className="form-row-input"><input className="input" inputMode="numeric" aria-label={t('Resting heart rate')} aria-invalid={rest === null || rest < 25 || rest > 120} value={texts.restHr} onChange={(e) => setTexts((x) => ({ ...x, restHr: e.target.value }))} /><span className="muted small">bpm</span></span>
               </label>
               <label className="form-row">
-                <span className="form-row-label"><span>Maximum heart rate</span><small>From a test if you know it{have?.maxHr ? `; your runs reached ${have.maxHr}` : ''}</small></span>
-                <span className="form-row-input"><input className="input" inputMode="numeric" aria-label="Maximum heart rate" placeholder={have?.maxHr ? `auto: ${have.maxHr}` : 'auto'} value={texts.maxHr} onChange={(e) => setTexts((t) => ({ ...t, maxHr: e.target.value }))} /><span className="muted small">bpm</span></span>
+                <span className="form-row-label"><span>{t('Maximum heart rate')}</span><small>{t('From a test if you know it')}{have?.maxHr ? t('; your runs reached {hr}', { hr: number(have.maxHr) }) : ''}</small></span>
+                <span className="form-row-input"><input className="input" inputMode="numeric" aria-label={t('Maximum heart rate')} placeholder={have?.maxHr ? t('auto: {value}', { value: number(have.maxHr) }) : t('auto')} value={texts.maxHr} onChange={(e) => setTexts((x) => ({ ...x, maxHr: e.target.value }))} /><span className="muted small">bpm</span></span>
               </label>
               <div className="form-row">
-                <span className="form-row-label"><span>Sex</span><small>Banister TRIMP weights the heart rate by it</small></span>
+                <span className="form-row-label"><span>{t('Sex')}</span><small>{t('Banister TRIMP weights the heart rate by it')}</small></span>
                 <div className="form-row-input">
-                  <div className="segmented" role="radiogroup" aria-label="Sex">
-                    {(['male', 'female'] as const).map((x) => <button key={x} type="button" role="radio" aria-checked={p.sex === x} className={p.sex === x ? 'on' : ''} onClick={() => setP((q) => ({ ...q, sex: x }))}>{x === 'male' ? 'Male' : 'Female'}</button>)}
+                  <div className="segmented" role="radiogroup" aria-label={t('Sex')}>
+                    {(['male', 'female'] as const).map((x) => <button key={x} type="button" role="radio" aria-checked={p.sex === x} className={p.sex === x ? 'on' : ''} onClick={() => setP((q) => ({ ...q, sex: x }))}>{x === 'male' ? t('Male') : t('Female')}</button>)}
                   </div>
                 </div>
               </div>
@@ -242,11 +251,11 @@ export function Wizard() {
 
         {step === 2 && (
           <>
-            <h2>Zones</h2>
-            <p className="muted">The boundaries between your zones, separated by commas, Z1 the easiest; pace as m:ss per km. {savedZones.defaults ? 'These are the defaults, for trying the app: change them to yours.' : 'These are yours, as saved.'} The run chart colours them; the intensity model and Edwards TRIMP read the heart rate&apos;s.</p>
+            <h2>{t('Zones')}</h2>
+            <p className="muted">{t('The boundaries between your zones, separated by commas, Z1 the easiest; pace as m:ss per km.')} {savedZones.defaults ? t('These are the defaults, for trying the app: change them to yours.') : t('These are yours, as saved.')} {t("The run chart colours them; the intensity model and Edwards TRIMP read the heart rate's.")}</p>
             {groups.filter(([, keys]) => keys.some((k) => ALL.includes(k))).map(([g, keys]) => (
-              <div key={g} className="setup-zone-group" role="group" aria-label={g}>
-                <h3>{g}</h3>
+              <div key={g} className="setup-zone-group" role="group" aria-label={t(g)}>
+                <h3>{t(g)}</h3>
                 <div className="form-rows setup-rows">
                   {ZONE_METRICS.filter((m) => keys.includes(m.key)).map(ZONE_ROW)}
                 </div>
@@ -257,54 +266,54 @@ export function Wizard() {
 
         {step === 3 && (
           <>
-            <h2>Gear</h2>
-            <p className="muted">Your shoes, to compare runs by them, and a heart rate strap if you wear one: the runs in its dates count as measured by a strap, which the models trust more than the wrist.</p>
+            <h2>{t('Gear')}</h2>
+            <p className="muted">{t('Your shoes, to compare runs by them, and a heart rate strap if you wear one: the runs in its dates count as measured by a strap, which the models trust more than the wrist.')}</p>
             {gear.length > 0 && (
-              <ul className="setup-gear" aria-label="Your gear">
+              <ul className="setup-gear" aria-label={t('Your gear')}>
                 {gear.map((g) => (
                   <li key={g.id}>
-                    <span className="chip">{GEAR_NAME[g.type]}</span>
+                    <span className="chip">{t(GEAR_NAME[g.type])}</span>
                     <b>{g.name}</b>
-                    <span className="muted small">from {g.from}{g.to ? ` to ${g.to}` : ''}</span>
+                    <span className="muted small">{g.to ? t('from {from} to {to}', { from: day(g.from), to: day(g.to) }) : t('from {from}', { from: day(g.from) })}</span>
                     <span className="spacer" />
-                    <button type="button" className="btn sm" aria-label={`Remove ${g.name}`} onClick={() => setGear((all) => all.filter((x) => x.id !== g.id))}>Remove</button>
+                    <button type="button" className="btn sm" aria-label={t('Remove {name}', { name: g.name })} onClick={() => setGear((all) => all.filter((x) => x.id !== g.id))}>{t('Remove')}</button>
                   </li>
                 ))}
               </ul>
             )}
-            <div className="setup-gear-add" role="group" aria-label="Add gear">
-              <div className="segmented" role="radiogroup" aria-label="Kind of gear">
-                {(['shoes', 'hrSensor'] as const).map((t) => <button key={t} type="button" role="radio" aria-checked={newGear.type === t} className={newGear.type === t ? 'on' : ''} onClick={() => setNewGear((n) => ({ ...n, type: t }))}>{GEAR_NAME[t]}</button>)}
+            <div className="setup-gear-add" role="group" aria-label={t('Add gear')}>
+              <div className="segmented" role="radiogroup" aria-label={t('Kind of gear')}>
+                {(['shoes', 'hrSensor'] as const).map((ty) => <button key={ty} type="button" role="radio" aria-checked={newGear.type === ty} className={newGear.type === ty ? 'on' : ''} onClick={() => setNewGear((n) => ({ ...n, type: ty }))}>{t(GEAR_NAME[ty])}</button>)}
               </div>
-              <input className="input" aria-label="Name" placeholder={newGear.type === 'shoes' ? 'e.g. Pegasus 41' : 'e.g. HRM-Pro'} value={newGear.name} onChange={(e) => setNewGear((n) => ({ ...n, name: e.target.value }))} onKeyDown={(e) => { if (e.key === 'Enter') addGear(); }} />
-              <input className="input" type="date" aria-label="In use from" value={newGear.from || firstDay} onChange={(e) => setNewGear((n) => ({ ...n, from: e.target.value }))} />
-              <button type="button" className="btn" disabled={!newGear.name.trim()} onClick={addGear}>Add</button>
+              <input className="input" aria-label={t('Name')} placeholder={t('e.g. {example}', { example: newGear.type === 'shoes' ? 'Pegasus 41' : 'HRM-Pro' })} value={newGear.name} onChange={(e) => setNewGear((n) => ({ ...n, name: e.target.value }))} onKeyDown={(e) => { if (e.key === 'Enter') addGear(); }} />
+              <input className="input" type="date" aria-label={t('In use from')} value={newGear.from || firstDay} onChange={(e) => setNewGear((n) => ({ ...n, from: e.target.value }))} />
+              <button type="button" className="btn" disabled={!newGear.name.trim()} onClick={addGear}>{t('Add')}</button>
             </div>
-            <p className="muted small">More (the end of a pair&apos;s use, tags for your runs) in Settings › Gears and Tags.</p>
+            <p className="muted small">{t("More (the end of a pair's use, tags for your runs) in Settings › Gears and Tags.")}</p>
           </>
         )}
 
         {step === 4 && (
           <>
-            <h2>Load model</h2>
-            <p className="muted">How the load of a run is counted. Form, the acute:chronic ratio, the weekly load and the fitted responses follow it; the best efforts and the aerobic models do not.</p>
+            <h2>{t('Load model')}</h2>
+            <p className="muted">{t('How the load of a run is counted. Form, the acute:chronic ratio, the weekly load and the fitted responses follow it; the best efforts and the aerobic models do not.')}</p>
             {have && <LoadModelChoice value={p.load} onChoose={(load: LoadModel) => setP((q) => ({ ...q, load }))} runs={have.runs} summaries={have.summaries} performance={p} defaultZones={zonesDefault} criticalSpeed={have.cs} />}
             <div className="form-rows setup-rows">
-              <Row label="Threshold pace" hint={`rTSS${p.load === 'rtss' ? ' · in use' : ''} · empty: your critical speed of the 90 days up to each run`}>
-                <input className="input" aria-label="Threshold pace" aria-invalid={tPace === undefined} placeholder={have?.cs ? `auto: ${mmss(1000 / have.cs)}` : 'auto'} value={texts.thresholdPace} onChange={(e) => setTexts((t) => ({ ...t, thresholdPace: e.target.value }))} /><span className="muted small">min/km</span>
+              <Row label={t('Threshold pace')} hint={`${modelNamed('rtss')}${p.load === 'rtss' ? ` · ${t('in use')}` : ''} · ${t('empty: your critical speed of the 90 days up to each run')}`}>
+                <input className="input" aria-label={t('Threshold pace')} aria-invalid={tPace === undefined} placeholder={have?.cs ? t('auto: {value}', { value: mmss(1000 / have.cs) }) : t('auto')} value={texts.thresholdPace} onChange={(e) => setTexts((x) => ({ ...x, thresholdPace: e.target.value }))} /><span className="muted small">min/km</span>
               </Row>
-              <Row label="Critical power" hint={`Power TSS${p.load === 'powerTss' ? ' · in use' : ''} · empty: your critical power of the 90 days up to each run`}>
-                <input className="input" inputMode="numeric" aria-label="Critical power" placeholder="auto" value={texts.thresholdPower} onChange={(e) => setTexts((t) => ({ ...t, thresholdPower: e.target.value }))} /><span className="muted small">W</span>
+              <Row label={t('Critical power')} hint={`${modelNamed('powerTss')}${p.load === 'powerTss' ? ` · ${t('in use')}` : ''} · ${t('empty: your critical power of the 90 days up to each run')}`}>
+                <input className="input" inputMode="numeric" aria-label={t('Critical power')} placeholder={t('auto')} value={texts.thresholdPower} onChange={(e) => setTexts((x) => ({ ...x, thresholdPower: e.target.value }))} /><span className="muted small">W</span>
               </Row>
             </div>
             <details className="setup-more">
-              <summary>Fitness and fatigue · how fast they follow the load</summary>
+              <summary>{t('Fitness and fatigue · how fast they follow the load')}</summary>
               <div className="form-rows setup-rows">
-                <Row label="Fitness (CTL) time constant" hint="Every load model; 42 is usual">
-                  <input className="input" inputMode="numeric" aria-label="Fitness (CTL) time constant" value={texts.fitnessDays} onChange={(e) => setTexts((t) => ({ ...t, fitnessDays: e.target.value }))} /><span className="muted small">days</span>
+                <Row label={t('Fitness (CTL) time constant')} hint={t('Every load model; {days} is usual', { days: number(42) })}>
+                  <input className="input" inputMode="numeric" aria-label={t('Fitness (CTL) time constant')} value={texts.fitnessDays} onChange={(e) => setTexts((x) => ({ ...x, fitnessDays: e.target.value }))} /><span className="muted small">{t('days')}</span>
                 </Row>
-                <Row label="Fatigue (ATL) time constant" hint="Every load model; 7 is usual">
-                  <input className="input" inputMode="numeric" aria-label="Fatigue (ATL) time constant" value={texts.fatigueDays} onChange={(e) => setTexts((t) => ({ ...t, fatigueDays: e.target.value }))} /><span className="muted small">days</span>
+                <Row label={t('Fatigue (ATL) time constant')} hint={t('Every load model; {days} is usual', { days: number(7) })}>
+                  <input className="input" inputMode="numeric" aria-label={t('Fatigue (ATL) time constant')} value={texts.fatigueDays} onChange={(e) => setTexts((x) => ({ ...x, fatigueDays: e.target.value }))} /><span className="muted small">{t('days')}</span>
                 </Row>
               </div>
             </details>
@@ -313,8 +322,8 @@ export function Wizard() {
 
         {step === 5 && (
           <>
-            <h2>Display</h2>
-            <p className="muted">How the app and the run chart look on this device; kept in this browser and applied at once.</p>
+            <h2>{t('Display')}</h2>
+            <p className="muted">{t('How the app and the run chart look on this device; kept in this browser and applied at once.')}</p>
             <div className="setup-device">
               <DisplayCard />
               <ChartsCard />
@@ -324,15 +333,15 @@ export function Wizard() {
 
         {step === 6 && (
           <>
-            <h2>Done</h2>
-            <p className="muted">Saved into your data folder; everything can be changed later in <Link href="/settings?tab=models">Settings</Link>. Left there as they are: your tags (made as you tag runs) and the thresholds of the models&apos; checks (their defaults suit most runners).</p>
-            <dl className="setup-facts setup-summary" aria-label="Summary">
-              <div><dt>Runs</dt><dd className="tnum">{have?.runs.length ?? 0}</dd></div>
-              <div><dt>Resting heart rate</dt><dd className="tnum">{rest ?? '–'} bpm</dd></div>
-              <div><dt>Maximum heart rate</dt><dd className="tnum">{max ?? (have?.maxHr ? `auto: ${have.maxHr}` : 'auto')}{max || have?.maxHr ? ' bpm' : ''}</dd></div>
-              <div><dt>Heart rate zones</dt><dd className="tnum">{zonesDefault ? 'the defaults' : (zones.heartRate ?? '').trim() || 'none'}</dd></div>
-              <div><dt>Gear</dt><dd>{count('shoes')} shoes · {count('hrSensor')} strap{count('hrSensor') === 1 ? '' : 's'}</dd></div>
-              <div><dt>Load model</dt><dd>{modelName}</dd></div>
+            <h2>{t('Done')}</h2>
+            <p className="muted">{doneText[0]}<Link href="/settings?tab=models">{t('Settings')}</Link>{doneText[1]}</p>
+            <dl className="setup-facts setup-summary" aria-label={t('Summary')}>
+              <div><dt>{t('Runs')}</dt><dd className="tnum">{number(have?.runs.length ?? 0)}</dd></div>
+              <div><dt>{t('Resting heart rate')}</dt><dd className="tnum">{rest === null ? '–' : number(rest)} bpm</dd></div>
+              <div><dt>{t('Maximum heart rate')}</dt><dd className="tnum">{max !== null ? number(max) : have?.maxHr ? t('auto: {value}', { value: number(have.maxHr) }) : t('auto')}{max || have?.maxHr ? ' bpm' : ''}</dd></div>
+              <div><dt>{t('Heart rate zones')}</dt><dd className="tnum">{zonesDefault ? t('the defaults') : (zones.heartRate ?? '').trim() || t('none')}</dd></div>
+              <div><dt>{t('Gear')}</dt><dd>{tn(count('shoes'), '{n} shoes', '{n} shoes')} · {tn(count('hrSensor'), '{n} strap', '{n} straps')}</dd></div>
+              <div><dt>{t('Load model')}</dt><dd>{modelName && t(modelName)}</dd></div>
             </dl>
           </>
         )}
@@ -340,12 +349,12 @@ export function Wizard() {
         {/* Shown with the first step's content, not before it, so it is not pushed down once the folder is read (layout shift 0). */}
         {(step > 0 || have) && (
           <div className="setup-nav">
-            {step > 0 && <button type="button" className="btn" onClick={() => setStep(step - 1)}>Back</button>}
+            {step > 0 && <button type="button" className="btn" onClick={() => setStep(step - 1)}>{t('Back')}</button>}
             <span className="spacer" />
             {saving && <span className="muted small" role="status">{saving}</span>}
             {step < STEPS.length - 1
-              ? <button type="button" className="btn primary" disabled={!canNext || job !== null} onClick={() => setStep(step + 1)}>Next</button>
-              : <button type="button" className="btn primary" disabled={saving !== null} onClick={finish}>Save and finish</button>}
+              ? <button type="button" className="btn primary" disabled={!canNext || job !== null} onClick={() => setStep(step + 1)}>{t('Next')}</button>
+              : <button type="button" className="btn primary" disabled={saving !== null} onClick={finish}>{t('Save and finish')}</button>}
           </div>
         )}
       </section>

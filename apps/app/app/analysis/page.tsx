@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect } from 'react';
+import { t } from '@/lib/i18n';
 
 export default function AnalysisRedirectWrapper() {
   return <Suspense><AnalysisRedirect /></Suspense>;
@@ -22,5 +23,5 @@ function AnalysisRedirect() {
     const s = q.toString();
     router.replace(`/compare${s ? `?${s}` : ''}`);
   }, [router, params]);
-  return <div className="page muted">Opening Compare…</div>;
+  return <div className="page muted">{t('Opening Compare…')}</div>;
 }

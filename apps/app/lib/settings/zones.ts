@@ -91,8 +91,10 @@ const ZONE_STEPS: Record<number, number[]> = { 1: [0], 2: [0, 4], 3: [0, 2, 4], 
 /** The step of the ramp (0 green to 5 dark red) of zone i of n. */
 export const zoneStep = (i: number, n: number): number => (ZONE_STEPS[Math.min(Math.max(n, 1), 6)])[Math.max(0, Math.min(i, Math.min(n, 6) - 1))];
 /** The colour of zone i of n, a CSS value. */
+// i18n-ignore
 export const zoneColor = (i: number, n: number): string => `var(--heat-${zoneStep(i, n) + 1})`;
 /** The colour of zone i of n mixed with the surface, `percent` of it: a wash under a chart, a chip, a bar. */
+// i18n-ignore
 export const zoneTint = (i: number, n: number, percent: number): string => `color-mix(in srgb, ${zoneColor(i, n)} ${percent}%, var(--surface))`;
 
 /**

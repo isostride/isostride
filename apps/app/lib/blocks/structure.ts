@@ -1,4 +1,5 @@
 import type { Lap } from '@/lib/kernel';
+import { SAVED_WORDS, type Words } from './words';
 
 /** A lap read as a workout structure element: a set duration or a set distance. */
 export interface LapKey {
@@ -32,10 +33,11 @@ export function lapKey(lap: Lap, index: number, laps: Lap[]): LapKey | null {
   return null;
 }
 
-export function structureName(kind: 'time' | 'distance', target: number): string {
+/** "5-minute lap", "1 km lap": a suggestion's name, kept in English unless given the words of the language in use. */
+export function structureName(kind: 'time' | 'distance', target: number, w: Words = SAVED_WORDS): string {
   if (kind === 'time') {
     const min = target / 60;
-    return `${Number.isInteger(min) ? min : min.toFixed(1)}-minute lap`;
+    return w.t('{min}-minute lap', { min: Number.isInteger(min) ? w.num(min) : w.num(min, 1) });
   }
-  return `${(target / 1000).toFixed(target % 1000 ? 1 : 0)} km lap`;
+  return w.t('{km} km lap', { km: w.num(target / 1000, target % 1000 ? 1 : 0) });
 }

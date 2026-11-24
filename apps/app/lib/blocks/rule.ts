@@ -1,4 +1,5 @@
 import { isPace, metricInfo, secondsPerKm, type IndexedRun, type RunFile } from '@/lib/kernel';
+import { SAVED_WORDS, SHOWN_WORDS, lengthName, routeName, type Words } from './words';
 import { STAT_LABEL, efficiencyOf, type BlockMetric, type BlockParams, type Conditions, type Rule, type RuleShape, type RunFilter, type Stat, type Tolerances } from './types';
 
 /**
@@ -118,25 +119,25 @@ export function hasAlways(c: Conditions): boolean {
 }
 
 const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
-const range = (min: number | null, max: number | null, f: (v: number) => string, unit: string) =>
-  min !== null && max !== null ? `${f(min)}–${f(max)}${unit}` : min !== null ? `from ${f(min)}${unit}` : max !== null ? `to ${f(max)}${unit}` : null;
+const range = (w: Words, min: number | null, max: number | null, f: (v: number) => string, unit: string) =>
+  min !== null && max !== null ? `${f(min)}–${f(max)}${unit}` : min !== null ? w.t('from {value}', { value: `${f(min)}${unit}` }) : max !== null ? w.t('to {value}', { value: `${f(max)}${unit}` }) : null;
 
-const COMPASS = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
-const lengthName = (kind: 'time' | 'distance', target: number) => (kind === 'time' ? `${+(target / 60).toFixed(1)} min` : `${+(target / 1000).toFixed(2)} km`);
-
-export function shapeName(shape: RuleShape): string {
-  if (shape.type === 'run') return 'Runs';
-  if (shape.type === 'lap') return shape.planned ? `Laps set up as ${lengthName(shape.planned.kind, shape.planned.target)}` : 'Laps';
-  if (shape.type === 'steady') return `Steady ${+(shape.minDuration / 60).toFixed(1)} min or more`;
-  if (shape.type === 'main') return 'Main effort of the run';
-  if (shape.type === 'pattern') return `Effort laps of ${shape.laps.length}-lap workouts`;
-  if (shape.type === 'route') return `Same route: ${(shape.length / 1000).toFixed(1)} km ${COMPASS[Math.round(shape.heading / 45) % 8]}-bound`;
+/** The stretch of a rule in words: "Fastest 5 min", "Laps", "Same route: 5.2 km north-bound"; in the language in use unless given the saved words. */
+export function shapeName(shape: RuleShape, w: Words = SHOWN_WORDS): string {
+  if (shape.type === 'run') return w.t('Runs');
+  if (shape.type === 'lap') return shape.planned ? w.t('Laps set up as {length}', { length: lengthName(shape.planned.kind, shape.planned.target, w) }) : w.t('Laps');
+  if (shape.type === 'steady') return w.t('Steady {min} min or more', { min: w.num(+(shape.minDuration / 60).toFixed(1)) });
+  if (shape.type === 'main') return w.t('Main effort of the run');
+  if (shape.type === 'pattern') return w.tn(shape.laps.length, 'Effort laps of {n}-lap workouts', 'Effort laps of {n}-lap workouts');
+  if (shape.type === 'route') return w.t('Same route: {route}', { route: routeName(shape.length, shape.heading, w) });
   if (shape.type === 'profile') {
     const k = shape.key;
     const climb = k.altitude ? Math.round(k.altitude.reduce((s, a, i, xs) => s + (i && a > xs[i - 1] ? a - xs[i - 1] : 0), 0)) : null;
-    return `Same profile: ${(k.distance / 1000).toFixed(1)} km${climb === null ? '' : `, ${climb} m up`}, pace shape of ${mmss(Math.round(k.pace))}`;
+    const vars = { km: w.num(k.distance / 1000, 1), climb: w.num(climb ?? 0), pace: mmss(Math.round(k.pace)) };
+    return climb === null ? w.t('Same profile: {km} km, pace shape of {pace}', vars) : w.t('Same profile: {km} km, {climb} m up, pace shape of {pace}', vars);
   }
-  return `Fastest ${lengthName(shape.kind, shape.target)}${shape.effort ? ', run as an effort' : ''}`;
+  const length = lengthName(shape.kind, shape.target, w);
+  return shape.effort ? w.t('Fastest {length}, run as an effort', { length }) : w.t('Fastest {length}', { length });
 }
 
 /**
@@ -161,31 +162,36 @@ export function asRuleDefinition<T extends { params: BlockParams; tolerances: To
   return d.params.type === 'rule' ? d : { ...d, params: { type: 'rule', ...asRule(d.params, d.tolerances) } };
 }
 
-/** "Fastest 5 min · HR never below 160 · since 2026-03-01": the rule in words, in a fixed order, as its name. */
-export function ruleName(r: Rule): string {
+/**
+ * "Fastest 5 min · HR never below 160 · since 2026-03-01": the rule in words, in a fixed order, as its
+ * name. In English as the data folder keeps it, unless given the words of the language in use.
+ */
+export function ruleName(r: Rule, w: Words = SAVED_WORDS): string {
   const c = r.conditions;
   const f = r.runs;
+  const n2 = (v: number) => w.num(+v.toFixed(2));
   const parts = [
-    shapeName(r.shape),
-    range(c.distanceMin, c.distanceMax, (v) => String(+(v / 1000).toFixed(2)), ' km'),
-    range(c.durationMin, c.durationMax, (v) => String(Math.round(v / 60)), ' min'),
-    range(c.paceMin, c.paceMax, mmss, ' /km'),
-    range(c.hrMin, c.hrMax, String, ' bpm'),
-    c.metric && (c.metricMin != null || c.metricMax != null) ? `${metricInfo(c.metric).name} ${range(c.metricMin ?? null, c.metricMax ?? null, isPace(c.metric) ? mmss : (v) => String(+v.toFixed(2)), isPace(c.metric) ? ' /km' : metricInfo(c.metric).unit ? ` ${metricInfo(c.metric).unit}` : '')}` : null,
-    c.alwaysHrMin !== null ? `HR never below ${c.alwaysHrMin}` : null,
-    c.alwaysHrMax !== null ? `HR never above ${c.alwaysHrMax}` : null,
-    c.alwaysPaceMin !== null || c.alwaysPaceMax !== null ? `pace always ${range(c.alwaysPaceMin, c.alwaysPaceMax, mmss, ' /km')}` : null,
-    c.start !== 'any' ? `${c.start} start` : null,
-    f.title.trim() ? `“${f.title.trim()}”` : null,
+    shapeName(r.shape, w),
+    range(w, c.distanceMin, c.distanceMax, (v) => n2(v / 1000), ' km'),
+    range(w, c.durationMin, c.durationMax, (v) => w.num(Math.round(v / 60)), ' min'),
+    range(w, c.paceMin, c.paceMax, mmss, ' /km'),
+    range(w, c.hrMin, c.hrMax, (v) => w.num(v), ' bpm'),
+    c.metric && (c.metricMin != null || c.metricMax != null) ? `${w.t(metricInfo(c.metric).name)} ${range(w, c.metricMin ?? null, c.metricMax ?? null, isPace(c.metric) ? mmss : n2, isPace(c.metric) ? ' /km' : metricInfo(c.metric).unit ? ` ${metricInfo(c.metric).unit}` : '')}` : null,
+    c.alwaysHrMin !== null ? w.t('HR never below {hr}', { hr: w.num(c.alwaysHrMin) }) : null,
+    c.alwaysHrMax !== null ? w.t('HR never above {hr}', { hr: w.num(c.alwaysHrMax) }) : null,
+    c.alwaysPaceMin !== null || c.alwaysPaceMax !== null ? w.t('pace always {range}', { range: range(w, c.alwaysPaceMin, c.alwaysPaceMax, mmss, ' /km') ?? '' }) : null,
+    c.start === 'standing' ? w.t('standing start') : c.start === 'flying' ? w.t('flying start') : null,
+    f.title.trim() ? w.t('“{title}”', { title: f.title.trim() }) : null,
+    // The runner's tags, gear and devices: data, as they are.
     ...f.workoutTypes, ...f.techniqueCues, ...f.shoes, ...f.heartRateSources, ...f.devices,
-    f.dateFrom && f.dateTo ? `${f.dateFrom} – ${f.dateTo}` : f.dateFrom ? `since ${f.dateFrom}` : f.dateTo ? `to ${f.dateTo}` : null,
-    range(f.lapsMin, f.lapsMax, String, ' laps'),
-    r.shape.type !== 'run' && r.shape.type !== 'fastest' && r.pick === 'best' ? 'best of each run' : null,
-    r.shape.type === 'fastest' && r.pick === 'all' ? 'every one' : null,
-    r.stat !== 'avg' ? STAT_LABEL[r.stat] : null,
+    f.dateFrom && f.dateTo ? `${w.day(f.dateFrom)} – ${w.day(f.dateTo)}` : f.dateFrom ? w.t('since {date}', { date: w.day(f.dateFrom) }) : f.dateTo ? w.t('to {value}', { value: w.day(f.dateTo) }) : null,
+    f.lapsMin !== null || f.lapsMax !== null ? w.t('{range} laps', { range: range(w, f.lapsMin, f.lapsMax, (v) => w.num(v), '') ?? '' }) : null,
+    r.shape.type !== 'run' && r.shape.type !== 'fastest' && r.pick === 'best' ? w.t('best of each run') : null,
+    r.shape.type === 'fastest' && r.pick === 'all' ? w.t('every one') : null,
+    r.stat !== 'avg' ? w.t(STAT_LABEL[r.stat]) : null,
   ].filter((p): p is string => p !== null);
   // Whole runs with nothing else set: every run.
-  if (parts.length === 1 && r.shape.type === 'run') return 'All runs';
+  if (parts.length === 1 && r.shape.type === 'run') return w.t('All runs');
   return parts.join(' · ');
 }
 

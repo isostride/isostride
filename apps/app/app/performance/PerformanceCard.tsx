@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { runInWorker, useOpenFolder } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
+import { t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import { autoMaxHr, criticalByRun, type LoadSummary } from '@/lib/load';
 import { DEFAULT_PERFORMANCE, parsePerformance, readSettings, writeSettings, type PerformanceSettings } from '@/lib/settings';
@@ -45,9 +46,9 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
       setHave((h) => ({ ...h, defaultZones: !!s.defaults }));
       const q = s.performance;
       setP(q);
-      const t = { restHr: String(q.restHr), maxHr: q.maxHr === null ? '' : String(q.maxHr), thresholdPace: q.thresholdPace === null ? '' : mmss(q.thresholdPace), thresholdPower: q.thresholdPower === null ? '' : String(q.thresholdPower), fitnessDays: String(q.fitnessDays), fatigueDays: String(q.fatigueDays) };
-      setTexts(t);
-      setSaved(JSON.stringify({ t, load: q.load, sex: q.sex }));
+      const typed = { restHr: String(q.restHr), maxHr: q.maxHr === null ? '' : String(q.maxHr), thresholdPace: q.thresholdPace === null ? '' : mmss(q.thresholdPace), thresholdPower: q.thresholdPower === null ? '' : String(q.thresholdPower), fitnessDays: String(q.fitnessDays), fatigueDays: String(q.fatigueDays) };
+      setTexts(typed);
+      setSaved(JSON.stringify({ t: typed, load: q.load, sex: q.sex }));
       setRead((r) => ({ ...r, settings: true }));
     });
     // What "auto" stands for now: the maximum heart rate of the runs, the critical speed and power of the last 90 days.
@@ -71,7 +72,7 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
   const bad = (Object.entries(values) as [keyof typeof values, number | null | undefined][]).filter(([k, v]) => v === undefined || ((k === 'restHr' || k === 'fitnessDays' || k === 'fatigueDays') && v === null)).map(([k]) => k);
   // Saved by the runner: the values are theirs from now on (the assumptions' checks read this).
   const next = parsePerformance({ ...p, ...Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined)), confirmed: true });
-  const edit = (k: keyof typeof texts, v: string) => { setTexts((t) => ({ ...t, [k]: v })); setStatus(null); };
+  const edit = (k: keyof typeof texts, v: string) => { setTexts((x) => ({ ...x, [k]: v })); setStatus(null); };
 
   const now = JSON.stringify({ t: texts, load: p.load, sex: p.sex });
   const dirty = saved !== '' && now !== saved;
@@ -88,9 +89,9 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
     // The zones stay as they are: the defaults are not saved as the runner's own.
     await writeSettings(folder, { schemaVersion: 1, ...(s.defaults ? {} : { zones: s.zones }), performance: next });
     setSaved(now);
-    setStatus('Recomputing the loads…');
+    setStatus(t('Recomputing the loads…'));
     await runInWorker('context', handle);
-    setStatus('Saved · loads recomputed');
+    setStatus(t('Saved · loads recomputed'));
     onSaved?.();
   };
 
@@ -101,52 +102,52 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
       <span className="form-row-input"><input className="input" aria-label={label} aria-invalid={bad.includes(k)} value={texts[k]} placeholder={placeholder} onChange={(e) => edit(k, e.target.value)} /><span className="muted small">{unit}</span></span>
     </label>
   );
-  const inUse = (...models: string[]) => (models.includes(p.load) ? ' · in use' : '');
+  const inUse = (...models: string[]) => (models.includes(p.load) ? ` · ${t('in use')}` : '');
 
   if (!ready) return null;
   return (
-    <section className="card settings-perf form-card" aria-label="Performance model">
+    <section className="card settings-perf form-card" aria-label={t('Performance model')}>
       <div className="form-card-head">
         <div>
-          <h2>Performance model</h2>
-          <p className="muted small">How the load of a run is counted, and the values the models rest on. The load model changes the views of Load and Response in <Link href="/performance?tab=load">Performance</Link>, marked by its name; Capacity and Aerobic do not depend on it.</p>
+          <h2>{t('Performance model')}</h2>
+          <p className="muted small">{t('How the load of a run is counted, and the values the models rest on. The load model changes the views of Load and Response in')} <Link href="/performance?tab=load">{t('Performance')}</Link>{t(', marked by its name; Capacity and Aerobic do not depend on it.')}</p>
         </div>
         <span className="spacer" />
         {status && <span className="muted small" role="status">{status}</span>}
-        {dirty && <button className="btn" onClick={discard}>Cancel</button>}
-        {dirty && <button className="btn primary" disabled={bad.length > 0} onClick={save}>Save and recompute</button>}
+        {dirty && <button className="btn" onClick={discard}>{t('Cancel')}</button>}
+        {dirty && <button className="btn primary" disabled={bad.length > 0} onClick={save}>{t('Save and recompute')}</button>}
       </div>
       <div className="form-section">
-        <h3>Load of a run, counted as</h3>
+        <h3>{t('Load of a run, counted as')}</h3>
         <LoadModelChoice value={p.load} onChoose={(load) => { setP((q) => ({ ...q, load })); setStatus(null); }} runs={have.runs} summaries={have.sums} performance={p} defaultZones={have.defaultZones} criticalSpeed={have.cs} />
       </div>
       <div className="form-section">
-        <h3>Heart rate</h3>
+        <h3>{t('Heart rate')}</h3>
         <div className="form-rows">
-          {field('restHr', 'Resting heart rate', 'bpm', `Banister TRIMP${inUse('trimpBanister')}, VO2max from heart rate`)}
-          {field('maxHr', 'Maximum heart rate', 'bpm', `Banister TRIMP${inUse('trimpBanister')}, all-out efforts, VO2max from heart rate · empty: the highest of your runs`, auto.maxHr ? `auto: ${auto.maxHr}` : 'auto')}
+          {field('restHr', t('Resting heart rate'), 'bpm', t('Banister TRIMP{inUse}, VO2max from heart rate', { inUse: inUse('trimpBanister') }))}
+          {field('maxHr', t('Maximum heart rate'), 'bpm', t('Banister TRIMP{inUse}, all-out efforts, VO2max from heart rate · empty: the highest of your runs', { inUse: inUse('trimpBanister') }), auto.maxHr ? t('auto: {value}', { value: auto.maxHr }) : t('auto'))}
           <div className="form-row">
-            <span className="form-row-label"><span>Sex</span><small>Banister TRIMP{inUse('trimpBanister')}: its weighting of the heart rate</small></span>
+            <span className="form-row-label"><span>{t('Sex')}</span><small>{t('Banister TRIMP{inUse}: its weighting of the heart rate', { inUse: inUse('trimpBanister') })}</small></span>
             <div className="form-row-input">
-              <div className="segmented" role="radiogroup" aria-label="Sex">
-                {(['male', 'female'] as const).map((x) => <button key={x} type="button" role="radio" aria-checked={p.sex === x} className={p.sex === x ? 'on' : ''} onClick={() => { setP((q) => ({ ...q, sex: x })); setStatus(null); }}>{x === 'male' ? 'Male' : 'Female'}</button>)}
+              <div className="segmented" role="radiogroup" aria-label={t('Sex')}>
+                {(['male', 'female'] as const).map((x) => <button key={x} type="button" role="radio" aria-checked={p.sex === x} className={p.sex === x ? 'on' : ''} onClick={() => { setP((q) => ({ ...q, sex: x })); setStatus(null); }}>{x === 'male' ? t('Male') : t('Female')}</button>)}
               </div>
             </div>
           </div>
         </div>
       </div>
       <div className="form-section">
-        <h3>Thresholds</h3>
+        <h3>{t('Thresholds')}</h3>
         <div className="form-rows">
-          {field('thresholdPace', 'Threshold pace', 'min/km', `rTSS${inUse('rtss')} · empty: your critical speed of the 90 days up to each run`, auto.pace ? `auto: ${mmss(auto.pace)}` : 'auto')}
-          {field('thresholdPower', 'Critical power', 'W', `Power TSS${inUse('powerTss')} · empty: your critical power of the 90 days up to each run`, auto.power ? `auto: ${Math.round(auto.power)}` : 'auto')}
+          {field('thresholdPace', t('Threshold pace'), 'min/km', `rTSS${inUse('rtss')} · ${t('empty: your critical speed of the 90 days up to each run')}`, auto.pace ? t('auto: {value}', { value: mmss(auto.pace) }) : t('auto'))}
+          {field('thresholdPower', t('Critical power'), 'W', `${t('Power TSS')}${inUse('powerTss')} · ${t('empty: your critical power of the 90 days up to each run')}`, auto.power ? t('auto: {value}', { value: Math.round(auto.power) }) : t('auto'))}
         </div>
       </div>
       <div className="form-section">
-        <h3>Fitness and fatigue</h3>
+        <h3>{t('Fitness and fatigue')}</h3>
         <div className="form-rows">
-          {field('fitnessDays', 'Fitness (CTL) time constant', 'days', 'Every load model · how slowly fitness follows the load; 42 is usual')}
-          {field('fatigueDays', 'Fatigue (ATL) time constant', 'days', 'Every load model · how quickly fatigue follows the load; 7 is usual')}
+          {field('fitnessDays', t('Fitness (CTL) time constant'), t('days'), t('Every load model · how slowly fitness follows the load; 42 is usual'))}
+          {field('fatigueDays', t('Fatigue (ATL) time constant'), t('days'), t('Every load model · how quickly fatigue follows the load; 7 is usual'))}
         </div>
       </div>
     </section>

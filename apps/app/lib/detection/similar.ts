@@ -1,4 +1,5 @@
 import { PATHS, readJson, type DataFolder, readRunFile } from '@/lib/fs';
+import { msg } from '@/lib/i18n';
 import { resample } from '@/lib/geo';
 import { isPace, secondsPerKm, type RunFile, type RunsIndex } from '@/lib/kernel';
 import { PROFILE_MIN_SCORE, SIMILAR_PACE_WITHIN, bestProfileMatch, efficiencyOf, distanceAtTime, profileOfStretch, stretchFigures, trackOf, type ProfileKey, type ProfileParts, type RefPoint, type StretchFigures, type Track } from '@/lib/blocks';
@@ -94,13 +95,13 @@ export async function similarOf(folder: DataFolder, q: SimilarQuery, onProgress?
   const rows = index?.runs ?? [];
   const own = await readRunFile(folder, q.runId);
   const empty: SimilarResult = { reference: null, key: null, track: [], route: [], profile: [], why: null };
-  if (!own) return { ...empty, why: 'The run is not in the data folder.' };
+  if (!own) return { ...empty, why: msg('The run is not in the data folder.') };
   const ownRow = rows.find((r) => r.id === q.runId);
   const tr = trackOf(own);
   const key = profileOfStretch(tr, q.from, q.to);
   const reference = stretchOf(own, ownRow?.title ?? null, tr, q.from, q.to);
   const track = trackOfStretch(own, q.from, q.to);
-  if (!key || !reference) return { ...empty, reference, track, why: 'Select at least 400 m of a run with distance to find efforts like it.' };
+  if (!key || !reference) return { ...empty, reference, track, why: msg('Select at least 400 m of a run with distance to find efforts like it.') };
   const ref = { track: track.length >= MIN_TRACK ? track : [], key };
   const route: SimilarStretch[] = [];
   const profile: SimilarStretch[] = [];

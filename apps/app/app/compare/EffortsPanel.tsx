@@ -6,9 +6,10 @@ import { useMetrics } from '@/components';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 import { reasonSummary, selectInstances, valueOf } from '@/lib/compare';
 import type { DataFolder } from '@/lib/fs';
+import { t } from '@/lib/i18n';
 
 const EffortsChart = dynamic(() => import('./EffortsChart').then((m) => m.EffortsChart), { ssr: false });
-const SegmentsTable = dynamic(() => import('./SegmentsTable').then((m) => m.SegmentsTable), { ssr: false, loading: () => <div className="muted small" style={{ padding: 18 }}>Loading the efforts…</div> });
+const SegmentsTable = dynamic(() => import('./SegmentsTable').then((m) => m.SegmentsTable), { ssr: false, loading: () => <div className="muted small" style={{ padding: 18 }}>{t('Loading the efforts…')}</div> });
 
 const keyOfEffort = (e: BlockInstance) => `${e.runId}:${e.start}`;
 
@@ -64,24 +65,24 @@ export function EffortsPanel({ blocks, item, onItem, all, metric, reference, tit
   return (
     <div className="card" style={{ overflowX: 'auto' }}>
       <div className="toolbar" style={{ padding: '12px 18px 0' }}>
-        <span className="chart-title" style={{ margin: 0 }}>Efforts</span>
+        <span className="chart-title" style={{ margin: 0 }}>{t('Efforts')}</span>
         {blocks.length > 1 && (
-          <select className="select small" aria-label="Segment" value={tableFor.id} onChange={(e) => onItem(e.target.value)}>
+          <select className="select small" aria-label={t('Segment')} value={tableFor.id} onChange={(e) => onItem(e.target.value)}>
             {blocks.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
           </select>
         )}
-        <select className="select small" aria-label="Table metric" value={tableKey} onChange={(e) => setTableMetric(e.target.value as BlockMetric)}>
+        <select className="select small" aria-label={t('Table metric')} value={tableKey} onChange={(e) => setTableMetric(e.target.value as BlockMetric)}>
           {blockKeys.map((k) => <option key={k} value={k}>{view(k).short}</option>)}
         </select>
-        <div className="segmented" role="radiogroup" aria-label="Order">
-          {([['date', 'By date'], ['best', ranked ? 'Best first' : 'Highest first'], ['worst', ranked ? 'Worst first' : 'Lowest first']] as const).map(([k, l]) => <button key={k} type="button" role="radio" aria-checked={sort === k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>{l}</button>)}
+        <div className="segmented" role="radiogroup" aria-label={t('Order')}>
+          {([['date', t('By date')], ['best', ranked ? t('Best first') : t('Highest first')], ['worst', ranked ? t('Worst first') : t('Lowest first')]] as const).map(([k, l]) => <button key={k} type="button" role="radio" aria-checked={sort === k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>{l}</button>)}
         </div>
         {sort !== 'date' && (
-          <select className="select small" aria-label="Top" value={top} onChange={(e) => setTop(Number(e.target.value))}>
-            {[5, 10, 20, 50].map((n) => <option key={n} value={n}>top {n}</option>)}
+          <select className="select small" aria-label={t('Top')} value={top} onChange={(e) => setTop(Number(e.target.value))}>
+            {[5, 10, 20, 50].map((n) => <option key={n} value={n}>{t('top {n}', { n })}</option>)}
           </select>
         )}
-        <span className="muted small">{segments.length} in · {selection.rejected.length} left out{selection.rejected.length ? `: ${reasonSummary(selection.rejected).join(', ')}` : ''}</span>
+        <span className="muted small">{selection.rejected.length ? t('{in} in · {out} left out: {reasons}', { in: segments.length, out: selection.rejected.length, reasons: reasonSummary(selection.rejected).join(', ') }) : t('{in} in · {out} left out', { in: segments.length, out: 0 })}</span>
       </div>
       {/* The efforts chosen, drawn over each other by distance ("tak" to the overlay for any segment's efforts). */}
       {drawn.length > 0 && <EffortsChart efforts={drawn} handle={handle} folder={folder} />}

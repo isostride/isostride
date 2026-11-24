@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useOpenFolder } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
 import { CONTEXT_METRICS, KNOWN_METRICS, directionOf, metricInfo, type Direction, type MetricInfo, type MetricsFile } from '@/lib/kernel';
+import { number, t } from '@/lib/i18n';
 import { readSettings } from '@/lib/settings';
 import { useDataVersion } from './dataVersion';
 
@@ -12,7 +13,7 @@ const mmss = (v: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 /** A tick: whole numbers unless the step of the axis needs decimals. */
-const num = (min: number) => (v: number, d = 0) => v.toFixed(Math.max(min, d));
+const num = (min: number) => (v: number, d = 0) => number(v, Math.max(min, d));
 /** Round steps of a pace axis, s/km: 0:05 up to 5:00. */
 export const PACE_STEPS = [5, 10, 15, 30, 60, 120, 300];
 
@@ -42,11 +43,13 @@ export interface MetricView {
 
 /** The view of a metric from the folder's catalog and the directions the runner set. */
 export function metricView(key: string, catalog?: readonly MetricInfo[] | null, directions?: Record<string, Direction> | null): MetricView {
-  const m = metricInfo(key, catalog);
+  const info = metricInfo(key, catalog);
+  // The names of the metrics the app knows in the language in use; a file's own names as the file gives them.
+  const m = { ...info, name: t(info.name), short: t(info.short), unit: info.unit ? t(info.unit) : info.unit };
   const direction = directionOf(m, directions);
   if (m.display === 'pace') return { key, short: m.short, title: m.name, name: `${m.name} (min/km)`, unit: 'min/km', fmt: (v) => `${mmss(v)} /km`, tick: mmss, minSpan: m.minSpan, invert: true, steps: PACE_STEPS, direction };
   const unit = m.unit ? ` ${m.unit}` : '';
-  return { key, short: m.short, title: m.name, name: m.unit ? `${m.name} (${m.unit})` : m.name, unit: m.unit, fmt: (v) => `${v.toFixed(m.decimals)}${unit}`, tick: num(m.decimals), minSpan: m.minSpan || 0, direction };
+  return { key, short: m.short, title: m.name, name: m.unit ? `${m.name} (${m.unit})` : m.name, unit: m.unit, fmt: (v) => `${number(v, m.decimals)}${unit}`, tick: num(m.decimals), minSpan: m.minSpan || 0, direction };
 }
 
 /** The known metrics compared on blocks, in the order of the pickers; a folder's others follow by name. */

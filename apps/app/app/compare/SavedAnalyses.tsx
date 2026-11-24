@@ -5,6 +5,7 @@ import { EditButton, EditDialog, useConfirm } from '@/components';
 import { SAVED_PARAM, analysisChanged, parseItems, defaultAnalysisName, removeAnalysis, upsertAnalysis, type SavedAnalysesFile, type SavedAnalysis } from '@/lib/compare';
 import { date } from '@/lib/format';
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
+import { t, tn } from '@/lib/i18n';
 
 /** The link of a saved analysis, with its id, so the screen knows which one is open. */
 const linkOf = (a: SavedAnalysis) => `${a.query}${a.query ? '&' : ''}${SAVED_PARAM}=${encodeURIComponent(a.id)}`;
@@ -47,7 +48,7 @@ export function SavedAnalyses({ folder, query, labels, hasItems, onOpen }: {
     onOpen(linkOf(saved));
   };
   const remove = async () => {
-    if (!current || !(await confirm({ title: 'Delete this analysis?', message: `“${current.name}” goes from your saved analyses. The segments and runs in it stay.`, confirm: 'Delete', danger: true }))) return;
+    if (!current || !(await confirm({ title: t('Delete this analysis?'), message: t('“{name}” goes from your saved analyses. The segments and runs in it stay.', { name: current.name }), confirm: t('Delete'), danger: true }))) return;
     await write(removeAnalysis(list, current.id));
     setDialog(false);
     const q = new URLSearchParams(query);
@@ -59,7 +60,7 @@ export function SavedAnalyses({ folder, query, labels, hasItems, onOpen }: {
     <div className="saved-analyses">
       {/* No list to open one from here ("nie ma chyba sensu"): the saved analyses are listed on the empty screen, each opened by its row. */}
       <button type="button" className="btn" disabled={!hasItems && !current} onClick={() => setDialog(true)}>
-        {current ? (changed ? 'Save changes…' : 'Saved') : 'Save analysis'}
+        {current ? (changed ? t('Save changes…') : t('Saved')) : t('Save analysis')}
       </button>
       {dialog && <SaveDialog current={current} changed={changed} offered={current?.name ?? defaultAnalysisName(labels)} onSave={save} onDelete={remove} onClose={() => setDialog(false)} />}
       {confirmDialog}
@@ -84,17 +85,17 @@ function SaveDialog({ current, changed, offered, onSave, onDelete, onClose }: {
   }, []);
   return (
     <div className="confirm-backdrop" onClick={onClose}>
-      <form className="confirm-dialog" role="dialog" aria-modal="true" aria-label="Save analysis" onClick={(e) => e.stopPropagation()}
+      <form className="confirm-dialog" role="dialog" aria-modal="true" aria-label={t('Save analysis')} onClick={(e) => e.stopPropagation()}
         onSubmit={(e) => { e.preventDefault(); onSave(name, !current); }}>
-        <h2>{current ? 'Save this analysis' : 'Save analysis'}</h2>
-        <p>What is shown (its segments and runs, metrics and tab) is kept in your data folder under this name, to open again from the list.</p>
-        <label className="field save-name"><span>Name</span><input ref={input} value={name} onChange={(e) => setName(e.target.value)} aria-label="Name of the analysis" /></label>
+        <h2>{current ? t('Save this analysis') : t('Save analysis')}</h2>
+        <p>{t('What is shown (its segments and runs, metrics and tab) is kept in your data folder under this name, to open again from the list.')}</p>
+        <label className="field save-name"><span>{t('Name')}</span><input ref={input} value={name} onChange={(e) => setName(e.target.value)} aria-label={t('Name of the analysis')} /></label>
         <div className="confirm-actions">
-          {current && <button type="button" className="btn danger" onClick={onDelete}>Delete</button>}
+          {current && <button type="button" className="btn danger" onClick={onDelete}>{t('Delete')}</button>}
           <span className="spacer" />
-          <button type="button" className="btn" onClick={onClose}>Cancel</button>
-          {current && <button type="button" className="btn" onClick={() => onSave(name, true)}>Save as new</button>}
-          <button type="submit" className="btn primary" disabled={!!current && !changed && name.trim() === current.name}>{current ? 'Save' : 'Save analysis'}</button>
+          <button type="button" className="btn" onClick={onClose}>{t('Cancel')}</button>
+          {current && <button type="button" className="btn" onClick={() => onSave(name, true)}>{t('Save as new')}</button>}
+          <button type="submit" className="btn primary" disabled={!!current && !changed && name.trim() === current.name}>{current ? t('Save') : t('Save analysis')}</button>
         </div>
       </form>
     </div>
@@ -129,22 +130,22 @@ export function SavedList({ folder, onOpen }: { folder: DataFolder; onOpen: (que
   };
   /** Deleted from its editor ("a co z usuwaniem analiz?"), once confirmed in the app. */
   const remove = async (a: SavedAnalysis) => {
-    if (!list || !(await confirm({ title: 'Delete this analysis?', message: `“${a.name}” goes from your saved analyses. The segments and runs in it stay.`, confirm: 'Delete', danger: true }))) return;
+    if (!list || !(await confirm({ title: t('Delete this analysis?'), message: t('“{name}” goes from your saved analyses. The segments and runs in it stay.', { name: a.name }), confirm: t('Delete'), danger: true }))) return;
     setEditing(null);
     await write(removeAnalysis(list, a.id));
   };
   if (!list?.length) return confirmDialog ? <>{confirmDialog}</> : null;
   return (
-    <section className="card saved-list" aria-label="Your saved analyses">
-      <h2>Saved analyses <span className="muted">· {list.length}</span></h2>
+    <section className="card saved-list" aria-label={t('Your saved analyses')}>
+      <h2>{t('Saved analyses')} <span className="muted">· {list.length}</span></h2>
       <ul>
         {list.map((a) => {
           const n = parseItems(new URLSearchParams(a.query).get('items')).length;
           return (
             <li key={a.id} className="saved-item">
-              <button type="button" className="saved-row" aria-label={`Open ${a.name}`} onClick={() => onOpen(linkOf(a))}>
+              <button type="button" className="saved-row" aria-label={t('Open {name}', { name: a.name })} onClick={() => onOpen(linkOf(a))}>
                 <b>{a.name}</b>
-                <span className="muted small">{n} item{n === 1 ? '' : 's'} · saved {date(a.savedAt)}</span>
+                <span className="muted small">{tn(n, '{n} item · saved {date}', '{n} items · saved {date}', { date: date(a.savedAt) })}</span>
               </button>
               <EditButton name={a.name} onClick={() => setEditing({ id: a.id, name: a.name })} />
             </li>
@@ -154,8 +155,8 @@ export function SavedList({ folder, onOpen }: { folder: DataFolder; onOpen: (que
       {editing && (() => {
         const a = list.find((x) => x.id === editing.id)!;
         return (
-          <EditDialog kind="analysis" kindLabel="Saved analysis" title={a.name} onSave={() => void rename()} onCancel={() => setEditing(null)} onDelete={() => void remove(a)} canSave={!!editing.name.trim()}>
-            <label className="edit-field">Name<input className="input" value={editing.name} onChange={(e) => setEditing({ id: a.id, name: e.target.value })} /></label>
+          <EditDialog kind="analysis" kindLabel={t('Saved analysis')} title={a.name} onSave={() => void rename()} onCancel={() => setEditing(null)} onDelete={() => void remove(a)} canSave={!!editing.name.trim()}>
+            <label className="edit-field">{t('Name')}<input className="input" value={editing.name} onChange={(e) => setEditing({ id: a.id, name: e.target.value })} /></label>
           </EditDialog>
         );
       })()}

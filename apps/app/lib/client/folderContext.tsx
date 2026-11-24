@@ -68,6 +68,7 @@ export function FolderProvider({ children }: { children: ReactNode }) {
 
 export function useFolder(): FolderApi {
   const api = useContext(Ctx);
+  // A mistake of the code, never shown to the runner. i18n-ignore
   if (!api) throw new Error('useFolder outside FolderProvider');
   return api;
 }
@@ -75,6 +76,7 @@ export function useFolder(): FolderApi {
 /** The open folder; only call inside screens the Shell renders once the folder is open. */
 export function useOpenFolder(): { folder: BrowserFolder; handle: FileSystemDirectoryHandle } {
   const { state } = useFolder();
+  // A mistake of the code (the Shell renders the screens once the folder is open), never shown. i18n-ignore
   if (state.status !== 'open') throw new Error('folder not open');
   return { folder: state.folder, handle: state.handle };
 }

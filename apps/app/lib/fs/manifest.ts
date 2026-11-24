@@ -1,3 +1,4 @@
+import { msg } from '@/lib/i18n';
 import { ALGORITHM_VERSION, SCHEMA_VERSION } from '@/lib/kernel';
 import { PATHS, listFitFiles, readJson, writeJson, type DataFolder } from './folder';
 
@@ -5,6 +6,42 @@ export type ImportStatus =
   | { status: 'imported'; runId: string }
   | { status: 'duplicate'; runId: string }
   | { status: 'error'; reason: string };
+
+/**
+ * Why a file could not be imported, as the manifest keeps it: in English, each a key of the app's
+ * texts with its {values} filled in ("not a run (sport: cycling)"), so the files written before read
+ * the same, and the Data folder screen shows it in the language in use (readReason, then t()).
+ */
+export const IMPORT_REASONS = {
+  notFit: msg('not a FIT file'),
+  damaged: msg('damaged FIT file (integrity check failed)'),
+  unreadable: msg('unreadable FIT file: {error}'),
+  noSession: msg('no session in the file'),
+  notRun: msg('not a run (sport: {sport})'),
+  noSamples: msg('no samples in the file'),
+  failed: msg('could not import: {error}'),
+  notFound: msg('Not found: {path}'),
+};
+
+/** A reason with its values filled in, as the manifest keeps it. */
+export function importReason(key: string, vars: Record<string, string> = {}): string {
+  return key.replace(/\{(\w+)\}/g, (all, k: string) => vars[k] ?? all);
+}
+
+const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const PATTERNS = Object.values(IMPORT_REASONS).map((key) => {
+  const names = [...key.matchAll(/\{(\w+)\}/g)].map((m) => m[1]);
+  return { key, names, re: new RegExp(`^${key.split(/\{\w+\}/).map(escape).join('(.*)')}$`, 's') };
+});
+
+/** The key and values of a reason the manifest keeps; null for a text that is none of them. */
+export function readReason(reason: string): { key: string; vars: Record<string, string> } | null {
+  for (const p of PATTERNS) {
+    const m = p.re.exec(reason);
+    if (m) return { key: p.key, vars: Object.fromEntries(p.names.map((n, i) => [n, m[i + 1]])) };
+  }
+  return null;
+}
 
 /** .isostride/derived/manifest.json */
 export interface Manifest {

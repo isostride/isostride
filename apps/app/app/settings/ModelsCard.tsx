@@ -2,14 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useOpenFolder } from '@/lib/client';
+import { number, t } from '@/lib/i18n';
 import { THRESHOLDS, THRESHOLD_FIELDS, thresholdValue } from '@/lib/load';
 import { readSettings, writeSettings } from '@/lib/settings';
 
 /** The texts as one key, the empty ones left out: equal keys, nothing changed. */
 const key = (t: Record<string, string>) => JSON.stringify(Object.entries(t).filter(([, v]) => v.trim()).sort());
 
-/** A stored value in the unit shown: a share as a percentage, to at most two decimals. */
-const shown = (v: number, scale: number) => String(Math.round(v * scale * 100) / 100);
+/** A stored value in the unit shown: a share as a percentage, to at most two decimals, written in the language in use (read back with a comma or a point). */
+const shown = (v: number, scale: number) => number(Math.round(v * scale * 100) / 100);
 
 /**
  * The thresholds of the models' checks, set by the runner (the runner's "tak" to "Chcesz, żeby te
@@ -28,10 +29,10 @@ export function ModelsCard() {
   useEffect(() => {
     readSettings(folder).then((s) => {
       const own = s.performance.thresholds;
-      const t = Object.fromEntries(THRESHOLD_FIELDS.filter((f) => f.key in own).map((f) => [f.key, shown(own[f.key], f.scale)]));
-      setTexts(t);
-      setBase(t);
-      setSaved(key(t));
+      const typed = Object.fromEntries(THRESHOLD_FIELDS.filter((f) => f.key in own).map((f) => [f.key, shown(own[f.key], f.scale)]));
+      setTexts(typed);
+      setBase(typed);
+      setSaved(key(typed));
     }).catch(() => undefined);
   }, [folder]);
 
@@ -55,34 +56,34 @@ export function ModelsCard() {
     await writeSettings(folder, { schemaVersion: 1, ...(s.defaults ? {} : { zones: s.zones }), performance: { ...s.performance, thresholds } });
     setSaved(key(texts));
     setBase(texts);
-    setStatus('Saved · Performance judges by these now');
+    setStatus(t('Saved · Performance judges by these now'));
   };
 
   return (
-    <section className="card models-card form-card" aria-label="Thresholds of the checks">
+    <section className="card models-card form-card" aria-label={t('Thresholds of the checks')}>
       <div className="form-card-head">
         <div>
-          <h2>Thresholds of the checks</h2>
-          <p className="muted small">The thresholds by which every &quot;Why?&quot; of Performance judges a model&apos;s assumptions: holds, in doubt or not. Empty: the default, beside each. Kept in your data folder.</p>
+          <h2>{t('Thresholds of the checks')}</h2>
+          <p className="muted small">{t(`The thresholds by which every "Why?" of Performance judges a model's assumptions: holds, in doubt or not. Empty: the default, beside each. Kept in your data folder.`)}</p>
         </div>
         <span className="spacer" />
-        {Object.values(texts).some((v) => v.trim()) && <button type="button" className="btn" onClick={() => { setTexts({}); setStatus(null); }}>Defaults</button>}
-        {dirty && <button type="button" className="btn" onClick={() => { setTexts(base); setStatus(null); }}>Cancel</button>}
-        {dirty && <button type="button" className="btn primary" disabled={bad.length > 0} onClick={save}>Save</button>}
+        {Object.values(texts).some((v) => v.trim()) && <button type="button" className="btn" onClick={() => { setTexts({}); setStatus(null); }}>{t('Defaults')}</button>}
+        {dirty && <button type="button" className="btn" onClick={() => { setTexts(base); setStatus(null); }}>{t('Cancel')}</button>}
+        {dirty && <button type="button" className="btn primary" disabled={bad.length > 0} onClick={save}>{t('Save')}</button>}
       </div>
       {status && <p className="muted small models-status" role="status">{status}</p>}
-      {bad.length > 0 && <p className="small models-bad" role="alert">Out of range: {bad.map((b) => `${b.f.label} (${b.f.min}–${b.f.max})`).join('; ')}.</p>}
+      {bad.length > 0 && <p className="small models-bad" role="alert">{t('Out of range: {fields}.', { fields: bad.map((b) => `${t(b.f.label)} (${b.f.min}–${b.f.max})`).join('; ') })}</p>}
       {groups.map((g) => (
-        <div key={g} className="form-section" role="group" aria-label={g}>
-          <h3>{g}</h3>
+        <div key={g} className="form-section" role="group" aria-label={t(g)}>
+          <h3>{t(g)}</h3>
           <div className="form-rows">
             {parsed.filter((p) => p.f.group === g).map(({ f, bad: wrong }) => (
               <label key={f.key} className="form-row">
-                <span className="form-row-label"><span>{f.label}</span><small>default {shown(thresholdValue(THRESHOLDS, f.key), f.scale)} {f.unit}</small></span>
+                <span className="form-row-label"><span>{t(f.label)}</span><small>{t('default {value} {unit}', { value: shown(thresholdValue(THRESHOLDS, f.key), f.scale), unit: t(f.unit) })}</small></span>
                 <span className="form-row-input">
-                  <input className="input" inputMode="decimal" aria-label={f.label} aria-invalid={wrong} value={texts[f.key] ?? ''}
-                    placeholder={shown(thresholdValue(THRESHOLDS, f.key), f.scale)} onChange={(e) => { setTexts((t) => ({ ...t, [f.key]: e.target.value })); setStatus(null); }} />
-                  <span className="muted small">{f.unit}</span>
+                  <input className="input" inputMode="decimal" aria-label={t(f.label)} aria-invalid={wrong} value={texts[f.key] ?? ''}
+                    placeholder={shown(thresholdValue(THRESHOLDS, f.key), f.scale)} onChange={(e) => { setTexts((x) => ({ ...x, [f.key]: e.target.value })); setStatus(null); }} />
+                  <span className="muted small">{t(f.unit)}</span>
                 </span>
               </label>
             ))}

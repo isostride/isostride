@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useDataVersion } from '@/components';
-import { runInWorker, useOpenFolder } from '@/lib/client';
+import { runInWorker, useLocale, useOpenFolder } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
+import { t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import { LOAD_SUMMARY_VERSION, formSeries, onLoad, performanceReport, type LoadSummary, type ModelKey, type ModelReport } from '@/lib/load';
 import { LOAD_MODELS, readSettings, type SettingsFile } from '@/lib/settings';
@@ -40,6 +41,8 @@ export function Body({ tab, view, embedded = false }: { tab: Tab; view: string; 
   const [preparing, setPreparing] = useState(false);
   /** raised when an import or a recompute ends, wherever it was started */
   const dataVersion = useDataVersion();
+  // Its charts and texts follow a change of the language (on the Dashboard too): the report's texts are built in it.
+  const locale = useLocale();
 
   useEffect(() => {
     let live = true;
@@ -64,17 +67,18 @@ export function Body({ tab, view, embedded = false }: { tab: Tab; view: string; 
   const report = useMemo(() => (data ? performanceReport({
     rows: data.runs, summaries: data.summaries, performance: data.settings.performance,
     hrZones: data.settings.zones.heartRate ?? [], zonesOwn: !data.settings.defaults, days, today,
-  }) : null), [data, days, today]);
+  }) : null), [data, days, today, locale]);
   const by = useMemo(() => (report ? Object.fromEntries(report.models.map((m) => [m.key, m])) as Record<ModelKey, ModelReport> : null), [report]);
 
   if (!data || !report || !by) {
-    return <div className="card chart muted small" style={{ padding: 18 }} role="status">{preparing ? 'Preparing the summaries of your runs, once…' : 'Reading the runs…'}</div>;
+    return <div className="card chart muted small" style={{ padding: 18 }} role="status">{preparing ? t('Preparing the summaries of your runs, once…') : t('Reading the runs…')}</div>;
   }
   // What the load model chosen changes, marked so wherever it shows.
-  const byLoad = { set: onLoad(report.models), name: LOAD_MODELS.find((m) => m.key === data.settings.performance.load)?.name ?? 'the load model', unit: report.now.loadUnit };
+  const loadName = LOAD_MODELS.find((m) => m.key === data.settings.performance.load)?.name;
+  const byLoad = { set: onLoad(report.models), name: loadName ? t(loadName) : t('the load model'), unit: report.now.loadUnit };
   if (tab === 'overview') return <OverviewTab models={report.models} by={by} now={report.now} byLoad={byLoad} />;
 
-  const views = TABS.find((t) => t.key === tab)!.views;
+  const views = TABS.find((tb) => tb.key === tab)!.views;
   const shown = views.find((v) => v.key === view) ?? views[0];
   const { runs, summaries, settings } = data;
   const hrZones = settings.zones.heartRate ?? [];
@@ -95,17 +99,18 @@ export function Body({ tab, view, embedded = false }: { tab: Tab; view: string; 
     }
   })();
   if (embedded) return content;
-  // The view is a widget: Pin in its corner puts it on the Dashboard as it is here.
+  // The view is a widget: Pin in its corner puts it on the Dashboard as it is here. Its name is written
+  // to the data folder, so it stays the English one (the keys), whatever the language in use.
   return (
     <>
       {(tab === 'load' || tab === 'response') && (
-        <p className="load-using muted small" role="note" aria-label="Load model in use">
-          The load of a run is counted as <span className="by-load">{byLoad.name}</span>: what is marked by it follows that choice; Capacity and Aerobic do not depend on it. <Link href="/settings?tab=models">Change it in Settings →</Link>
+        <p className="load-using muted small" role="note" aria-label={t('Load model in use')}>
+          {t('The load of a run is counted as')} <span className="by-load">{byLoad.name}</span>{t(': what is marked by it follows that choice; Capacity and Aerobic do not depend on it.')} <Link href="/settings?tab=models">{t('Change it in Settings →')}</Link>
         </p>
       )}
       <WhyBar key={`${tab}/${shown.key}`} models={shown.models} by={by} byLoad={byLoad} />
       <div className="pin-host perf-widget">
-        <PinButton folder={folder} kind="perf" target={`${tab}/${shown.key}`} name={`${TABS.find((t) => t.key === tab)!.name} · ${shown.name}`} />
+        <PinButton folder={folder} kind="perf" target={`${tab}/${shown.key}`} name={`${TABS.find((tb) => tb.key === tab)!.name} · ${shown.name}`} />
         {content}
       </div>
     </>

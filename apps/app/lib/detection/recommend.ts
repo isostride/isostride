@@ -4,7 +4,7 @@ import type { RouteSegment } from './segments';
 import { movingPart } from './instance';
 import { EFFORT_TARGETS, effortIn, effortName, patternKey, patternName, patternOf, tagName, workoutTypes } from './logical';
 import { findPasses } from './routeMatch';
-import { asRule, defaultTolerances, lapKey, structureName, DEFAULT_TOLERANCES, type BlockDefinition, type RefPoint, type Recommendation } from '@/lib/blocks';
+import { SAVED_WORDS, asRule, basisOf, defaultTolerances, lapKey, routeName, structureName, DEFAULT_TOLERANCES, type BlockDefinition, type RefPoint, type Recommendation } from '@/lib/blocks';
 
 
 /** The blocks there are, in the one model: a suggestion the runner has (kept or dismissed) is not made again. */
@@ -15,8 +15,8 @@ export const MIN_STRUCTURE_WORKOUTS = 3;
 /** The pace band of a recommendation: 30 s/km wide around the median pace (spec section 5). */
 const BAND = 30;
 
-const COMPASS = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
-export const compass = (h: number) => COMPASS[Math.round(h / 45) % 8];
+/** Why a suggestion is made, in English as the suggestions file keeps it (a screen shows it with basisOf). */
+const basis = (r: Omit<Recommendation, 'id' | 'name' | 'basis'>) => basisOf(r, SAVED_WORDS);
 
 function band(paces: number[]): { paceMin: number; paceMax: number } {
   const s = [...paces].sort((a, b) => a - b);
@@ -68,15 +68,13 @@ export function recommend(segments: RouteSegment[], runs: RunFile[], tracks: Map
       }
     }
     if (!paces.length) continue;
-    out.push({
-      id: `rec-${seg.id}`,
-      name: `${(seg.length / 1000).toFixed(1)} km ${compass(seg.heading)}-bound`,
-      params: { type: 'route', track: seg.track, length: seg.length, heading: seg.heading },
+    const rec = {
+      params: { type: 'route', track: seg.track, length: seg.length, heading: seg.heading } as const,
       tolerances: { ...DEFAULT_TOLERANCES, ...band(paces) },
       runs: seg.runs,
       instances: seg.passes,
-      basis: `route passed ${seg.passes} times in ${seg.runs} runs`,
-    });
+    };
+    out.push({ id: `rec-${seg.id}`, name: routeName(seg.length, seg.heading), ...rec, basis: basis(rec) });
   }
 
   const byKey = new Map<string, { kind: 'time' | 'distance'; target: number; runs: Set<string>; paces: number[] }>();
@@ -94,18 +92,16 @@ export function recommend(segments: RouteSegment[], runs: RunFile[], tracks: Map
   for (const [key, e] of [...byKey.entries()].sort((a, b) => b[1].runs.size - a[1].runs.size)) {
     if (e.runs.size < MIN_STRUCTURE_WORKOUTS) continue;
     if (shapesOf(defs).some((r) => r.shape.type === 'lap' && r.shape.planned?.kind === e.kind && r.shape.planned.target === e.target)) continue;
-    out.push({
-      id: `rec-structure-${key}`,
-      name: structureName(e.kind, e.target),
-      params: { type: 'structure', kind: e.kind, target: e.target, tolerance: 0.03 },
+    const rec = {
+      params: { type: 'structure', kind: e.kind, target: e.target, tolerance: 0.03 } as const,
       // No pace band: how the pace of a repeated workout changes is what its trend shows.
       // No effort-before check: a workout element always follows its warm-up, so every
       // instance would fail it the same way (model's choice; editable per definition).
       tolerances: { ...DEFAULT_TOLERANCES, effortBeforeMax: null },
       runs: e.runs.size,
       instances: e.paces.length,
-      basis: `lap found in ${e.runs.size} workouts`,
-    });
+    };
+    out.push({ id: `rec-structure-${key}`, name: structureName(e.kind, e.target), ...rec, basis: basis(rec) });
   }
   out.push(...logicalRecommendations(runs, defs, rows));
   return out.sort((a, b) => b.runs - a.runs);
@@ -120,11 +116,13 @@ function logicalRecommendations(runs: RunFile[], defs: BlockDefinition[], rows: 
     if (shapesOf(defs).some((r) => r.shape.type === 'fastest' && r.shape.effort && r.shape.kind === kind && r.shape.target === target)) continue;
     const found = runs.filter((r) => effortIn(r, kind, target));
     if (found.length < MIN_STRUCTURE_WORKOUTS) continue;
-    out.push({ id: `rec-effort-${kind}:${target}`, name: effortName(kind, target), params: { type: 'effort', kind, target }, tolerances, runs: found.length, instances: found.length, basis: `effort found in ${found.length} runs, on any route` });
+    const rec = { params: { type: 'effort', kind, target } as const, tolerances, runs: found.length, instances: found.length };
+    out.push({ id: `rec-effort-${kind}:${target}`, name: effortName(kind, target), ...rec, basis: basis(rec) });
   }
   for (const [type, n] of workoutTypes(rows)) {
     if (n < MIN_STRUCTURE_WORKOUTS || shapesOf(defs).some((r) => r.shape.type === 'main' && r.runs.workoutTypes.length === 1 && r.runs.workoutTypes[0] === type)) continue;
-    out.push({ id: `rec-tag-${type}`, name: tagName(type), params: { type: 'tag', workoutType: type }, tolerances, runs: n, instances: n, basis: `${n} runs tagged ${type}` });
+    const rec = { params: { type: 'tag', workoutType: type } as const, tolerances, runs: n, instances: n };
+    out.push({ id: `rec-tag-${type}`, name: tagName(type), ...rec, basis: basis(rec) });
   }
   const byLayout = new Map<string, RunFile[]>();
   for (const r of runs) {
@@ -140,7 +138,8 @@ function logicalRecommendations(runs: RunFile[], defs: BlockDefinition[], rows: 
     const patterns = group.map((r) => patternOf(r.laps, r.distance > 0 ? r.duration / r.distance : 0));
     const laps = patterns[0].map((p, i) => ({ ...p, effort: patterns.filter((q) => q[i].effort).length * 2 > patterns.length }));
     if (!laps.some((l) => l.effort)) continue;
-    out.push({ id: `rec-pattern-${key}`, name: patternName(laps), params: { type: 'pattern', laps, tolerance: 0.03 }, tolerances: { ...DEFAULT_TOLERANCES, effortBeforeMax: null }, runs: group.length, instances: group.length * laps.filter((l) => l.effort).length, basis: `lap pattern found in ${group.length} runs, on any route` });
+    const rec = { params: { type: 'pattern', laps, tolerance: 0.03 } as const, tolerances: { ...DEFAULT_TOLERANCES, effortBeforeMax: null }, runs: group.length, instances: group.length * laps.filter((l) => l.effort).length };
+    out.push({ id: `rec-pattern-${key}`, name: patternName(laps), ...rec, basis: basis(rec) });
   }
   return out;
 }

@@ -1,5 +1,6 @@
 /** Block definitions and instances (spec sections 2, 3 and 5). */
 
+import { msg } from '@/lib/i18n';
 import { CONTEXT_METRICS } from '@/lib/kernel';
 import type { ProfileKey } from './profile';
 
@@ -87,7 +88,8 @@ export type Pick = 'best' | 'all';
  */
 export type Stat = 'avg' | 'median' | 'min' | 'max';
 export const STATS: Stat[] = ['avg', 'median', 'min', 'max'];
-export const STAT_LABEL: Record<Stat, string> = { avg: 'average', median: 'median', min: 'minimum', max: 'maximum' };
+/** The statistics in words: keys of the texts, shown with t(). */
+export const STAT_LABEL: Record<Stat, string> = { avg: msg('average'), median: msg('median'), min: msg('minimum'), max: msg('maximum') };
 
 export interface Rule {
   runs: RunFilter;
@@ -200,6 +202,7 @@ export type BlockMetric = string;
 /** The metrics of a block of a run holding these metrics: all but the ground's and the day's, and efficiency with pace and heart rate. */
 export function blockMetricsOf(runMetrics: readonly string[]): BlockMetric[] {
   const own = runMetrics.filter((m) => !CONTEXT_METRICS.includes(m) && m !== 'efficiency');
+  // i18n-ignore: a metric's key
   return own.includes('speed') && own.includes('heartRate') ? [...own, 'efficiency'] : own;
 }
 

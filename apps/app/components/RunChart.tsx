@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { clock, ensureSpan, niceTicks, robustExtent, tickDecimals, useWidth } from './chartKit';
+import { t } from '@/lib/i18n';
 import { zoneColor, zoneOf, zoneRanges } from '@/lib/settings';
 import { LANE, smoothPaths, thinPoints } from './charts';
 import { MIN_SPAN, clampDomain, kmLabel, kmTicks, panDomain, spanTicks, stepTicks, wheelFactor, zoomDomain, type DistanceMap, type Domain } from './chartZoom';
@@ -283,25 +284,25 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
   const order = [...drawn.filter((d) => d !== scale), ...(scale ? [scale] : [])];
 
   return (
-    <div ref={wrap} className="run-chart" role="group" aria-label="Run chart: the wheel or + and − zoom, arrows move, 0 shows the whole run" tabIndex={0} onKeyDown={key}>
+    <div ref={wrap} className="run-chart" role="group" aria-label={t('Run chart: the wheel or + and − zoom, arrows move, 0 shows the whole run')} tabIndex={0} onKeyDown={key}>
       <div ref={box} className="run-plot">
         {laps.length > 1 && (
-          <div className="lap-strip" role="group" aria-label="Laps">
+          <div className="lap-strip" role="group" aria-label={t('Laps')}>
             {laps.map((l, i) => {
               if (!inView(l)) return null;
               const b = band(l);
               // The lap shown, which is the selection.
               const on = (d1 - d0 < total) && Math.abs(d0 - l.from) < 0.5 && Math.abs(d1 - l.to) < 0.5;
               return (
-                <button key={i} type="button" className={`lap-bar ${on ? 'on' : ''} ${i % 2 ? 'odd' : ''}`} aria-pressed={on} aria-label={l.label ?? `Lap ${i + 1}`} title={l.label}
+                <button key={i} type="button" className={`lap-bar ${on ? 'on' : ''} ${i % 2 ? 'odd' : ''}`} aria-pressed={on} aria-label={l.label ?? t('Lap {n}', { n: i + 1 })} title={l.label}
                   style={{ left: b.x + 1, width: Math.max(2, b.width - 2) }} onClick={() => onSelect({ from: l.from, to: l.to })}>
-                  {b.width > 104 ? l.short ?? `Lap ${i + 1}` : b.width > 20 ? `${i + 1}` : ''}
+                  {b.width > 104 ? l.short ?? t('Lap {n}', { n: i + 1 }) : b.width > 20 ? `${i + 1}` : ''}
                 </button>
               );
             })}
           </div>
         )}
-        <svg ref={svg} width={width} height={H} role="img" aria-label={`Run metrics · ${lines.map((l) => l.title).join(', ') || 'none shown'}`}
+        <svg ref={svg} width={width} height={H} role="img" aria-label={t('Run metrics · {metrics}', { metrics: lines.map((l) => l.title).join(', ') || t('none shown') })}
           onMouseMove={(e) => onCursor(at(e))} onMouseLeave={() => { onCursor(null); setDrag(null); }}
           onMouseDown={(e) => setDrag(at(e))} onMouseUp={up} onDoubleClick={(e) => { const t = at(e); const lap = laps.find((l) => t >= l.from && t < l.to); if (lap) onSelect({ from: lap.from, to: lap.to }); }} style={{ cursor: 'crosshair', userSelect: 'none', display: 'block' }}>
           <defs>
@@ -374,9 +375,9 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
             return (
               <g data-metric={d.line.key}>
                 <line className={`run-mark mark-avg ${avgLit ? 'mark-hot' : ''}`} x1={PLOT_L} x2={width - laneR} y1={ya} y2={ya} stroke={d.line.color} strokeWidth={avgLit ? 2.5 : 1.25} strokeDasharray="6 4" />
-                <text x={PLOT_L + 6 + (narrow && banded ? 22 + d.line.short.length * 6.5 : 0)} y={ya - 4} fontSize="10" textAnchor="start" fill="var(--text)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke" fontWeight={avgLit ? 700 : 500}>avg {d.line.format(mk.avg)}</text>
-                {ext && inX(ext.minAt) && label(px(ext.minAt), d.py(ext.min), `min ${d.line.format(ext.min)}`, 'mark-min', hot?.key === d.line.key && hot.stat === 'min')}
-                {ext && inX(ext.maxAt) && label(px(ext.maxAt), d.py(ext.max), `max ${d.line.format(ext.max)}`, 'mark-max', hot?.key === d.line.key && hot.stat === 'max')}
+                <text x={PLOT_L + 6 + (narrow && banded ? 22 + d.line.short.length * 6.5 : 0)} y={ya - 4} fontSize="10" textAnchor="start" fill="var(--text)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke" fontWeight={avgLit ? 700 : 500}>{t('avg {value}', { value: d.line.format(mk.avg) })}</text>
+                {ext && inX(ext.minAt) && label(px(ext.minAt), d.py(ext.min), t('min {value}', { value: d.line.format(ext.min) }), 'mark-min', hot?.key === d.line.key && hot.stat === 'min')}
+                {ext && inX(ext.maxAt) && label(px(ext.maxAt), d.py(ext.max), t('max {value}', { value: d.line.format(ext.max) }), 'mark-max', hot?.key === d.line.key && hot.stat === 'max')}
               </g>
             );
           })()}
@@ -413,12 +414,12 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
           </div>
         )}
       </div>
-      <div className="chart-legend" role="group" aria-label="Scale shown">
+      <div className="chart-legend" role="group" aria-label={t('Scale shown')}>
         {drawn.map((d) => (
-          <button key={d.line.key} type="button" className={`legend-item ${d === scale ? 'on' : ''}`} aria-pressed={d === scale} title={`Show the scale of ${d.line.title}`} onClick={() => onFocus(d.line.key)}>
+          <button key={d.line.key} type="button" className={`legend-item ${d === scale ? 'on' : ''}`} aria-pressed={d === scale} title={t('Show the scale of {metric}', { metric: d.line.title })} onClick={() => onFocus(d.line.key)}>
             <i className="key-line" style={{ background: d.line.color }} />
             <span>{d.line.title}</span>
-            <span className="muted tnum">{d.range ? `${d.line.tick(d.range[0])}–${d.line.format(d.range[1])}` : 'no data here'}</span>
+            <span className="muted tnum">{d.range ? `${d.line.tick(d.range[0])}–${d.line.format(d.range[1])}` : t('no data here')}</span>
           </button>
         ))}
       </div>
@@ -490,7 +491,7 @@ function Overview({ x, total, line, laps, domain, onDomain, selection, onSelect,
 
   const win = brush ?? current;
   return (
-    <svg ref={ref} className="overview" width={width} height={h} role="img" aria-label="Overview of the whole run: the window is the range shown; drag it to move, drag elsewhere to select" onMouseDown={down} style={{ display: 'block', userSelect: 'none', cursor: current ? 'grab' : 'crosshair' }}>
+    <svg ref={ref} className="overview" width={width} height={h} role="img" aria-label={t('Overview of the whole run: the window is the range shown; drag it to move, drag elsewhere to select')} onMouseDown={down} style={{ display: 'block', userSelect: 'none', cursor: current ? 'grab' : 'crosshair' }}>
       <rect x={PLOT_L} y={0} width={Math.max(0, plotW)} height={h} rx="6" fill="var(--surface-2)" />
       {laps.map((l, i) => i % 2 === 1 && <rect key={i} x={px(l.from)} width={Math.max(1, px(l.to) - px(l.from))} y={0} height={h} fill="var(--surface-3)" opacity="0.6" />)}
       <path d={path} fill="none" stroke="var(--muted)" strokeWidth="1.25" />
