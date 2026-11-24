@@ -606,6 +606,26 @@
     { "element": "d4170178-0675-49e2-9e92-0767eb151f2f", "name": "Zones coloured green to red", "tests": [
       "tests/unit/zones.test.ts › Zones coloured on the chart › Zones coloured green to red"
     ] },
+    { "element": "f81ab94c-a0cd-46bd-a65e-743f1e67144e", "name": "Version shown and recorded", "tests": [
+      "tests/unit/version.test.ts › App version shown › Version shown and recorded",
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn",
+      "tests/unit/version.test.ts › App version shown › Build stamped with its version",
+      "e2e/site.spec.ts › Site without layout shift › Site gives the app version"
+    ] },
+    { "element": "12c280f2-b83b-49fd-a069-3637f956a990", "name": "Version released with its notes", "tests": [
+      "tests/unit/version.test.ts › Version raised by hand › Version released with its notes",
+      "tests/integration/release.test.ts › Version raised by hand › Release command run",
+      "tests/integration/release.test.ts › Version raised by hand › Version tagged on deploy"
+    ] },
+    { "element": "137d6b23-9735-4f78-bd91-1bdec71cf7df", "name": "Tag renamed everywhere it is used", "tests": [
+      "tests/unit/rename.test.ts › Gear and tags renamed › Tag renamed everywhere it is used"
+    ] },
+    { "element": "be43cd67-2712-4a69-9a60-727e4945f27d", "name": "Run tagged from its screen", "tests": [
+      "e2e/run.spec.ts › Run chart › Run tagged from its screen"
+    ] },
+    { "element": "491bbe6f-72fb-40d7-a857-a7ff18a38f66", "name": "Tags and gear edited alike", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
+    ] },
     { "element": "abaf99b7-b15f-4bde-87dc-cbcbd3a1d124", "name": "Runs grouped into weeks", "tests": [
       "tests/unit/weeks.test.ts › Calendar of runs by week › Runs grouped into weeks"
     ] },
@@ -649,7 +669,8 @@
       "e2e/journeys.spec.ts › Journeys › Import, recompute, block definition, trend, export and A/B without the network"
     ] },
     { "element": "21156837-ae8d-48fe-820e-0e3d08822daa", "name": "Settings shown in tabs", "tests": [
-      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn",
+      "tests/unit/links.test.ts › Settings in tabs › Links lead to a tab there is"
     ] },
     { "element": "d04af837-ef55-4c28-bc68-7ae01bbbd478", "name": "A/B opened from a block", "tests": [
       "e2e/ab-comparison.spec.ts › Result transparency › Open instances of A/B"
@@ -729,10 +750,6 @@
     { "element": "a4c3a2bf-49e0-4aaa-b00a-2d2b896b07ec", "name": "Folder menu and history used", "tests": [
       "e2e/journeys.spec.ts › Journeys › Import, recompute, block definition, trend, export and A/B without the network"
     ] },
-    { "element": "b66b289b-d780-4c0d-9344-2a50ac02e340", "name": "To do list built from the checks", "tests": [
-      "tests/unit/assumptions.test.ts › To do for the models › The list says what to do",
-      "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
-    ] },
     { "element": "0d40d086-746a-4574-9906-9fd84865b734", "name": "Route coloured and read on a large map", "tests": [
       "e2e/run.spec.ts › Run chart › Metrics laid over one chart, zoomed in and out"
     ] },
@@ -792,6 +809,18 @@
     ] },
     { "element": "79c59153-cd4d-4b15-81fe-de41f4378eed", "name": "Paths of the static export served", "tests": [
       "tests/unit/hosting.test.ts › App and site served from AWS › Paths of the static export served"
+    ] },
+    { "element": "3ac5135d-0963-4827-8aef-5e08635bb409", "name": "One version everywhere", "tests": [
+      "tests/unit/version.test.ts",
+      "tests/integration/release.test.ts",
+      "e2e/site.spec.ts › Site without layout shift › Site gives the app version"
+    ] },
+    { "element": "f4a10542-8f6b-4d3e-997a-a4ae24a77d07", "name": "Edited alike everywhere", "tests": [
+      "e2e/performance.spec.ts › Performance model › Load model set and form drawn",
+      "e2e/analysis.spec.ts",
+      "e2e/block-definition.spec.ts › Every block on one screen › Block built from a rule with a live count",
+      "e2e/metrics.spec.ts",
+      "e2e/run.spec.ts › Run chart › Run tagged from its screen"
     ] }
   ]
 }

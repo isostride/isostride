@@ -37,9 +37,9 @@ export function FolderPath({ name, initial }: { name: string; initial: string | 
         <label className="muted small" htmlFor="folder-path">Where is it on your disk?</label>
         <span className="folder-path-row">
           <input id="folder-path" className="input" placeholder={`e.g. /Users/you/Runs/${name}`} value={draft} onChange={(e) => setDraft(e.target.value)} spellCheck={false} autoComplete="off" />
-          <button type="submit" className="btn sm primary" disabled={!draft.trim()}>Save</button>
-          {editing && <button type="button" className="btn sm" onClick={() => (path ? setEditing(false) : undefined)}>Cancel</button>}
           {editing && path && <button type="button" className="btn sm" onClick={() => void save(null)}>Forget</button>}
+          {editing && <button type="button" className="btn sm" onClick={() => (path ? setEditing(false) : undefined)}>Cancel</button>}
+          <button type="submit" className="btn sm primary" disabled={!draft.trim()}>Save</button>
         </span>
         {draft.trim() && last(draft.trim()) !== name && <span className="small warn-text">The path does not end in “{name}”, the folder chosen.</span>}
         <span className="muted small">Your browser gives a web page only the folder’s name. Type its path once to see it here; it is kept in this browser.</span>

@@ -56,6 +56,12 @@
     "targetId": "2f223517-a575-43e4-bac5-c331d15faa41"
   },
   {
+    "id": "01d7c645-bc98-4013-9edb-288528df9510",
+    "relationType": "traces-to",
+    "sourceId": "2bdfee86-5b8d-4650-a0b1-f547bf6df2f4",
+    "targetId": "f3de29b6-3564-4a94-96f5-ea8dd99f97ec"
+  },
+  {
     "id": "0221589c-bfe2-4179-9230-ff8118d6eb18",
     "quote": "to krzywych dodaj estymowana krzywa i parametry ... oraz mozliwosc skokow do odbpowiednij segmentow biegow z ktorych ta krzywa powsytala",
     "relationType": "derives",
@@ -67,6 +73,13 @@
     "relationType": "satisfies",
     "sourceId": "989ddea4-2268-46b9-a61d-ef102ca319a6",
     "targetId": "e59886da-dd99-4f9a-a722-ee9026468a35"
+  },
+  {
+    "id": "02a047ae-e5e9-47bc-81f7-c80db205df38",
+    "quote": "w wielu elementach apliakcji mozna cos edytowac, usuwac i dodawac ... upewnij sie ze wszedzie jest spojny mechanism pod wzgledem UI",
+    "relationType": "derives",
+    "sourceId": "ecf2e2e1-ad11-4e0b-8b48-7a2dc4edd702",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "02f810ac-2129-4da8-917d-85fcdae39544",
@@ -524,6 +537,13 @@
     "targetId": "3614e7f4-9407-407b-a23b-56e0b424d992"
   },
   {
+    "id": "11115193-04fe-4d62-888d-f98cc3cfe4d0",
+    "quote": "dodaj wersjonowanie do aplikacji, w tym momencie to 0.1",
+    "relationType": "derives",
+    "sourceId": "2bdfee86-5b8d-4650-a0b1-f547bf6df2f4",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "113536c9-4355-4ae8-9a6c-f68d3ab33379",
     "relationType": "illustrates",
     "sourceId": "29452319-21e3-42fa-a4e2-87267d468dc4",
@@ -749,6 +769,13 @@
     "relationType": "verifies",
     "sourceId": "1809c170-5fa4-4576-9f85-6886fe771b9f",
     "targetId": "b1707f8d-4ee5-434c-a5c1-8545b9b1c76a"
+  },
+  {
+    "id": "16bd8283-f18f-4eed-ad94-c0596c3cef67",
+    "quote": "By hand, release notes (Recommended): You decide when it is 0.2: one command bumps package.json, adds a CHANGELOG entry and a git tag v0.2 on merge",
+    "relationType": "derives",
+    "sourceId": "f266c9f7-6a1e-4cb1-85d6-66de049e38e4",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "16de492d-94e8-47e9-9227-bb3c1239c987",
@@ -1224,6 +1251,12 @@
     "targetId": "eac14764-4083-489d-82f3-63493d94a4c2"
   },
   {
+    "id": "23b44174-4957-482c-8d06-85502acd9003",
+    "relationType": "implements",
+    "sourceId": "f4a10542-8f6b-4d3e-997a-a4ae24a77d07",
+    "targetId": "c4d7ca04-8e22-452f-8054-cd1ea0eb2ff6"
+  },
+  {
     "id": "23d3af5d-adb3-49da-828b-00028436d25e",
     "quote": "F5. Run tags: workout type, technique cue, note.\ntag dictionary",
     "relationType": "derives",
@@ -1277,6 +1310,12 @@
     "relationType": "satisfies",
     "sourceId": "2f223517-a575-43e4-bac5-c331d15faa41",
     "targetId": "7379e576-1802-487b-bc76-a9d745b2e2bd"
+  },
+  {
+    "id": "25883209-4370-4755-b28a-56270ab8bbad",
+    "relationType": "traces-to",
+    "sourceId": "f266c9f7-6a1e-4cb1-85d6-66de049e38e4",
+    "targetId": "f3de29b6-3564-4a94-96f5-ea8dd99f97ec"
   },
   {
     "id": "25f1b4ae-465f-46ea-ac12-358e2f184f09",
@@ -1582,6 +1621,12 @@
     "sourceId": "d0291cd1-bdf1-4c49-8333-4b658a02f95d",
     "targetId": "ae98bcc0-d501-45fc-b39d-c304e5a7b242",
     "technology": "File System Access API"
+  },
+  {
+    "id": "2ed1ec6b-1084-4d87-9c1d-74de8683112f",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "ecf2e2e1-ad11-4e0b-8b48-7a2dc4edd702"
   },
   {
     "id": "2f0e0e83-65d6-4f60-9381-4fe19b7e78bc",
@@ -2000,13 +2045,6 @@
     "targetId": "84b558e0-d87c-4134-8479-f01b164bcd47"
   },
   {
-    "id": "3ebd6500-eaa2-4ec6-bf06-5b6f8cb5d75d",
-    "quote": "w sekcji performance chce zakladke todo .. w ktorej jest lista rzeczy do zrobienia aby modele dzialay poprawnie",
-    "relationType": "derives",
-    "sourceId": "83f9eaba-c80b-43d0-98e0-3c61939655f5",
-    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
-  },
-  {
     "id": "3ec918bc-6a5a-48db-8f5f-0fe690753add",
     "relationType": "satisfies",
     "sourceId": "2a60339a-0a2c-4da8-b12e-4227eba8f4d1",
@@ -2072,6 +2110,12 @@
     "relationType": "satisfies",
     "sourceId": "9d407d6d-646e-46ac-bfb9-f310b0c8fa75",
     "targetId": "a1eb87ee-eaa2-4c04-8c19-56379ad448ec"
+  },
+  {
+    "id": "412a281d-a43f-448b-afcb-2e397d205573",
+    "relationType": "satisfies",
+    "sourceId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1",
+    "targetId": "2bdfee86-5b8d-4650-a0b1-f547bf6df2f4"
   },
   {
     "id": "4141078e-0fed-4aaf-8f24-67508c535372",
@@ -2289,6 +2333,12 @@
     "relationType": "realises",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
     "targetId": "3614e7f4-9407-407b-a23b-56e0b424d992"
+  },
+  {
+    "id": "47db2b1f-36f8-4191-8d88-cb5ded2679ce",
+    "relationType": "verifies",
+    "sourceId": "491bbe6f-72fb-40d7-a857-a7ff18a38f66",
+    "targetId": "ecf2e2e1-ad11-4e0b-8b48-7a2dc4edd702"
   },
   {
     "id": "47f28f9d-7cee-4e62-b629-e1f429cd7c23",
@@ -2831,6 +2881,12 @@
     "targetId": "820d6ab8-673f-4836-909f-a74779044ff5"
   },
   {
+    "id": "5cec2156-25f6-4241-b7ef-07688da76107",
+    "relationType": "traces-to",
+    "sourceId": "ecf2e2e1-ad11-4e0b-8b48-7a2dc4edd702",
+    "targetId": "c4d7ca04-8e22-452f-8054-cd1ea0eb2ff6"
+  },
+  {
     "id": "5d0a0678-f046-46fb-97a0-4dab73c1fde3",
     "relationType": "illustrates",
     "sourceId": "45412314-e70a-445a-bb9e-27340722d02c",
@@ -3097,6 +3153,12 @@
     "targetId": "70862baf-3a94-4a8b-a51a-590bb1cfa605"
   },
   {
+    "id": "67821cfc-d5a7-4dcf-ad0e-e8876951cabe",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "31252938-84e1-4baf-a376-adcc9865d2a9"
+  },
+  {
     "id": "67900fd1-015d-48ec-895c-c4ee382c004b",
     "relationType": "illustrates",
     "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
@@ -3177,6 +3239,12 @@
     "relationType": "derives",
     "sourceId": "ca5872d9-75d4-48c7-a7c7-33c2f1e74e8d",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "6a35fc8d-715c-412d-9484-25116acc65a0",
+    "relationType": "verifies",
+    "sourceId": "12c280f2-b83b-49fd-a069-3637f956a990",
+    "targetId": "f266c9f7-6a1e-4cb1-85d6-66de049e38e4"
   },
   {
     "id": "6aebc581-ac71-4dae-a003-86d8facc5117",
@@ -3550,12 +3618,6 @@
     "targetId": "acc7080d-81b9-4b31-8f5c-db0d35e36abb"
   },
   {
-    "id": "76e614e4-e7fe-4740-8838-500968758986",
-    "relationType": "satisfies",
-    "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
-    "targetId": "83f9eaba-c80b-43d0-98e0-3c61939655f5"
-  },
-  {
     "id": "772b893a-a14c-4b85-b5e0-20e1a6711c6b",
     "relationType": "verifies",
     "sourceId": "a5594f9e-b2dd-4555-9cfe-84de48874542",
@@ -3572,12 +3634,6 @@
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
     "targetId": "917c2241-0a24-4062-a058-0ca2df470b18"
-  },
-  {
-    "id": "7792d83e-09d1-4fa8-be7b-bfeb54ce71cd",
-    "relationType": "verifies",
-    "sourceId": "b66b289b-d780-4c0d-9344-2a50ac02e340",
-    "targetId": "83f9eaba-c80b-43d0-98e0-3c61939655f5"
   },
   {
     "id": "77b804d6-c0ac-4874-918a-3893c0b1f608",
@@ -3788,6 +3844,12 @@
     "relationType": "illustrates",
     "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
     "targetId": "0cc6539e-3293-4327-970f-e394a053c69a"
+  },
+  {
+    "id": "7ee52b78-0c97-471a-85ff-f4658b2569a6",
+    "relationType": "verifies",
+    "sourceId": "be43cd67-2712-4a69-9a60-727e4945f27d",
+    "targetId": "24464add-dd72-490e-a272-9d7b5b2c72bc"
   },
   {
     "id": "7ef69764-77bd-470b-b246-519fe4ded71a",
@@ -5068,6 +5130,12 @@
     "targetId": "318c99a5-6ed7-45ae-98f1-d7daa3f364c2"
   },
   {
+    "id": "a9b8ed52-b7d9-427d-887e-6f315ec073b3",
+    "relationType": "verifies",
+    "sourceId": "f81ab94c-a0cd-46bd-a65e-743f1e67144e",
+    "targetId": "2bdfee86-5b8d-4650-a0b1-f547bf6df2f4"
+  },
+  {
     "id": "a9c3c244-ec9b-481b-8784-6303b0100e5c",
     "quote": "every view sends the area of your route to the server: the 'no network' requirement and its fitness function change.",
     "relationType": "derives",
@@ -5531,6 +5599,13 @@
     "targetId": "b4b221e2-9bf4-4166-b055-d255f8e0b444"
   },
   {
+    "id": "b67e1b5e-20c9-4699-bed1-287e102d6f1d",
+    "quote": "jak juz stworzy gear to nie moge zmienic jego nazwy - jak juz stworze tag to tez nie moge zmienic jego nazwy",
+    "relationType": "derives",
+    "sourceId": "31252938-84e1-4baf-a376-adcc9865d2a9",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "b6840a64-7c6f-4951-a0b7-19ad78f6bf51",
     "relationType": "satisfies",
     "sourceId": "9af04b42-1352-4b04-880f-a46bcd62caf2",
@@ -5541,6 +5616,12 @@
     "relationType": "verifies",
     "sourceId": "a3d655ff-98f9-4f76-a992-556ed91006c4",
     "targetId": "5728343f-2b0f-43e8-8c7b-2709cf92e3d6"
+  },
+  {
+    "id": "b6a66329-24a6-47d5-980a-8c1975a1ef74",
+    "relationType": "implements",
+    "sourceId": "3ac5135d-0963-4827-8aef-5e08635bb409",
+    "targetId": "f3de29b6-3564-4a94-96f5-ea8dd99f97ec"
   },
   {
     "id": "b6d46dbe-84ed-4cd5-a382-0accb902cc9e",
@@ -6338,6 +6419,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "cf8ca073-1eb4-4e26-b261-5e8dc258d62b",
+    "relationType": "constrains",
+    "sourceId": "f3de29b6-3564-4a94-96f5-ea8dd99f97ec",
+    "targetId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1"
+  },
+  {
     "id": "cfb41715-0b35-495e-880b-4c6ee9bb29f4",
     "quote": "kwestie zwiazane z folderem, recompute  import daj w popupie ktory sie otworzy po klikieniu na ikone stideprism",
     "relationType": "derives",
@@ -6877,6 +6964,12 @@
     "relationType": "performed-by",
     "sourceId": "654a1fed-0ad2-42f6-a25c-45479141274d",
     "targetId": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9"
+  },
+  {
+    "id": "e1e4cd6f-a1f3-4d9a-ac8d-aa99fda8c704",
+    "relationType": "verifies",
+    "sourceId": "137d6b23-9735-4f78-bd91-1bdec71cf7df",
+    "targetId": "31252938-84e1-4baf-a376-adcc9865d2a9"
   },
   {
     "id": "e1f1237a-65f8-4560-957d-ced9af79bdaf",

@@ -6,7 +6,7 @@ import type { ModelGroup, ModelKey } from '@/lib/load';
  * chosen at the top of Load, its values set in Settings › Models (the runner's "tak" to it: "mam
  * wrazenie ze wszystkie modele sa pomieszane").
  */
-export type Tab = 'overview' | ModelGroup | 'todo';
+export type Tab = 'overview' | ModelGroup;
 
 export interface View {
   key: string;
@@ -44,7 +44,6 @@ export const TABS: { key: Tab; name: string; /** the evidence a group's models r
       { key: 'vdot', name: 'On VDOT', models: ['fittedVdot'] },
     ],
   },
-  { key: 'todo', name: 'To do', views: [] },
 ];
 
 /** The link of a tab and view of the Performance screen. */

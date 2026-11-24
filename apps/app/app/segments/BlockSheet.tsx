@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useConfirm } from '@/components';
+import { EditGlyph, useConfirm } from '@/components';
 import { asRuleDefinition, type BlockDefinition, type BlockStart, type Rule, type Tolerances } from '@/lib/blocks';
 import { RuleBuilder, type BuilderOptions } from './RuleBuilder';
 
@@ -40,7 +40,7 @@ export function BlockSheet({ def, kept, options, handle, onClose, onSave, onDele
   const { type: _type, ...rule } = one.params as Extract<BlockDefinition['params'], { type: 'rule' }>;
   const [tol, setTol] = useState<Tolerances>(one.tolerances);
   // Opened, the editor takes the focus; Esc closes it wherever the focus is.
-  const box = useRef<HTMLElement>(null);
+  const box = useRef<HTMLDivElement>(null);
   const close = useRef(onClose);
   useEffect(() => { close.current = onClose; }, [onClose]);
   useEffect(() => {
@@ -67,17 +67,26 @@ export function BlockSheet({ def, kept, options, handle, onClose, onSave, onDele
   };
   const fields = FIELDS.filter((f) => rule.shape.type === 'route' || !f.key.startsWith('route'));
   return (
-    <div className="sheet-backdrop" onClick={onClose}>
-      <aside ref={box} tabIndex={-1} className="sheet wide" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ margin: 0 }}>{title}</h3>
-          <span style={{ flex: 1 }} />
-          <button className="btn icon" aria-label="Close" onClick={onClose}>✕</button>
-        </div>
+    // In the middle of the screen, as every editor of the app ("edit zawsze pokazuje popup na srodku ...
+    // edytowane segmentow tez tam przenies"; ADR "One way to add, edit and delete"): Cancel or Esc closes it.
+    <>
+    <div className="edit-backdrop" onClick={onClose}>
+      <div ref={box} tabIndex={-1} className="edit-dialog wide block-dialog" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
+        <header className="edit-head">
+          <EditGlyph kind="segment" />
+          <div className="edit-head-text">
+            <span className="edit-kind">{kept ? 'Segment' : title}</span>
+            <h2>{def.name || 'A segment of your rule'}</h2>
+          </div>
+          <button type="button" className="edit-close" aria-label="Close" onClick={onClose}>✕</button>
+        </header>
+        <div className="edit-body">
         <RuleBuilder initial={rule as Rule} initialName={kept || def.name ? def.name : undefined} options={options} handle={handle} tolerances={tol} footer={(s) => (
           <>
-            <button className="btn primary" disabled={!s.segments} onClick={() => onSave({ ...one, name: s.name, params: { type: 'rule', ...s.rule }, tolerances: tol })}>{kept ? 'Save & find again' : 'Save segment'}</button>
-            {kept && onDelete && <button className="btn danger" onClick={remove}>Delete segment</button>}
+            {/* Delete, Cancel and Save, the words of every editor of the app ("delete segment -> tekst ujednolic .. poprostu delete"; ADR "One way to add, edit and delete"). */}
+            {kept && onDelete && <button type="button" className="btn danger edit-delete" onClick={remove}>Delete</button>}
+            <button type="button" className="btn" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn primary" disabled={!s.segments} onClick={() => onSave({ ...one, name: s.name, params: { type: 'rule', ...s.rule }, tolerances: tol })}>Save</button>
           </>
         )}>
           <details className="builder-section matching-checks">
@@ -102,8 +111,11 @@ export function BlockSheet({ def, kept, options, handle, onClose, onSave, onDele
             </label>}
           </details>
         </RuleBuilder>
-      </aside>
-      {confirmDialog}
+        </div>
+      </div>
     </div>
+    {/* Beside the editor, not in it: a click beside the confirmation does not close the editor too. */}
+    {confirmDialog}
+    </>
   );
 }

@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget } from '@/components';
-import { readChartSettings, useChartSettings, useOpenFolder } from '@/lib/client';
+import { readChartSettings, runInWorker, useChartSettings, useOpenFolder } from '@/lib/client';
+import { readGear, readRunTags, writeRunTags, type Gear, type RunTag, type RunTagsFile } from '@/lib/gear';
+import { TagEditor } from './TagEditor';
 import { PATHS, readJson, readRunFile } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { efficiencyOf, rangeStats, readDefinitions, zoneShares, type BlockInstance } from '@/lib/blocks';
@@ -76,6 +78,12 @@ function RunPage() {
   const goBack = (e: MouseEvent) => { if (back.viaHistory && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); router.back(); } };
   const [run, setRun] = useState<RunFile | null | undefined>(undefined);
   const [title, setTitle] = useState<string | null>(null);
+  /** the run's workout type, technique cue and note, as the index holds them */
+  const [tagged, setTagged] = useState<{ workoutType: string | null; techniqueCue: string | null; note: string | null }>({ workoutType: null, techniqueCue: null, note: null });
+  /** the tags and the gear, read when the editor of the run's tags opens */
+  const [tagEdit, setTagEdit] = useState<{ file: RunTagsFile; gear: Gear[] } | null>(null);
+  /** read again after the run's tags are saved */
+  const [tagsSaved, setTagsSaved] = useState(0);
   const [cursor, setCursor] = useState<number | null>(null);
   const [blocks, setBlocks] = useState<(BlockInstance & { name: string })[]>([]);
   /** the zones of the metrics, from the settings */
@@ -201,6 +209,7 @@ function RunPage() {
       setZones(s.zones);
       const row = idx?.runs.find((r) => r.id === id);
       setTitle(row?.title ?? null);
+      setTagged({ workoutType: row?.workoutType ?? null, techniqueCue: row?.techniqueCue ?? null, note: row?.note ?? null });
       const model = LOAD_MODELS.find((m) => m.key === s.performance.load)!;
       setEffort(row && row.load !== null && row.load !== undefined ? { load: row.load, estimated: !!row.loadEstimated, unit: model.unit, model: model.name, form: row.form ?? 0 } : null);
     }).catch(() => setZones({}));
@@ -209,7 +218,16 @@ function RunPage() {
       const all = (await readJson<{ instances: BlockInstance[] }>(folder, PATHS.blockInstances))?.instances ?? [];
       setBlocks(all.filter((i) => i.runId === id).map((i) => ({ ...i, name: names.get(i.definitionId) ?? i.definitionId })).sort((a, b) => a.start - b.start));
     })();
-  }, [folder, id]);
+  }, [folder, id, tagsSaved]);
+  // The run's tags edited here as on the Runs list: saved, the context recomputed, the screen read again.
+  const editTags = async () => setTagEdit({ file: await readRunTags(folder), gear: await readGear(folder) });
+  const saveTags = async (tag: RunTag) => {
+    if (!tagEdit) return;
+    await writeRunTags(folder, { ...tagEdit.file, tags: { ...tagEdit.file.tags, [id]: tag } });
+    await runInWorker('context', handle);
+    setTagEdit(null);
+    setTagsSaved((n) => n + 1);
+  };
 
   const view = useMemo(() => {
     if (!run) return null;
@@ -335,8 +353,12 @@ function RunPage() {
         <span className="chip">{run.device}</span>
         <span className="chip">{run.laps.length} laps</span>
         {run.temperature !== null && <span className="chip">{run.temperature} °C</span>}
+        {[tagged.workoutType, tagged.techniqueCue].filter(Boolean).map((t) => <span key={t} className="chip run-tag">{t}</span>)}
+        {tagged.note && <span className="muted small run-note" title={tagged.note}>✉ {tagged.note}</span>}
+        <button type="button" className="btn" onClick={() => void editTags()} title="The run's title, workout type, technique cue, shoes and a note">Tags and note</button>
         <Link className="btn" href={`/compare?items=r:${run.id}:0`} title="Open this run in Compare, beside your segments and other runs">Compare this run</Link>
       </div>
+      {tagEdit && <TagEditor title={title ?? `${date(run.startTime)} ${time(run.startTime)}`} tag={tagEdit.file.tags[id] ?? {}} gear={tagEdit.gear} dictionary={tagEdit.file.dictionary} onSave={(t) => void saveTags(t)} onCancel={() => setTagEdit(null)} />}
       <div className="card run-board pin-host">
         <PinButton folder={folder} kind="run" target={run.id} name={title ?? `${date(run.startTime)} ${time(run.startTime)}`} opts={slots.filter((k) => k !== null).join(',')} />
         <div className="metrics-bar">
@@ -361,10 +383,6 @@ function RunPage() {
               Clear selection
             </button>
           )}
-          {/* How every chart draws is set in Settings (the runner's "tak" to "przycisk chart w runs ... czy ma sens jeszcze"): a small way there. */}
-          <Link className="btn sm icon chart-settings-link" href="/settings?tab=charts" aria-label="Chart settings" title="How the chart draws: bands or overlaid, smoothing, the x axis — Settings › Charts">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /></svg>
-          </Link>
         </div>
         <div className="run-top">
           <div className="run-chart-col">

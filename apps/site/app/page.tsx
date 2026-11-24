@@ -3,6 +3,9 @@ import { Logo } from './Logo';
 import { Shot } from './Shot';
 import { APP_HOST, APP_URL, REPO_URL } from './links';
 
+/** The version of the app deployed with the site (its build reads it from package.json), a patch of 0 left out. */
+const VERSION = (process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0').replace(/^(\d+\.\d+)\.0$/, '$1');
+
 /** Where the data is and what leaves the computer: plain answers. */
 const LOCAL: [string, string][] = [
   ['Where is my data?', 'In a folder you choose on your disk. IsoStride reads the FIT files there and writes what it computes next to them, in .isostride/, as JSON files you can open, copy or delete.'],
@@ -200,7 +203,7 @@ export default function Home() {
       </main>
 
       <footer className="foot">
-        <span>© {new Date().getFullYear()} IsoStride · <a href={REPO_URL}>source on GitHub</a> (MIT)</span>
+        <span>© {new Date().getFullYear()} IsoStride {VERSION} · <a href={REPO_URL}>source on GitHub</a> (MIT) · <a href={`${REPO_URL}/blob/master/CHANGELOG.md`}>changelog</a></span>
         <a href={APP_URL}>{APP_HOST}</a>
       </footer>
     </>

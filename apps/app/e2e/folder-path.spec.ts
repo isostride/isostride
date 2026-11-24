@@ -22,6 +22,8 @@ test.describe('Folder path shown', () => {
     await expect(page.locator('.folder-path')).toHaveText('/Users/runner/Runs/data');
     // Edited, then forgotten: the question again.
     await page.getByRole('button', { name: 'Edit path' }).click();
+    // Its buttons in the order of every editor: Cancel and Save last (ADR "One way to add, edit and delete").
+    await expect(page.locator('.folder-path-row button')).toHaveText(['Forget', 'Cancel', 'Save']);
     await page.getByRole('button', { name: 'Forget' }).click();
     await expect(page.getByLabel('Where is it on your disk?')).toBeVisible();
   });

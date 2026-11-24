@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { fitFiles, importAll, logOpenedFiles, nav, openRun, openWithFolder, readText, recordMeasure, showList } from './support';
 
@@ -11,15 +13,27 @@ test.describe('Performance model', () => {
     // The navigation: Runs, Analysis, Performance, Settings.
     const screens = page.locator('.sidebar nav').getByRole('link');
     expect(await screens.evaluateAll((ls) => ls.map((l) => (l.querySelector('.nav-text > span') ?? l).textContent))).toEqual(['Dashboard', 'Runs', 'Segments', 'Compare', 'Performance', 'Settings']);
-    // Under each screen a line of facts, read from the data; under them this week's running (requirement "Side menu with the data").
+    // Under each screen a line of facts, read from the data (requirement "Side menu with the data"); no week's running.
     await expect(screens.nth(1)).toHaveAccessibleDescription(/^\d+ runs · last \w{3} \d+|^\d+ runs · last \d+ \w{3}/);
     await expect(screens.nth(2)).toHaveAccessibleDescription(/^\d+ kept/);
-    const week = page.getByRole('region', { name: 'This week' });
-    await expect(week).toContainText(/\d+\.\d km/);
-    await expect(week.getByRole('img', { name: /^Kilometres by day: M / })).toBeVisible();
+    await expect(page.locator('.sidebar').getByRole('region', { name: 'This week' })).toHaveCount(0);
+    // Settings at the bottom of the side menu, the other screens at its top.
+    const side = (await page.locator('.sidebar').boundingBox())!;
+    const settings = (await screens.last().boundingBox())!;
+    const performance = (await screens.nth(4).boundingBox())!;
+    expect(side.y + side.height - (settings.y + settings.height)).toBeLessThan(40);
+    expect(settings.y - (performance.y + performance.height)).toBeGreaterThan(100);
+    // The app's version under its name (requirement "App version shown"), and in Settings, Display, with the changelog.
+    const pkgVersion = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, '../../../package.json'), 'utf8')).version as string;
+    const shown = pkgVersion.replace(/^(\d+\.\d+)\.0$/, '$1');
+    await expect(page.locator('.sidebar .brand-version')).toHaveText(shown);
     // Settings in tabs, zones first; gear and tags are tabs of it, not a screen of the navigation.
     await nav(page, 'Settings');
-    await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Zones', 'Metrics', 'Gear', 'Tags', 'Charts', 'Models', 'Display']);
+    await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Models', 'Metrics', 'Gears', 'Tags', 'Display', 'About']);
+    await page.getByRole('tab', { name: 'About' }).click();
+    const about = page.getByRole('region', { name: 'About IsoStride' });
+    await expect(about).toContainText(`Version ${shown}`);
+    await expect(about.getByRole('link', { name: 'Changelog' })).toHaveAttribute('href', /CHANGELOG\.md$/);
     // Models (requirement "Thresholds of the models"): each threshold of the checks with its default; one out of
     // its range cannot be saved; set, it is kept in the data folder with the performance model.
     await page.getByRole('tab', { name: 'Models' }).click();
@@ -27,6 +41,11 @@ test.describe('Performance model', () => {
     const strap = thresholds.getByLabel('A heart rate strap in at least');
     await expect(strap).toHaveAttribute('placeholder', '80');
     // Save shows only when something is changed and not saved ("powinien sie pojawic gdy cos jest zmienione ale nie zapisane").
+    await expect(thresholds.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    // Cancel goes back to what is saved (ADR "One way to add, edit and delete").
+    await strap.fill('70');
+    await thresholds.getByRole('button', { name: 'Cancel' }).click();
+    await expect(strap).toHaveValue('');
     await expect(thresholds.getByRole('button', { name: 'Save' })).toHaveCount(0);
     await strap.fill('150');
     await expect(thresholds.getByRole('alert')).toContainText('A heart rate strap in at least (0–100)');
@@ -39,18 +58,93 @@ test.describe('Performance model', () => {
     await page.getByRole('tab', { name: 'Tags' }).click();
     await expect(page).toHaveURL(/\/settings\?tab=tags/);
     await expect(page.getByRole('region', { name: 'Tags' })).toContainText('Workout type');
-    // The old address of Gear and tags opens the Gear tab.
+    // A tag renamed (requirement "Gear and tags renamed"): in its place, in the folder's dictionary.
+    const tagsCard = page.getByRole('region', { name: 'Tags' });
+    // Edited as everything kept in the folder (ADR "One way to add, edit and delete"): Esc leaves it as it was.
+    // Its editor a dialog in the middle of the screen ("edit zawsze pokazuje popup na srodku").
+    const tagDialog = (name: string) => page.getByRole('dialog', { name: `Edit ${name}` });
+    await tagsCard.getByRole('button', { name: 'Edit tempo' }).click();
+    await tagDialog('tempo').getByRole('textbox', { name: 'Name' }).fill('nothing');
+    await page.keyboard.press('Escape');
+    await expect(tagDialog('tempo')).toHaveCount(0);
+    await expect(tagsCard.getByRole('button', { name: 'Edit tempo' })).toBeVisible();
+    await tagsCard.getByRole('button', { name: 'Edit tempo' }).click();
+    await tagDialog('tempo').getByRole('textbox', { name: 'Name' }).fill('threshold');
+    await tagDialog('tempo').getByRole('button', { name: 'Save' }).click();
+    await expect(tagsCard.getByRole('button', { name: 'Edit threshold' })).toBeVisible();
+    await expect(tagsCard.getByRole('button', { name: 'Edit tempo' })).toHaveCount(0);
+    await expect.poll(async () => JSON.parse(await readText(page, '.isostride/user/run-tags.json')).dictionary.workoutTypes).toEqual(['easy', 'long', 'threshold', 'intervals', 'race']);
+    // Deleted from its editor ("w samym edit jest usuwanie"), after asking in the app's own dialog; Cancel keeps it.
+    await expect(tagsCard.getByRole('button', { name: 'Delete race' })).toHaveCount(0);
+    const ask = page.getByRole('alertdialog', { name: 'Delete this tag?' });
+    await tagsCard.getByRole('button', { name: 'Edit race' }).click();
+    await tagDialog('race').getByRole('button', { name: 'Delete' }).click();
+    await ask.getByRole('button', { name: 'Cancel' }).click();
+    await expect(tagsCard.getByRole('button', { name: 'Edit race' })).toBeVisible();
+    await tagsCard.getByRole('button', { name: 'Edit race' }).click();
+    await tagDialog('race').getByRole('button', { name: 'Delete' }).click();
+    await ask.getByRole('button', { name: 'Delete' }).click();
+    await expect(tagsCard.getByRole('button', { name: 'Edit race' })).toHaveCount(0);
+    // Added with Add.
+    await tagsCard.getByRole('textbox', { name: 'New workout type' }).fill('hills');
+    await tagsCard.getByRole('group', { name: 'Workout type' }).getByRole('button', { name: 'Add' }).click();
+    await expect.poll(async () => JSON.parse(await readText(page, '.isostride/user/run-tags.json')).dictionary.workoutTypes).toEqual(['easy', 'long', 'threshold', 'intervals', 'hills']);
+    // The old address of Gear and tags opens the Gears tab; the old tabs' links the tabs that hold them now.
     await page.goto('/gear');
-    await expect(page).toHaveURL(/\/settings\?tab=gear/);
-    await expect(page.getByRole('region', { name: 'Gear' }).getByRole('button', { name: 'Add gear' })).toBeVisible();
-    await page.getByRole('tab', { name: 'Zones' }).click();
+    await expect(page).toHaveURL(/\/settings\?tab=gears/);
+    await expect(page.getByRole('region', { name: 'Gears' }).getByRole('button', { name: 'Add gear' })).toBeVisible();
+    // A piece of gear added, then renamed in place.
+    const gears = page.getByRole('region', { name: 'Gears' });
+    await gears.getByLabel('Gear name').fill('Shoes A');
+    await gears.locator('.gear-add input[type="date"]').first().fill('2026-01-01');
+    await gears.getByRole('button', { name: 'Add gear' }).click();
+    // The editor, a dialog in the middle of the screen: its first field takes the focus, Tab stays within it,
+    // ✕ and a click beside it close it, nothing saved.
+    await gears.getByRole('button', { name: 'Edit Shoes A' }).click();
+    const gearForm = page.getByRole('dialog', { name: 'Edit Shoes A' });
+    await expect(gearForm.getByRole('textbox', { name: 'Name' })).toBeFocused();
+    await gearForm.getByRole('button', { name: 'Save' }).focus();
+    await page.keyboard.press('Tab');
+    await expect(gearForm.getByRole('button', { name: 'Close' })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(gearForm.getByRole('button', { name: 'Save' })).toBeFocused();
+    await gearForm.getByRole('textbox', { name: 'Name' }).fill('Not kept');
+    await gearForm.getByRole('button', { name: 'Close' }).click();
+    await expect(gearForm).toHaveCount(0);
+    await gears.getByRole('button', { name: 'Edit Shoes A' }).click();
+    await expect(gearForm.getByRole('textbox', { name: 'Name' })).toHaveValue('Shoes A');
+    await page.mouse.click(4, 4);
+    await expect(gearForm).toHaveCount(0);
+    // Its name and its dates saved together, with Enter.
+    await gears.getByRole('button', { name: 'Edit Shoes A' }).click();
+    await gearForm.getByLabel('To (empty: in use)').fill('2026-06-30');
+    await gearForm.getByRole('textbox', { name: 'Name' }).fill('Shoes B');
+    await gearForm.getByRole('textbox', { name: 'Name' }).press('Enter');
+    await expect(page.locator('.banner')).toContainText('Renamed Shoes A to Shoes B');
+    await expect(gears.getByRole('button', { name: 'Edit Shoes B' })).toBeVisible();
+    await expect(gears.locator('.gear-row', { hasText: 'Shoes B' })).toContainText('from 2026-01-01 to 2026-06-30');
+    await expect(gears.locator('.gear-row', { hasText: 'Shoes B' }).getByText('in use')).toHaveCount(0);
+    // Deleted from its editor, after asking.
+    await gears.getByRole('button', { name: 'Edit Shoes B' }).click();
+    await page.getByRole('dialog', { name: 'Edit Shoes B' }).getByRole('button', { name: 'Delete' }).click();
+    await page.getByRole('alertdialog', { name: 'Delete this gear?' }).getByRole('button', { name: 'Delete' }).click();
+    await expect(page.locator('.banner')).toContainText('Deleted Shoes B');
+    await expect(gears.getByRole('button', { name: 'Edit Shoes B' })).toHaveCount(0);
+    await page.goto('/settings?tab=charts');
+    await expect(page.getByRole('tab', { name: 'Display' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('region', { name: 'Charts' })).toBeVisible();
+    await page.goto('/settings?tab=zones');
+    await expect(page.getByRole('tab', { name: 'Metrics' })).toHaveAttribute('aria-selected', 'true');
+    await page.getByRole('tab', { name: 'Tags' }).click();
+    // Models first: its tab is the screen's own address.
+    await page.getByRole('tab', { name: 'Models' }).click();
     await expect(page).toHaveURL(/\/settings$/);
 
     // Performance is laid out by the evidence its models rest on: an overview, a tab per group, the settings.
     await nav(page, 'Performance');
     const tabs = page.getByRole('tablist', { name: 'Performance sections' });
     // No Model tab ("mam wrazenie ze wszystkie modele sa pomieszane"): the load model is chosen at the top of Load, its values set in Settings › Models.
-    await expect(tabs.getByRole('tab')).toHaveText(['Overview', 'Load', 'Capacity', 'Aerobic', 'Response', 'To do']);
+    await expect(tabs.getByRole('tab')).toHaveText(['Overview', 'Load', 'Capacity', 'Aerobic', 'Response']);
     await expect(tabs.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
     await expect(page).toHaveURL(/\/performance$/);
     // The overview is the map of the models: each with its name, what it says now, its trust and a "Why?"; no list repeats it.
@@ -94,25 +188,11 @@ test.describe('Performance model', () => {
     await page.getByRole('dialog', { name: /^Why:/ }).getByRole('button', { name: 'Close' }).click();
     await expect(page.getByRole('region', { name: /^Why:/ })).toHaveCount(0);
 
-    // To do: what the runner can do so the models work — nothing saved yet, so the settings come first, each saying where it is done.
-    await tabs.getByRole('tab', { name: 'To do' }).click();
-    await expect(page).toHaveURL(/\/performance\?tab=todo$/);
-    const setNow = page.getByRole('region', { name: 'Set now' });
-    await expect(page.getByRole('region', { name: 'Progress' }).getByRole('heading')).toHaveText(/^\d+ things? to do$/);
-    for (const key of ['zones', 'resthr']) await expect(setNow.locator(`[data-todo="${key}"]`)).toBeVisible();
-    await expect(setNow.locator('[data-todo="resthr"]')).toContainText('Your resting heart rate is set: 60 bpm is the default');
-    await expect(setNow.locator('[data-todo="resthr"]').getByRole('link', { name: 'Load of a run' })).toBeVisible();
-    // An item the files cannot check is set aside by the runner, and brought back.
-    const before = await page.locator('.todo-item:not(.done):not(.aside)').count();
-    const judged = page.locator('.todo-item.todo-unknown').first();
-    const judgedKey = (await judged.getAttribute('data-todo'))!;
-    await judged.getByRole('button', { name: 'Set aside' }).click();
-    await expect(page.locator('.todo-item:not(.done):not(.aside)')).toHaveCount(before - 1);
-    await page.getByText(/^Done and set aside/).click();
-    await page.locator(`[data-todo="${judgedKey}"]`).getByRole('button', { name: 'Bring back' }).click();
-    await expect(page.locator('.todo-item:not(.done):not(.aside)')).toHaveCount(before);
-    // Where a setting is made: Settings › Models ("ok wybor modelu chce w settings"): the load model and the values of the models.
-    await setNow.locator('[data-todo="resthr"]').getByRole('link', { name: 'Open Settings › Models →' }).click();
+    // No To do any more ("usun todo"): neither its tab nor its address.
+    await expect(tabs.getByRole('tab', { name: 'To do' })).toHaveCount(0);
+    // Where a setting is made: Settings › Models ("ok wybor modelu chce w settings"): the load model and the values of the models, from Load.
+    await tabs.getByRole('tab', { name: 'Load' }).click();
+    await page.getByRole('note', { name: 'Load model in use' }).getByRole('link', { name: 'Change it in Settings →' }).click();
     await expect(page).toHaveURL(/\/settings\?tab=models/);
     const card = page.getByRole('region', { name: 'Performance model' });
     await expect(card.getByRole('button', { name: 'Save and recompute' })).toHaveCount(0);
@@ -124,6 +204,13 @@ test.describe('Performance model', () => {
     await expect(models.getByRole('radio', { name: /Banister TRIMP/ })).toHaveAttribute('aria-checked', 'true');
     await expect(models.getByRole('radio', { name: /Banister TRIMP/ })).toContainText(/Needs heart rate: \d+ of \d+ runs/, { timeout: 30_000 });
     await expect(models.getByRole('radio', { name: /Power TSS/ })).toContainText(/Needs power: \d+ of \d+ runs/);
+    // A choice and a value changed, then Cancel: both as saved.
+    await models.getByRole('radio', { name: /Power TSS/ }).click();
+    await card.getByLabel('Maximum heart rate').fill('188');
+    await card.getByRole('button', { name: 'Cancel' }).click();
+    await expect(models.getByRole('radio', { name: /Banister TRIMP/ })).toHaveAttribute('aria-checked', 'true');
+    await expect(card.getByLabel('Maximum heart rate')).toHaveValue('');
+    await expect(card.getByRole('button', { name: 'Save and recompute' })).toHaveCount(0);
     await models.getByRole('radio', { name: /Power TSS/ }).click();
     await card.getByRole('button', { name: 'Save and recompute' }).click();
     await expect(card.getByRole('status')).toHaveText('Saved · loads recomputed', { timeout: 60_000 });
@@ -164,6 +251,22 @@ test.describe('Performance model', () => {
     await tabs.getByRole('tab', { name: 'Load' }).click();
     await expect(page).toHaveURL(/\/performance\?tab=load$/);
     await expect(page.getByRole('radiogroup', { name: 'Load views' }).getByRole('radio')).toHaveText(['Form', 'Weekly load', 'Intensity']);
+    // The views a second level inside the group's card, not a second row of tabs ("2 poziomy tabow"); its name
+    // not said again under its tab ("powtarzasz tytul").
+    await expect(page.getByRole('region', { name: 'Load', exact: true }).getByRole('radiogroup', { name: 'Load views' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Load', exact: true }).getByRole('heading', { name: 'Load', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('tablist')).toHaveCount(1);
+    // On the left of the card ("chce to po lewej stronie").
+    const group = page.getByRole('region', { name: 'Load', exact: true });
+    const [groupBox, views] = [(await group.boundingBox())!, (await group.getByRole('radiogroup', { name: 'Load views' }).boundingBox())!];
+    expect(views.x - groupBox.x).toBeLessThanOrEqual(24);
+    // The view chosen in the blue of the tab chosen.
+    const bg = (l: ReturnType<typeof page.locator>) => l.evaluate((e) => getComputedStyle(e).backgroundImage);
+    const chosen = group.getByRole('radiogroup', { name: 'Load views' }).getByRole('radio', { checked: true });
+    expect(await bg(chosen)).toBe(await bg(page.getByRole('tab', { selected: true })));
+    expect(await bg(chosen)).toContain('gradient');
+    // The group's card white as every card ("tlo w wewnetrznej ramce powinny byc biale nie szare").
+    expect(await group.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(await group.locator('.card').first().evaluate((e) => getComputedStyle(e).backgroundColor));
     const chart = page.getByRole('img', { name: 'Form over time' });
     await expect(chart.locator('.form-fitness')).toBeAttached();
     await expect(chart.locator('.form-fatigue')).toBeAttached();
@@ -308,6 +411,9 @@ test.describe('Performance model', () => {
     // columns from what is measured to what is fitted; every model a link wearing its trust.
     const map = page.getByRole('region', { name: 'Map of the models' });
     await expect(map.locator('.map-node')).toHaveCount(17, { timeout: 60_000 });
+    // Its type light enough to read ("ten bold jest przytlaczajacy"): nothing on it heavier than 620.
+    const weights = await map.locator('.map-now, .map-name, .map-lane-head > a, .map-col-title, .map-trust, h2').evaluateAll((es) => es.map((e) => Number(getComputedStyle(e).fontWeight)));
+    expect(Math.max(...weights)).toBeLessThanOrEqual(620);
     // The overview close to one 1440 × 900 screen: at most a short scroll to see the whole map.
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight - innerHeight)).toBeLessThanOrEqual(120);
     // On a taller window the map takes its whole height: it reaches the bottom of the window, nothing to scroll, the rows wider apart.
@@ -315,6 +421,19 @@ test.describe('Performance model', () => {
     await expect.poll(() => page.evaluate(() => innerHeight - document.querySelector('.model-map')!.getBoundingClientRect().bottom), { message: 'room under the map' }).toBeLessThanOrEqual(24);
     await page.setViewportSize({ width: 1440, height: 900 });
     await expect(map.locator('.map-lane-head a')).toHaveText(['Load', 'Response', 'Aerobic', 'Capacity']);
+    // The lanes' bands apart, not touching ("powinnien byc odstep").
+    const bands = await map.locator('.map-lane').evaluateAll((ls) => ls.map((l) => { const r = l.getBoundingClientRect(); return [r.top, r.bottom]; }));
+    for (let i = 1; i < bands.length; i++) expect(bands[i][0] - bands[i - 1][1]).toBeGreaterThanOrEqual(8);
+    // Every card inside its lane with room on the right too ("odstep po prawej").
+    const right = await map.evaluate((m) => {
+      const lanes = [...m.querySelectorAll('.map-lane')].map((l) => l.getBoundingClientRect());
+      return [...m.querySelectorAll('.map-node')].map((n) => {
+        const r = n.getBoundingClientRect();
+        const lane = lanes.find((l) => r.top >= l.top - 1 && r.bottom <= l.bottom + 1)!;
+        return lane.right - r.right;
+      });
+    });
+    expect(Math.min(...right)).toBeGreaterThanOrEqual(6);
     // A link to the Model tab of before opens Load, where the load model is chosen now.
     await page.goto('/performance?tab=model');
     await expect(page.getByRole('tab', { name: 'Load', exact: true })).toHaveAttribute('aria-selected', 'true');

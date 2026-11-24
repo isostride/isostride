@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { fitFiles, importAll, openWithFolder, showList } from './support';
+import { fitFiles, headGap, importAll, openWithFolder, showList } from './support';
 
 test.describe('Search runs', () => {
   test('Runs searched and the calendar browsed', async ({ page }) => {
@@ -8,6 +8,9 @@ test.describe('Search runs', () => {
     await importAll(page);
     // The runner titles one run, to find it by its title.
     await showList(page);
+    // The head of the list apart from its rows: a row pointed at does not touch it.
+    await page.locator('tr.row').first().hover();
+    expect(await headGap(page.locator('table.data').first())).toBeGreaterThanOrEqual(6);
     const third = page.locator('tr.row').nth(2);
     await third.getByRole('button', { name: 'Edit' }).click();
     await page.getByLabel('Title').fill('COROS test');
@@ -75,6 +78,13 @@ test.describe('Search runs', () => {
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/run\?id=2026-?08/);
     await expect(palette).toHaveCount(0);
+    // Settings' tabs offered by name: Gears opens its tab.
+    await page.keyboard.press('ControlOrMeta+k');
+    await palette.getByRole('combobox').fill('gears');
+    await expect(options.first()).toContainText('Gears');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/settings\?tab=gears$/);
+    await expect(page.getByRole('tab', { name: 'Gears' })).toHaveAttribute('aria-selected', 'true');
     // Nothing found: said so, with what to try.
     await page.keyboard.press('ControlOrMeta+k');
     await palette.getByRole('combobox').fill('zzqx');

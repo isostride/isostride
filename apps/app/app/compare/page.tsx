@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ItemKey, useDataVersion, useMetrics, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup } from '@/components';
+import { EditButton, ItemKey, useDataVersion, useMetrics, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup } from '@/components';
 import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, asRule, definitionFromProfile, definitionFromRoute, shapeName, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule, ruleOf } from '@/lib/blocks';
 import { curvesInWorker, instancesInWorker, runInWorker, similarInWorker, useOpenFolder } from '@/lib/client';
 import { MAX_ITEMS, addItem, computeTrend, firstUsableMetric, formatItems, instancesCsv, parseItems, runMean, type AnalysisItem } from '@/lib/compare';
@@ -394,6 +394,8 @@ function AnalysisPage() {
         {busy && <span className="chip">⟳ {busy}…</span>}
         <SavedAnalyses folder={folder} query={params.toString()} labels={items.map(label)} hasItems={items.length > 0} onOpen={(q) => router.replace(`/compare${q ? `?${q}` : ''}`)} />
         {blocks.length > 0 && <button className="btn" onClick={exportCsv}>Export CSV</button>}
+        {/* At the right of the head, as New segment on Segments ("add segment or run daj po prawej tak samo jak w segments"). */}
+        <button className="btn primary" disabled={items.length >= MAX_ITEMS || !!busy} onClick={() => setAdding(true)}>+ Add segment or run</button>
       </div>
 
       {outdated && (
@@ -402,19 +404,18 @@ function AnalysisPage() {
         </div>
       )}
 
-      <div className="items-bar">
+      {items.length > 0 && <div className="items-bar">
         {items.map((i) => (
           <span key={i.id} className="item-chip">
             <ItemKey shape={shape(i)} color={color(i)} />
             <span>{label(i)}</span>
             {i.kind === 'rule' && <button className="item-save" title="Keep this segment in the folder: it stays in the list and can be compared A/B" disabled={!!busy} onClick={() => saveItem(i)}>Save</button>}
-            {i.kind !== 'run' && <button className="item-save" aria-label={`Edit ${label(i)}`} disabled={!!busy} onClick={() => setEditing(i)}>Edit</button>}
+            {i.kind !== 'run' && <EditButton small name={label(i)} disabled={!!busy} onClick={() => setEditing(i)} />}
             <button className="item-remove" aria-label={`Remove ${label(i)}`} onClick={() => setItems(items.filter((x) => x.id !== i.id))}>×</button>
           </span>
         ))}
-        <button className="btn" disabled={items.length >= MAX_ITEMS || !!busy} onClick={() => setAdding(true)}>+ Add segment or run</button>
         {items.length >= MAX_ITEMS && <span className="muted small">Up to {MAX_ITEMS} at once.</span>}
-      </div>
+      </div>}
 
 
       <>

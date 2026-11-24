@@ -33,6 +33,11 @@ describe('Library used through its theme', () => {
     for (const dir of ['app', 'components'])
       for (const f of fs.readdirSync(path.join(ROOT, dir), { recursive: true }) as string[])
         if (f.endsWith('.tsx')) tsx[`${dir}/${f}`] = fs.readFileSync(path.join(ROOT, dir, f), 'utf8');
+    // Every block of the stylesheet closed where it ends: an unclosed one takes the rules after it in.
+    let depth = 0;
+    let least = 0;
+    for (const c of css.replace(/\/\*[\s\S]*?\*\//g, '')) { depth += c === '{' ? 1 : c === '}' ? -1 : 0; least = Math.min(least, depth); }
+    expect([depth, least]).toEqual([0, 0]);
     const found = untokenized(css, tsx);
     await recordMeasure('untokenizedColours', found.length);
     expect(found).toEqual([]);

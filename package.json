@@ -15,6 +15,7 @@
     "build:site": "npm run build -w @isostride/site",
     "check": "npm run check -w @isostride/app",
     "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "release": "node apps/app/scripts/release.mjs"
   }
 }

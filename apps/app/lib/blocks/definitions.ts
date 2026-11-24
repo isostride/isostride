@@ -113,3 +113,17 @@ export function definitionFromProfile(key: ProfileKey, now = new Date()): BlockD
     tolerances: { ...RULE_TOLERANCES },
   };
 }
+
+/**
+ * The definitions with a name renamed in their rules (a tag, or a piece of gear, by the name runs
+ * carry): the runs a rule draws from, the workout type of a tag segment and its name of "Workout: …".
+ * The others as they are.
+ */
+export function renameInDefinitions(definitions: BlockDefinition[], field: 'workoutTypes' | 'techniqueCues' | 'shoes' | 'heartRateSources', from: string, to: string): BlockDefinition[] {
+  return definitions.map((d) => {
+    const p = d.params;
+    if (p.type === 'rule' && p.runs[field].includes(from)) return { ...d, params: { ...p, runs: { ...p.runs, [field]: p.runs[field].map((v) => (v === from ? to : v)) } } };
+    if (p.type === 'tag' && field === 'workoutTypes' && p.workoutType === from) return { ...d, name: d.name === `Workout: ${from}` ? `Workout: ${to}` : d.name, params: { ...p, workoutType: to } };
+    return d;
+  });
+}

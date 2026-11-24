@@ -20,7 +20,7 @@ test.describe('Analysis workspace', () => {
     await dialog.getByText('More: start, how many per run, statistic').click();
     await dialog.getByRole('radio', { name: 'maximum' }).click();
     await expect(dialog.locator('.preview-count')).toContainText('12 efforts in 12 runs', { timeout: 30_000 });
-    await dialog.getByRole('button', { name: 'Save segment' }).click();
+    await dialog.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByRole('region', { name: 'Segments', exact: true }).getByRole('row', { name: /^Runs · since 2026-03-01 · maximum/ })).toBeVisible({ timeout: 30_000 });
     await page.goBack();
     await addFromPicker(page, 'Runs · since 2026-03-01 · maximum');
@@ -112,11 +112,26 @@ test.describe('Analysis workspace', () => {
     await page.locator('.sidebar').getByRole('link', { name: /Compare$/ }).click();
     await expect(page.getByText(/^Choose the data to analyse/)).toBeVisible();
     await expect(page.locator('.item-chip')).toHaveCount(0);
-    // Listed on the empty screen, opened with a click (the list in the head opens them too).
+    // Listed on the empty screen, each row opening its analysis, with Edit ("jak zapisze to chce open oraz edit");
+    // no list of them in the head as well ("nie ma chyba sensu").
+    await expect(page.getByRole('combobox', { name: 'Saved analyses' })).toHaveCount(0);
     const saved = page.getByRole('region', { name: 'Your saved analyses' });
-    await expect(saved.getByRole('button', { name: /^Spring check/ })).toHaveText(/^Spring check2 items · saved \w{3} \d+, 2026/);
-    await expect(saved.getByRole('button', { name: 'Delete Spring check' })).toBeVisible();
-    await saved.getByRole('button', { name: /^Spring check/ }).click();
+    await expect(saved.getByRole('listitem')).toHaveText([/^Spring check2 items · saved \w{3} \d+, 2026$/]);
+    await expect(saved.getByRole('button', { name: 'Delete Spring check' })).toHaveCount(0);
+    // Edit renames it in place; Esc leaves it.
+    await saved.getByRole('button', { name: 'Edit Spring check' }).click();
+    await page.getByRole('dialog', { name: 'Edit Spring check' }).getByRole('textbox', { name: 'Name' }).fill('Spring check 2');
+    await page.keyboard.press('Escape');
+    await saved.getByRole('button', { name: 'Edit Spring check' }).click();
+    await page.getByRole('dialog', { name: 'Edit Spring check' }).getByRole('textbox', { name: 'Name' }).fill('Spring review');
+    await page.getByRole('dialog', { name: 'Edit Spring check' }).getByRole('button', { name: 'Save' }).click();
+    await expect(saved.getByRole('listitem')).toHaveText([/^Spring review2 items/]);
+    await saved.getByRole('button', { name: 'Edit Spring review' }).click();
+    await page.getByRole('dialog', { name: 'Edit Spring review' }).getByRole('textbox', { name: 'Name' }).fill('Spring check');
+    await page.keyboard.press('Enter');
+    await expect(saved.getByRole('listitem')).toHaveText([/^Spring check2 items/]);
+    // Opened by a click on its row.
+    await saved.getByText('Spring check', { exact: true }).click();
     await expect(page.locator('.item-chip')).toHaveCount(2, { timeout: 30_000 });
     await expect(tabs.getByRole('tab', { name: 'Efforts' })).toHaveAttribute('aria-selected', 'true');
     // The curve tab, Speed first: one line per block, from its segments; time against pace, kept in the link.
@@ -184,10 +199,11 @@ test.describe('Analysis workspace', () => {
     // A best of the curve opens the run it comes from, the stretch selected.
     await clickPoint(curve);
 
-    // A saved analysis deleted from the list of the empty screen, once confirmed in the app.
+    // A saved analysis deleted from its editor in the list of the empty screen, once confirmed in the app.
     await page.locator('.sidebar').getByRole('link', { name: /Runs$/ }).click();
     await page.locator('.sidebar').getByRole('link', { name: /Compare$/ }).click();
-    await saved.getByRole('button', { name: 'Delete Spring check' }).click();
+    await saved.getByRole('button', { name: 'Edit Spring check' }).click();
+    await page.getByRole('dialog', { name: 'Edit Spring check' }).getByRole('button', { name: 'Delete' }).click();
     await page.getByRole('alertdialog', { name: 'Delete this analysis?' }).getByRole('button', { name: 'Delete' }).click();
     await expect(saved).toHaveCount(0);
   });

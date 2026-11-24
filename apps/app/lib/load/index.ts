@@ -7,4 +7,3 @@ export * from './banister';
 export * from './vo2';
 export * from './assumptions';
 export * from './efforts';
-export * from './todo';

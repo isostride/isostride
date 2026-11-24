@@ -1,4 +1,4 @@
-import { metricInfo, type RunFile, type Samples, type Series } from '@/lib/kernel';
+import { metricInfo, writtenBy, type RunFile, type Samples, type Series } from '@/lib/kernel';
 /**
  * The runner's data folder, seen through one small interface so that the same
  * import and storage code runs in the browser (File System Access API) and in
@@ -32,7 +32,9 @@ export async function readJson<T>(folder: DataFolder, path: string): Promise<T |
 }
 
 export async function writeJson(folder: DataFolder, path: string, value: unknown): Promise<void> {
-  await folder.writeText(path, JSON.stringify(value));
+  // Every object written says which version of the app wrote it (requirement "App version shown").
+  const stamped = value !== null && typeof value === 'object' && !Array.isArray(value) ? { ...value, app: writtenBy() } : value;
+  await folder.writeText(path, JSON.stringify(stamped));
 }
 
 /**

@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { useConfirm, useDataVersion } from '@/components';
+import { EditButton, useDataVersion } from '@/components';
 import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, asRule, fromRecommendation, readDefinitions, ruleName, ruleOf, shapeName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
 import { runInWorker, useOpenFolder } from '@/lib/client';
 import { date } from '@/lib/format';
@@ -91,8 +91,6 @@ function BlocksPage() {
   };
   const remove = (d: BlockDefinition) => { setEditing(null); return keep(`Deleting ${d.name}`, (all) => all.filter((x) => x.id !== d.id)); };
   /** Deleted from its row ("dodaj mozliwosc usuwania moich blokow"), once the runner confirms: its segments go with it; a suggestion it came from returns. */
-  const [confirmDialog, confirm] = useConfirm();
-  const ask = async (d: BlockDefinition) => { if (await confirm({ title: 'Delete this segment?', message: `“${d.name}” and its efforts go. If it came from a suggestion, the suggestion is offered again.`, confirm: 'Delete', danger: true })) await remove(d); };
   const dismiss = (r: Recommendation) => keep(`Dismissing ${r.name}`, (all) => [...all, fromRecommendation(r, 'rejected')]);
 
   const stretchOf = (d: BlockDefinition) => shapeName(asRule(d.params, d.tolerances).shape);
@@ -138,16 +136,15 @@ function BlocksPage() {
                   const t = tally.get(d.id);
                   const rest = restOf(d);
                   return (
-                    <tr key={d.id}>
-                      <td className="strong">{d.name}{rest && d.name !== rest && <span className="muted small block-rest">{rest}</span>}</td>
+                    // The row opens the segment in Compare ("przycisk open sa bezsensu ... poprostu klikam na wiersz"); its name the link for the keyboard.
+                    <tr key={d.id} className="row" onClick={() => router.push(`/compare?items=b:${d.id}:0`)}>
+                      <td className="strong"><Link className="row-link" href={`/compare?items=b:${d.id}:0`} aria-label={`${d.name} in Compare`} onClick={(e) => e.stopPropagation()}>{d.name}</Link>{rest && d.name !== rest && <span className="muted small block-rest">{rest}</span>}</td>
                       <td>{stretchOf(d)}</td>
                       <td className="num tnum">{t?.segments ?? 0}</td>
                       <td className="num tnum">{t?.runs ?? 0}</td>
                       <td>{t?.latest ? date(t.latest) : <span className="muted">–</span>}</td>
                       <td className="num block-actions">
-                        <button type="button" className="btn sm" disabled={!options} onClick={() => setEditing({ def: d, kept: true, title: 'Segment' })} aria-label={`Edit ${d.name}`}>Edit</button>
-                        <button type="button" className="btn sm danger" disabled={!!busy} onClick={() => ask(d)} aria-label={`Delete ${d.name}`}>Delete</button>
-                        <Link className="row-open" href={`/compare?items=b:${d.id}:0`} aria-label={`${d.name} in Compare`}>Compare →</Link>
+                        <EditButton name={d.name} disabled={!options} onClick={(e) => { e.stopPropagation(); setEditing({ def: d, kept: true, title: 'Segment' }); }} />
                       </td>
                     </tr>
                   );
@@ -177,7 +174,6 @@ function BlocksPage() {
         </section>
       )}
 
-      {confirmDialog}
       {editing && options && (
         <BlockSheet def={editing.def} kept={editing.kept} title={editing.title} options={options} handle={handle}
           onClose={() => setEditing(null)} onSave={(d) => save(d, editing.kept)} onDelete={remove} />

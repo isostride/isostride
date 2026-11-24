@@ -112,7 +112,7 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
 
       {!result ? (
         <div className="card empty">
-          {computing ? 'Reading the runs…' : 'No context field splits this item’s efforts yet.'} Register two pairs of shoes (or tag runs) in the Gear tab of <Link href="/settings?tab=gear">Settings</Link>; each effort carries the shoes of its run.
+          {computing ? 'Reading the runs…' : 'No context field splits this item’s efforts yet.'} Register two pairs of shoes (or tag runs) in the Gears tab of <Link href="/settings?tab=gears">Settings</Link>; each effort carries the shoes of its run.
         </div>
       ) : (
         <>

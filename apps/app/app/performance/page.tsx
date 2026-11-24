@@ -40,14 +40,20 @@ function PerformancePage() {
         ))}
       </div>
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-        {def.views.length > 0 && (
-          <div className="toolbar perf-views">
-            <div className="segmented" role="radiogroup" aria-label={`${def.name} views`}>
-              {def.views.map((v) => <button key={v.key} type="button" role="radio" aria-checked={view === v.key} className={view === v.key ? 'on' : ''} onClick={() => router.replace(performanceHref(tab, v.key))}>{v.name}</button>)}
-            </div>
-          </div>
-        )}
-        <Body tab={tab} view={view} />
+        {/* A group's views are a second level, not a second row of tabs ("w performance w roznych zakladkach
+            mam 2 poziomy tabow", answered "Views inside the card"): the group's card, a small switch of its
+            views at the left of its head ("chce to po lewej stronie"), its name not said again under the
+            tab that says it ("powtarzasz tytul"), the view under them. */}
+        {def.views.length > 0 ? (
+          <section className="perf-views-card" aria-label={def.name}>
+            <header className="perf-views-head">
+              <div className="segmented perf-views" role="radiogroup" aria-label={`${def.name} views`}>
+                {def.views.map((v) => <button key={v.key} type="button" role="radio" aria-checked={view === v.key} className={view === v.key ? 'on' : ''} onClick={() => router.replace(performanceHref(tab, v.key))}>{v.name}</button>)}
+              </div>
+            </header>
+            <Body tab={tab} view={view} />
+          </section>
+        ) : <Body tab={tab} view={view} />}
       </div>
     </div>
   );

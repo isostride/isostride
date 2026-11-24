@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { PATHS, readJson, type DataFolder } from '@/lib/fs';
 import type { RunsIndex } from '@/lib/kernel';
-import { formSeries, performanceReport, todoList, type LoadSummary, type ModelKey } from '@/lib/load';
+import { formSeries, performanceReport, type LoadSummary, type ModelKey } from '@/lib/load';
 import { readSettings, type SettingsFile } from '@/lib/settings';
 import { TrustChip } from '../performance/Assumptions';
 import { saysNow } from '../performance/OverviewTab';
@@ -17,12 +17,10 @@ const localDay = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).pad
  * trust, and what to do so the models work. The models' report is computed as Performance computes
  * it, once for every such tile (loaded only when the Dashboard has one).
  */
-export function ModelTiles({ folder, models, todo, render }: {
+export function ModelTiles({ folder, models, render }: {
   folder: DataFolder;
   /** the models whose tiles are shown */
   models: ModelKey[];
-  /** whether the To do tile is shown */
-  todo: boolean;
   /** places each tile's body in its frame, by the tile's id */
   render: (id: string, title: string, body: React.ReactNode) => React.ReactNode;
 }) {
@@ -51,15 +49,6 @@ export function ModelTiles({ folder, models, todo, render }: {
           </div>
         ));
       })}
-      {todo && render('todo', 'To do for the models', !report ? <p className="muted small">Reading the runs…</p> : (() => {
-        const open = todoList(report.models).filter((t) => !t.done).slice(0, 3);
-        return open.length ? (
-          <ol className="dash-todo">
-            {open.map((t) => <li key={t.key}><b>{t.title}</b><span className="muted small">{t.how}</span></li>)}
-            <li className="dash-more"><Link className="row-open" href="/performance?tab=todo">All of it →</Link></li>
-          </ol>
-        ) : <p className="muted small">Nothing to do: every check the runner can act on holds.</p>;
-      })())}
     </>
   );
 }

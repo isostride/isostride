@@ -1,6 +1,7 @@
 // The published API of components: other parts import only this file.
 export * from './CommandPalette';
 export * from './ConfirmDialog';
+export * from './EditDialog';
 export * from './InstancePanel';
 export * from './Logo';
 export * from './Shell';

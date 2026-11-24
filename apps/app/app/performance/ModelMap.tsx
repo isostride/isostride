@@ -89,7 +89,10 @@ export function ModelMap({ models, by: models_, says, byLoad }: { models: ModelR
   const [active, setActive] = useState<ModelKey | null>(null);
   const by = useMemo(() => new Map(models.map((m) => [m.key, m])), [models]);
   const { spot, rows } = useMemo(() => place(models), [models]);
-  const laneStart = rows.map((_, i) => 2 + rows.slice(0, i).reduce((s, n) => s + n, 0));
+  // Each lane's rows, a row of 8 px between two lanes so their bands do not touch ("taby load, response,
+  // aerobic nakladaja sie ... powinnien byc odstep"): the column titles, then the lanes.
+  const laneStart = rows.map((_, i) => 2 + rows.slice(0, i).reduce((s, n) => s + n, 0) + i);
+  const gridRows = ['auto', ...rows.flatMap((n, i) => [...Array<string>(n).fill('minmax(min-content, 1fr)'), ...(i < rows.length - 1 ? ['8px'] : [])])].join(' ');
 
   // On a wide screen the map takes the rest of the window's height (the runner's request: "chce aby
   // zajmowalo pelny ekran na wysokosc"); its rows share it, never less than their content needs.
@@ -182,7 +185,7 @@ export function ModelMap({ models, by: models_, says, byLoad }: { models: ModelR
         </div>
       </div>
       <div className="model-map-scroll">
-        <div ref={inner} className="model-map-grid">
+        <div ref={inner} className="model-map-grid" style={{ gridTemplateRows: gridRows }}>
           {COLUMNS.map((c, i) => <div key={c} className="map-col-title" style={{ gridColumn: 3 + i * 2, gridRow: 1 }}>{c}</div>)}
           {LANES.map((g, i) => (
             <div key={`band-${g}`} className={`map-lane lane-${g}`} style={{ gridColumn: '1 / -1', gridRow: `${laneStart[i]} / span ${rows[i]}` }} aria-hidden="true" />
