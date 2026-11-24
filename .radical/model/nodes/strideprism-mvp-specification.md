@@ -1137,3 +1137,7 @@ A: (model) Done (requirement "Phone reads from a copy", ADR "A copy in the brows
 Q: (model) Gdy E2E przejdą, wypchnąć jako PR?
 A: (użytkownik) tak
 A: (użytkownik) nie czekaj na pelne testy i sienie ... to bezsensu ... 3 serie testow sa robione
+A: (użytkownik) znowu jakis fail
+A: (model) The new end-to-end test of the copy failed once in CI on master (passed in the PR and 6 times of 6 here): a copy dropped was removed by the page leaving while the page opened again took the same copy, its folder going away under it, and every read through the copy failed. Fixed: a copy dropped or failing is left for a new one (another id) and pruned only when the app opens on the new one; a copy that fails never fails the app, the folder read alone for the session; the folder written before the copy.
+Q: (model) Wypchnąć jako PR?
+A: (użytkownik) tak

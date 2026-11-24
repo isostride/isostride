@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { BrowserFolder, copyIsCurrent, openCopy, openDataFolder, removeCopy, usesCopy, type DataFolder } from '@/lib/fs';
+import { BrowserFolder, copyIsCurrent, openCopy, openDataFolder, pruneCopies, usesCopy, type DataFolder } from '@/lib/fs';
 import { setCopyId } from './worker';
 import { getValue, setValue } from './handleStore';
 
@@ -25,38 +25,45 @@ const HANDLE_KEY = 'folderHandle';
 /** The id of the copy in the browser of the folder chosen (ADR "A copy in the browser on phones"). */
 const COPY_KEY = 'copyId';
 
+const newCopyId = () => `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
 /**
  * The copy of the folder on this device, when it keeps one (Android): the one of this folder, or a new
- * one when another folder was chosen (`fresh`), the copy before removed.
+ * one when another folder was chosen (`fresh`). A copy left is never removed while a page may use it:
+ * the copies but the one in use are pruned in the background when the app opens.
  */
 async function copyFor(fresh: boolean): Promise<string | null> {
   const kept = await getValue<string>(COPY_KEY).catch(() => undefined);
   if (!usesCopy()) {
-    if (kept) { await removeCopy(kept).catch(() => undefined); await setValue(COPY_KEY, null); }
+    if (kept) await setValue(COPY_KEY, null);
     return null;
   }
   if (kept && !fresh) return kept;
-  if (kept) await removeCopy(kept).catch(() => undefined);
-  const id = `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const id = newCopyId();
   await setValue(COPY_KEY, id);
   return id;
 }
 
+/** The next opening starts a new copy (this one failed, or holds a folder changed elsewhere). */
+const startNewCopy = () => { void setValue(COPY_KEY, newCopyId()).catch(() => undefined); };
+
 /**
  * The folder opened (through its copy on a phone), its data moved first from strideprism/ to .isostride/
- * when an earlier version left it there. A copy of a folder changed outside this browser (another data
- * stamp) is dropped in the background, and the app opened again on the folder.
+ * when an earlier version left it there. In the background: the copies of folders left are pruned, and
+ * a copy of a folder changed outside this browser (another data stamp) is left for a new one, the app
+ * opened again. A copy that fails is left the same way, the folder read alone meanwhile.
  */
 async function opened(handle: FileSystemDirectoryHandle, fresh = false): Promise<FolderState> {
   const copy = await copyFor(fresh);
   setCopyId(copy);
-  const folder = await openDataFolder(handle, copy);
+  const folder = await openDataFolder(handle, copy, startNewCopy);
   const { moveLegacyData } = await import('@/lib/legacy');
   await moveLegacyData(folder);
+  void pruneCopies(copy).catch(() => undefined);
   if (copy) {
     void (async () => {
       if (await copyIsCurrent(new BrowserFolder(handle), await openCopy(copy))) return;
-      await removeCopy(copy);
+      await setValue(COPY_KEY, newCopyId());
       location.reload();
     })().catch(() => undefined);
   }
