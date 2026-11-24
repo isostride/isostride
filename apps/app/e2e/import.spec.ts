@@ -253,19 +253,19 @@ test.describe('Phone reads from a copy', () => {
     const stamp = JSON.parse(await readText(page, '.isostride/derived/stamp.json'));
     await putText(page, '.isostride/derived/stamp.json', JSON.stringify({ ...stamp, stamp: 'elsewhere' }));
     await page.goto('/');
-    // Dropped and filled again from the folder: the copy no longer holds its own stamp (the folder's, once read).
-    const copyStamp = () => page.evaluate(async () => {
+    // Left for a new copy, the app opened again on the folder, the old copy pruned: no copy holds the old stamp.
+    const copyStamps = () => page.evaluate(async () => {
       const copies = await (await navigator.storage.getDirectory()).getDirectoryHandle('copies');
+      const out: (string | null)[] = [];
       for await (const [, h] of (copies as any).entries()) {
         try {
           const d = await (await (h as FileSystemDirectoryHandle).getDirectoryHandle('.isostride')).getDirectoryHandle('derived');
-          return JSON.parse(await (await (await d.getFileHandle('stamp.json')).getFile()).text()).stamp;
-        } catch { /* not filled yet */ }
+          out.push(JSON.parse(await (await (await d.getFileHandle('stamp.json')).getFile()).text()).stamp);
+        } catch { out.push(null); }
       }
-      return null;
+      return out;
     });
-    await expect(async () => expect([null, 'elsewhere']).toContain(await copyStamp())).toPass({ timeout: 30_000 });
-    expect(await copyStamp()).not.toBe(stamp.stamp);
+    await expect(async () => expect(await copyStamps()).not.toContain(stamp.stamp)).toPass({ timeout: 30_000 });
     await page.goto('/');
     await expect(page.locator('.run-tile')).toHaveCount(3, { timeout: 30_000 });
   });

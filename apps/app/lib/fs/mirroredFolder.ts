@@ -10,15 +10,31 @@ import { PATHS, readJson, type DataFolder, type FolderEntry } from './folder';
  * come from the folder: it stays the whole data, and the copy can be lost and filled again.
  */
 export class MirroredFolder implements DataFolder {
-  constructor(private readonly folder: DataFolder, private readonly copy: DataFolder) {}
+  /** The copy failed this session (removed under it, no room): the folder alone is read until the app opens again. */
+  private broken = false;
+
+  /**
+   * @param brokenCopy told once when the copy fails, so the next opening starts a new one. A failing
+   * copy never fails the app: the folder holds the whole data.
+   */
+  constructor(private readonly folder: DataFolder, private readonly copy: DataFolder, private readonly brokenCopy?: () => void) {}
 
   get name(): string {
     return this.folder.name;
   }
 
-  /** The app's own files are copied; the runner's FIT files are not. */
+  /** The app's own files are copied; the runner's FIT files are not; nothing once the copy failed. */
   private copied(path: string): boolean {
-    return path === PATHS.root || path.startsWith(`${PATHS.root}/`);
+    return !this.broken && (path === PATHS.root || path.startsWith(`${PATHS.root}/`));
+  }
+
+  /** Does to the copy what the folder had done; a failure leaves the copy for this session. */
+  private async toCopy(f: () => Promise<unknown>): Promise<void> {
+    try {
+      await f();
+    } catch {
+      if (!this.broken) { this.broken = true; this.brokenCopy?.(); }
+    }
   }
 
   list(path: string): Promise<FolderEntry[]> {
@@ -27,10 +43,11 @@ export class MirroredFolder implements DataFolder {
 
   async readText(path: string): Promise<string | null> {
     if (!this.copied(path)) return this.folder.readText(path);
-    const kept = await this.copy.readText(path);
+    let kept: string | null = null;
+    await this.toCopy(async () => { kept = await this.copy.readText(path); });
     if (kept !== null) return kept;
     const text = await this.folder.readText(path);
-    if (text !== null) await this.copy.writeText(path, text);
+    if (text !== null && this.copied(path)) await this.toCopy(() => this.copy.writeText(path, text));
     return text;
   }
 
@@ -39,22 +56,27 @@ export class MirroredFolder implements DataFolder {
     try {
       return await this.copy.readBytes(path);
     } catch {
+      // Not in the copy yet (or the copy failed): from the folder, then into the copy.
       const bytes = await this.folder.readBytes(path);
-      await this.copy.writeBytes(path, bytes);
+      if (this.copied(path)) await this.toCopy(() => this.copy.writeBytes(path, bytes));
       return bytes;
     }
   }
 
+  // The folder first, then the copy: a write the folder refused never reaches the copy alone.
   async writeText(path: string, text: string): Promise<void> {
-    await Promise.all([this.folder.writeText(path, text), ...(this.copied(path) ? [this.copy.writeText(path, text)] : [])]);
+    await this.folder.writeText(path, text);
+    if (this.copied(path)) await this.toCopy(() => this.copy.writeText(path, text));
   }
 
   async writeBytes(path: string, bytes: Uint8Array): Promise<void> {
-    await Promise.all([this.folder.writeBytes(path, bytes), ...(this.copied(path) ? [this.copy.writeBytes(path, bytes)] : [])]);
+    await this.folder.writeBytes(path, bytes);
+    if (this.copied(path)) await this.toCopy(() => this.copy.writeBytes(path, bytes));
   }
 
   async remove(path: string): Promise<void> {
-    await Promise.all([this.folder.remove(path), ...(this.copied(path) || path === '' ? [this.copy.remove(path)] : [])]);
+    await this.folder.remove(path);
+    if (this.copied(path) || (path === '' && !this.broken)) await this.toCopy(() => this.copy.remove(path));
   }
 }
 
@@ -82,6 +104,15 @@ export async function openCopy(id: string): Promise<BrowserFolder> {
   return new BrowserFolder(await copies.getDirectoryHandle(id, { create: true }), 'isostride-copy');
 }
 
+/** Removes the copies but the one in use: those of folders left, dropped or failed (removed here, never under a page using them). */
+export async function pruneCopies(keep: string | null): Promise<void> {
+  const root = await navigator.storage.getDirectory();
+  const copies = await root.getDirectoryHandle(COPIES, { create: true });
+  const names: string[] = [];
+  for await (const [name] of (copies as unknown as { entries(): AsyncIterable<[string, FileSystemHandle]> }).entries()) names.push(name);
+  for (const name of names) if (name !== keep) await copies.removeEntry(name, { recursive: true }).catch(() => undefined);
+}
+
 /** Removes the copy of a data folder no longer used (another folder chosen). */
 export async function removeCopy(id: string): Promise<void> {
   const root = await navigator.storage.getDirectory();
@@ -105,7 +136,14 @@ export function usesCopy(): boolean {
 }
 
 /** The folder the app reads: the runner's, with its copy when it keeps one. */
-export async function openDataFolder(handle: FileSystemDirectoryHandle, copyId: string | null): Promise<DataFolder> {
+export async function openDataFolder(handle: FileSystemDirectoryHandle, copyId: string | null, brokenCopy?: () => void): Promise<DataFolder> {
   const folder = new BrowserFolder(handle);
-  return copyId ? new MirroredFolder(folder, await openCopy(copyId)) : folder;
+  if (!copyId) return folder;
+  try {
+    return new MirroredFolder(folder, await openCopy(copyId), brokenCopy);
+  } catch {
+    // No copy to be had (no room, no storage): the folder alone.
+    brokenCopy?.();
+    return folder;
+  }
 }

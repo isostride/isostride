@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BrowserFolder, MirroredFolder, openCopy, openDataFolder, removeCopy, usesCopy } from '@/lib/fs';
+import { BrowserFolder, MirroredFolder, openCopy, openDataFolder, pruneCopies, removeCopy, usesCopy, type DataFolder } from '@/lib/fs';
 import { MemDir, dirHandle } from '../support/memFolder';
 
 /**
@@ -39,6 +39,38 @@ describe('Copy in the browser', () => {
     expect([...copies.entriesMap.keys()]).toEqual([]);
     // Removing a copy there is not is no failure.
     await removeCopy('c-2');
+    // The copies but the one in use pruned.
+    await openCopy('c-3');
+    await openCopy('c-4');
+    await pruneCopies('c-4');
+    expect([...copies.entriesMap.keys()]).toEqual(['c-4']);
+  });
+
+  it('A copy that fails leaves the folder read alone, and the next opening a new copy', async () => {
+    const runner = new BrowserFolder(dirHandle(new MemDir('runs')));
+    await runner.writeText('.isostride/derived/runs-index.json', '{"runs":[]}');
+    const failing: DataFolder = {
+      name: 'copy',
+      list: async () => [],
+      readBytes: async () => { throw new Error('gone'); },
+      readText: async () => { throw new Error('gone'); },
+      writeText: async () => { throw new Error('gone'); },
+      writeBytes: async () => { throw new Error('gone'); },
+      remove: async () => { throw new Error('gone'); },
+    };
+    let told = 0;
+    const app = new MirroredFolder(runner, failing, () => told++);
+    expect(await app.readText('.isostride/derived/runs-index.json')).toBe('{"runs":[]}');
+    await app.writeText('.isostride/user/gear.json', '[]');
+    expect(await runner.readText('.isostride/user/gear.json')).toBe('[]');
+    await app.remove('.isostride/user/gear.json');
+    expect(await runner.readText('.isostride/user/gear.json')).toBeNull();
+    expect(told).toBe(1);
+    // No copy to be had at all: the folder alone, told the same way.
+    vi.stubGlobal('navigator', { userAgent: 'Android', storage: { getDirectory: async () => { throw new Error('no storage'); } } });
+    let toldAgain = 0;
+    expect(await openDataFolder(dirHandle(new MemDir('runs')), 'c-1', () => toldAgain++)).toBeInstanceOf(BrowserFolder);
+    expect(toldAgain).toBe(1);
   });
 
   it('The folder read through its copy when the device keeps one', async () => {
