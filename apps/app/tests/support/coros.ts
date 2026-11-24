@@ -26,3 +26,6 @@ export const RECORDS = `Sport Records — 2026-11-01 to 2026-11-24 (3 records)
 export const linkText = (name: string) => `Activity FIT file download URL(s):
 1. ${name}
    https://s3eu.coros.com/fit/v2/123/${name}`;
+
+/** The list as COROS sends it through MCP: a quoted text, its line breaks written out as \\n (24 Nov 2026). */
+export const RECORDS_QUOTED = JSON.stringify(RECORDS);

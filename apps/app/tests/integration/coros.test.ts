@@ -6,7 +6,7 @@ import { PATHS, listFitFiles, readJson } from '@/lib/fs';
 import type { RunsIndex } from '@/lib/kernel';
 import { importFolder } from '@/lib/pipeline';
 import { FILES, TEST_DATA, makeDataFolder } from '../support/fixtures';
-import { RECORDS, linkText } from '../support/coros';
+import { RECORDS, RECORDS_QUOTED, linkText } from '../support/coros';
 
 /**
  * Runs fetched from COROS into the data folder (requirements "Runs fetched from COROS" and "COROS fetch
@@ -112,6 +112,37 @@ describe('Runs fetched from COROS', () => {
     } finally {
       globalThis.fetch = real;
     }
+  });
+
+  it('The list as COROS sends it read whole; a list read short is no complete fetch', async () => {
+    // Quoted, its line breaks written out: both runs fetched, not the first alone.
+    const folder = await makeDataFolder([]);
+    const coros = fakeCoros();
+    const quoted: CallTool = async (name, args) => (name === 'querySportRecords' ? { text: RECORDS_QUOTED, isError: false } : coros.call(name, args));
+    const report = await fetchCorosRuns(folder, quoted, { download: coros.download, today: TODAY });
+    expect(report).toEqual({ missing: 2, files: ['fit/r3_aa.fit', 'fit/r2_bb.fit'], stopped: null });
+    // A list that says 4 activities but gives 3: what was read is fetched, the day stays, the runner is told.
+    const other = await makeDataFolder([]);
+    const short: CallTool = async (name, args) => (name === 'querySportRecords' ? { text: RECORDS.replace('(3 records)', '(4 records)'), isError: false } : coros.call(name, args));
+    const shortReport = await fetchCorosRuns(other, short, { download: coros.download, today: TODAY });
+    expect(shortReport.files).toHaveLength(2);
+    expect(shortReport.stopped).toBe('IsoStride read 3 of the 4 activities COROS listed.');
+    expect((await readCorosRecord(other)).since).toBeUndefined();
+  });
+
+  it('A run the folder already holds not downloaded again', async () => {
+    // Exported by hand before: the same start (to 2 s) is the same run, kept as fetched without a file of the day's 50.
+    const folder = await makeDataFolder([FILES.pace4]);
+    await importFolder(folder);
+    const held = (await readJson<RunsIndex>(folder, PATHS.runsIndex))!.runs[0];
+    const start = Date.parse(held.startTime) / 1000;
+    const list = `Sport Records — 2026-11-01 to 2026-11-24 (1 records)\n\n1. Outdoor Run — 2026-11-09\n   Time Window: startTimestamp=${start + 1} | endTimestamp=${start + 2600}\n   LabelId: 300000000000000001 | SportType: 100`;
+    const asked: string[] = [];
+    const call: CallTool = async (name) => { asked.push(name); return { text: JSON.stringify(list), isError: false }; };
+    const report = await fetchCorosRuns(folder, call, { today: TODAY });
+    expect(report).toEqual({ missing: 0, files: [], stopped: null });
+    expect(asked).toEqual(['querySportRecords']);
+    expect((await readCorosRecord(folder)).fetched).toEqual({ '300000000000000001': held.file });
   });
 });
 

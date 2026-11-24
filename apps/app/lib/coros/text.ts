@@ -11,17 +11,47 @@ export interface CorosActivity {
   sportType: number;
   /** its day, yyyy-mm-dd, when the text gives it */
   date: string | null;
+  /** its start, seconds since 1970, when the text gives it */
+  start: number | null;
 }
 
 /** The activities in querySportRecords' answer ("1. Outdoor Run — 2026-11-23 … LabelId: 4819… | SportType: 100"). */
 export function readSportRecords(text: string): CorosActivity[] {
+  // Each activity by its LabelId line, its day the last one written before it: whatever the line
+  // breaks (COROS sends this list as a quoted text, its breaks written out as \n: the runner's
+  // "pobral mi tylko 1 plik" when the list was read line by line).
+  const plain = unquoted(text);
   const out: CorosActivity[] = [];
-  for (const block of text.split(/\n(?=\s*\d+\.\s)/)) {
-    const id = block.match(/LabelId:\s*(\d+)\s*\|\s*SportType:\s*(\d+)/i);
-    if (!id) continue;
-    out.push({ labelId: id[1], sportType: Number(id[2]), date: block.match(/\b(\d{4}-\d{2}-\d{2})\b/)?.[1] ?? null });
+  let from = 0;
+  for (const m of plain.matchAll(/LabelId:\s*(\d+)\s*\|\s*SportType:\s*(\d+)/gi)) {
+    const days = [...plain.slice(from, m.index).matchAll(/\b(\d{4}-\d{2}-\d{2})\b/g)];
+    // The first day after the previous activity is this one's (its title line); the list's own range is before the first.
+    const day = out.length ? days[0]?.[1] : days.at(-1)?.[1];
+    const start = plain.slice(from, m.index).match(/startTimestamp=(\d+)/)?.[1];
+    out.push({ labelId: m[1], sportType: Number(m[2]), date: day ?? null, start: start ? Number(start) : null });
+    from = m.index! + m[0].length;
   }
   return out;
+}
+
+/** How many activities the list says it holds ("(26 records)"), or null when it does not say. */
+export function recordsCounted(text: string): number | null {
+  const n = unquoted(text).match(/\((\d+) records?\)/i);
+  return n ? Number(n[1]) : null;
+}
+
+/** A text sent as a quoted JSON string ("Sport Records …\n…"), as it reads; another as it is. */
+function unquoted(text: string): string {
+  const t = text.trim();
+  if (t.startsWith('"') && t.endsWith('"')) {
+    try {
+      const s = JSON.parse(t);
+      if (typeof s === 'string') return s;
+    } catch {
+      // Not a JSON string after all: read as it is.
+    }
+  }
+  return text;
 }
 
 /** A FIT file of COROS: its name and where to download it. */

@@ -855,7 +855,9 @@
       "tests/unit/site.test.ts › Site in plain statements › Site says the same in Polish"
     ] },
     { "element": "5e606384-c6f9-4d1e-9338-340d7a5d79e0", "name": "COROS runs fetched once", "tests": [
-      "tests/integration/coros.test.ts › Runs fetched from COROS › The runs not fetched before written into the folder and imported, never asked twice"
+      "tests/integration/coros.test.ts › Runs fetched from COROS › The runs not fetched before written into the folder and imported, never asked twice",
+      "tests/integration/coros.test.ts › Runs fetched from COROS › The list as COROS sends it read whole; a list read short is no complete fetch",
+      "tests/integration/coros.test.ts › Runs fetched from COROS › A run the folder already holds not downloaded again"
     ] },
     { "element": "e5dd9207-a3cb-45af-bf6c-aff883a45596", "name": "COROS limit stops the fetch", "tests": [
       "tests/integration/coros.test.ts › Runs fetched from COROS › A fetch stopped by COROS keeps what it fetched and fetches the rest next time",

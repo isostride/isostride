@@ -1,6 +1,7 @@
 import { PATHS, fitDirectory, joinPath, readJson, writeJson, type DataFolder } from '@/lib/fs';
+import type { RunsIndex } from '@/lib/kernel';
 import type { CallTool } from './mcp';
-import { isFitFile, readFitLinks, readSportRecords } from './text';
+import { isFitFile, readFitLinks, readSportRecords, recordsCounted } from './text';
 
 /**
  * The runs of the runner's COROS account fetched into the data folder (requirements "Runs fetched from
@@ -76,6 +77,20 @@ export async function fetchCorosRuns(folder: DataFolder, call: CallTool, opts: F
   const list = await call('querySportRecords', { startDate: compact(from), endDate: compact(today), sportTypeCodes: RUN_SPORT_TYPES, limit: LIST_LIMIT });
   if (list.isError) return { ...report, stopped: list.text };
   const activities = readSportRecords(list.text);
+  // A list read short (its count says more activities than were read) is no complete fetch: what was
+  // read is fetched, the day does not move, and the runner is told.
+  const counted = recordsCounted(list.text);
+  // i18n-ignore: the detail of a stop, shown as it is
+  const readShort = counted !== null && counted !== activities.length ? `IsoStride read ${activities.length} of the ${counted} activities COROS listed.` : null;
+  // A run the folder already holds (exported by hand: the same start, to 2 s) is not downloaded again:
+  // it would be a duplicate and spend a file of the day's 50.
+  const index = await readJson<RunsIndex>(folder, PATHS.runsIndex);
+  const held = (index?.runs ?? []).map((r) => ({ start: Date.parse(r.startTime) / 1000, file: r.file }));
+  for (const a of activities) {
+    if (record.fetched[a.labelId] || a.start === null) continue;
+    const same = held.find((h) => Math.abs(h.start - a.start!) <= 2);
+    if (same) record.fetched[a.labelId] = same.file;
+  }
   const missing = activities.filter((a) => RUN_SPORT_TYPES.includes(a.sportType) && !record.fetched[a.labelId]);
   report.missing = missing.length;
   const dir = await fitDirectory(folder);
@@ -112,6 +127,7 @@ export async function fetchCorosRuns(folder: DataFolder, call: CallTool, opts: F
   }
 
   // The day moves on only when nothing of the days asked is left behind; a full list may hide more.
+  if (readShort && !report.stopped) report.stopped = readShort;
   if (!report.stopped && !leftOver && activities.length < LIST_LIMIT) {
     record.since = today;
     await writeJson(folder, PATHS.coros, record);

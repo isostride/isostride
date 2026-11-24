@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { RECORDS, linkText } from '../support/coros';
-import { CorosError, CorosMcp, authorizeUrl, discoverCoros, exchangeCode, pkcePair, registerClient, revokeTokens, isFitFile, readFitLinks, readRpc, readSportRecords, type CorosConnection, type CorosServer } from '@/lib/coros';
+import { RECORDS, RECORDS_QUOTED, linkText } from '../support/coros';
+import { CorosError, recordsCounted, CorosMcp, authorizeUrl, discoverCoros, exchangeCode, pkcePair, registerClient, revokeTokens, isFitFile, readFitLinks, readRpc, readSportRecords, type CorosConnection, type CorosServer } from '@/lib/coros';
 
 /**
  * COROS through its MCP server (ADR "COROS through its MCP server"): the text of its tools read as
@@ -23,10 +23,14 @@ const json = (body: unknown, status = 200, headers: Record<string, string> = {})
 describe('COROS through its MCP server', () => {
   it('Activities and FIT links read out of the tools’ text', () => {
     expect(readSportRecords(RECORDS)).toEqual([
-      { labelId: '100000000000000003', sportType: 100, date: '2026-11-23' },
-      { labelId: '100000000000000002', sportType: 102, date: '2026-11-21' },
-      { labelId: '100000000000000001', sportType: 900, date: '2026-11-20' },
+      { labelId: '100000000000000003', sportType: 100, date: '2026-11-23', start: 1795463786 },
+      { labelId: '100000000000000002', sportType: 102, date: '2026-11-21', start: null },
+      { labelId: '100000000000000001', sportType: 900, date: '2026-11-20', start: null },
     ]);
+    // As COROS sends it: quoted, its line breaks written out ("pobral mi tylko 1 plik": only the first was read).
+    expect(readSportRecords(RECORDS_QUOTED)).toEqual(readSportRecords(RECORDS));
+    expect(recordsCounted(RECORDS_QUOTED)).toBe(3);
+    expect(recordsCounted('LabelId: 1 | SportType: 100')).toBeNull();
     expect(readFitLinks(linkText('200000000000000001_ab12cd34ef.fit'))).toEqual([
       { name: '200000000000000001_ab12cd34ef.fit', url: 'https://s3eu.coros.com/fit/v2/123/200000000000000001_ab12cd34ef.fit' },
     ]);

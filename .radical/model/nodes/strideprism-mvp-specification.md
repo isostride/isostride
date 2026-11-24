@@ -1085,3 +1085,10 @@ A: (model) Done (found by the check): the site keeps its plain statement "There 
 A: (użytkownik) no to nie uruchamiaj raz jeszcze ...
 A: (użytkownik) zobavz na git
 A: (model) Done (found by CI on PR #16): the links to the runs added, in a notice, were under 24 px high (WCAG 2.2 target size); each is now at least 24 px. The notice was on screen while CI's accessibility test scanned, and had gone by the time it scanned locally. (no requirement)
+A: (użytkownik) juz sam zmergowalem
+Q: (użytkownik) ze stryda pobral mi tylko 1 plik
+A: (model) The folder's record (.isostride/user/coros.json) holds one run fetched and the day of a full fetch: COROS lists the 26 runs of the last 30 days, but sends the list as a quoted text whose line breaks are written out (\n), and the fetch read the runs line by line, so it found the first only and took the fetch for complete. Fixed: the list read whatever its quoting and line breaks; a list whose count ("26 records") differs from the runs read is not taken for complete and the fetch says so.
+A: (model) Also: a run the folder already holds (the same start, to 2 s) is kept as fetched without downloading it, so a folder exported by hand does not get duplicates nor spend the day's 50 files on them. The folder's record says the last full fetch was 24 Nov; with it as it is the next fetch would look from 23 Nov only.
+Q: (model) Czy usunąć tę datę z Twojego folderu? Czy wypchnąć poprawkę (commit, push, PR)?
+A: (użytkownik) tak
+A: (model) Done: "since" taken out of the folder's coros.json (the run fetched kept), so the next fetch looks at the whole 30 days and downloads only the runs the folder does not hold.
