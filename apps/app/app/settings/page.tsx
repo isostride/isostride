@@ -10,6 +10,8 @@ import { AboutCard, ChartsCard, DisplayCard, LanguageCard } from './DeviceCards'
 import { METRICS_CHANGED, useMetrics, eager } from '@/components';
 import { metricInfo } from '@/lib/kernel';
 
+/** The folder, its import and the integrations: the first tab, loaded with it. */
+const DataTab = eager(() => import('./DataTab').then((m) => m.DataTab));
 /** The thresholds of the models' checks: loaded with their tab. */
 const ModelsCard = eager(() => import('./ModelsCard').then((m) => m.ModelsCard));
 import { DEFAULT_ZONES, zoneMetricsOf, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneRanges, zoneTint, zonesFromMaxHr, type ZoneMetric } from '@/lib/settings';
@@ -40,17 +42,20 @@ function ZoneChips({ m, boundaries }: { m: ZoneMetric; boundaries: number[] }) {
 }
 
 /**
- * The Settings tabs (requirement "Settings in tabs"), kept in the link (tab=metrics, gears, tags, language,
- * display, about; Models first: "w settings - tab models daj jako pierwsze"; About a tab of its own:
+ * The Settings tabs (requirement "Settings in tabs"), kept in the link (tab=models, metrics, gears, tags,
+ * language, display, about; Data first, the folder's screen once under the logo: "menu data pod logiem
+ * jest bezsensu .. przesun je cale pod settings ... jako pierwzza zakladka"; About a tab of its own:
  * "about to osobny tab"): the zones inside Metrics, as zones are of a metric; the charts inside
  * Display ("metrics (w srodku zones) ... gears ... tags ... displays (w srodku charts) i models").
  */
-type Tab = 'metrics' | 'gears' | 'tags' | 'display' | 'language' | 'models' | 'about';
-const TABS: [Tab, string][] = [['models', 'Models'], ['metrics', 'Metrics'], ['gears', 'Gears'], ['tags', 'Tags'], ['display', 'Look & feel'], ['language', 'Language & region'], ['about', 'About']];
+type Tab = 'data' | 'metrics' | 'gears' | 'tags' | 'display' | 'language' | 'models' | 'about';
+const TABS: [Tab, string][] = [['data', 'Data'], ['models', 'Models'], ['metrics', 'Metrics'], ['gears', 'Gears'], ['tags', 'Tags'], ['display', 'Look & feel'], ['language', 'Language & region'], ['about', 'About']];
 /** A tab's name in the language in use (TABS keeps the English as plain text: the test of the links reads it there). */
-const tabName = (tab: Tab): string => ({ models: t('Models'), metrics: t('Metrics'), gears: t('Gears'), tags: t('Tags'), display: t('Look & feel'), language: t('Language & region'), about: t('About') })[tab];
+const tabName = (tab: Tab): string => ({ data: t('Data'), models: t('Models'), metrics: t('Metrics'), gears: t('Gears'), tags: t('Tags'), display: t('Look & feel'), language: t('Language & region'), about: t('About') })[tab];
 /** The tabs of links made before (tab=zones, gear, charts): the tab that holds them now. */
 const MOVED: Record<string, Tab> = { zones: 'metrics', gear: 'gears', charts: 'display' };
+/** The tab of /settings with no tab named: the first. */
+const FIRST: Tab = TABS[0][0];
 
 export default function SettingsPageWrapper() {
   // Drawn again in the language chosen in Display, at once, the tab shown kept (requirement "Language chosen").
@@ -58,18 +63,18 @@ export default function SettingsPageWrapper() {
   return <Suspense fallback={<div className="page wide-page"><div className="page-head"><h1>{t('Settings')}</h1></div></div>}><SettingsPage /></Suspense>;
 }
 
-/** Settings: the zones of the metrics, the gear, the tags and the display, one tab at a time. */
+/** Settings: the data folder, the models, the zones of the metrics, the gear, the tags and the display, one tab at a time. */
 function SettingsPage() {
   const params = useSearchParams();
   const router = useRouter();
   const tabParam = params.get('tab');
   const asked = tabParam ? MOVED[tabParam] ?? tabParam : null;
-  const tab: Tab = TABS.some(([key]) => key === asked) ? (asked as Tab) : 'models';
+  const tab: Tab = TABS.some(([key]) => key === asked) ? (asked as Tab) : FIRST;
   const [performanceDrawn, setPerformanceDrawn] = useState(false);
   const onPerformanceDrawn = useCallback(() => setPerformanceDrawn(true), []);
   const setTab = (next: Tab) => {
     const q = new URLSearchParams(params.toString());
-    if (next === 'models') q.delete('tab'); else q.set('tab', next);
+    if (next === FIRST) q.delete('tab'); else q.set('tab', next);
     router.replace(`/settings${q.toString() ? `?${q.toString()}` : ''}`);
   };
   return (
@@ -88,6 +93,7 @@ function SettingsPage() {
         ))}
       </div>
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+        {tab === 'data' && <DataTab />}
         {tab === 'metrics' && <MetricsCard />}
         {tab === 'gears' && <GearTags part="gear" />}
         {tab === 'tags' && <GearTags part="tags" />}

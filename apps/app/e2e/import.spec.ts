@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { fakeFolderPicker, fitFiles, importAll, openWithFolder, putFitFiles, putText, readText, recordMeasure } from './support';
+import { fakeFolderPicker, fitFiles, importAll, openData, openWithFolder, putFitFiles, putText, readText, recordMeasure } from './support';
 
 /** The serious or critical WCAG 2.2 AA violations axe finds on the page. */
 const violations = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze()).violations
@@ -94,7 +94,7 @@ test.describe('Reopen same folder', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Choose data folder' })).toHaveCount(0);
-    await expect(page.locator('.sidebar .brand')).toHaveAttribute('href', '/data');
+    await expect(page.locator('.sidebar .brand')).toHaveAttribute('aria-haspopup', 'dialog');
     // A folder set up before the wizard came (its settings saved, the wizard never gone through): it opens once there too.
     await putText(page, '.isostride/user/settings.json', JSON.stringify({ schemaVersion: 1, performance: { load: 'rtss', restHr: 55 } }));
     await page.evaluate(async () => {
@@ -149,13 +149,13 @@ test.describe('Import FIT files', () => {
 test.describe('Non-blocking processing', () => {
   test('UI responsive during import', async ({ page }) => {
     await openWithFolder(page, await fitFiles(40));
-    // The folder imports by itself; the Data screen shows its progress.
-    await page.locator('.sidebar .brand').click();
+    // The folder imports by itself; the Data tab of Settings shows its progress.
+    await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
     await expect(page.getByText(/^Importing · \d+ \/ /)).toBeVisible();
     // While the worker imports, another screen opens at once.
     const t0 = Date.now();
-    await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
-    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+    await page.locator('.sidebar').getByRole('link', { name: /Performance$/ }).click();
+    await expect(page.getByRole('heading', { name: 'Performance', exact: true })).toBeVisible();
     expect(Date.now() - t0).toBeLessThan(2000);
     // The import finished in the background.
     await expect(async () => {
@@ -216,7 +216,7 @@ test.describe('Recompute on mismatch', () => {
     await page.reload();
     const notice = page.locator('.toast-region .toast');
     await expect(notice).toContainText('Rebuilt 3 runs for this version of the app.', { timeout: 60_000 });
-    await page.locator('.sidebar .brand').click();
+    await openData(page);
     await expect(page.locator('.banner.warn')).toHaveCount(0);
     expect(JSON.parse(await readText(page, '.isostride/derived/manifest.json')).algorithmVersion).toBeGreaterThan(0);
   });

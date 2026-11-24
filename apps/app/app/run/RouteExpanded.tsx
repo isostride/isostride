@@ -149,8 +149,8 @@ export function RouteExpanded({ lat, lon, t: times, start, step, metrics, initia
               </div>
               <p className="muted small">
                 {byZones
-                  ? <>{t('Your zones of {metric} in', { metric: metric.title.toLowerCase() })} <Link href="/settings">{t('Settings')}</Link>{t(', Z1 green; the share of the run in each beside it.')}</>
-                  : <>{metric.invert ? t('Green slow, red fast') : t('Green low, red high')}{t('; each colour holds about a sixth of the run, the share beside its range.')}{!zones && <> {t('{metric} has no zones in', { metric: metric.title })} <Link href="/settings">{t('Settings')}</Link>.</>}</>}
+                  ? <>{t('Your zones of {metric} in', { metric: metric.title.toLowerCase() })} <Link href="/settings?tab=metrics">{t('Settings')}</Link>{t(', Z1 green; the share of the run in each beside it.')}</>
+                  : <>{metric.invert ? t('Green slow, red fast') : t('Green low, red high')}{t('; each colour holds about a sixth of the run, the share beside its range.')}{!zones && <> {t('{metric} has no zones in', { metric: metric.title })} <Link href="/settings?tab=metrics">{t('Settings')}</Link>.</>}</>}
               </p>
             </>
           ) : <p className="muted small">{t('This run has no values of it.')}</p>}

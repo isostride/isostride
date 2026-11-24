@@ -1350,12 +1350,12 @@ a.crumbs:hover b { color: var(--text); }
 /* The name, IsoStride: "stride" in the accent (the light accent on the rail), readable at 4.5:1. */
 .brand-name { letter-spacing: -0.03em; }
 /* The app's version under its name (requirement "App version shown"). */
-.brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.brand-text { display: flex; align-items: baseline; gap: 6px; line-height: 1.15; min-width: 0; }
 .brand-version { font: 500 11px var(--mono); color: var(--text-2); letter-spacing: 0; }
 .brand-dot { font-style: normal; color: var(--accent); }
 @media (min-width: 821px) { .sidebar .brand-dot { color: var(--rail-accent); } }
 /* On the brand's highlight (hovered, or the Data folder open) "Prism" takes the text's colour: the accent on it is too faint to read. */
-.brand:hover .brand-dot, .brand.active .brand-dot { color: inherit; }
+.brand:hover .brand-dot, .brand.active .brand-dot, .brand[aria-expanded='true'] .brand-dot { color: inherit; }
 .welcome h1 { letter-spacing: -0.04em; }
 
 /* The run's map made large: the route over the window's height, coloured by one metric chosen beside it. */
@@ -1619,6 +1619,15 @@ a.crumbs:hover b { color: var(--text); }
 /* The one editor of the app, a dialog in the middle of the screen (ADR "One way to add, edit and delete";
    "popracuj nad wygladem tego popupa .. wyglada biednie"): a head saying what is edited, the fields, a foot
    with Delete apart from Cancel and Save; under a confirmation, which stands over it. */
+/* The splash the logo opens: the mark, the name, what the app is, its version. */
+.splash { display: flex; flex-direction: column; align-items: center; gap: 10px; width: min(420px, 100%); padding: 32px 28px 24px; text-align: center; background: linear-gradient(170deg, color-mix(in srgb, var(--accent) 12%, var(--surface)), var(--surface) 55%); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-float); animation: edit-in 0.18s var(--ease); }
+.splash .brand-mark { border-radius: 20px; }
+.splash-name { margin: 4px 0 0; font-size: 28px; font-weight: 700; }
+.splash-tagline { margin: 0; font-weight: 600; color: var(--text-2); }
+.splash-text { margin: 0; line-height: 1.55; color: var(--text-2); }
+.splash-version { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; padding: 10px 14px; border-radius: 10px; background: var(--surface-2); width: 100%; }
+.splash-version code { font-size: 12px; }
+.splash-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; }
 .edit-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: var(--scrim-strong); backdrop-filter: blur(6px) saturate(1.2); animation: fade-in 0.14s ease-out; }
 .edit-dialog { display: flex; flex-direction: column; width: min(520px, 100%); max-height: calc(100dvh - 32px); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-float), 0 0 0 1px color-mix(in srgb, var(--surface) 60%, transparent) inset; outline: none; overflow: hidden; animation: edit-in 0.18s var(--ease); }
 .edit-dialog.wide { width: min(880px, 100%); }

@@ -107,7 +107,7 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
         { group: 'Screens', glyph: 'analysis', label: msg('Compare'), hint: msg('Trends, efforts, A/B and curves'), run: go('/compare') },
         { group: 'Screens', glyph: 'performance', label: msg('Performance'), hint: msg('The map of the models'), run: go('/performance') },
         { group: 'Screens', glyph: 'settings', label: msg('Settings'), hint: msg('Zones, gear, tags, display'), run: go('/settings') },
-        { group: 'Screens', glyph: 'import', label: msg('Data'), hint: msg('The folder, recompute, another folder, integrations'), run: go('/data') },
+        { group: 'Screens', glyph: 'import', label: msg('Data'), hint: msg('The folder, recompute, another folder, integrations'), run: go('/settings') },
         { group: 'Screens', glyph: 'ab', label: msg('A/B comparison'), hint: msg('Compare'), run: go('/compare?tab=ab') },
         { group: 'Screens', glyph: 'model', label: msg('Load model'), hint: msg('Settings › Models'), run: go('/settings?tab=models') },
         { group: 'Screens', glyph: 'settings', label: msg('Setup wizard'), hint: msg('Settings'), run: go('/setup') },

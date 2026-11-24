@@ -18,6 +18,8 @@ const AutoImport = eager(() => import('./AutoImport').then((m) => m.AutoImport))
 const SidebarFacts = eager(() => import('./SidebarFacts').then((m) => m.SidebarFacts));
 /** Whether the setup wizard opens by itself: looked at after the screen shows, so no screen's script grows. */
 const SetupGate = eager(() => import('./SetupGate').then((m) => m.SetupGate));
+/** The splash the logo opens: loaded when it is opened, so no screen's script grows. */
+const AboutSplash = eager(() => import('./AboutSplash').then((m) => m.AboutSplash));
 
 /**
  * Back and forward through the screens seen in this tab (the runner's request: "dodaj back/forward
@@ -100,8 +102,10 @@ function ScreenTrail() {
  * (logo, search) and a bottom tab bar of the screens (the author's request of 21 Nov 2026: "layout
  * ma byc responsywny ... mobile devices"). The theme and the map background are set in Settings
  * ("ustawienia schema - light/dark i online/offline przenies do settings"); the shell applies the theme.
- * The logo and the folder's name lead to the Data folder screen (import, recompute, another folder:
- * "pod logiem nie chce popup ale normalna strone"); back and forward sit beside the logo.
+ * The logo opens a splash, the app and its version ("klikniecie na logo pokazuje popup z logiem, krotka
+ * informacje o aplikacji i numerem wersji ... taki splash"); the folder, its import and its integrations
+ * are the first tab of Settings ("menu data pod logiem jest bezsensu .. przesun je cale pod settings");
+ * back and forward sit beside the logo.
  */
 export function Shell({ children }: { children: ReactNode }) {
   // The app in its language from the first paint (requirement "Language chosen"); the menu follows a change.
@@ -113,12 +117,14 @@ export function Shell({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useTheme();
   /** a line of facts under each screen of the menu, by its link */
   const [facts, setFacts] = useState<Record<string, string>>({});
+  const [splash, setSplash] = useState(false);
+  const closeSplash = useCallback(() => setSplash(false), []);
 
   const cycleTheme = useCallback(() => setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light'), [theme, setTheme]);
 
-  // COROS's sign-in comes back to a window of its own (app/coros), and the old address of the Data
-  // screen (app/folder) only leads on to it: neither needs the folder.
-  if (path.startsWith('/coros') || path.startsWith('/folder')) return <>{children}</>;
+  // COROS's sign-in comes back to a window of its own (app/coros), and the old addresses of the Data
+  // screen (app/folder, app/data) only lead on to Settings: none needs the folder.
+  if (path.startsWith('/coros') || path.startsWith('/folder') || path.startsWith('/data')) return <>{children}</>;
   if (state.status !== 'open') return <Welcome />;
 
   const active = (href: string) => (href === '/' ? path === '/' || path.startsWith('/run') : path.startsWith(href));
@@ -127,13 +133,13 @@ export function Shell({ children }: { children: ReactNode }) {
       <Suspense fallback={null}><ScreenTrail /></Suspense>
       <aside className="sidebar">
         <div className="brand-row">
-          <Link className={`brand ${path.startsWith('/data') ? 'active' : ''}`} href="/data" title={t('Data: import, recompute, change')} aria-current={path.startsWith('/data') ? 'page' : undefined}>
+          <button type="button" className="brand" aria-haspopup="dialog" aria-expanded={splash} title={t('About IsoStride')} onClick={() => setSplash(true)}>
             <Logo size={36} />
             <span className="label brand-text">
               <span className="brand-name">Iso<i className="brand-dot">Stride</i></span>
               <span className="brand-version" title={APP_COMMIT ? t('Version {version}, commit {commit}', { version: APP_VERSION, commit: APP_COMMIT }) : t('Version {version}', { version: APP_VERSION })}>{versionLabel(APP_VERSION)}</span>
             </span>
-          </Link>
+          </button>
           <HistoryNav />
         </div>
         <button className="search" onClick={() => window.dispatchEvent(new Event('open-palette'))} title={t('Search runs, segments, screens (⌘K)')}>
@@ -159,6 +165,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <SetupGate folder={state.folder} />
       <AutoImport />
       <CommandPalette onTheme={cycleTheme} />
+      {splash && <AboutSplash onClose={closeSplash} />}
     </div>
   );
 }

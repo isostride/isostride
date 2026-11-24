@@ -3,7 +3,7 @@
 import { Diagnostics } from './Diagnostics';
 import { useChartSettings, useLanguage, useMapTiles, useNarrowMenu, useTheme, type ChartSettings, type Theme } from '@/lib/client';
 import { LOCALES, t } from '@/lib/i18n';
-import { APP_BUILT, APP_COMMIT, APP_VERSION, versionLabel } from '@/lib/kernel';
+import { APP_BUILT, APP_COMMIT, APP_VERSION, REPO_URL, releaseNotesUrl, versionLabel } from '@/lib/kernel';
 
 /** A setting of a choice among a few: its name and what it does on the left, the choice on the right. */
 function Choice<T extends string | boolean>({ name, hint, label, value, options, onChange }: { name: string; hint: string; label: string; value: T; options: [T, string][]; onChange: (v: T) => void }) {
@@ -115,14 +115,6 @@ export function DisplayCard() {
 }
 
 
-/** The repository of IsoStride, its commits and the release notes of its versions. */
-const REPO = 'https://github.com/isostride/isostride';
-/**
- * The release notes of a version, on the GitHub release the deploy makes for it ("link do changelog ... a nie
- * powinien byc do release note ?"); a build without a version, all the releases.
- */
-export const releaseNotesUrl = (version: string): string => (version === '0.0.0' ? `${REPO}/releases` : `${REPO}/releases/tag/v${versionLabel(version)}`);
-
 /**
  * About the app (requirement "App version shown"): its version, the commit and the date of its build,
  * and the release notes of its version.
@@ -136,7 +128,7 @@ export function AboutCard() {
           <div className="display-name">{t('Version {version}', { version: versionLabel(APP_VERSION) })}</div>
           <div className="muted small">
             {APP_VERSION}
-            {APP_COMMIT && <> · {t('commit')} <a href={`${REPO}/commit/${APP_COMMIT}`}><code>{APP_COMMIT}</code></a></>}
+            {APP_COMMIT && <> · {t('commit')} <a href={`${REPO_URL}/commit/${APP_COMMIT}`}><code>{APP_COMMIT}</code></a></>}
             {APP_BUILT && <> · {t('built {date}', { date: APP_BUILT })}</>}
           </div>
         </div>

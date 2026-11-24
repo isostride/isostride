@@ -29,7 +29,7 @@ test.describe('Performance model', () => {
     await expect(page.locator('.sidebar .brand-version')).toHaveText(shown);
     // Settings in tabs, zones first; gear and tags are tabs of it, not a screen of the navigation.
     await nav(page, 'Settings');
-    await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Models', 'Metrics', 'Gears', 'Tags', 'Look & feel', 'Language & region', 'About']);
+    await expect(page.getByRole('tablist', { name: 'Settings sections' }).getByRole('tab')).toHaveText(['Data', 'Models', 'Metrics', 'Gears', 'Tags', 'Look & feel', 'Language & region', 'About']);
     await page.getByRole('tab', { name: 'About' }).click();
     const about = page.getByRole('region', { name: 'About IsoStride' });
     await expect(about).toContainText(`Version ${shown}`);
@@ -144,8 +144,8 @@ test.describe('Performance model', () => {
     await page.goto('/settings?tab=zones');
     await expect(page.getByRole('tab', { name: 'Metrics' })).toHaveAttribute('aria-selected', 'true');
     await page.getByRole('tab', { name: 'Tags' }).click();
-    // Models first: its tab is the screen's own address.
-    await page.getByRole('tab', { name: 'Models' }).click();
+    // Data first: its tab is the screen's own address.
+    await page.getByRole('tab', { name: 'Data', exact: true }).click();
     await expect(page).toHaveURL(/\/settings$/);
 
     // Performance is laid out by the evidence its models rest on: an overview, a tab per group, the settings.

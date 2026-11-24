@@ -113,11 +113,11 @@ function RunsPage() {
     });
   }, [load]);
 
-  // An old link with ?action=import opens the Data folder screen, which imports.
+  // An old link with ?action=import opens the Data tab of Settings (the import runs by itself).
   useEffect(() => {
     if (params.get('action') === 'import' && !actionDone.current) {
       actionDone.current = true;
-      router.replace('/data?action=import');
+      router.replace('/settings');
     }
   });
 
@@ -169,7 +169,7 @@ function RunsPage() {
       {!loaded ? null : runs.length > 0 && view === 'calendar' ? <Calendar weeks={weeks} match={match} searching={isSearching(search)} loadUnit={loadUnit} fresh={fresh} /> : (
       <div className="card">
         {runs.length === 0 ? (
-          <div className="empty">{index ? t('No runs yet.') : t('Nothing imported yet.')} {t('Put your FIT files in this folder (or its fit/ subfolder): they are imported by themselves. The')} <Link href="/data">{t('Data')}</Link> {t('screen (the IsoStride logo) shows the import and the files that could not be read.')}</div>
+          <div className="empty">{index ? t('No runs yet.') : t('Nothing imported yet.')} {t('Put your FIT files in this folder (or its fit/ subfolder): they are imported by themselves. The')} <Link href="/settings">{t('Data')}</Link> {t('tab of Settings shows the import and the files that could not be read.')}</div>
         ) : (
           <table className="data runs-table">
             <thead>

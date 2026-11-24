@@ -147,13 +147,19 @@ export async function openWithFolder(page: Page, files: string[]): Promise<void>
   await page.getByRole('heading', { name: 'Runs' }).waitFor();
 }
 
+/** Opens the Data tab, the first of Settings: the folder, what it holds, its logs and the integrations. */
+export async function openData(page: Page): Promise<void> {
+  await nav(page, 'Settings');
+  await page.getByRole('tab', { name: 'Data', exact: true }).click();
+  await page.getByLabel('What the folder holds').waitFor();
+}
+
 /**
- * Waits on the Data screen (the logo leads to it) until the folder is imported: the app imports every
- * file by itself, so no job runs, no file waits and the files are read.
+ * Waits on the Data tab of Settings until the folder is imported: the app imports every file by
+ * itself, so no job runs, no file waits and the files are read.
  */
 export async function importDone(page: Page): Promise<void> {
-  await page.locator('.sidebar .brand').click();
-  await page.getByRole('heading', { name: 'Data', exact: true }).waitFor();
+  await openData(page);
   const facts = page.getByLabel('What the folder holds');
   await expect(async () => {
     await expect(page.locator('.folder-page .folder-progress')).toHaveCount(0);
