@@ -17,12 +17,16 @@ export interface DiagnosticStep {
 const kb = (text: string | null) => (text === null ? 'missing' : `${Math.round(text.length / 1024)} KB`); // i18n-ignore: the report is sent as it is, in English
 
 /** Measures the folder's reads; `fresh` gives the folder anew, with nothing kept from reads before. */
-export async function diagnose(fresh: () => DataFolder, now: () => number = () => performance.now()): Promise<DiagnosticStep[]> {
+export async function diagnose(fresh: () => DataFolder, now: () => number = () => performance.now(), operations?: () => number): Promise<DiagnosticStep[]> {
   const steps: DiagnosticStep[] = [];
   const time = async <T>(what: string, f: () => Promise<T>, detail?: (v: T) => string): Promise<T> => {
     const t0 = now();
+    const ops0 = operations?.() ?? 0;
     const v = await f();
-    steps.push({ what, ms: Math.round(now() - t0), ...(detail ? { detail: detail(v) } : {}) });
+    // The calls to the system the step made, when the folder counts them: what a slow folder costs.
+    const ops = operations ? `${operations() - ops0} calls` : null; // i18n-ignore: the report is sent as it is, in English
+    const said = [detail?.(v), ops].filter(Boolean).join(', ');
+    steps.push({ what, ms: Math.round(now() - t0), ...(said ? { detail: said } : {}) });
     return v;
   };
   const folder = fresh();
@@ -38,14 +42,14 @@ export async function diagnose(fresh: () => DataFolder, now: () => number = () =
     const text = await time('read the last run file', () => folder.readText(PATHS.runFile(ids[0])), kb);
     await time('parse the last run file', async () => (text ? JSON.parse(text) : null));
     await time(`read ${ids.length} run files one after another`, async () => {
-      for (const id of ids) await fresh().readText(PATHS.runFile(id));
+      for (const id of ids) await folder.readText(PATHS.runFile(id));
       return ids.length;
     });
   }
   if (fits.length) await time('read a FIT file', () => folder.readBytes(fits[fits.length - 1]), (b) => `${Math.round(b.length / 1024)} KB`); // i18n-ignore: the report is sent as it is, in English
   // The average of a run file read is only known once timed: written again with it.
   const many = steps.find((s) => s.what.startsWith('read ') && s.what.endsWith('one after another'));
-  if (many) many.detail = `${Math.round(many.ms / ids.length)} ms each`;
+  if (many) many.detail = [`${Math.round(many.ms / ids.length)} ms each`, many.detail].filter(Boolean).join(', '); // i18n-ignore: the report is sent as it is, in English
   return steps;
 }
 
