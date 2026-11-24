@@ -83,10 +83,17 @@ type Final = Exclude<WorkerEvent, { type: 'progress' | 'error' }>;
  * A job given up stops at its next file; the worker goes on with the others.
  */
 let reader: Worker | null = null;
+/** The folder the worker that stays reads: another folder, another worker. */
+let readerHandle: FileSystemDirectoryHandle | null = null;
 let nextId = 1;
 const asked = new Map<number, { job: WorkerJob; resolve: (m: Final) => void; reject: (e: Error) => void; onProgress?: Progress }>();
 
-function readerWorker(): Worker {
+function readerWorker(handle: FileSystemDirectoryHandle): Worker {
+  if (reader && readerHandle !== handle) {
+    reader.terminate();
+    reader = null;
+  }
+  readerHandle = handle;
   if (reader) return reader;
   const w = new Worker(new URL('../../workers/pipeline.worker.ts', import.meta.url));
   w.onmessage = (e: MessageEvent<WorkerEvent>) => {
@@ -116,7 +123,7 @@ function readerWorker(): Worker {
 /** Asks the worker that stays; a signal gives the request up. */
 function ask(request: ReadRequest, onProgress?: Progress, signal?: AbortSignal): Promise<Final> {
   const id = nextId++;
-  const w = readerWorker();
+  const w = readerWorker(request.handle);
   publish({ job: request.type, done: 0, total: 0 });
   return new Promise((resolve, reject) => {
     asked.set(id, { job: request.type, resolve, reject, onProgress });

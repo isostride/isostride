@@ -40,7 +40,7 @@ export function Diagnostics() {
     setRunning(true);
     setCopied(false);
     try {
-      const steps = await diagnose(() => new BrowserFolder(handle));
+      const steps = await diagnose(() => new BrowserFolder(handle), undefined, () => BrowserFolder.operations);
       const t0 = performance.now();
       await instancesInWorker([], handle);
       const job = Math.round(performance.now() - t0);

@@ -27,8 +27,9 @@ test.describe('Denormalized index files', () => {
     await page.getByRole('tab', { name: 'A/B' }).click();
     await expect(page.getByRole('img', { name: 'Timeline of the two groups' })).toContainText('Shoes May');
     await expect(page.getByRole('img', { name: 'Difference and interval' })).toBeVisible();
+    // The index files, read now or given back from what the folder kept (ADR "One reading worker, files
+    // kept": a file read before is not asked for again); never a run file.
     const names = await opened(page);
-    expect(names).toContain('block-instances.json');
     expect(names.filter((n) => RUN_FILE.test(n))).toEqual([]);
   });
 });

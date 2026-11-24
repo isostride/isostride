@@ -34,6 +34,8 @@ const send = (e: WorkerEvent) => (self as unknown as { postMessage(m: unknown): 
 /** The run files this worker read, kept while the data stamp stays (the worker that stays: lib/client). */
 const KEEP_RUNS = 150;
 let keptFor: string | null = null;
+/** The folder the worker that stays reads, kept between its requests. */
+let readingFolder: BrowserFolder | null = null;
 /** The requests given up (the screen moved on). */
 const cancelled = new Set<number>();
 
@@ -45,7 +47,10 @@ self.onmessage = async (msg: MessageEvent<WorkerRequest | CancelRequest>) => {
   const e = msg as MessageEvent<WorkerRequest>;
   const id = e.data.id;
   const post = (ev: WorkerEvent) => send({ ...ev, id });
-  const folder = new BrowserFolder(e.data.handle);
+  const reading = e.data.type === 'instances' || e.data.type === 'curve' || e.data.type === 'figures' || e.data.type === 'similar';
+  // The worker that stays reads one folder through one BrowserFolder, which keeps the handles and
+  // texts it learned (the page starts another worker for another folder); a writing job's worker has its own.
+  const folder = reading ? (readingFolder ??= new BrowserFolder(e.data.handle)) : new BrowserFolder(e.data.handle);
   const onProgress = (p: { done: number; total: number; file: string }) => {
     // Given up: the job stops at its next file, the worker goes on with the others.
     if (id !== undefined && cancelled.has(id)) throw new DOMException('abandoned', 'AbortError');

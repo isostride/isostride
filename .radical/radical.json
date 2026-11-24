@@ -885,7 +885,10 @@
       "tests/integration/ingest.test.ts › New runs imported by themselves › An import that adds nothing reads no run again"
     ] },
     { "element": "f1c03f5c-4092-4ddf-aaa9-efc717d56dc7", "name": "Reading worker keeps runs", "tests": [
-      "tests/unit/keptRuns.test.ts › Run files kept by the reading worker › Read once, the oldest let go, forgotten when the data change"
+      "tests/unit/keptRuns.test.ts › Run files kept by the reading worker › Read once, the oldest let go, forgotten when the data change",
+      "tests/unit/browserFolder.test.ts › Folder keeps what it learned › A file read again, a missing file and the folders found once ask the system nothing",
+      "tests/unit/browserFolder.test.ts › Folder keeps what it learned › What one folder of the app writes or removes the others forget",
+      "tests/unit/browserFolder.test.ts › Folder keeps what it learned › A handle kept that went stale is let go and the call made again"
     ] },
     { "element": "cc160c7c-2632-4d74-902c-56af70f51643", "name": "Device diagnosed", "tests": [
       "tests/integration/diagnose.test.ts › Diagnostics of this device › Each read of the folder timed, as lines to copy",

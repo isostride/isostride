@@ -39,6 +39,8 @@ test.describe('Performance model', () => {
     const report = about.getByRole('textbox', { name: 'Diagnostics' });
     await expect(report).toHaveValue(/read runs-index\.json \(first time\): \d+ ms/, { timeout: 30_000 });
     await expect(report).toHaveValue(/a job in the background worker \(no work\): \d+ ms/);
+    // A file read again is given back from what the folder kept: no call to the system (the phone's 2.5 s).
+    await expect(report).toHaveValue(/read runs-index\.json \(again\): \d+ ms \(\d+ KB, 0 calls\)/);
     await expect(about.getByRole('button', { name: 'Copy' })).toBeVisible();
     // Models (requirement "Thresholds of the models"): each threshold of the checks with its default; one out of
     // its range cannot be saved; set, it is kept in the data folder with the performance model.
