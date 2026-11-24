@@ -893,6 +893,14 @@
     { "element": "cc160c7c-2632-4d74-902c-56af70f51643", "name": "Device diagnosed", "tests": [
       "tests/integration/diagnose.test.ts › Diagnostics of this device › Each read of the folder timed, as lines to copy",
       "e2e/performance.spec.ts › Performance model › Load model set and form drawn"
+    ] },
+    { "element": "c2209298-ad42-48e4-b873-6c72a8310840", "name": "Copy read, folder kept whole", "tests": [
+      "tests/integration/copy.test.ts › Phone reads from a copy › Read from the copy once filled, written to both, FIT files from the folder",
+      "tests/integration/copy.test.ts › Phone reads from a copy › A copy of a folder changed outside the browser is not current",
+      "e2e/import.spec.ts › Phone reads from a copy › The app read through a copy in the browser, the folder kept whole",
+      "tests/unit/copy.test.ts › Copy in the browser › Kept on Android, or as this browser says",
+      "tests/unit/copy.test.ts › Copy in the browser › One copy a folder in the browser’s storage, removed when the folder is left",
+      "tests/unit/copy.test.ts › Copy in the browser › The folder read through its copy when the device keeps one"
     ] }
   ]
 }

@@ -3582,6 +3582,12 @@
     "targetId": "6e00e259-2327-4229-8aeb-2681b4eb3848"
   },
   {
+    "id": "71084129-d412-4c66-b903-00b5206a9fd3",
+    "relationType": "satisfies",
+    "sourceId": "d0291cd1-bdf1-4c49-8333-4b658a02f95d",
+    "targetId": "9fa1f01b-3bbb-482f-82b5-b5262fff4029"
+  },
+  {
     "id": "7130ecc2-f8b0-4981-b622-5fd504fe8ebf",
     "relationType": "illustrates",
     "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
@@ -4477,6 +4483,12 @@
     "targetId": "2ca6a82b-6302-4406-a3b5-7ad433a6dea2"
   },
   {
+    "id": "8af84c12-531e-4dbe-a22f-3d1c3b7c03c4",
+    "relationType": "constrains",
+    "sourceId": "2dd6ffe3-1b0d-4558-a192-4f8997234db5",
+    "targetId": "d0291cd1-bdf1-4c49-8333-4b658a02f95d"
+  },
+  {
     "id": "8af90595-40d3-435a-975d-8dcbfa2c1a74",
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
@@ -4506,6 +4518,12 @@
     "relationType": "satisfies",
     "sourceId": "9af04b42-1352-4b04-880f-a46bcd62caf2",
     "targetId": "e59886da-dd99-4f9a-a722-ee9026468a35"
+  },
+  {
+    "id": "8bef8176-933d-494c-b43d-244b129b1dfc",
+    "relationType": "verifies",
+    "sourceId": "c2209298-ad42-48e4-b873-6c72a8310840",
+    "targetId": "9fa1f01b-3bbb-482f-82b5-b5262fff4029"
   },
   {
     "id": "8c773c4a-c2ea-4fc4-a9f8-1e29c67f924e",
@@ -5163,6 +5181,12 @@
     "relationType": "derives",
     "sourceId": "c0171ff7-cd96-4397-bfa6-0dc87e93beb7",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "a26406b9-056c-4d8a-bf5e-b2477ca42839",
+    "relationType": "traces-to",
+    "sourceId": "9fa1f01b-3bbb-482f-82b5-b5262fff4029",
+    "targetId": "2dd6ffe3-1b0d-4558-a192-4f8997234db5"
   },
   {
     "id": "a3d12096-bcff-4b22-89f6-3dd49ed068c7",
@@ -6634,6 +6658,13 @@
     "relationType": "satisfies",
     "sourceId": "9d407d6d-646e-46ac-bfb9-f310b0c8fa75",
     "targetId": "e34e41c2-1850-4479-8a3f-380d7834213d"
+  },
+  {
+    "id": "cdad2c6d-122e-4844-bb2d-567a35a39665",
+    "quote": "ok idzmy z opfs w przypadku telefonu",
+    "relationType": "derives",
+    "sourceId": "9fa1f01b-3bbb-482f-82b5-b5262fff4029",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "cdc2ef61-af5c-4fd0-9862-1b266bf7e7fb",

@@ -31,8 +31,9 @@ export class BrowserFolder implements DataFolder {
   private textBytes = 0;
   private readonly channel: BroadcastChannel | null;
 
-  constructor(private readonly handle: FileSystemDirectoryHandle) {
-    this.channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(CHANNEL);
+  /** @param channel the channel of the folders of one place: the copy in the browser has its own (its paths are the folder's). */
+  constructor(private readonly handle: FileSystemDirectoryHandle, channel = CHANNEL) {
+    this.channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(channel);
     if (this.channel) this.channel.onmessage = (e: MessageEvent<Change>) => this.changed(e.data, false);
   }
 

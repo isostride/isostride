@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { instancesInWorker, useOpenFolder } from '@/lib/client';
-import { BrowserFolder, diagnose, diagnosticText } from '@/lib/fs';
+import { BrowserFolder, MirroredFolder, PATHS, diagnose, diagnosticText } from '@/lib/fs';
 import { t } from '@/lib/i18n';
 import { APP_COMMIT, APP_VERSION } from '@/lib/kernel';
 
@@ -31,7 +31,7 @@ function longTasks(): Promise<string> {
  * Nothing leaves the device unless the runner sends it.
  */
 export function Diagnostics() {
-  const { handle } = useOpenFolder();
+  const { folder, handle } = useOpenFolder();
   const [text, setText] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -44,6 +44,13 @@ export function Diagnostics() {
       const t0 = performance.now();
       await instancesInWorker([], handle);
       const job = Math.round(performance.now() - t0);
+      // The copy in the browser (ADR "A copy in the browser on phones"): kept or not, its room, a read through it.
+      const est = await navigator.storage?.estimate?.().catch(() => undefined);
+      const mb = (n?: number) => (n === undefined ? '?' : `${Math.round(n / 1048576)} MB`); // i18n-ignore: the report is sent as it is, in English
+      const copied = folder instanceof MirroredFolder;
+      const t1 = performance.now();
+      await folder.readText(PATHS.runsIndex);
+      const through = Math.round(performance.now() - t1);
       const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
       const nv = navigator as Navigator & { deviceMemory?: number };
       const lines = [
@@ -54,6 +61,8 @@ export function Diagnostics() {
         `long tasks since the page loaded: ${await longTasks()}`, // i18n-ignore: the report is sent as it is
         diagnosticText(steps),
         `a job in the background worker (no work): ${job} ms`, // i18n-ignore: the report is sent as it is
+        `copy in the browser: ${copied ? 'on' : 'off'}; storage of this site ${mb(est?.usage)} of ${mb(est?.quota)}`, // i18n-ignore: the report is sent as it is
+        `read runs-index.json as the app does${copied ? ' (through the copy)' : ''}: ${through} ms`, // i18n-ignore: the report is sent as it is
       ];
       setText(lines.join('\n'));
     } catch (e) {

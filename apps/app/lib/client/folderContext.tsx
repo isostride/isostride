@@ -1,7 +1,8 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { BrowserFolder } from '@/lib/fs';
+import { BrowserFolder, copyIsCurrent, openCopy, openDataFolder, removeCopy, usesCopy, type DataFolder } from '@/lib/fs';
+import { setCopyId } from './worker';
 import { getValue, setValue } from './handleStore';
 
 /** The Data Folder lifecycle as the screens see it (model: Data Folder lifecycle). */
@@ -11,7 +12,7 @@ export type FolderState =
   | { status: 'unsupported'; insecure: boolean }
   | { status: 'not-chosen' }
   | { status: 'access-pending'; name: string }
-  | { status: 'open'; folder: BrowserFolder; handle: FileSystemDirectoryHandle };
+  | { status: 'open'; folder: DataFolder; handle: FileSystemDirectoryHandle };
 
 interface FolderApi {
   state: FolderState;
@@ -21,12 +22,44 @@ interface FolderApi {
 
 const Ctx = createContext<FolderApi | null>(null);
 const HANDLE_KEY = 'folderHandle';
+/** The id of the copy in the browser of the folder chosen (ADR "A copy in the browser on phones"). */
+const COPY_KEY = 'copyId';
 
-/** The folder opened, its data moved first from strideprism/ to .isostride/ when an earlier version left it there. */
-async function opened(handle: FileSystemDirectoryHandle): Promise<FolderState> {
-  const folder = new BrowserFolder(handle);
+/**
+ * The copy of the folder on this device, when it keeps one (Android): the one of this folder, or a new
+ * one when another folder was chosen (`fresh`), the copy before removed.
+ */
+async function copyFor(fresh: boolean): Promise<string | null> {
+  const kept = await getValue<string>(COPY_KEY).catch(() => undefined);
+  if (!usesCopy()) {
+    if (kept) { await removeCopy(kept).catch(() => undefined); await setValue(COPY_KEY, null); }
+    return null;
+  }
+  if (kept && !fresh) return kept;
+  if (kept) await removeCopy(kept).catch(() => undefined);
+  const id = `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  await setValue(COPY_KEY, id);
+  return id;
+}
+
+/**
+ * The folder opened (through its copy on a phone), its data moved first from strideprism/ to .isostride/
+ * when an earlier version left it there. A copy of a folder changed outside this browser (another data
+ * stamp) is dropped in the background, and the app opened again on the folder.
+ */
+async function opened(handle: FileSystemDirectoryHandle, fresh = false): Promise<FolderState> {
+  const copy = await copyFor(fresh);
+  setCopyId(copy);
+  const folder = await openDataFolder(handle, copy);
   const { moveLegacyData } = await import('@/lib/legacy');
   await moveLegacyData(folder);
+  if (copy) {
+    void (async () => {
+      if (await copyIsCurrent(new BrowserFolder(handle), await openCopy(copy))) return;
+      await removeCopy(copy);
+      location.reload();
+    })().catch(() => undefined);
+  }
   return { status: 'open', folder, handle };
 }
 
@@ -50,7 +83,7 @@ export function FolderProvider({ children }: { children: ReactNode }) {
     const handle = await window.showDirectoryPicker!({ id: 'strideprism-data', mode: 'readwrite' });
     await setValue(HANDLE_KEY, handle);
     setRemembered(handle);
-    setState(await opened(handle));
+    setState(await opened(handle, true));
   }, []);
 
   const confirmAccess = useCallback(async () => {
@@ -70,7 +103,7 @@ export function useFolder(): FolderApi {
 }
 
 /** The open folder; only call inside screens the Shell renders once the folder is open. */
-export function useOpenFolder(): { folder: BrowserFolder; handle: FileSystemDirectoryHandle } {
+export function useOpenFolder(): { folder: DataFolder; handle: FileSystemDirectoryHandle } {
   const { state } = useFolder();
   // A mistake of the code (the Shell renders the screens once the folder is open), never shown. i18n-ignore
   if (state.status !== 'open') throw new Error('folder not open');
