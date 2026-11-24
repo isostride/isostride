@@ -2338,6 +2338,12 @@
     "targetId": "b0289efc-ad5a-46b3-b57d-9abbb703ae9a"
   },
   {
+    "id": "44ecf700-1cf0-4e78-ab90-24304a6995ad",
+    "relationType": "satisfies",
+    "sourceId": "d0291cd1-bdf1-4c49-8333-4b658a02f95d",
+    "targetId": "c104ba57-c0ce-49ae-95ec-11b681ba4d24"
+  },
+  {
     "id": "4509f1fa-9ddc-43b0-9794-e3b1ebb34fbd",
     "relationType": "verifies",
     "sourceId": "50a052f7-595b-411c-a59a-5d8b6247b9ff",
@@ -2482,6 +2488,12 @@
     "relationType": "derives",
     "sourceId": "368d77bf-f7ca-4698-8943-e0f8518b648a",
     "targetId": "aec32856-5ea5-4f0e-8316-178aff6a9838"
+  },
+  {
+    "id": "49914230-3d48-4c57-84f1-a846e3c7bbab",
+    "relationType": "verifies",
+    "sourceId": "cc160c7c-2632-4d74-902c-56af70f51643",
+    "targetId": "c104ba57-c0ce-49ae-95ec-11b681ba4d24"
   },
   {
     "id": "49a820f4-4f3a-4edb-a068-6adafa6d7f2c",
@@ -8183,6 +8195,13 @@
     "relationType": "illustrates",
     "sourceId": "8b8003c2-e262-4787-95d6-4576f080cdf3",
     "targetId": "0cc6539e-3293-4327-970f-e394a053c69a"
+  },
+  {
+    "id": "fd9d9213-3aa7-42a7-b9db-47e0d9f084f0",
+    "quote": "zrob diagnostyka w inny sposb",
+    "relationType": "derives",
+    "sourceId": "c104ba57-c0ce-49ae-95ec-11b681ba4d24",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "fdcd24f1-e799-4441-affd-5f9fedd50b71",

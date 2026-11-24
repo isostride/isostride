@@ -1,5 +1,6 @@
 'use client';
 
+import { Diagnostics } from './Diagnostics';
 import { useChartSettings, useLanguage, useMapTiles, useNarrowMenu, useTheme, type ChartSettings, type Theme } from '@/lib/client';
 import { LOCALES, t } from '@/lib/i18n';
 import { APP_BUILT, APP_COMMIT, APP_VERSION, versionLabel } from '@/lib/kernel';
@@ -141,6 +142,7 @@ export function AboutCard() {
         </div>
         <a className="btn" href={releaseNotesUrl(APP_VERSION)}>{t('Release notes')}</a>
       </div>
+      <Diagnostics />
     </section>
   );
 }
