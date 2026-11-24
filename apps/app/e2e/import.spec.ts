@@ -13,19 +13,20 @@ test.describe('Pick data folder', () => {
     await putFitFiles(page, await fitFiles(1));
     await expect(page.getByRole('button', { name: 'Choose data folder' })).toBeVisible();
     // The folder is the wizard's first step ("uruchomilem w incognito i dalej pyta o folder"): its steps ahead.
-    await expect(page.getByRole('list', { name: 'Steps' }).getByRole('listitem')).toHaveText(['1Data folder', '2Your runs', '3You', '4Zones', '5Gear', '6Load model', '7Display', '8Done']);
+    await expect(page.getByRole('list', { name: 'Steps' }).getByRole('listitem')).toHaveText(['1Data folder', '2Your runs', '3You', '4Zones', '5Gear', '6Load model', '7Look & feel', '8Done']);
     await expect(page.getByRole('heading', { name: 'Choose your data folder' })).toBeVisible();
     expect(await violations(page)).toEqual([]);
     await page.getByRole('button', { name: 'Choose data folder' }).click();
     // The setup wizard opens by itself on a folder nothing was set in (requirement "Setup wizard"): the runs
     // imported, the heart rates, the zones, the load model, then all saved at once.
     await expect(page).toHaveURL(/\/setup$/);
-    await expect(page.getByRole('list', { name: 'Steps' }).getByRole('listitem')).toHaveText(['✓Data folder', '2Your runs', '3You', '4Zones', '5Gear', '6Load model', '7Display', '8Done']);
+    await expect(page.getByRole('list', { name: 'Steps' }).getByRole('listitem')).toHaveText(['✓Data folder', '2Your runs', '3You', '4Zones', '5Gear', '6Load model', '7Look & feel', '8Done']);
     const step = (name: string) => page.getByRole('region', { name, exact: true });
-    await expect(step('Your runs')).toContainText(/FIT files\s*1\s*Runs imported\s*0/);
+    // The runs import by themselves, no button to press ("myslalem ze aplikacja sama pobierze wszystkie pliki z folderu").
+    await expect(step('Your runs').getByRole('button', { name: /^Import/ })).toHaveCount(0);
+    await expect(step('Your runs')).toContainText(/FIT files\s*1\s*Runs imported\s*1/, { timeout: 60_000 });
+    await expect(step('Your runs').getByRole('status')).toHaveText(/^Imported: each new file/);
     expect(await violations(page)).toEqual([]);
-    await step('Your runs').getByRole('button', { name: 'Import 1 file' }).click();
-    await expect(step('Your runs').getByRole('status')).toHaveText(/^Imported 1 run/, { timeout: 60_000 });
     await page.getByRole('button', { name: 'Next' }).click();
     await step('You').getByLabel('Resting heart rate').fill('52');
     await step('You').getByLabel('Maximum heart rate').fill('188');
@@ -55,8 +56,8 @@ test.describe('Pick data folder', () => {
     await step('Load model').getByLabel('Threshold pace').fill('4:10');
     await page.getByRole('button', { name: 'Next' }).click();
     // Display: the theme, the map, the menu and the run chart, as in Settings.
-    await expect(step('Display').getByRole('radiogroup', { name: 'Theme' })).toBeVisible();
-    await expect(step('Display').getByRole('group', { name: 'Lines' }).or(step('Display').getByText('Lines', { exact: true }))).toBeVisible();
+    await expect(step('Look & feel').getByRole('radiogroup', { name: 'Theme' })).toBeVisible();
+    await expect(step('Look & feel').getByRole('group', { name: 'Lines' }).or(step('Look & feel').getByText('Lines', { exact: true }))).toBeVisible();
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(step('Done').getByRole('definition')).toHaveText(['1', '52 bpm', '188 bpm', '113, 132, 150, 169', '1 shoes · 0 straps', 'rTSS']);
     await page.getByRole('button', { name: 'Save and finish' }).click();
@@ -93,7 +94,7 @@ test.describe('Reopen same folder', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Choose data folder' })).toHaveCount(0);
-    await expect(page.locator('.sidebar .brand')).toHaveAttribute('href', '/folder');
+    await expect(page.locator('.sidebar .brand')).toHaveAttribute('href', '/data');
     // A folder set up before the wizard came (its settings saved, the wizard never gone through): it opens once there too.
     await putText(page, '.isostride/user/settings.json', JSON.stringify({ schemaVersion: 1, performance: { load: 'rtss', restHr: 55 } }));
     await page.evaluate(async () => {
@@ -148,8 +149,8 @@ test.describe('Import FIT files', () => {
 test.describe('Non-blocking processing', () => {
   test('UI responsive during import', async ({ page }) => {
     await openWithFolder(page, await fitFiles(40));
+    // The folder imports by itself; the Data screen shows its progress.
     await page.locator('.sidebar .brand').click();
-    await page.getByRole('button', { name: 'Import folder' }).click();
     await expect(page.getByText(/^Importing · \d+ \/ /)).toBeVisible();
     // While the worker imports, another screen opens at once.
     const t0 = Date.now();
@@ -170,25 +171,54 @@ test.describe('New runs imported by themselves', () => {
     const later = (await fitFiles(5, '2026-08-20'))[4];
     await openWithFolder(page, files);
     const notice = page.locator('.toast-region .toast');
-    // Before the first import nothing is imported by itself: the runner starts it.
-    await page.waitForTimeout(2200);
-    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-    await page.waitForTimeout(500);
-    await expect(page.getByText('Nothing imported yet.', { exact: false })).toBeVisible();
+    // The folder chosen: all its files imported by themselves, said so; the first import marks nothing New.
+    await expect(notice).toContainText('Imported 4 new runs from the folder.', { timeout: 60_000 });
+    await expect(notice.locator('.added-runs li')).toHaveText([/./, /./, /./, 'and 1 more in Runs']);
+    // A notice goes by itself after a few seconds, or at once by its ×.
+    await notice.getByRole('button', { name: 'Close' }).click();
     await expect(notice).toHaveCount(0);
     await importAll(page);
     await expect(page.locator('.glance-dl')).toContainText('4 runs');
+    await expect(page.locator('.new-chip')).toHaveCount(0);
     // A run dropped into the folder: when the window comes back into view, it is imported and said so.
     await putFitFiles(page, [later]);
     await page.waitForTimeout(2200);
     await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-    await expect(notice).toHaveText('Imported 1 new run from the folder.', { timeout: 30_000 });
+    await expect(notice).toContainText('Imported 1 new run from the folder.', { timeout: 30_000 });
     await expect(page.locator('.glance-dl')).toContainText('5 runs');
+    // What was added (requirement "New runs marked new"): the notice names the run, leading to it, and
+    // the Runs screen marks it New, in the calendar and in the list, until it is seen.
+    await expect(notice.locator('.added-runs li')).toHaveCount(1);
+    await expect(notice.locator('.added-runs a')).toHaveAttribute('href', /\/run\?id=/);
+    await expect(page.locator('.new-runs-bar')).toContainText('1 run added since you last looked');
+    await expect(page.locator('.run-tile.new')).toHaveCount(1);
+    await page.getByRole('radio', { name: 'List' }).click();
+    await expect(page.locator('.runs-table .new-chip')).toHaveCount(1);
+    await page.getByRole('button', { name: 'Mark as seen' }).click();
+    await expect(page.locator('.new-chip')).toHaveCount(0);
+    await page.getByRole('radio', { name: 'Calendar' }).click();
     // Nothing new: another look imports nothing, and the notice goes after a few seconds.
-    await expect(notice).toHaveCount(0, { timeout: 10_000 });
+    await expect(notice).toHaveCount(0, { timeout: 15_000 });
     await page.waitForTimeout(2200);
     await page.evaluate(() => window.dispatchEvent(new Event('focus')));
     await page.waitForTimeout(1000);
     await expect(notice).toHaveCount(0);
   });
 });
+
+test.describe('Recompute on mismatch', () => {
+  test('Data built by an older algorithm rebuilt by themselves when the app opens', async ({ page }) => {
+    await openWithFolder(page, await fitFiles(3));
+    await importAll(page);
+    // The folder's data as an older version of the app left them.
+    const manifest = JSON.parse(await readText(page, '.isostride/derived/manifest.json'));
+    await putText(page, '.isostride/derived/manifest.json', JSON.stringify({ ...manifest, algorithmVersion: 0 }));
+    await page.reload();
+    const notice = page.locator('.toast-region .toast');
+    await expect(notice).toContainText('Rebuilt 3 runs for this version of the app.', { timeout: 60_000 });
+    await page.locator('.sidebar .brand').click();
+    await expect(page.locator('.banner.warn')).toHaveCount(0);
+    expect(JSON.parse(await readText(page, '.isostride/derived/manifest.json')).algorithmVersion).toBeGreaterThan(0);
+  });
+});
+

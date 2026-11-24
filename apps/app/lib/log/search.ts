@@ -29,6 +29,15 @@ const dayNames = (d: Date, tag: string) => [
  * its month and weekday named in every language of the app ("november", "listopad", "wtorek").
  */
 function haystack(r: IndexedRun): string {
+  let text = haystacks.get(r);
+  if (text === undefined) haystacks.set(r, (text = haystackOf(r)));
+  return text;
+}
+
+/** Each run's text, made once (a run read again from the index is a new object, its text made again). */
+const haystacks = new WeakMap<IndexedRun, string>();
+
+function haystackOf(r: IndexedRun): string {
   const day = localDay(r.startTime);
   const d = new Date(`${day}T12:00:00`);
   const words = [

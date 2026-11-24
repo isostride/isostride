@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { addFromPicker, chooseFolder, fakeFolderPicker, fitFiles, nav, putFitFiles, recordMeasure } from './support';
+import { addFromPicker, chooseFolder, fakeFolderPicker, fitFiles, importAll, nav, putFitFiles, recordMeasure } from './support';
 
 /**
  * Every screen and tab of the app holds still (the runner's "ustaw ze layout shift ma byc 0", then
@@ -33,9 +33,7 @@ test('Every screen holds still', async ({ page }) => {
   await page.goto('/');
   await putFitFiles(page, await fitFiles(30, '2026-08-20'));
   await chooseFolder(page);
-  await page.locator('.sidebar .brand').click();
-  await page.getByRole('button', { name: 'Import folder' }).click();
-  await page.getByText(/^Imported \d+ runs?/).waitFor({ timeout: 120_000 });
+  await importAll(page);
   await nav(page, 'Compare');
   await addFromPicker(page, /^All runs/);
   await page.locator('.item-chip').first().waitFor({ timeout: 60_000 });
@@ -44,7 +42,7 @@ test('Every screen holds still', async ({ page }) => {
   const run = await page.evaluate(async () => { const r = await (await (await (await (await navigator.storage.getDirectory()).getDirectoryHandle('data')).getDirectoryHandle('.isostride')).getDirectoryHandle('derived')).getFileHandle('runs-index.json'); return JSON.parse(await (await r.getFile()).text()).runs.at(-1).id; });
   const urls = ['/dashboard', '/', `/run?id=${run}`, '/segments', '/compare', compare, `${compare}&tab=segments`, `${compare}&tab=ab`, `${compare}&tab=curve`,
     '/performance', ...['load&view=form', 'load&view=weekly', 'load&view=intensity', 'capacity&view=efforts', 'capacity&view=critical', 'capacity&view=predictions', 'aerobic&view=efficiency', 'aerobic&view=decoupling', 'aerobic&view=vo2', 'response&view=hr', 'response&view=vdot'].map((t) => `/performance?tab=${t}`),
-    '/settings', ...['models', 'metrics', 'gears', 'tags', 'display', 'about'].map((t) => `/settings?tab=${t}`), '/folder', '/setup', '/nothing-here'];
+    '/settings', ...['models', 'metrics', 'gears', 'tags', 'display', 'about'].map((t) => `/settings?tab=${t}`), '/data', '/setup', '/nothing-here'];
   // A slow machine: the CPU four times slower, so what comes late on a slow computer (or on CI) comes
   // late here too, and moves the page here if it would there.
   const cdp = await page.context().newCDPSession(page);

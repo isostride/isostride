@@ -1,10 +1,9 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { EditButton, ItemKey, useDataVersion, useMetrics, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup } from '@/components';
+import { EditButton, ItemKey, useDataVersion, useMetrics, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup, eager } from '@/components';
 import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, asRule, definitionFromProfile, definitionFromRoute, shapeName, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule, ruleOf } from '@/lib/blocks';
 import { curvesInWorker, instancesInWorker, runInWorker, similarInWorker, useOpenFolder } from '@/lib/client';
 import { MAX_ITEMS, addItem, computeTrend, firstUsableMetric, formatItems, instancesCsv, parseItems, runMean, type AnalysisItem } from '@/lib/compare';
@@ -19,19 +18,19 @@ import type { BuilderOptions } from '../segments/RuleBuilder';
 import { isUnsaved, keepUnsaved, readUnsaved } from './unsaved';
 
 // The curve tab's chart, figures and table load when the tab is first opened (ADR "Built with React": 200 KB of script per route).
-const AbTab = dynamic(() => import('./AbTab').then((m) => m.AbTab), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>{t('Loading the A/B comparison…')}</div> });
+const AbTab = eager(() => import('./AbTab').then((m) => m.AbTab), () => <div className="card chart muted small" style={{ padding: 18 }}>{t('Loading the A/B comparison…')}</div>);
 /** The picker and the sheet that edits a block, loaded when they open. */
 /** The saved analyses: loaded after the screen (requirement "Saved analyses"). */
 /** The verdicts under the trends' charts: loaded with the tab. */
-const TrendVerdicts = dynamic(() => import('./TrendVerdicts').then((m) => m.TrendVerdicts), { ssr: false });
-const SavedAnalyses = dynamic(() => import('./SavedAnalyses').then((m) => m.SavedAnalyses), { ssr: false });
+const TrendVerdicts = eager(() => import('./TrendVerdicts').then((m) => m.TrendVerdicts));
+const SavedAnalyses = eager(() => import('./SavedAnalyses').then((m) => m.SavedAnalyses));
 /** Pin to the Dashboard, in the Over time card's corner: loaded after the screen, as the budget wants. */
-const PinButton = dynamic(() => import('../dashboard/PinButton').then((m) => m.PinButton), { ssr: false });
-const SavedList = dynamic(() => import('./SavedAnalyses').then((m) => m.SavedList), { ssr: false });
-const AddDialog = dynamic(() => import('./AddDialog').then((m) => m.AddDialog), { ssr: false });
-const BlockSheet = dynamic(() => import('../segments/BlockSheet').then((m) => m.BlockSheet), { ssr: false });
-const EffortsPanel = dynamic(() => import('./EffortsPanel').then((m) => m.EffortsPanel), { ssr: false, loading: () => <div className="card muted small" style={{ padding: 18 }}>{t('Loading the efforts…')}</div> });
-const CurveTab = dynamic(() => import('./CurveTab').then((m) => m.CurveTab), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>{t('Loading the curve…')}</div> });
+const PinButton = eager(() => import('../dashboard/PinButton').then((m) => m.PinButton));
+const SavedList = eager(() => import('./SavedAnalyses').then((m) => m.SavedList));
+const AddDialog = eager(() => import('./AddDialog').then((m) => m.AddDialog));
+const BlockSheet = eager(() => import('../segments/BlockSheet').then((m) => m.BlockSheet));
+const EffortsPanel = eager(() => import('./EffortsPanel').then((m) => m.EffortsPanel), () => <div className="card muted small" style={{ padding: 18 }}>{t('Loading the efforts…')}</div>);
+const CurveTab = eager(() => import('./CurveTab').then((m) => m.CurveTab), () => <div className="card chart muted small" style={{ padding: 18 }}>{t('Loading the curve…')}</div>);
 
 const DAY = 86_400_000;
 /** The item Analysis opens with: every run, whole (a rule with nothing set). */

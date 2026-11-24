@@ -1,6 +1,6 @@
 'use client';
 
-import dynamic from 'next/dynamic';
+import { eager } from '@/components';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useLocale } from '@/lib/client';
@@ -8,7 +8,7 @@ import { t } from '@/lib/i18n';
 import { TABS, performanceHref, type Tab } from './structure';
 
 // The content loads after the frame of the page (ADR "Built with React": 200 KB of script per route).
-const Body = dynamic(() => import('./Body').then((m) => m.Body), { ssr: false, loading: () => <div className="card chart muted small" style={{ padding: 18 }}>{t('Loading…')}</div> });
+const Body = eager(() => import('./Body').then((m) => m.Body), () => <div className="card chart muted small" style={{ padding: 18 }}>{t('Loading…')}</div>);
 
 export default function PerformancePageWrapper() {
   return <Suspense fallback={<div className="page"><div className="page-head"><h1>{t('Performance')}</h1></div></div>}><PerformancePage /></Suspense>;

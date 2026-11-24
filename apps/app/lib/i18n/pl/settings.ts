@@ -19,7 +19,7 @@ export const SETTINGS: Dictionary = {
   Distance: 'Dystans',
   'Segments on the chart': 'Segmenty na wykresie',
   'Draw the efforts of every segment in the run; off, only the one pointed at in the chart menu.': 'Rysuj wysiłki każdego segmentu w biegu; wyłączone: tylko ten wskazany w menu wykresu.',
-  Display: 'Wygląd',
+  'Look & feel': 'Wygląd',
   'Kept in this browser: they belong to the device, not to the data folder.': 'Zapisane w tej przeglądarce: należą do urządzenia, nie do folderu danych.',
   Language: 'Język',
   'The language of the app, its numbers and dates; at first the browser’s.': 'Język aplikacji, jej liczb i dat; na początku język przeglądarki.',
@@ -38,4 +38,6 @@ export const SETTINGS: Dictionary = {
   commit: 'commit',
   'built {date}': 'zbudowano {date}',
   'Release notes': 'Informacje o wydaniu',
+  // The language in a tab of its own.
+  'Language & region': 'Język i region',
 };

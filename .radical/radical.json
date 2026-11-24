@@ -3,6 +3,7 @@
     { "element": "39491f93-4fcc-4f9c-960b-e12750deef8f", "name": "Web App", "paths": ["apps/app/app"] },
     { "element": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1", "name": "App Shell", "paths": ["apps/app/components"] },
     { "element": "d0291cd1-bdf1-4c49-8333-4b658a02f95d", "name": "Folder Access", "paths": ["apps/app/lib/client", "apps/app/lib/fs/browserFolder.ts"] },
+    { "element": "c14dbde0-de4f-48ba-a569-779a0fdfc5c8", "name": "COROS Sync", "paths": ["apps/app/lib/coros", "apps/app/app/data/CorosCard.tsx", "apps/app/app/coros"] },
     { "element": "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7", "name": "Processing Worker", "paths": ["apps/app/workers"] },
     { "element": "ce42067b-80ea-40e1-a577-39607ab89630", "name": "Ingest", "paths": ["apps/app/lib/ingest"] },
     { "element": "31df2b33-7d61-4128-bd2a-a8fd73481b33", "name": "Prepare", "paths": ["apps/app/lib/prepare"] },
@@ -51,9 +52,6 @@
     ] },
     { "element": "a1792881-fbff-4b5b-80c0-6d6b718aac50", "name": "Site home page holds still", "tests": [
       "e2e/site.spec.ts › Site without layout shift › Site home page holds still"
-    ] },
-    { "element": "1c415b5d-bd8f-4b36-9264-5bab7844f9fe", "name": "Folder path typed once", "tests": [
-      "e2e/folder-path.spec.ts › Folder path shown › Folder path typed once"
     ] },
     { "element": "a025de2c-5474-4895-8005-020e88ecb052", "name": "Site says what it is", "tests": [
       "tests/unit/site.test.ts › Site in plain statements › Site says what it is"
@@ -128,8 +126,9 @@
     { "element": "79088551-a2af-4e96-b5be-32942b1f662c", "name": "User data survives recompute", "tests": [
       "tests/integration/recompute.test.ts › User data never overwritten › User data survives recompute"
     ] },
-    { "element": "ad22c80f-c82c-4d21-ad60-2e568333f3a4", "name": "Old version offers recompute", "tests": [
-      "tests/unit/recompute.test.ts › Offer recompute on mismatch › Old version offers recompute"
+    { "element": "ad22c80f-c82c-4d21-ad60-2e568333f3a4", "name": "Old version rebuilt by itself", "tests": [
+      "tests/unit/recompute.test.ts › Offer recompute on mismatch › Old version offers recompute",
+      "e2e/import.spec.ts › Recompute on mismatch › Data built by an older algorithm rebuilt by themselves when the app opens"
     ] },
     { "element": "929d3f69-cf3e-4522-95d1-a5424b36e37f", "name": "Recompute within 15 min", "tests": [
       "tests/integration/recompute.test.ts › Recompute time budget › Recompute within 15 min"
@@ -742,7 +741,10 @@
       "e2e/analysis.spec.ts › Analysis workspace › Rule blocks compared, ranked and curved"
     ] },
     { "element": "051990c0-368a-4666-b423-ff370d7cb2fe", "name": "Run dropped into the folder imported", "tests": [
-      "e2e/import.spec.ts › New runs imported by themselves › A run dropped into the folder is imported when the app comes back into view"
+      "e2e/import.spec.ts › New runs imported by themselves › A run dropped into the folder is imported when the app comes back into view",
+      "tests/integration/ingest.test.ts › New runs imported by themselves › A file that could not be read tried again when the app opens",
+      "tests/integration/ingest.test.ts › New runs imported by themselves › A file that is not a run not tried again",
+      "tests/integration/ingest.test.ts › New runs imported by themselves › An import that adds nothing reads no run again"
     ] },
     { "element": "3828b443-8b56-40b5-b1d9-11cc7e92ba6b", "name": "Palette searched and opened", "tests": [
       "e2e/runs.spec.ts › Search runs › Runs searched and the calendar browsed"
@@ -851,6 +853,36 @@
     ] },
     { "element": "93d8b496-d74a-4602-806f-776bea01c341", "name": "Site says the same in Polish", "tests": [
       "tests/unit/site.test.ts › Site in plain statements › Site says the same in Polish"
+    ] },
+    { "element": "5e606384-c6f9-4d1e-9338-340d7a5d79e0", "name": "COROS runs fetched once", "tests": [
+      "tests/integration/coros.test.ts › Runs fetched from COROS › The runs not fetched before written into the folder and imported, never asked twice"
+    ] },
+    { "element": "e5dd9207-a3cb-45af-bf6c-aff883a45596", "name": "COROS limit stops the fetch", "tests": [
+      "tests/integration/coros.test.ts › Runs fetched from COROS › A fetch stopped by COROS keeps what it fetched and fetches the rest next time",
+      "tests/integration/coros.test.ts › Runs fetched from COROS › A run still in progress left for the next fetch, the others fetched",
+      "tests/integration/coros.test.ts › Runs fetched from COROS › A list refused, a link missing or a file that is no FIT file stop the fetch, nothing wrong written",
+      "tests/integration/coros.test.ts › Runs fetched from COROS › A full list leaves the day where it was: there may be more runs on those days",
+      "tests/integration/coros.test.ts › Runs fetched from COROS › A download COROS refuses stops with its status"
+    ] },
+    { "element": "b29cedb1-7934-4e5e-ab3e-7ac1b8cf6d61", "name": "COROS sign-in kept renewed", "tests": [
+      "tests/unit/coros.test.ts › COROS through its MCP server › Sign-in found from COROS’s metadata",
+      "tests/unit/coros.test.ts › COROS through its MCP server › Access token renewed by itself and kept",
+      "tests/unit/coros.test.ts › COROS through its MCP server › A renewal refused asks to connect again",
+      "tests/unit/coros.test.ts › COROS through its MCP server › Activities and FIT links read out of the tools’ text",
+      "tests/unit/coros.test.ts › COROS through its MCP server › Answers read from JSON and from server-sent events",
+      "tests/unit/coros.test.ts › COROS through its MCP server › Registered with COROS, signed in with PKCE, the renewal revoked at Disconnect",
+      "tests/unit/coros.test.ts › COROS through its MCP server › COROS unreachable, refusing or offering no registration named as such"
+    ] },
+    { "element": "7839e2f2-1577-489d-a915-aa798379a6a6", "name": "Runs added named and marked", "tests": [
+      "e2e/import.spec.ts › New runs imported by themselves › A run dropped into the folder is imported when the app comes back into view",
+      "tests/integration/new-runs.test.ts › New runs marked new › Runs added by a later import marked new until seen"
+    ] },
+    { "element": "d5523fc0-5228-475a-8242-c0d8cac17086", "name": "Detection reads what changed", "tests": [
+      "tests/integration/blocks.test.ts › Blocks detected where something changed › Only what changed detected again, the same as from scratch",
+      "tests/integration/ingest.test.ts › New runs imported by themselves › An import that adds nothing reads no run again"
+    ] },
+    { "element": "f1c03f5c-4092-4ddf-aaa9-efc717d56dc7", "name": "Reading worker keeps runs", "tests": [
+      "tests/unit/keptRuns.test.ts › Run files kept by the reading worker › Read once, the oldest let go, forgotten when the data change"
     ] }
   ]
 }

@@ -62,13 +62,12 @@ test.describe('App in English and Polish', () => {
     await page.locator('.welcome-step .btn').first().click();
     await page.waitForURL(/\/setup$/);
 
-    // The wizard: the runs imported, then each step in Polish.
+    // The wizard: the runs imported by themselves, then each step in Polish.
     const card = page.locator('section.setup-card');
     const next = page.locator('.setup-nav .btn.primary');
-    await card.locator('.setup-actions .btn.primary').click();
     await expect(card.locator('.setup-facts dd').nth(1)).toHaveText('5', { timeout: 60_000 });
     await check('Setup · runs');
-    for (const step of ['You', 'Zones', 'Gear', 'Load model', 'Display']) {
+    for (const step of ['You', 'Zones', 'Gear', 'Load model', 'Look & feel']) {
       await next.click();
       await page.waitForTimeout(200);
       await check(`Setup · ${step}`);
@@ -90,16 +89,16 @@ test.describe('App in English and Polish', () => {
     await page.waitForURL(/\/dashboard$/, { timeout: 60_000 });
     await check('Dashboard');
 
-    // Settings › Display: English chosen, kept after a reload; then Polish again.
+    // Settings › Language & region: English chosen, kept after a reload; then Polish again.
     await page.locator('.sidebar a[href="/settings"]').click();
-    await page.goto('/settings?tab=display');
+    await page.goto('/settings?tab=language');
     await page.getByRole('radio', { name: 'English' }).click();
     await page.reload();
     await expect(html).toHaveAttribute('lang', 'en');
     await expect(page.locator('.sidebar a[href="/"]')).toContainText('Runs');
     await page.getByRole('radio', { name: 'Polski' }).click();
     await expect(page.locator('.sidebar a[href="/"]')).toContainText('Biegi');
-    for (const tab of ['models', 'metrics', 'gears', 'tags', 'display', 'about']) {
+    for (const tab of ['models', 'metrics', 'gears', 'tags', 'display', 'language', 'about']) {
       await page.goto(`/settings?tab=${tab}`);
       await check(`Settings · ${tab}`);
     }
@@ -113,7 +112,7 @@ test.describe('App in English and Polish', () => {
     await page.locator('.run-figures').waitFor();
     await expect(page.locator('.run-figures dd').first()).toHaveText(/^\d+,\d{2} km$/);
     await check('Run');
-    for (const [href, screen] of [['/segments', 'Segments'], ['/compare', 'Compare'], ['/performance', 'Performance'], ['/folder', 'Data folder']] as const) {
+    for (const [href, screen] of [['/segments', 'Segments'], ['/compare', 'Compare'], ['/performance', 'Performance'], ['/data', 'Data']] as const) {
       await page.goto(href);
       await page.waitForTimeout(1500);
       await check(screen);

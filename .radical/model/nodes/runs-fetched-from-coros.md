@@ -1,0 +1,9 @@
+---
+id: "4f3898f1-b8a8-4e4b-a7ae-88098b734eb5"
+type: "requirement"
+label: "Runs fetched from COROS"
+action: "download from the runner's COROS account into the folder's FIT files (fit/ when the folder has one) the FIT files of the runs no fetch has brought before, from the day of the last full fetch (the last 30 days at the first), import them as the runner's own import does, and say how many runs it fetched"
+ears_type: "event-driven"
+rationale: "The runner asked whether the COROS MCP API can be used \"aby zgrac pliki od uzytkownika z coros do folderu\", then said \"zrob prototyp\". Model's choices: a prototype in the Integrations section of the Data screen (\"w data ... wyszczegolni sekcje integracje ... i tam daj coros\"), fetched when the runner asks (no fetch by itself); only runs (COROS sport types 100 outdoor, 101 indoor, 102 trail, 103 track); the first fetch goes back 30 days, the next ones from the day of the last full fetch, one day before it; the activities fetched are kept by their COROS labelId in .isostride/user/coros.json, so a run is never fetched twice (each file counts against COROS's limit of 50 a day); the file keeps the name COROS gives it."
+trigger: "the runner, with a COROS account connected, asks in the Integrations section of the Data screen to fetch runs from COROS"
+---

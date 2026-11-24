@@ -11,7 +11,7 @@ test.describe('Light and dark theme', () => {
     expect(await bg(page)).toBe('rgb(29, 31, 35)');
     // The theme is set in Settings, its Display tab.
     await nav(page, 'Settings');
-    await page.getByRole('tab', { name: 'Display', exact: true }).click();
+    await page.getByRole('tab', { name: 'Look & feel', exact: true }).click();
     await page.getByRole('radio', { name: 'Light' }).click();
     expect(await bg(page)).toBe('rgb(244, 245, 247)');
     await page.reload();
@@ -30,14 +30,28 @@ test.describe('Journeys', () => {
     await openWithFolder(page, await fitFiles(30, '2026-05-01'));
     await importAll(page);
 
-    // The Data folder screen, under the logo: the folder and what it holds, import, recompute, another folder.
+    // The Data screen, under the logo: the folder and what it holds, import, recompute, another folder.
     await page.locator('.sidebar .brand').click();
-    await expect(page).toHaveURL(/\/folder$/);
+    await expect(page).toHaveURL(/\/data$/);
+    // A link kept from before the screen was named Data (/folder) leads to it.
+    await page.goto('/folder');
+    await expect(page).toHaveURL(/\/data$/);
+    await page.getByRole('heading', { name: 'Data', exact: true }).waitFor();
     const facts = page.getByLabel('What the folder holds');
     await expect(page.locator('.folder-name')).toContainText('data');
     await expect(facts).toContainText(/Runs\d+/);
     await expect(facts).toContainText('FIT files read30');
-    await expect(page.getByRole('region', { name: 'Folder' }).locator('.folder-actions').getByRole('button')).toHaveText(['Import folder', 'Recompute everything', 'Change folder…']);
+    // Another folder, a choice of its own in the accent; the notes and Recompute everything (for a repair)
+    // folded under Logs until opened.
+    const folderCard = page.getByRole('region', { name: 'Folder', exact: true });
+    await expect(folderCard.locator('.folder-top').getByRole('button', { name: 'Change folder…' })).toHaveClass(/primary/);
+    await expect(folderCard.getByRole('button', { name: 'Recompute everything' })).toBeHidden();
+    await folderCard.locator('.folder-logs summary').click();
+    await expect(folderCard.locator('.folder-logs')).toContainText('Every FIT file of the folder is imported by itself');
+    // Integrations: COROS, not connected in this browser, offers to connect.
+    const integrations = page.getByRole('region', { name: /^Integrations/ });
+    await expect(integrations.getByRole('region', { name: 'COROS' })).toContainText('Not connected');
+    await expect(integrations.getByRole('button', { name: 'Connect COROS' })).toBeVisible();
     // Recompute everything from the FIT files.
     await page.getByRole('button', { name: 'Recompute everything' }).click();
     await page.getByRole('alertdialog', { name: 'Recompute everything?' }).getByRole('button', { name: 'Recompute' }).click();
@@ -46,7 +60,7 @@ test.describe('Journeys', () => {
     await nav(page, 'Settings');
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
     await page.getByRole('button', { name: 'Back' }).click();
-    await expect(page.getByRole('heading', { name: 'Data folder' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Data', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Forward' })).toBeEnabled();
     await page.getByRole('button', { name: 'Forward' }).click();
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();

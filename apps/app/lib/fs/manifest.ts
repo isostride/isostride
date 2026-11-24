@@ -79,12 +79,33 @@ export function isOutdated(manifest: Manifest | null): boolean {
 }
 
 /**
- * The FIT files of an imported folder that no import has seen: a run dropped into the folder since
- * (requirement "New runs imported by themselves"). None before the first import, which the runner
- * starts, nor a file an import failed on (it is tried again by the next import the runner starts).
+ * The FIT files of the folder that no import has seen (requirement "New runs imported by themselves"):
+ * every file of a folder never imported, then each run dropped into it since. A file an import failed
+ * on is not one of them (failedFitFiles).
  */
 export async function unseenFitFiles(folder: DataFolder): Promise<string[]> {
   const manifest = await readManifest(folder);
-  if (!manifest || !Object.keys(manifest.files).length) return [];
-  return (await listFitFiles(folder)).filter((f) => !manifest.files[f]);
+  return (await listFitFiles(folder)).filter((f) => !manifest?.files[f]);
+}
+
+/** Reasons a whole file gives: read again, it gives them again (a hike is not a run however often it is read). */
+const LASTING: string[] = [IMPORT_REASONS.notRun, IMPORT_REASONS.noSamples, IMPORT_REASONS.noSession];
+
+/**
+ * The FIT files of the folder an import failed on for a reason that may pass (a file cut short while
+ * it was copied, unreadable for a moment): tried again when the app opens. A file that is not a run,
+ * or holds no samples, is not: it would be read again at every opening for nothing.
+ */
+export async function failedFitFiles(folder: DataFolder): Promise<string[]> {
+  return (await filesToImport(folder)).failed;
+}
+
+/** The files no import has seen and those to try again, from one reading of the manifest and one listing of the folder. */
+export async function filesToImport(folder: DataFolder): Promise<{ unseen: string[]; failed: string[]; outdated: boolean }> {
+  const [manifest, files] = await Promise.all([readManifest(folder), listFitFiles(folder)]);
+  return {
+    unseen: files.filter((f) => !manifest?.files[f]),
+    failed: manifest ? files.filter((f) => { const s = manifest.files[f]; return s?.status === 'error' && !LASTING.includes(readReason(s.reason)?.key ?? ''); }) : [],
+    outdated: isOutdated(manifest),
+  };
 }

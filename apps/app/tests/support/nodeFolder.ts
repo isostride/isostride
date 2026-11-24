@@ -42,6 +42,11 @@ export class NodeFolder implements DataFolder {
     await fs.writeFile(this.abs(p), text);
   }
 
+  async writeBytes(p: string, bytes: Uint8Array): Promise<void> {
+    await fs.mkdir(path.dirname(this.abs(p)), { recursive: true });
+    await fs.writeFile(this.abs(p), bytes);
+  }
+
   async remove(p: string): Promise<void> {
     await fs.rm(this.abs(p), { recursive: true, force: true });
   }

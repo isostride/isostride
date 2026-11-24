@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { definitionFromRule, readDefinitions, ruleOf, writeDefinitions, type BlockInstancesFile } from '@/lib/blocks';
 import { instancesOf } from '@/lib/detection';
 import { PATHS, readJson } from '@/lib/fs';
-import { writeGear } from '@/lib/gear';
+import { readRunTags, writeGear, writeRunTags } from '@/lib/gear';
+import type { RunsIndex } from '@/lib/kernel';
 import { bumpStamp, cached, dataStamp, importFolder, refreshBlocks, refreshContext } from '@/lib/pipeline';
 import { FILES, makeDataFolder, recordMeasure } from '../support/fixtures';
 import type { NodeFolder } from '../support/nodeFolder';
@@ -39,9 +40,10 @@ describe('Computed once and cached', () => {
     await bumpStamp(folder);
     expect(await dataStamp(folder)).not.toBe(stamp);
     expect((await cached(folder, 'instances', key, () => instancesOf(folder, [all]))).hit).toBe(false);
-    // So does a change of the blocks, and an import of new runs; an import of none keeps it.
+    // A change of the blocks keeps it (the results read the runs, not the blocks: "tak zrob 1-4"), so
+    // does an import of no new run.
     await refreshBlocks(folder);
-    expect((await cached(folder, 'instances', key, () => instancesOf(folder, [all]))).hit).toBe(false);
+    expect((await cached(folder, 'instances', key, () => instancesOf(folder, [all]))).hit).toBe(true);
     await importFolder(folder);
     expect((await cached(folder, 'instances', key, () => instancesOf(folder, [all]))).hit).toBe(true);
   });
@@ -74,4 +76,29 @@ describe('Computed once and cached', () => {
     expect(await refreshContext(folder)).toBe('detected');
     expect((await instances()).length).toBe(3);
   });
+
+  it('Kept results stand when a change does not touch them', async () => {
+    // The review of 24 Nov 2026 ("tak zrob 1-4"): a note or a block changed dropped every result kept.
+    const folder = await makeDataFolder([FILES.pace3, FILES.pace4]);
+    await importFolder(folder);
+    const all = definitionFromRule('All runs', ruleOf({ type: 'run' }));
+    const key = JSON.stringify([all]);
+    const instances = () => cached(folder, 'instances', key, () => instancesOf(folder, [all]));
+    expect((await instances()).hit).toBe(false);
+    const index = (await readJson<RunsIndex>(folder, PATHS.runsIndex))!;
+    // A note: the results stand.
+    const tags = await readRunTags(folder);
+    await writeRunTags(folder, { ...tags, tags: { [index.runs[0].id]: { note: 'windy' } } });
+    await refreshContext(folder);
+    expect((await instances()).hit).toBe(true);
+    // A block kept: they stand.
+    await writeDefinitions(folder, [all]);
+    await refreshBlocks(folder);
+    expect((await instances()).hit).toBe(true);
+    // Shoes: the runs' context changed, they are computed again.
+    await writeGear(folder, [{ id: 's', name: 'Shoes S', type: 'shoes', from: '2026-01-01', to: null }]);
+    await refreshContext(folder);
+    expect((await instances()).hit).toBe(false);
+  });
 });
+

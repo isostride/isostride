@@ -12,7 +12,7 @@ export const COMMON: Dictionary = {
   History: 'Historia',
   Back: 'Wstecz',
   Forward: 'Dalej',
-  'Data folder: import, recompute, change': 'Folder danych: import, przeliczenie, zmiana',
+  'Data: import, recompute, change': 'Dane: import, przeliczenie, zmiana',
   'Version {version}': 'Wersja {version}',
   'Version {version}, commit {commit}': 'Wersja {version}, commit {commit}',
   'Search runs, segments, screens (⌘K)': 'Szukaj biegów, segmentów, ekranów (⌘K)',
@@ -36,4 +36,6 @@ export const COMMON: Dictionary = {
   'Effort pace': 'Tempo wysiłku',
   'Leg spring stiffness': 'Sztywność nogi',
   'Leg stiffness': 'Sztywność nogi',
+  'The folder, recompute, another folder, integrations': 'Folder, przeliczenie, inny folder, integracje',
+  'Settings · the language, its numbers and dates': 'Ustawienia · język, jego liczby i daty',
 };

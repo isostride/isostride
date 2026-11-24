@@ -1187,9 +1187,25 @@ table.data.changes td { padding-top: 14px; padding-bottom: 14px; }
 
 /* The notice of runs imported by themselves: a dark card at the bottom right, over the page; on a phone above the tab bar. */
 .toast-region { position: fixed; right: 20px; bottom: calc(var(--tabbar) + 20px); z-index: 30; display: grid; gap: 8px; pointer-events: none; }
-.toast { display: flex; align-items: center; gap: 10px; max-width: min(420px, calc(100vw - 40px)); padding: 12px 16px; border-radius: 14px; background: var(--ink); color: var(--on-ink); font-size: 13px; font-weight: 550; box-shadow: var(--shadow-float); animation: toast-in 0.22s var(--ease); }
+/* A light card with the accent ("Jasna karta z akcentem"): its stripe and icon in the accent, its text as the page's. */
+.toast { display: flex; align-items: center; gap: 10px; max-width: min(420px, calc(100vw - 40px)); padding: 12px 14px 12px 16px; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 14px; background: var(--surface); color: var(--text); font-size: 13px; font-weight: 550; box-shadow: var(--shadow-float); animation: toast-in 0.22s var(--ease); }
+.toast > svg { color: var(--accent); }
 @keyframes toast-in { from { transform: translateY(8px); } to { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+/* The runs an import added, named in its notice and its message (requirement "New runs marked new"). */
+.toast { pointer-events: auto; align-items: flex-start; }
+.toast-body { flex: 1; min-width: 0; }
+.toast-close { flex: none; display: grid; place-items: center; width: 24px; height: 24px; margin: -3px -4px -3px 4px; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
+.toast-close:hover { color: var(--text); background: var(--surface-2); }
+.toast-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.toast > svg { align-self: flex-start; margin-top: 1px; }
+.added-runs { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; font-weight: 450; }
+.added-runs { color: var(--text-2); }
+.added-runs a { color: var(--accent); text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 2px; }
+.added-runs a:hover { text-decoration-color: currentColor; }
+.new-chip { display: inline-flex; align-items: center; margin-left: 6px; padding: 0 7px; border-radius: 999px; background: var(--grad); color: var(--on-accent); font-size: 10.5px; font-weight: 700; line-height: 17px; letter-spacing: 0.02em; vertical-align: 1px; }
+.run-tile.new { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.new-runs-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 
 /* Settings · Display: a row per setting, its name and what it does on the left, its control on the right. */
 .display-row { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; padding: 16px 18px; border-top: 1px solid var(--line); }
@@ -1277,28 +1293,45 @@ a.crumbs:hover b { color: var(--text); }
 .folder-icon { display: grid; place-items: center; flex: none; width: 46px; height: 46px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 13%, var(--surface)); color: var(--accent); }
 .folder-name { display: grid; flex: 1; min-width: 0; }
 .folder-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; font-weight: 720; letter-spacing: -0.02em; }
-/* The folder's path as the runner typed it: the start cut off when it is long, the folder's end kept. */
-.folder-name .folder-path { direction: rtl; text-align: left; font: 600 15px var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); letter-spacing: 0; }
-.folder-path-form { display: grid; gap: 6px; margin-top: 8px; max-width: 640px; }
-.folder-path-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.folder-path-row .input { flex: 1 1 280px; min-width: 0; font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); }
 .link-button { border: 0; padding: 0; background: none; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .warn-text { color: var(--warn); }
 .folder-new { flex: none; padding: 4px 11px; border-radius: 999px; background: var(--grad); color: var(--on-accent); font-size: 12px; font-weight: 650; }
 /* Columns of a set width: a figure read late ("–" first, then the number) does not move the ones beside it (layout shift 0). */
-.folder-facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+/* The six figures in one row on a wide screen (three, then two, on narrower ones): none drops to a line of its own. */
+.folder-facts { margin: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.folder-facts .folder-day { font-size: 17px; white-space: nowrap; }
+.folder-change { flex: none; height: 38px; padding: 0 18px; }
+@media (max-width: 1180px) { .folder-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .folder-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .folder-actions .btn { height: 38px; padding: 0 18px; }
 .folder-actions .btn.ghost { border-color: transparent; background: none; box-shadow: none; color: var(--text-2); }
 .folder-actions .btn.ghost:hover { background: var(--surface-2); color: var(--text); }
 .folder-progress .progress { margin-top: 6px; }
-.folder-message { justify-self: start; padding: 9px 14px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--text); font-size: 13px; font-weight: 550; }
 .folder-notes { display: grid; gap: 4px; padding-top: 14px; border-top: 1px solid var(--line); line-height: 1.5; }
 .folder-notes p { margin: 0; }
+/* Logs: how the import works, the files that could not be read, the duplicates, Recompute everything; folded until opened. */
+.folder-logs { border-top: 1px solid var(--line); padding-top: 12px; }
+.folder-logs summary { display: flex; align-items: center; gap: 8px; width: fit-content; padding: 6px 10px 6px 6px; margin-left: -6px; border-radius: 10px; cursor: pointer; list-style: none; color: var(--text-2); font-size: 13px; font-weight: 600; }
+.folder-logs summary::-webkit-details-marker { display: none; }
+.folder-logs summary:hover { background: var(--surface-2); color: var(--text); }
+.folder-logs summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* A chevron that turns when open: it is seen to open (a flex summary has no marker of its own). */
+.folder-logs summary::before { content: ''; width: 7px; height: 7px; margin: 0 4px 0 6px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform 0.15s var(--ease); }
+.folder-logs[open] summary::before { transform: rotate(45deg); }
+.folder-logs[open] summary { margin-bottom: 12px; }
+@media (prefers-reduced-motion: reduce) { .folder-logs summary::before { transition: none; } }
+.folder-logs .warn-chip { color: var(--warn); }
+.folder-logs .folder-notes { border-top: 0; padding-top: 0; }
+.folder-log { margin-top: 14px; }
+.folder-log h3 { margin: 0 0 2px; font-size: 13.5px; }
+.folder-log p { margin: 0 0 8px; line-height: 1.5; }
+.folder-log ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; }
 .folder-notes b { color: var(--text-2); font-weight: 600; }
-.folder-failed { margin-top: 14px; padding: 16px 18px; }
-.folder-failed h2 { margin: 0 0 2px; font-size: 15px; }
-.folder-failed ul { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; }
+/* COROS (prototype): the account connected and its fetch, a card under the folder's. */
+.integrations { margin-top: 24px; }
+.integrations .section-title { margin: 0 0 10px; font-size: 15px; }
+.coros-name { display: grid; flex: 1; min-width: 0; }
+.coros-name b { font-size: 18px; font-weight: 720; letter-spacing: -0.02em; }
 @media (max-width: 820px) {
   .brand-row { flex: 1; min-width: 0; margin: 0; }
   .history-nav button { width: 40px; height: 40px; border-radius: 12px; }
@@ -1946,6 +1979,8 @@ table.data tr.reference > td { background: color-mix(in srgb, var(--accent) 9%, 
 
   /* The Data folder's figures two to a line. */
   .folder-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .folder-top { flex-wrap: wrap; }
+  .folder-change { flex: 1 1 100%; }
 
   /* The map of the models read down the screen: each lane's name, then its models from what is measured to what is fitted. */
   .model-map-scroll { overflow: visible; }

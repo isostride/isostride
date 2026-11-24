@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { fakeFolderPicker, fitFiles, putFitFiles, recordMeasure } from './support';
+import { fakeFolderPicker, fitFiles, importDone, putFitFiles, recordMeasure } from './support';
 
 let presses = 0;
 
@@ -37,13 +37,11 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
     await tabTo(page, 'button', 'Skip setup');
     await page.keyboard.press('Enter');
     await page.waitForURL(/\/dashboard$/);
-    // The logo leads to the Data folder screen, where the import starts.
+    // The logo leads to the Data screen, where the import (by itself) is seen to end.
     await tabTo(page, 'link', /^IsoStride/);
     await page.keyboard.press('Enter');
-    await page.getByRole('heading', { name: 'Data folder' }).waitFor();
-    await tabTo(page, 'button', 'Import folder');
-    await page.keyboard.press('Enter');
-    await expect(page.getByText(/^Imported \d+ runs?/)).toBeVisible({ timeout: 60_000 });
+    await page.getByRole('heading', { name: 'Data', exact: true }).waitFor();
+    await importDone(page);
     // Block definition: on the Analysis screen, the picker opens with the search focused; Enter takes the first block found in the runs.
     await tabTo(page, 'link', /Compare$/);
     await page.keyboard.press('Enter');

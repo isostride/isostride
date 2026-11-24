@@ -44,6 +44,12 @@
     "targetId": "f0ce90cd-4cf5-47df-bc6f-d44ce24ec168"
   },
   {
+    "id": "013b5069-5d4b-43ec-bb41-ec5bf2da7cec",
+    "relationType": "verifies",
+    "sourceId": "b29cedb1-7934-4e5e-ab3e-7ac1b8cf6d61",
+    "targetId": "c0171ff7-cd96-4397-bfa6-0dc87e93beb7"
+  },
+  {
     "id": "01680cc3-f768-41ca-909b-a26819786196",
     "relationType": "traces-to",
     "sourceId": "c811d742-0659-4f3a-b7b9-da09229a7bf0",
@@ -1496,10 +1502,22 @@
     "targetId": "6c5841aa-eb91-46d4-bad2-10d27bb0ea15"
   },
   {
+    "id": "2b014154-73ff-4612-90f6-8050443bc21f",
+    "relationType": "verifies",
+    "sourceId": "5e606384-c6f9-4d1e-9338-340d7a5d79e0",
+    "targetId": "4f3898f1-b8a8-4e4b-a7ae-88098b734eb5"
+  },
+  {
     "id": "2b2105bd-880d-47c7-96fa-1dc84735d79d",
     "relationType": "verifies",
     "sourceId": "7bc5e495-26c7-48cc-9d47-1607dd64f8d1",
     "targetId": "edf14cec-c720-4d6e-b09b-f2ad6d867283"
+  },
+  {
+    "id": "2b2d7808-929d-4162-98fb-2a5f2768c4bc",
+    "relationType": "implements",
+    "sourceId": "d5523fc0-5228-475a-8242-c0d8cac17086",
+    "targetId": "31c48696-639f-4365-978a-a6cfca0472b5"
   },
   {
     "id": "2b7400b9-9efe-4930-ade2-2bfb5ae7fdd6",
@@ -1607,6 +1625,13 @@
     "relationType": "verifies",
     "sourceId": "c9b0a80c-9323-4a1f-8e7a-d521ca7be1a8",
     "targetId": "91d74a54-7182-48e5-b12f-bb403539e0e5"
+  },
+  {
+    "id": "2d0188a6-bc74-4873-8925-e555ef6cf253",
+    "quote": "jak cos zaimprotujesz to chcialbym wiedziec co coztsalo dodnane ... albo znaczek new ... albo w notify",
+    "relationType": "derives",
+    "sourceId": "54829c19-12cb-49a0-bc4e-f0d306131dfe",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "2d229065-e14e-4bd3-9606-66dc5d3293bb",
@@ -1774,6 +1799,12 @@
     "targetId": "78dd70f1-da92-4e8c-b1a9-0bfcd47910a4"
   },
   {
+    "id": "334d1ba3-3672-4026-8ba0-f34848041371",
+    "relationType": "implements",
+    "sourceId": "f1c03f5c-4092-4ddf-aaa9-efc717d56dc7",
+    "targetId": "93361e28-caed-42b4-9f93-7d5759c549ac"
+  },
+  {
     "id": "33b3e066-08d4-4d17-afc4-c2a4ea78a75c",
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
@@ -1877,6 +1908,12 @@
     "relationType": "constrains",
     "sourceId": "fefd8bec-3f3f-4a8a-92ef-ff994442c642",
     "targetId": "a694fdc9-58ad-462b-a996-c49812b6da79"
+  },
+  {
+    "id": "37f29711-4eca-4df6-8131-498c053741b4",
+    "relationType": "satisfies",
+    "sourceId": "c14dbde0-de4f-48ba-a569-779a0fdfc5c8",
+    "targetId": "db3a5634-f1c1-4459-b810-53b37c39c7c5"
   },
   {
     "id": "3823be1f-917b-483a-8e68-7c36fa59f44c",
@@ -2824,6 +2861,12 @@
     "targetId": "3a807173-78c6-4e65-a07c-6d1aed8a072b"
   },
   {
+    "id": "599b88d0-79e6-490a-9152-bed539c5b53c",
+    "relationType": "constrains",
+    "sourceId": "49a7c174-419c-4933-9340-17ca2c617bb6",
+    "targetId": "c14dbde0-de4f-48ba-a569-779a0fdfc5c8"
+  },
+  {
     "id": "59a516f0-4430-4837-a5f6-636d2004a3db",
     "relationType": "realises",
     "sourceId": "a694fdc9-58ad-462b-a996-c49812b6da79",
@@ -3369,6 +3412,12 @@
     "targetId": "0965031c-0b71-4b28-b698-63d5fc5d9f2a"
   },
   {
+    "id": "6c983378-a327-42dc-ab62-32493647d5bf",
+    "relationType": "constrains",
+    "sourceId": "31c48696-639f-4365-978a-a6cfca0472b5",
+    "targetId": "af580e00-9fde-4182-89d8-479d71707a14"
+  },
+  {
     "id": "6ca64d9d-05a5-486c-9eac-37ad7acaf1ef",
     "relationType": "satisfies",
     "sourceId": "dcc9c750-4930-43ec-b29a-96d8cc3419e7",
@@ -3711,6 +3760,12 @@
     "targetId": "ae98bcc0-d501-45fc-b39d-c304e5a7b242"
   },
   {
+    "id": "767977df-e60c-4125-a12c-4d7ff2042d6d",
+    "relationType": "satisfies",
+    "sourceId": "c14dbde0-de4f-48ba-a569-779a0fdfc5c8",
+    "targetId": "c0171ff7-cd96-4397-bfa6-0dc87e93beb7"
+  },
+  {
     "id": "76c385f7-b16d-4603-9191-629a8e248cd0",
     "relationType": "verifies",
     "sourceId": "f2252e81-ddb1-469c-a537-c2ff29fab823",
@@ -3787,6 +3842,12 @@
     "relationType": "illustrates",
     "sourceId": "c8a74635-e779-4b75-81e7-8fcec5b8f1b7",
     "targetId": "7670dcd8-f3c7-4529-bbe2-78f77a582699"
+  },
+  {
+    "id": "799301f4-14be-4bb0-9b3c-add5059cd845",
+    "relationType": "satisfies",
+    "sourceId": "c14dbde0-de4f-48ba-a569-779a0fdfc5c8",
+    "targetId": "4f3898f1-b8a8-4e4b-a7ae-88098b734eb5"
   },
   {
     "id": "79ddc18f-45fb-4a17-9586-a35aaecb2d78",
@@ -4276,6 +4337,13 @@
     "targetId": "d3a03d2c-8b8d-41a1-9028-ce00ca6f8177"
   },
   {
+    "id": "87c6ce0f-318b-48ea-8852-e7f1cf28485d",
+    "quote": "Ograniczenia: 50 plików na użytkownika na 24 h",
+    "relationType": "derives",
+    "sourceId": "db3a5634-f1c1-4459-b810-53b37c39c7c5",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "87ce9e4f-4c1d-4375-8cb0-efe9144144dc",
     "relationType": "verifies",
     "sourceId": "a7041664-0172-4632-9168-8f1465772fe8",
@@ -4657,12 +4725,6 @@
     "targetId": "abf40e24-6f3f-4f08-aadc-ec6a4a6f5368"
   },
   {
-    "id": "936ef9a1-dccf-49b1-9d0c-dd73cf2ead14",
-    "relationType": "satisfies",
-    "sourceId": "d0291cd1-bdf1-4c49-8333-4b658a02f95d",
-    "targetId": "419eeee3-6616-4030-a71a-481278d2141b"
-  },
-  {
     "id": "93caf066-5097-4192-9e09-becb82e1ed08",
     "relationType": "verifies",
     "sourceId": "fb4d09da-7dc0-4127-9813-c478e3638ca5",
@@ -4772,6 +4834,12 @@
     "relationType": "verifies",
     "sourceId": "84930b78-0d43-4aea-b74b-808687a91b45",
     "targetId": "2a60339a-0a2c-4da8-b12e-4227eba8f4d1"
+  },
+  {
+    "id": "97f4f2d4-957d-4370-9b6e-d0ad53d2bbe6",
+    "relationType": "constrains",
+    "sourceId": "31c48696-639f-4365-978a-a6cfca0472b5",
+    "targetId": "df4990c9-dd90-49cc-9eca-6507c3d5dd66"
   },
   {
     "id": "9824e494-2d1c-465c-99f6-b884d5f0e5ce",
@@ -4896,6 +4964,12 @@
     "relationType": "verifies",
     "sourceId": "8c6f9230-8468-4d75-8316-7e9e9c1eaa42",
     "targetId": "f43c283f-b3a3-4199-873e-c4773079e307"
+  },
+  {
+    "id": "9b74c812-03b9-4db3-9fe5-9346e40c0715",
+    "relationType": "verifies",
+    "sourceId": "7839e2f2-1577-489d-a915-aa798379a6a6",
+    "targetId": "54829c19-12cb-49a0-bc4e-f0d306131dfe"
   },
   {
     "id": "9b99dc7f-0de5-49c6-8459-5432d578e2c3",
@@ -5072,6 +5146,13 @@
     "targetId": "ae98bcc0-d501-45fc-b39d-c304e5a7b242"
   },
   {
+    "id": "a2456fff-47f8-49e8-b601-e086d48b044c",
+    "quote": "zgrac pliki od uzytkownika z coros",
+    "relationType": "derives",
+    "sourceId": "c0171ff7-cd96-4397-bfa6-0dc87e93beb7",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "a3d12096-bcff-4b22-89f6-3dd49ed068c7",
     "relationType": "satisfies",
     "sourceId": "3614e7f4-9407-407b-a23b-56e0b424d992",
@@ -5229,6 +5310,12 @@
     "targetId": "39491f93-4fcc-4f9c-960b-e12750deef8f"
   },
   {
+    "id": "a871fdc1-e6d5-4bfa-84d0-376be96ad397",
+    "relationType": "constrains",
+    "sourceId": "93361e28-caed-42b4-9f93-7d5759c549ac",
+    "targetId": "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7"
+  },
+  {
     "id": "a8a9cab8-ed4b-4492-a256-dc0678b95aa2",
     "relationType": "constrains",
     "sourceId": "aaaccc51-012a-4c14-9315-82eaa46770f1",
@@ -5346,6 +5433,13 @@
     "relationType": "depends-on",
     "sourceId": "1a767a75-6088-48ab-bed9-a2498217b013",
     "targetId": "28133512-0955-4030-aed2-ebbae2df888f"
+  },
+  {
+    "id": "ac3574ff-d03c-4509-bd8f-43c95da927ab",
+    "quote": "aby zgrac pliki od uzytkownika z coros do folderu",
+    "relationType": "derives",
+    "sourceId": "4f3898f1-b8a8-4e4b-a7ae-88098b734eb5",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "ac79b1f9-8b97-41b2-808c-f16f780832d5",
@@ -5508,6 +5602,14 @@
     "relationType": "verifies",
     "sourceId": "2a0542b2-ead0-42d2-ad1c-24694dc2d613",
     "targetId": "e6909b1e-ea15-4395-b4e5-0ecdb64eef5b"
+  },
+  {
+    "id": "b0d6918f-f474-4561-acca-f4790d332a32",
+    "label": "Signs in, lists runs, downloads FIT files",
+    "relationType": "interacts",
+    "sourceId": "c14dbde0-de4f-48ba-a569-779a0fdfc5c8",
+    "targetId": "7f6ed566-2dac-4505-af87-88711fdd8c66",
+    "technology": "MCP over HTTPS, OAuth 2.0 PKCE"
   },
   {
     "id": "b11f2123-ba4d-4089-864b-c2a58ecc4c68",
@@ -5921,6 +6023,13 @@
     "relationType": "constrains",
     "sourceId": "027b71b3-7b37-4e61-b765-489c9b4e9ecc",
     "targetId": "dcc9c750-4930-43ec-b29a-96d8cc3419e7"
+  },
+  {
+    "id": "bab33236-2813-409c-9fa3-3a937b93a0c7",
+    "quote": "zmien nazwe data folder ... na data",
+    "relationType": "derives",
+    "sourceId": "a4b5c657-99ae-490c-89ba-79da8f76da5e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "bab70dcf-32ae-4379-9b36-0b478140c116",
@@ -6451,6 +6560,12 @@
     "targetId": "b44139fd-e3bb-4b10-9e60-0c2aa1907358"
   },
   {
+    "id": "cc5a54be-73ea-46e2-894c-38c2ea28bd75",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "54829c19-12cb-49a0-bc4e-f0d306131dfe"
+  },
+  {
     "id": "cc973599-ea38-4839-a5de-0bc2874e7f53",
     "quote": "F11. Trend: a series of instances of one definition over time, for a chosen metric, filtered by context fields.\nInstances of one definition over time, noise threshold, gear changes as vertical lines",
     "relationType": "derives",
@@ -6495,6 +6610,12 @@
     "relationType": "realises",
     "sourceId": "dcc9c750-4930-43ec-b29a-96d8cc3419e7",
     "targetId": "20773fe3-dac4-43a8-b0a4-5098326b5d59"
+  },
+  {
+    "id": "cd155c6a-68c2-4d2e-9d78-7798c316d535",
+    "relationType": "constrains",
+    "sourceId": "93361e28-caed-42b4-9f93-7d5759c549ac",
+    "targetId": "d0291cd1-bdf1-4c49-8333-4b658a02f95d"
   },
   {
     "id": "cd255469-e7c4-4efa-b070-999e02f0d119",
@@ -7680,12 +7801,6 @@
     "targetId": "8690d92b-9be0-4782-8993-56acf708796a"
   },
   {
-    "id": "f2eb9c17-cd3e-482c-89cb-98dee7ab7dc5",
-    "relationType": "verifies",
-    "sourceId": "1c415b5d-bd8f-4b36-9264-5bab7844f9fe",
-    "targetId": "419eeee3-6616-4030-a71a-481278d2141b"
-  },
-  {
     "id": "f2fd4ac6-4cee-4770-bbca-ee84ad3381e3",
     "relationType": "satisfies",
     "sourceId": "3614e7f4-9407-407b-a23b-56e0b424d992",
@@ -7856,6 +7971,12 @@
     "relationType": "satisfies",
     "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
     "targetId": "06b9896e-33c2-4668-b6eb-3f0115d9ceea"
+  },
+  {
+    "id": "f7f67e63-1600-4c2b-b6cb-ef7eb3261c6a",
+    "relationType": "verifies",
+    "sourceId": "e5dd9207-a3cb-45af-bf6c-aff883a45596",
+    "targetId": "db3a5634-f1c1-4459-b810-53b37c39c7c5"
   },
   {
     "id": "f7fa5ef9-1bec-4e20-8851-11e4c680354c",
@@ -8099,13 +8220,6 @@
     "relationType": "verifies",
     "sourceId": "695baba5-904e-49a7-9043-1a856d257987",
     "targetId": "0e952c97-92a0-4037-846e-9154619a2261"
-  },
-  {
-    "id": "fed8e3d6-6e10-4b66-9f0b-9e5fe23eb68b",
-    "quote": "usun ta ikonke folderu ... w ekranie data folder .. daj path do folderu\n(użytkownik) Ścieżka wpisana raz",
-    "relationType": "derives",
-    "sourceId": "419eeee3-6616-4030-a71a-481278d2141b",
-    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "fee24e5a-bc2f-4d41-ac2b-2255146ffd23",

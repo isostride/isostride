@@ -1,15 +1,14 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, SCREEN_LEAVE, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget } from '@/components';
+import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, SCREEN_LEAVE, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget, eager } from '@/components';
 import { readChartSettings, runInWorker, useChartSettings, useLocale, useOpenFolder } from '@/lib/client';
 import { msg, number, t, tn } from '@/lib/i18n';
 import { readGear, readRunTags, writeRunTags, type Gear, type RunTag, type RunTagsFile } from '@/lib/gear';
 import { TagEditor } from './TagEditor';
-import { PATHS, readJson, readRunFile } from '@/lib/fs';
+import { PATHS, readJson, readRunFile, markRunsSeen } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { asRule, efficiencyOf, rangeStats, readDefinitions, reasonText, shownName, zoneShares, type BlockInstance, type Rule } from '@/lib/blocks';
 import { date, duration, km, pace, time } from '@/lib/format';
@@ -18,7 +17,7 @@ import { PinButton } from '../dashboard/PinButton';
 import { runMetricsOf, secondsOf, seriesOf, withSecondExtremes, type WindowKey } from './metrics';
 
 /** The map made large, coloured by a metric: loaded when it opens. */
-const RouteExpanded = dynamic(() => import('./RouteExpanded').then((m) => m.RouteExpanded), { ssr: false });
+const RouteExpanded = eager(() => import('./RouteExpanded').then((m) => m.RouteExpanded));
 
 /** The metrics shown, at most 4: a slot each, the slot giving the colour, so a metric keeps its colour while shown. */
 const SLOTS_KEY = 'strideprism.runChart';
@@ -74,6 +73,8 @@ function RunPage() {
   const id = params.get('id') ?? '';
   const { folder, handle } = useOpenFolder();
   const router = useRouter();
+  // A run opened is no longer new (requirement "New runs marked new").
+  useEffect(() => { if (id) markRunsSeen(folder, [id]).catch(() => undefined); }, [folder, id]);
   // The back link: the screen the run was opened from, as it was left (requirement "Back to the previous screen").
   const [back, setBack] = useState<{ href: string; label: string; viaHistory: boolean }>({ href: '/', label: msg('Runs'), viaHistory: false });
   useEffect(() => { setBack(backTarget(window.sessionStorage)); }, []);
@@ -276,6 +277,20 @@ function RunPage() {
   }, [run, view, zoom]);
 
 
+  // The run's metrics and the chart's lines, computed again only when what they show changes: not on
+  // each move of the pointer over the chart (the cursor), which draws the page again.
+  const metricsOfRun = useMemo(() => (run ? runMetricsOf(run) : []), [run, lang]);
+  const shownSpan = view ? (zoom ? zoom[1] - zoom[0] : view.total) : 0;
+  const span = smooth ? smoothSpan(shownSpan) : 0;
+  const lines = useMemo<RunLine[]>(() => {
+    if (!view) return [];
+    return slots.flatMap((k, i) => {
+      const m = metricsOfRun.find((x) => x.key === k);
+      return m && view.series[m.key]?.some((v) => v !== null) ? [{ key: m.key, title: m.title, short: m.short, unit: m.unit, y: rollingMean(view.x, view.series[m.key], span), color: `var(--series-${i + 1})`, format: m.format, tick: m.tick, minSpan: m.minSpan, invert: m.invert, steps: m.steps, zones: zones[m.key] }] : [];
+    });
+  }, [view, slots, span, zones, metricsOfRun]);
+  const mapMetrics = useMemo(() => (bigMap && view ? metricsOfRun.filter((m) => view.series[m.key]?.some((v) => v !== null)).map((m) => ({ key: m.key, title: m.title, format: m.format, invert: m.invert, values: rollingMean(view.wx, view.wseries[m.key], 30), zones: zones[m.key] })) : []), [bigMap, view, metricsOfRun, zones]);
+
   if (run === undefined) return <div className="page muted">{t('Loading…')}</div>;
   if (!run || !view) return <div className="page">{t('Run not found.')} <Link href="/" className="muted">← {t('Runs')}</Link></div>;
   const { x, laps, series, total, dmap } = view;
@@ -285,7 +300,7 @@ function RunPage() {
   const select = (b: { from: number; to: number }) => setDomain(clampDomain([b.from, b.to], total));
   const clear = () => { setZoom(null); setMapLed(false); };
   const has = (k: WindowKey) => !!series[k]?.some((v) => v !== null);
-  const METRICS = runMetricsOf(run);
+  const METRICS = metricsOfRun;
   const domain: Domain = zoom ?? [0, total];
   const setDomain = (d: Domain) => { setMapLed(false); setZoom(d[0] <= 0 && d[1] >= total ? null : d); };
   // The map zoomed or panned by hand: the chart shows the range of time of the route in view.
@@ -305,12 +320,7 @@ function RunPage() {
     setSlots(next);
     if (i >= 0 && focus === k) setFocus(null);
   };
-  // Smooth: each line the rolling mean of its seconds over 1/30 of the range shown; Raw: every second.
-  const span = smooth ? smoothSpan(domain[1] - domain[0]) : 0;
-  const lines: RunLine[] = slots.flatMap((k, i) => {
-    const m = METRICS.find((x) => x.key === k);
-    return m && has(m.key) ? [{ key: m.key, title: m.title, short: m.short, unit: m.unit, y: rollingMean(x, series[m.key], span), color: `var(--series-${i + 1})`, format: m.format, tick: m.tick, minSpan: m.minSpan, invert: m.invert, steps: m.steps, zones: zones[m.key] }] : [];
-  });
+  // Smooth: each line the rolling mean of its seconds over 1/30 of the range shown (span); Raw: every second.
   const colourOf = (k: WindowKey) => lines.find((l) => l.key === k)?.color;
   // The tooltip's head: the time, the distance and the lap.
   const head = (at: number) => {
@@ -522,7 +532,7 @@ function RunPage() {
       )}
       {bigMap && (
         <RouteExpanded lat={run.samples.lat} lon={run.samples.lon} t={run.samples.t} start={view.w.start[0] ?? 0} step={view.w.start.length > 1 ? view.w.start[1] - view.w.start[0] : 10}
-          metrics={METRICS.filter((m) => has(m.key)).map((m) => ({ key: m.key, title: m.title, format: m.format, invert: m.invert, values: rollingMean(view.wx, view.wseries[m.key], 30), zones: zones[m.key] }))}
+          metrics={mapMetrics}
           initial={focus ?? slots.find((k) => k !== null) ?? 'speed'} onClose={() => setBigMap(false)} />
       )}
     </div>

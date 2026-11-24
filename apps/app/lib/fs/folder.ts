@@ -22,6 +22,8 @@ export interface DataFolder {
   readText(path: string): Promise<string | null>;
   /** Writes a text file, creating its parent directories. */
   writeText(path: string, text: string): Promise<void>;
+  /** Writes a file's bytes, creating its parent directories (a FIT file fetched from COROS). */
+  writeBytes(path: string, bytes: Uint8Array): Promise<void>;
   /** Removes a file or a directory with everything in it; no-op when missing. */
   remove(path: string): Promise<void>;
 }
@@ -57,12 +59,21 @@ export const PATHS = {
   /** the tiles of the Dashboard, in their order */
   dashboard: '.isostride/user/dashboard.json',
   settings: '.isostride/user/settings.json',
+  /** the activities fetched from COROS, by their labelId, and the day of the last full fetch (requirement "Runs fetched from COROS") */
+  coros: '.isostride/user/coros.json',
+  /** the runs an import added that the runner has not opened yet (requirement "New runs marked new") */
+  newRuns: '.isostride/user/new-runs.json',
   /** whether the setup wizard was gone through or skipped in this folder */
   setup: '.isostride/user/setup.json',
   derived: '.isostride/derived',
   runs: '.isostride/derived/runs',
   runFile: (id: string) => `.isostride/derived/runs/${id}.json`,
   runsIndex: '.isostride/derived/runs-index.json',
+  /** a run's track every 10 m, for the route segments and the route blocks without its whole file (the review of 24 Nov 2026) */
+  tracks: '.isostride/derived/tracks',
+  trackFile: (id: string) => `.isostride/derived/tracks/${id}.json`,
+  /** what the detection of the blocks kept to do only what changed: the facts of each run, the paces and counts of the suggestions */
+  blocksCache: '.isostride/derived/blocks-cache.json',
   /** every metric the folder's runs hold, with its name and unit (ADR "Metrics from the file") */
   metrics: '.isostride/derived/metrics.json',
   segments: '.isostride/derived/segments.json',
@@ -104,6 +115,42 @@ const SCHEMA_1_METRICS = ['speed', 'heartRate', 'cadence', 'groundContactTime', 
  * recomputes. Null when there is none.
  */
 export async function readRunFile(folder: DataFolder, id: string): Promise<RunFile | null> {
+  if (!keepMax) return readRunFileNow(folder, id);
+  const hit = kept.get(id);
+  if (hit) {
+    // The most recent last: the oldest are let go first.
+    kept.delete(id);
+    kept.set(id, hit);
+    return hit;
+  }
+  const run = await readRunFileNow(folder, id);
+  if (run) {
+    kept.set(id, run);
+    if (kept.size > keepMax) kept.delete(kept.keys().next().value!);
+  }
+  return run;
+}
+
+/**
+ * The run files read last, kept in memory by the Processing Worker that stays (the review of 24 Nov
+ * 2026: Compare's jobs one after another each read every run file again). Off unless keepRunFiles is
+ * called; what is kept is read only, never changed by its readers.
+ */
+const kept = new Map<string, RunFile>();
+let keepMax = 0;
+
+/** Keeps the last `max` run files read (0: none); a change of the data calls forgetRunFiles. */
+export function keepRunFiles(max: number): void {
+  keepMax = max;
+  if (!max) kept.clear();
+}
+
+/** Lets go of the run files kept: the runs changed (a recompute, another folder). */
+export function forgetRunFiles(): void {
+  kept.clear();
+}
+
+async function readRunFileNow(folder: DataFolder, id: string): Promise<RunFile | null> {
   const file = await readJson<RunFile>(folder, PATHS.runFile(id));
   if (!file || file.samples.values) return file;
   const old = file as unknown as { samples: Record<string, Series>; windows: Record<string, unknown> };

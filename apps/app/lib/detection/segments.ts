@@ -23,6 +23,8 @@ export interface RunTrack {
 }
 
 const CELL = 20;
+/** The cells of the comparison of candidates, m: a little more than 30 m, the distance two points of one route keep. */
+const GRID = 32;
 /** Fewer runs than this near a point: no shared route there. */
 const MIN_RUNS = 5;
 /** A change of more than this share in the runs passing ends a segment (a junction). */
@@ -60,8 +62,13 @@ export function detectRouteSegments(tracks: RunTrack[]): RouteSegment[] {
       set.add(ri);
     }
   });
+  // The count depends on the cell only: counted once for each cell (points of many runs share one).
+  const counted = new Map<string, number>();
   const near = (p: TrackPoint): number => {
     const [cx, cy, s] = cellOf(p);
+    const key = `${cx},${cy},${s}`;
+    const known = counted.get(key);
+    if (known !== undefined) return known;
     const out = new Set<number>();
     for (let dx = -1; dx <= 1; dx++)
       for (let dy = -1; dy <= 1; dy++)
@@ -69,6 +76,7 @@ export function detectRouteSegments(tracks: RunTrack[]): RouteSegment[] {
           const set = cells.get(`${cx + dx},${cy + dy},${(s + ds + 8) % 8}`);
           if (set) for (const r of set) out.add(r);
         }
+    counted.set(key, out.size);
     return out.size;
   };
 
@@ -99,18 +107,61 @@ export function detectRouteSegments(tracks: RunTrack[]): RouteSegment[] {
   }
 
   // Strongest first: most runs, then longest; keep a candidate unless it is the same as one kept.
+  // Each candidate's points in a grid of 32 m cells: a point's neighbours within 30 m are in its cell
+  // and the eight around it, so comparing two candidates looks at those only, not at every point of
+  // the other (the review of 24 Nov 2026: this comparison was most of the cost at 500 runs).
+  const gridOf = (pts: TrackPoint[]) => {
+    const grid = new Map<string, TrackPoint[]>();
+    for (const q of pts) {
+      const { x, y } = proj(q);
+      const k = `${Math.floor(x / GRID)},${Math.floor(y / GRID)}`;
+      let cell = grid.get(k);
+      if (!cell) grid.set(k, (cell = []));
+      cell.push(q);
+    }
+    return grid;
+  };
+  /** Share of a's points with a point of b within 30 m, same direction. */
+  const overlap = (a: TrackPoint[], b: Map<string, TrackPoint[]>): number => {
+    let hit = 0;
+    for (let i = 0; i < a.length; i += 3) {
+      const p = a[i];
+      const { x, y } = proj(p);
+      const cx = Math.floor(x / GRID);
+      const cy = Math.floor(y / GRID);
+      let found = false;
+      for (let dx = -1; dx <= 1 && !found; dx++)
+        for (let dy = -1; dy <= 1 && !found; dy++)
+          for (const q of b.get(`${cx + dx},${cy + dy}`) ?? []) if (distance(p, q) <= 30 && angleBetween(p.heading, q.heading) <= 60) { found = true; break; }
+      if (found) hit++;
+    }
+    return hit / Math.ceil(a.length / 3);
+  };
   cands.sort((a, b) => b.count - a.count || b.pts.length - a.pts.length);
-  const kept: Cand[] = [];
+  const kept: (Cand & { grid: Map<string, TrackPoint[]> })[] = [];
   for (const cand of cands) {
-    if (!kept.some((k) => overlap(cand.pts, k.pts) >= SAME_SHARE && overlap(k.pts, cand.pts) >= SAME_SHARE)) kept.push(cand);
+    const grid = gridOf(cand.pts);
+    if (!kept.some((k) => overlap(cand.pts, k.grid) >= SAME_SHARE && overlap(k.pts, grid) >= SAME_SHARE)) kept.push({ ...cand, grid });
   }
 
+  // A pass starts within 30 m of the segment's first point: only the runs with a point in the cells
+  // around it (two cells of 20 m each way, any direction) can pass; the others are not looked at.
+  const runsNear = (p: TrackPoint): Set<number> => {
+    const [cx, cy] = cellOf(p);
+    const out = new Set<number>();
+    for (let dx = -2; dx <= 2; dx++)
+      for (let dy = -2; dy <= 2; dy++)
+        for (let s = 0; s < 8; s++) for (const r of cells.get(`${cx + dx},${cy + dy},${s}`) ?? []) out.add(r);
+    return out;
+  };
   const segments: RouteSegment[] = [];
   for (const k of kept) {
     const track: RefPoint[] = k.pts.map((p) => ({ lat: round6(p.lat), lon: round6(p.lon), heading: Math.round(p.heading) }));
+    const candidates = runsNear(k.pts[0]);
     let runs = 0;
     let passes = 0;
-    for (const t of tracks) {
+    for (const [ri, t] of tracks.entries()) {
+      if (!candidates.has(ri)) continue;
       const n = findPasses(track, t.pts).length;
       if (n) runs++;
       passes += n;
@@ -126,15 +177,6 @@ export function detectRouteSegments(tracks: RunTrack[]): RouteSegment[] {
     });
   }
   return segments.sort((a, b) => b.runs - a.runs || b.length - a.length);
-}
-
-/** Share of a's points with a point of b within 30 m, same direction. */
-function overlap(a: TrackPoint[], b: TrackPoint[]): number {
-  let hit = 0;
-  for (let i = 0; i < a.length; i += 3) {
-    if (b.some((q) => distance(a[i], q) <= 30 && angleBetween(a[i].heading, q.heading) <= 60)) hit++;
-  }
-  return hit / Math.ceil(a.length / 3);
 }
 
 function median(xs: number[]): number {

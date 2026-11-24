@@ -12,7 +12,7 @@ import { msg, number, t } from '@/lib/i18n';
 export const SETUP_CONTINUE = 'strideprism.setupContinue';
 
 /** The steps' names, in English (they name the steps for the tests too); shown in the language in use. */
-export const SETUP_STEPS = [msg('Data folder'), msg('Your runs'), msg('You'), msg('Zones'), msg('Gear'), msg('Load model'), msg('Display'), msg('Done')] as const;
+export const SETUP_STEPS = [msg('Data folder'), msg('Your runs'), msg('You'), msg('Zones'), msg('Gear'), msg('Load model'), msg('Look & feel'), msg('Done')] as const;
 
 /** Compact: a bar of segments, only the current step's name shown (the names stay for screen readers). */
 export function SetupSteps({ at, compact = false }: { at: number; compact?: boolean }) {

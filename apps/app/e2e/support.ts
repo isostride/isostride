@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -147,12 +147,24 @@ export async function openWithFolder(page: Page, files: string[]): Promise<void>
   await page.getByRole('heading', { name: 'Runs' }).waitFor();
 }
 
-/** Imports the folder on the Data folder screen (the logo leads to it), then returns to Runs. */
-export async function importAll(page: Page): Promise<void> {
+/**
+ * Waits on the Data screen (the logo leads to it) until the folder is imported: the app imports every
+ * file by itself, so no job runs, no file waits and the files are read.
+ */
+export async function importDone(page: Page): Promise<void> {
   await page.locator('.sidebar .brand').click();
-  await page.getByRole('heading', { name: 'Data folder' }).waitFor();
-  await page.getByRole('button', { name: 'Import folder' }).click();
-  await page.getByText(/^Imported \d+ runs?/).waitFor({ timeout: 60_000 });
+  await page.getByRole('heading', { name: 'Data', exact: true }).waitFor();
+  const facts = page.getByLabel('What the folder holds');
+  await expect(async () => {
+    await expect(page.locator('.folder-page .folder-progress')).toHaveCount(0);
+    await expect(page.locator('.folder-new')).toHaveCount(0);
+    await expect(facts).not.toContainText('FIT files read0');
+  }).toPass({ timeout: 90_000 });
+}
+
+/** Waits until the folder is imported (it imports by itself), then returns to Runs. */
+export async function importAll(page: Page): Promise<void> {
+  await importDone(page);
   await page.locator('.sidebar').getByRole('link', { name: /Runs$/ }).click();
   await page.getByRole('heading', { name: 'Runs' }).waitFor();
 }
@@ -163,7 +175,7 @@ export async function importAll(page: Page): Promise<void> {
  */
 export async function setChart(page: Page, ...choices: string[]): Promise<void> {
   await page.locator('.sidebar').getByRole('link', { name: /Settings$/ }).click();
-  await page.getByRole('tab', { name: 'Display', exact: true }).click();
+  await page.getByRole('tab', { name: 'Look & feel', exact: true }).click();
   const card = page.getByRole('region', { name: 'Charts' });
   for (const c of choices) {
     if (c === 'blocks on' || c === 'blocks off') await card.getByRole('checkbox', { name: /Segments on the chart/ }).setChecked(c === 'blocks on');

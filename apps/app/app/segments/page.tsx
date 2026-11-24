@@ -1,10 +1,9 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { EditButton, useDataVersion } from '@/components';
+import { EditButton, useDataVersion, eager } from '@/components';
 import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, SHOWN_WORDS, asRule, basisOf, fromRecommendation, readDefinitions, ruleName, ruleOf, shapeName, shownName, shownSuggestionName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type Recommendation } from '@/lib/blocks';
 import { runInWorker, useLocale, useOpenFolder } from '@/lib/client';
 import { date } from '@/lib/format';
@@ -15,7 +14,7 @@ import { builderOptions } from './options';
 import type { BuilderOptions } from './RuleBuilder';
 
 /** The one editor of a block: loaded when it opens. */
-const BlockSheet = dynamic(() => import('./BlockSheet').then((m) => m.BlockSheet), { ssr: false });
+const BlockSheet = eager(() => import('./BlockSheet').then((m) => m.BlockSheet));
 
 export default function BlocksPageWrapper() {
   return <Suspense fallback={<div className="page wide-page blocks-page"><div className="page-head"><h1>{t('Segments')}</h1></div></div>}><BlocksPage /></Suspense>;

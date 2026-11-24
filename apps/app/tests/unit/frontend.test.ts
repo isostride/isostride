@@ -13,7 +13,10 @@ const ROOT = path.resolve(__dirname, '../..');
 describe('Built on the chosen framework', () => {
   it('Only React', async () => {
     const pkg = { file: 'package.json', json: JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')) };
-    const found = otherFrameworks([pkg], allowedByAdrs(path.join(ROOT, '../../.radical/model')));
+    // The decision records are read only when the package declares another framework: reading the
+    // whole model (some 500 files) each time put this unit test over its 100 ms.
+    const declared = otherFrameworks([pkg]);
+    const found = declared.length ? otherFrameworks([pkg], allowedByAdrs(path.join(ROOT, '../../.radical/model'))) : declared;
     await recordMeasure('otherFrameworks', found.length);
     expect(found).toEqual([]);
     expect(pkg.json.dependencies.react).toBeDefined();

@@ -2,23 +2,28 @@
 
 import { useEffect, useState } from 'react';
 import { runInWorker, useOpenFolder, watchJob } from '@/lib/client';
-import { unseenFitFiles } from '@/lib/fs';
-import { tn } from '@/lib/i18n';
+import { filesToImport } from '@/lib/fs';
+import { t, tn } from '@/lib/i18n';
+import type { DataFolder } from '@/lib/fs';
+import { AddedRuns } from './AddedRuns';
+import { onNotice, type Notice } from './notify';
 
 /** The least time between two looks at the folder, ms: focus and visibility often come together. */
 const SETTLE = 2000;
-/** How long the notice of an automatic import stays, ms. */
-const NOTICE = 6000;
+/** How long a notice stays, ms ("wystarczy np. 5 sekund i jeszcze dismiss"); × closes it before. */
+const NOTICE = 5000;
 
 /**
- * New runs imported by themselves (requirement "New runs imported by themselves"): when the app
- * opens on a folder imported before, and whenever its window comes back into view, the folder is
- * listed and the FIT files no import has seen are imported, in the Processing Worker, like the
- * runner's own import (only the new files are read). Returns the notice to show, for a few seconds.
+ * Every run of the folder imported by itself (requirements "New runs imported by themselves" and
+ * "Import folder" replaced: "czy przycisk import folder ma sens ? myslalem ze aplikacja sama pobierze
+ * wszystkie pliki z folderu"): when the app opens on a folder, all its FIT files no import has seen
+ * (every one, the first time) and those an import failed on; whenever its window comes back into view,
+ * the files no import has seen. In the Processing Worker; only the files to import are read. Returns
+ * the notice to show, for a few seconds.
  */
-function useAutoImport(): string | null {
+function useAutoImport(): { notice: Notice | null; folder: DataFolder; dismiss: () => void } {
   const { folder, handle } = useOpenFolder();
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
   useEffect(() => {
     let alive = true;
     let busy = false;
@@ -27,14 +32,27 @@ function useAutoImport(): string | null {
     const unwatch = watchJob((j) => { running = j !== null; });
     const jobRunning = () => running;
     let last = 0;
+    /** the first look since the app opened on the folder: the files an import failed on are tried again */
+    let first = true;
     const look = async () => {
       if (busy || document.visibilityState !== 'visible' || Date.now() - last < SETTLE || jobRunning()) return;
       busy = true;
       last = Date.now();
+      const retry = first;
+      first = false;
       try {
-        if ((await unseenFitFiles(folder)).length && !jobRunning()) {
+        // Data built by an older algorithm, when the app opens: rebuilt at once, by itself (requirement
+        // "Offer recompute on mismatch": "Czy przeliczanie po zmianie algorytmu ma być samoczynne ... tak").
+        const files = await filesToImport(folder);
+        if (retry && files.outdated && !jobRunning()) {
+          const done = await runInWorker('recompute', handle);
+          if (alive) setNotice({ text: tn(done.imported, 'Rebuilt {n} run for this version of the app.', 'Rebuilt {n} runs for this version of the app.'), ids: [] });
+        }
+        // After a recompute the folder is looked at again: it read every file there was.
+        const now = retry && files.outdated ? await filesToImport(folder) : files;
+        if ((now.unseen.length || (retry && now.failed.length)) && !jobRunning()) {
           const done = await runInWorker('import', handle);
-          if (alive && done.imported) setNotice(tn(done.imported, 'Imported {n} new run from the folder.', 'Imported {n} new runs from the folder.'));
+          if (alive && done.imported) setNotice({ text: tn(done.imported, 'Imported {n} new run from the folder.', 'Imported {n} new runs from the folder.'), ids: done.runIds ?? [] });
         }
       } catch {
         // The folder could not be read now (permission, a file being written): the next look tries again.
@@ -52,28 +70,37 @@ function useAutoImport(): string | null {
       unwatch();
     };
   }, [folder, handle]);
+  // The notices of the screens (a recompute, COROS), shown the same way (components/notify).
+  useEffect(() => onNotice(setNotice), []);
   useEffect(() => {
     if (!notice) return;
     const t = setTimeout(() => setNotice(null), NOTICE);
     return () => clearTimeout(t);
   }, [notice]);
-  return notice;
+  return { notice, folder, dismiss: () => setNotice(null) };
 }
 
 
 /**
- * The notice of runs imported by themselves (requirement "New runs imported by themselves"): the
- * folder is looked at when the app opens and whenever its window comes back into view. The live
- * region is always there, so that a screen reader announces the notice when it appears.
+ * The notices of the app at the bottom right, for 5 s (× closes one before): the runs imported by themselves (requirement
+ * "New runs imported by themselves": the folder is looked at when the app opens and whenever its
+ * window comes back into view), and what a screen's job did (components/notify). The live region is
+ * always there, so that a screen reader announces a notice when it appears.
  */
 export function AutoImport() {
-  const notice = useAutoImport();
+  const { notice, folder, dismiss } = useAutoImport();
   return (
     <div className="toast-region" aria-live="polite">
       {notice && (
         <div className="toast">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
-          {notice}
+          <div className="toast-body">
+            {notice.text}
+            <AddedRuns folder={folder} ids={notice.ids ?? []} />
+          </div>
+          <button type="button" className="toast-close" onClick={dismiss} aria-label={t('Close')} title={t('Close')}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
         </div>
       )}
     </div>
