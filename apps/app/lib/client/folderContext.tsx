@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { BrowserFolder, copyIsCurrent, openCopy, openDataFolder, pruneCopies, usesCopy, type DataFolder } from '@/lib/fs';
+import { BrowserFolder, MirroredFolder, copyIsCurrent, openCopy, openDataFolder, pruneCopies, usesCopy, type DataFolder } from '@/lib/fs';
 import { setCopyId } from './worker';
 import { getValue, setValue } from './handleStore';
 
@@ -25,6 +25,8 @@ const HANDLE_KEY = 'folderHandle';
 /** The id of the copy in the browser of the folder chosen (ADR "A copy in the browser on phones"). */
 const COPY_KEY = 'copyId';
 
+/** When the filling of the copy starts after the app opens, ms: the first screen reads first. */
+const FILL_AFTER = 3000;
 const newCopyId = () => `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 /**
@@ -49,9 +51,10 @@ const startNewCopy = () => { void setValue(COPY_KEY, newCopyId()).catch(() => un
 
 /**
  * The folder opened (through its copy on a phone), its data moved first from strideprism/ to .isostride/
- * when an earlier version left it there. In the background: the copies of folders left are pruned, and
- * a copy of a folder changed outside this browser (another data stamp) is left for a new one, the app
- * opened again. A copy that fails is left the same way, the folder read alone meanwhile.
+ * when an earlier version left it there. In the background: the copies of folders left are pruned; a
+ * copy of a folder changed outside this browser (another data stamp) is left for a new one, the app
+ * opened again; a current copy is filled with what it lacks. A copy that fails is left the same way,
+ * the folder read alone meanwhile.
  */
 async function opened(handle: FileSystemDirectoryHandle, fresh = false): Promise<FolderState> {
   const copy = await copyFor(fresh);
@@ -62,7 +65,11 @@ async function opened(handle: FileSystemDirectoryHandle, fresh = false): Promise
   void pruneCopies(copy).catch(() => undefined);
   if (copy) {
     void (async () => {
-      if (await copyIsCurrent(new BrowserFolder(handle), await openCopy(copy))) return;
+      if (await copyIsCurrent(new BrowserFolder(handle), await openCopy(copy))) {
+        // The copy filled in the background with what it lacks, after the first screen had its turn.
+        if (folder instanceof MirroredFolder) setTimeout(() => { void folder.fill().catch(() => undefined); }, FILL_AFTER);
+        return;
+      }
       await setValue(COPY_KEY, newCopyId());
       location.reload();
     })().catch(() => undefined);
