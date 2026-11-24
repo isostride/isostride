@@ -266,8 +266,23 @@ test.describe('Phone reads from a copy', () => {
       return out;
     });
     await expect(async () => expect(await copyStamps()).not.toContain(stamp.stamp)).toPass({ timeout: 30_000 });
-    await page.goto('/');
-    await expect(page.locator('.run-tile')).toHaveCount(3, { timeout: 30_000 });
+    // The app opens itself again when it drops a copy: a reload of the test may cross it, so the runs are
+    // looked for again until they show. Stuck without them, the screen, the address and the copies are
+    // written to the log of the run.
+    try {
+      await expect(async () => {
+        await page.goto('/');
+        await expect(page.locator('.run-tile')).toHaveCount(3, { timeout: 10_000 });
+      }).toPass({ timeout: 45_000 });
+    } catch (e) {
+      const seen = await page.evaluate(async () => {
+        const names: string[] = [];
+        try { for await (const [n] of ((await (await navigator.storage.getDirectory()).getDirectoryHandle('copies')) as any).entries()) names.push(n); } catch { /* none */ }
+        return { url: location.href, text: document.body.innerText.slice(0, 600), copies: names };
+      }).catch((err) => ({ error: String(err) }));
+      console.log('Phone copy test, stuck:', JSON.stringify(seen));
+      throw e;
+    }
   });
 });
 

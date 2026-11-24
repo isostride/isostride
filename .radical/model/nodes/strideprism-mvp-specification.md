@@ -1147,3 +1147,5 @@ A: (użytkownik) zrob a i b
 A: (model) Done: A. on the phone the results the background jobs keep (derived/cache/) are written to and read from the copy alone; B. 3 s after the app opens, a current copy is filled in the background with the app's files it lacks (user's and derived files first, then the runs from the newest, then the tracks), leaving any file the app wrote meanwhile.
 Q: (model) Wypchnąć jako PR?
 A: (użytkownik) tak
+A: (użytkownik) znowu blad na git
+A: (model) The copy's end-to-end test failed again in CI on its last step (no run shown after the copy was dropped), 12 of 12 passing here: the app opens itself again when it drops a copy, and the test's own reload may cross it. The last step now looks for the runs again until they show (45 s at most) and, stuck without them, writes the screen, the address and the copies to the run's log.
