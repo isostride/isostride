@@ -1127,3 +1127,4 @@ Q: (użytkownik) opfs?
 A: (model) [OPFS explained: the browser's private, fast file storage for the site; the folder stays the source, the app keeps a copy of what it reads most there, writes both, rebuilds the copy from the folder when it is missing; a change of the ADR "Folder via File System Access"] Proponuję: najpierw wypchnąć obecną poprawkę, potem diagnostyka na telefonie, potem OPFS, jeśli nadal będzie za wolno. Tak robimy?
 A: (użytkownik) tak najpierw poprawka
 A: (model) Done: the page keeps the run files it read too (a run opened again is not read again); the diagnostics test holds a second read of a file at 0 calls to the system.
+A: (model) Done (found by CI on PR #19: the new code of the folder was covered 7.8%, the browser's folder runs in no unit test): unit tests over a folder in memory with the API's shape hold what a folder keeps, what it forgets when another writes or removes, and a stale handle made again (91% of browserFolder.ts).
