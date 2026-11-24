@@ -855,7 +855,9 @@
       "tests/unit/site.test.ts › Site in plain statements › Site says the same in Polish"
     ] },
     { "element": "5e606384-c6f9-4d1e-9338-340d7a5d79e0", "name": "COROS runs fetched once", "tests": [
-      "tests/integration/coros.test.ts › Runs fetched from COROS › The runs not fetched before written into the folder and imported, never asked twice"
+      "tests/integration/coros.test.ts › Runs fetched from COROS › The runs not fetched before written into the folder and imported, never asked twice",
+      "tests/integration/coros.test.ts › Runs fetched from COROS › The list as COROS sends it read whole; a list read short is no complete fetch",
+      "tests/integration/coros.test.ts › Runs fetched from COROS › A run the folder already holds not downloaded again"
     ] },
     { "element": "e5dd9207-a3cb-45af-bf6c-aff883a45596", "name": "COROS limit stops the fetch", "tests": [
       "tests/integration/coros.test.ts › Runs fetched from COROS › A fetch stopped by COROS keeps what it fetched and fetches the rest next time",
@@ -875,7 +877,8 @@
     ] },
     { "element": "7839e2f2-1577-489d-a915-aa798379a6a6", "name": "Runs added named and marked", "tests": [
       "e2e/import.spec.ts › New runs imported by themselves › A run dropped into the folder is imported when the app comes back into view",
-      "tests/integration/new-runs.test.ts › New runs marked new › Runs added by a later import marked new until seen"
+      "tests/integration/new-runs.test.ts › New runs marked new › Runs added by a later import marked new until seen",
+      "tests/integration/new-runs.test.ts › New runs marked new › A run not opened stays new a week at most"
     ] },
     { "element": "d5523fc0-5228-475a-8242-c0d8cac17086", "name": "Detection reads what changed", "tests": [
       "tests/integration/blocks.test.ts › Blocks detected where something changed › Only what changed detected again, the same as from scratch",

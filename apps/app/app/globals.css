@@ -1205,7 +1205,8 @@ table.data.changes td { padding-top: 14px; padding-bottom: 14px; }
 .added-runs { color: var(--text-2); }
 .added-runs a { color: var(--accent); text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 2px; }
 .added-runs a:hover { text-decoration-color: currentColor; }
-.new-chip { display: inline-flex; align-items: center; margin-left: 6px; padding: 0 7px; border-radius: 999px; background: var(--grad); color: var(--on-accent); font-size: 10.5px; font-weight: 700; line-height: 17px; letter-spacing: 0.02em; vertical-align: 1px; }
+/* New: the accent on its soft tint, readable in both themes (the gradient with --on-accent read dark on light blue in the dark theme). */
+.new-chip { display: inline-flex; align-items: center; margin-left: 6px; padding: 0 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); font-size: 10.5px; font-weight: 700; line-height: 17px; letter-spacing: 0.02em; vertical-align: 1px; }
 .run-tile.new { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
 .new-runs-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 
@@ -1297,7 +1298,7 @@ a.crumbs:hover b { color: var(--text); }
 .folder-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; font-weight: 720; letter-spacing: -0.02em; }
 .link-button { border: 0; padding: 0; background: none; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .warn-text { color: var(--warn); }
-.folder-new { flex: none; padding: 4px 11px; border-radius: 999px; background: var(--grad); color: var(--on-accent); font-size: 12px; font-weight: 650; }
+.folder-new { flex: none; padding: 4px 11px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); font-size: 12px; font-weight: 650; }
 /* Columns of a set width: a figure read late ("–" first, then the number) does not move the ones beside it (layout shift 0). */
 /* The six figures in one row on a wide screen (three, then two, on narrower ones): none drops to a line of its own. */
 .folder-facts { margin: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
