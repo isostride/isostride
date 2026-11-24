@@ -6,12 +6,56 @@ The versions of IsoStride (the app at app.isostride.com and the site at isostrid
 
 ## 0.1 — 2026-11-24
 
-The first version.
+The first version of IsoStride: an open source tool for analysing the metrics of your runs and modelling your performance, in your browser, with your data on your own disk.
 
-- Reads the FIT files of a folder on your disk (COROS and Garmin tested, Garmin smart recording included) and keeps everything it computes next to them in `.isostride/`. No server, no account.
-- Every numeric field of a file is a metric, the developer fields of watch apps included.
-- A run on one chart, second by second: up to four metrics, zones from green to red, laps, the route on a map, statistics of any selection.
-- Segments: routes, laps of a workout or your own rules, found in every run.
-- Compare: a segment over months with its trend and noise threshold, A/B comparisons by shoes, sensor, watch or workout type, efforts on one chart, pace and power curves, CSV export.
-- Performance models: training load (TRIMP, rTSS, power TSS), fitness, fatigue and form, critical speed and D′, critical power and W′, race predictions, VO2max, intensity distribution, aerobic efficiency.
-- Dashboard, setup wizard, settings for zones, metrics, gear, tags, charts and display.
+### Your data, local
+- Reads the FIT files of a folder you choose (Chrome, Edge or Opera on a desktop, through the File System Access API). Tested on COROS and Garmin files, Garmin smart recording included.
+- No server and no account: everything the app computes is kept next to your files in `.isostride/`, as JSON files you can open, copy or delete. Every file records the version of the app that wrote it.
+- Imports new files on its own when the folder is opened; Recompute rebuilds everything from the FIT files; the processing runs in a background worker and reuses what is already computed.
+- Setup wizard: the runs, your heart rate (resting and maximum), the zones, your gear and the load model, step by step.
+
+### Metrics
+- Every numeric field of a file is a metric, the developer fields of watch apps included (COROS Form Power, Stryd, Garmin running dynamics…), on every screen.
+- Which way is better for each metric (higher or lower), the app's own for the metrics it knows, set by you for the others.
+- Zones for any metric, from green (Z1) to red, with defaults to start from and Fill from max HR.
+
+### Dashboard
+- Tiles you choose, order and size: this week, weekly distance, last run, form today, recent runs, a run, a segment's trend, a saved analysis, a model's value, a chart of Performance.
+- Pin a run, a segment, an analysis or a model to it from its own screen.
+
+### Runs
+- List and calendar of your runs, with search by words, workout type, distance and month.
+- Title, workout type, technique cue, shoes worn and a note for each run, from the list or the run's own screen.
+
+### A run
+- Up to four metrics on one chart, second by second as the watch recorded them: in bands or overlaid, by time or by distance, smoothed or raw.
+- Zoom by wheel, pinch or a dragged selection; laps; the zones of a metric as coloured stripes.
+- Statistics of the selection: minimum, average and maximum of each metric, trend, time in zones, pace to heart rate decoupling.
+- The route on a map (map tiles optional, off by default), large with the route coloured by any metric.
+- Efforts of your segments in the run; Find similar from a selection.
+
+### Segments
+- One way to define a segment, as a rule: the whole run, its laps, the fastest stretch of a time or distance, a steady stretch, the main effort, the effort laps of a workout, a route you run often, or a stretch with the same profile; with conditions on pace, heart rate and more, and checks every effort must pass.
+- Segments suggested from your runs, to keep or dismiss.
+
+### Compare
+- Trends: a metric of a segment over months, with a fitted trend, its noise threshold, the changes of gear and a table of changes.
+- A/B: the same segment split by shoes, heart rate sensor, watch, workout type or technique cue, with the difference, its 95% interval and a warning when the comparison is not a fair one.
+- Efforts on one chart; pace and power curves with their estimates.
+- Saved analyses; CSV export of every segment with its metrics and context.
+
+### Performance
+- The models grouped by the evidence they rest on, with an overview map of what rests on what and how far each can be trusted (Reliable, Rough, Not reliable, No data), and Why? for each.
+- Load: training load of every run (Banister TRIMP, Edwards TRIMP, rTSS or power TSS, chosen in Settings), fitness, fatigue and form (Banister's impulse-response model), acute:chronic ratio, weekly load, monotony and strain, intensity distribution and time in heart rate zones.
+- Capacity: best efforts of 2–20 minutes, critical speed and D′, critical power and W′, race predictions (Riegel) and VDOT (Daniels and Gilbert).
+- Aerobic: efficiency factor, aerobic decoupling, VO2max from heart rate and by Uth's ratio.
+- Response: the impulse-response model fitted to your own results, on VO2max from heart rate and on VDOT.
+
+### Settings
+- Models (the load model, your heart rate, threshold pace and power, the thresholds of the checks), Metrics (zones and which way is better), Gears (shoes and heart rate sensors with their dates of use), Tags, Display (light or dark theme, map background, side menu, how charts draw) and About.
+- Gear and tags renamed or deleted in one editor; the segments' rules that name them follow.
+
+### Everywhere
+- Command palette (⌘K) to reach any screen, run or action from the keyboard.
+- Layout for a phone, light and dark themes, WCAG 2.2 AA accessibility, no layout shift.
+- Open source (MIT): the code, its tests and its model of requirements on GitHub.
