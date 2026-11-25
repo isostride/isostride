@@ -82,3 +82,40 @@ export function bootstrapDiff(a: number[], b: number[], seed = 1, iterations = B
   const alpha = (1 - CONFIDENCE) / 2;
   return [quantile(diffs, alpha), quantile(diffs, 1 - alpha)];
 }
+
+/**
+ * The minimum of a function by the Nelder–Mead simplex (Nelder & Mead 1965; Lagarias et al. 1998
+ * coefficients): no gradient, deterministic. `step` is the size of the first simplex on each axis.
+ * Restarted once from its own result, which keeps a collapsed simplex from stopping short.
+ */
+export function nelderMead(f: (x: number[]) => number, x0: number[], step: number[], iterations = 2000, tolerance = 1e-12): { x: number[]; value: number } {
+  const run = (start: number[]) => {
+    const n = start.length;
+    let simplex = [start, ...start.map((_, i) => start.map((v, k) => (k === i ? v + step[i] : v)))].map((x) => ({ x, v: f(x) }));
+    for (let it = 0; it < iterations; it++) {
+      simplex.sort((a, b) => a.v - b.v);
+      if (Math.abs(simplex[n].v - simplex[0].v) <= tolerance * (Math.abs(simplex[0].v) + tolerance)) break;
+      const centroid = start.map((_, k) => simplex.slice(0, n).reduce((s, p) => s + p.x[k], 0) / n);
+      const along = (t: number) => centroid.map((c, k) => c + t * (simplex[n].x[k] - c));
+      const r = along(-1);
+      const fr = f(r);
+      if (fr < simplex[0].v) {
+        const e = along(-2);
+        const fe = f(e);
+        simplex[n] = fe < fr ? { x: e, v: fe } : { x: r, v: fr };
+      } else if (fr < simplex[n - 1].v) {
+        simplex[n] = { x: r, v: fr };
+      } else {
+        const c = fr < simplex[n].v ? along(-0.5) : along(0.5);
+        const fc = f(c);
+        if (fc < Math.min(fr, simplex[n].v)) simplex[n] = { x: c, v: fc };
+        else simplex = simplex.map((p, i) => (i === 0 ? p : { x: p.x.map((v, k) => simplex[0].x[k] + 0.5 * (v - simplex[0].x[k])), v: 0 })).map((p, i) => (i === 0 ? p : { x: p.x, v: f(p.x) }));
+      }
+    }
+    simplex.sort((a, b) => a.v - b.v);
+    return { x: simplex[0].x, value: simplex[0].v };
+  };
+  const first = run(x0);
+  const second = run(first.x);
+  return second.value <= first.value ? second : first;
+}

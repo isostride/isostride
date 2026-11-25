@@ -1,4 +1,5 @@
 import { linearFit } from '@/lib/stats';
+import { fitEnvelope } from './envelope';
 import type { CurveMetric } from './curve';
 
 /** The estimate's models need this many best stretches of at least MIN_FIT_SECONDS. */
@@ -34,29 +35,30 @@ const rateOf = (metric: CurveMetric, value: number) => (metric === 'power' ? val
  * estymowana ... bazujac na researchu"): Riegel's power law (Riegel 1981, "Athletic records and
  * human endurance": time grows with distance to the power 1.06, that is speed falls with time to
  * the power about −0.06), its exponent fitted by least squares in log–log to the best stretches
- * of 3 minutes and more and its level raised to the strongest of them (an envelope: the law is
- * meant for maximal efforts), and the critical speed model (Monod & Scherrer 1965; Hill 1993;
- * Jones & Vanhatalo 2017) fitted to the bests of 2–20 minutes. For power (the author's request of
- * 20 Nov 2026: "krzywe z wyborem predkosci i mocy") the same law of power over time, and the
- * critical power model (Monod & Scherrer 1965; Moritani et al. 1981), W = CP·t + W′, in place of
- * critical speed; no race times. Null with fewer than MIN_FIT_POINTS bests.
+ * of 3 minutes and more, and the critical speed model (Monod & Scherrer 1965; Hill 1993; Jones &
+ * Vanhatalo 2017), v = CS + D′/t, fitted to the bests of 2–20 minutes. Both fitted as an envelope
+ * (envelope.ts: the runner's "idz ta metoda"): every parameter from the bests, by least squares with
+ * an error that lets no best lie above the curve and no easy run pull it down; started from the
+ * ordinary least-squares fit (log–log for the law, distance against time for the critical model). For
+ * power (the author's request of 20 Nov 2026: "krzywe z wyborem predkosci i mocy") the same law of
+ * power over time, and the critical power model (Monod & Scherrer 1965; Moritani et al. 1981),
+ * P = CP + W′/t, in place of critical speed; no race times. Null with fewer than MIN_FIT_POINTS bests.
  */
 export function estimateCurve(points: { duration: number; value: number }[], metric: CurveMetric = 'speed'): CurveEstimate | null {
   const rate = (v: number) => rateOf(metric, v);
   const fit = points.filter((p) => p.duration >= MIN_FIT_SECONDS);
   if (fit.length < MIN_FIT_POINTS) return null;
-  const f = linearFit(fit.map((p) => Math.log(p.duration)), fit.map((p) => Math.log(rate(p.value))));
-  const k = -f.slope;
-  // The envelope (the author's choice of 19 Nov 2026): the law's slope from the fit, its level
-  // raised to the strongest best, so no measured best lies above the estimate; Riegel's law is
-  // meant for a maximal effort, and an easy long run is no such effort.
-  const a = Math.max(...fit.map((p) => Math.log(rate(p.value)) + k * Math.log(p.duration)));
-  const csPts = points.filter((p) => p.duration >= CS_RANGE[0] && p.duration <= CS_RANGE[1]);
+  const law = fit.map((p) => ({ t: p.duration, r: rate(p.value) }));
+  const f = linearFit(law.map((p) => Math.log(p.t)), law.map((p) => Math.log(p.r)));
+  // r = e^a · t^(−k): a and k from the envelope's fit, started from the log–log line.
+  const [a, k] = fitEnvelope(law, ([a0, k0], t) => Math.exp(a0 - k0 * Math.log(t)), [f.intercept, -f.slope], [0.02, 0.01]);
+  const csPts = points.filter((p) => p.duration >= CS_RANGE[0] && p.duration <= CS_RANGE[1]).map((p) => ({ t: p.duration, r: rate(p.value) }));
   let critical: CurveEstimate['critical'] = null;
   if (csPts.length >= MIN_FIT_POINTS) {
-    // Distance (or work) against time: the slope is the critical rate, the intercept the reserve above it.
-    const c = linearFit(csPts.map((p) => p.duration), csPts.map((p) => rate(p.value) * p.duration));
-    critical = { rate: c.slope, reserve: c.intercept, n: csPts.length };
+    // Distance (or work) against time for the start: the slope is the critical rate, the intercept the reserve above it.
+    const c = linearFit(csPts.map((p) => p.t), csPts.map((p) => p.r * p.t));
+    const [cr, reserve] = fitEnvelope(csPts, ([cr0, d0], t) => cr0 + d0 / t, [c.slope, c.intercept], [Math.abs(c.slope) * 0.02 || 0.01, Math.abs(c.intercept) * 0.1 + 1]);
+    critical = { rate: cr, reserve, n: csPts.length };
   }
   // d = v·t = e^a · t^(1−k)  ⇒  t = (d / e^a)^(1/(1−k)); meaningless when the law says speed rises with time.
   const predictions = metric === 'speed' && k < 1 && k > -0.5 ? PREDICTED_DISTANCES.map((distance) => ({ distance, seconds: Math.pow(distance / Math.exp(a), 1 / (1 - k)) })) : [];
@@ -67,4 +69,47 @@ export function estimateCurve(points: { duration: number; value: number }[], met
 export function estimatedValue(e: CurveEstimate, duration: number): number {
   const r = Math.exp(e.a) * Math.pow(duration, -e.k);
   return e.metric === 'power' ? r : 1000 / r;
+}
+
+/** The longest length the curve's charts reach: past the 20 minutes of the fit, an extrapolation (model's choice: an hour). */
+export const EXTRAPOLATE_TO = 3600;
+/** The lengths named on the curve's time axis, s: those of the fit, then 30 minutes and an hour. */
+export const CURVE_AXIS = [120, 180, 300, 600, 900, 1200, 1800, 3600];
+
+/** Whether the critical model can draw the curve: a positive rate and a positive reserve. */
+const hyperbolic = (e: CurveEstimate) => !!e.critical && e.critical.rate > 0 && e.critical.reserve > 0;
+
+/**
+ * The fitted value at a length of time (the runner's question of 25 Nov 2026: "czy krzywa tempa i mocy
+ * jest napewno prostolinijna?", answered "ok" to the hyperbola within 2–20 minutes and the power law,
+ * marked as an extrapolation, past them): within CS_RANGE the critical model, rate = CS + D′/t (or
+ * CP + W′/t), the curve critical speed and D′ come from, bending towards CS; elsewhere, or when the
+ * critical model has no positive rate and reserve, Riegel's power law, the predicted times' model.
+ * A pace in s/km, or a power in W.
+ */
+export function fittedValue(e: CurveEstimate, duration: number): number {
+  if (hyperbolic(e) && duration >= CS_RANGE[0] && duration <= CS_RANGE[1]) {
+    const r = e.critical!.rate + e.critical!.reserve / duration;
+    return e.metric === 'power' ? r : 1000 / r;
+  }
+  return estimatedValue(e, duration);
+}
+
+/** The fitted curve sampled for a chart: `n` lengths evenly on a logarithmic axis from `from` to `to`, s. */
+export function sampleFitted(e: CurveEstimate, from: number, to: number, n = 25): { duration: number; value: number }[] {
+  return Array.from({ length: n }, (_, k) => { const d = from * Math.pow(to / from, k / (n - 1)); return { duration: d, value: fittedValue(e, d) }; });
+}
+
+/**
+ * The curve of a chart: the fit over 2–20 minutes, and past 20 minutes up to EXTRAPOLATE_TO the power
+ * law, an extrapolation drawn apart from it. `at` reads either under the pointer.
+ */
+export function curveOfEstimate(e: CurveEstimate): { estimate: { duration: number; value: number }[]; extrapolate: { duration: number; value: number }[]; at: (duration: number) => number } {
+  return {
+    estimate: sampleFitted(e, CS_RANGE[0], CS_RANGE[1]),
+    extrapolate: Array.from({ length: 9 }, (_, k) => { const d = CS_RANGE[1] * Math.pow(EXTRAPOLATE_TO / CS_RANGE[1], k / 8); return { duration: d, value: estimatedValue(e, d) }; }),
+    // Under 2 minutes neither the critical model nor Riegel's law describes a best (the runner's "ponizej 2
+    // min ... nie liczyc roznicy"): no value, so no gap is measured there.
+    at: (d) => (d < CS_RANGE[0] ? Number.NaN : fittedValue(e, d)),
+  };
 }

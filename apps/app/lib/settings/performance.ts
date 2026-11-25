@@ -16,8 +16,22 @@ export const LOAD_MODELS: { key: LoadModel; name: string; unit: string; about: s
   { key: 'powerTss', name: msg('Power TSS'), unit: 'TSS', about: msg('hours × (normalised power ÷ critical power)² × 100') },
 ];
 
+/**
+ * How the curve of the bests is modelled (the runner's "chce moc wybrac model ... ktory pozniej
+ * powinien byc uzywany tu i tu", 25 Nov 2026): the curve drawn, the predicted race times, VDOT and what
+ * rests on them follow it; critical speed and power, the thresholds of rTSS and Power TSS, keep the
+ * bests of 2–20 minutes whichever is chosen.
+ */
+export type CurveModel = 'riegel' | 'whole';
+export const CURVE_MODELS: { key: CurveModel; name: string; about: string }[] = [
+  { key: 'riegel', name: msg('Riegel and critical speed'), about: msg('the bests of 2–20 minutes: the critical speed or power model up to 20 minutes, Riegel’s law past them and for the predicted times (Monod & Scherrer 1965; Riegel 1981)') },
+  { key: 'whole', name: msg('Péronnet–Thibault and omni-domain'), about: msg('the bests of 30 seconds to 2 hours: Péronnet–Thibault for pace and the predicted times (1989), the omni-domain model for power (Puchowicz 2020)') },
+];
+
 export interface PerformanceSettings {
   load: LoadModel;
+  /** how the curve of the bests is modelled, and the predicted times with it */
+  curve: CurveModel;
   /** bpm */
   restHr: number;
   /** bpm; null: the highest heart rate held for 10 s in the runs */
@@ -42,7 +56,7 @@ export interface PerformanceSettings {
 
 /** Until the runner sets their own (model's choices: Banister TRIMP, resting HR 60, 42 and 7 days). */
 export const DEFAULT_PERFORMANCE: PerformanceSettings = {
-  load: 'trimpBanister', restHr: 60, maxHr: null, sex: 'male', thresholdPace: null, thresholdPower: null, fitnessDays: 42, fatigueDays: 7, confirmed: false, thresholds: {},
+  load: 'trimpBanister', curve: 'riegel', restHr: 60, maxHr: null, sex: 'male', thresholdPace: null, thresholdPower: null, fitnessDays: 42, fatigueDays: 7, confirmed: false, thresholds: {},
 };
 
 const num = (v: unknown, lo: number, hi: number): number | null => (typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? v : null);
@@ -53,6 +67,7 @@ export function parsePerformance(v: unknown): PerformanceSettings {
   const d = DEFAULT_PERFORMANCE;
   return {
     load: LOAD_MODELS.some((m) => m.key === o.load) ? (o.load as LoadModel) : d.load,
+    curve: CURVE_MODELS.some((m) => m.key === o.curve) ? (o.curve as CurveModel) : d.curve,
     restHr: num(o.restHr, 25, 120) ?? d.restHr,
     maxHr: num(o.maxHr, 100, 240),
     sex: o.sex === 'female' ? 'female' : 'male',

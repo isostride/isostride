@@ -1278,3 +1278,27 @@ A: (użytkownik) 1 ma lapy, 2-i nie ma
 A: (użytkownik) w czartach sie cos dziwnego dzieje
 A: (model) Done: on the Efforts tab, the runs added whole as one more choice, "The runs added, lap by lap": a row for each run (its time and distance the whole run's), opened its laps (the whole run when it has none), no last lap against the first; on the chart each run drawn whole; two runs of one day told apart by their time.
 A: (użytkownik) wyglada dobrze ... wypchnij pr
+A: (użytkownik) zastanawiam sie nad modulem planowania trenigu, czy myslisz ze to ma sens czy sie kloci z zalozeniami isostirde?
+A: (model) A planner that writes the training conflicts with "an analysis tool, not a training planner"; experiments asked of the data do not.
+A: (użytkownik) wlasnie brakuje mi ekseprtymentow
+Q: (model) Experiments (pre-registered A/B): how should the two groups be defined? [Both (Recommended) | Rotation only | Before/after only]
+A: (użytkownik) [question dismissed] chodzi mi o eksperymenty zwiazane z forma ... np. co gdybym mial takie a nie inne obciazenia; jak by kryzwa mocy wyhladala gdybym 20 min przebiegl 3 minuty szybciej
+A: (model) Proposed: a What if tab on the Performance screen: an effort that did not happen added to the curve (its bests, critical speed, predictions and VDOT redrawn), and weeks of load that did not happen added to the form (the Banister response redrawn); the scenario kept in the link, nothing saved to the runs.
+A: (użytkownik) ok podoba mi sie wha if na ekranie performance
+A: (użytkownik) dystans nie liczyc sie prawidlowo
+A: (użytkownik) ok przegladnij raz jeszcze i upewnij sie ze dziala poprawnie
+A: (użytkownik) czy krzywa tempa i mocy jest napewno prostolinijna ?
+A: (model) Not quite: drawn as Riegel's power law it is a straight line on the log axis. Proposed: within 2–20 minutes the critical model's hyperbola (CS + D′/t), past 20 minutes Riegel's law dotted, as an extrapolation.
+A: (użytkownik) ok
+A: (użytkownik) zrob Peronnet–Thibault albo dla mocy model "omni-domain" (Puchowicz 2020)
+A: (użytkownik) czy predykcje czasow sa teraz inne ? bo model jest inny?
+A: (użytkownik) chce moc wybrac model ... ktory pozniej powinien byc uzywany tu i tu
+A: (użytkownik) mam wyniki szybsze niz to co pokazuje krzywa ... jak to mozliwe
+A: (użytkownik) nie tak .... zobacz na 3 min ... mam czas szybszy niz model
+A: (użytkownik) Poniżej 2 min w modelu Riegla nie liczyć różnicy i nie rysować wypełnienia. Punkty zostają, ale z dopiskiem, że żaden model tej długości nie opisuje. P–T i OmPD dopasowywać jako obwiednię, tak jak 19 listopada wybrałeś dla Riegla. Krzywa to Twoje maksymalne możliwości, więc żaden najlepszy wynik nie może leżeć nad nią. Ma dotykać najmocniejszych wyników, a spokojne długie biegi mogą leżeć pod nią i nie ściągają jej w dół. Technicznie: punkt nad krzywą kosztuje w dopasowaniu wielokrotnie więcej niż punkt pod nią.
+A: (użytkownik) [screenshot: the default model, 3 min measured 3:17 /km, the estimate 3:26 /km, "8 s/km szybciej niż krzywa", D′ 154 m] powaznie?
+A: (użytkownik) myslalem ze dopasowanie krzywej polega na tym ze dopasowujesz sie do pomiarow i liczysz przez to parametry modelu
+A: (model) It does, and so it should be: one method for every model, every parameter from the fit and none lifted after it — least squares with an error that says what a best is: a best above the curve costs many times more than one below it, a best far below it (an easy run) stops pulling. Critical speed then moves, and with it the rTSS and Power TSS loads.
+A: (użytkownik) tak
+A: (użytkownik) idz ta metoda
+A: (użytkownik) wrzuc na repo

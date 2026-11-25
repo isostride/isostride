@@ -921,6 +921,26 @@
     { "element": "868dcd0f-3b38-48f6-b9f0-08ef0f8391f4", "name": "Runs added whole, lap by lap", "tests": [
       "e2e/reps.spec.ts › Efforts by run › Runs added whole, lap by lap",
       "tests/unit/reps.test.ts › Workouts compared rep by rep › A run added whole: its laps its efforts, or the whole run"
+    ] },
+    { "element": "b8dbbd3f-7059-4138-ad35-ed1a58d0ec9b", "name": "Curve with an effort that did not happen", "tests": [
+      "tests/unit/whatif.test.ts › What if › Curve with an effort that did not happen",
+      "tests/unit/whatif.test.ts › What if › Scenario kept in the link",
+      "tests/unit/whatif.test.ts › What if › Form with weeks of load that did not happen",
+      "e2e/performance.spec.ts › Performance model › What if drawn"
+    ] },
+    { "element": "5762a6d2-55c5-4b43-86ff-a001c119f058", "name": "Curve model chosen in Settings", "tests": [
+      "e2e/performance.spec.ts › Performance model › Curve model chosen in Settings",
+      "tests/unit/whole-curve.test.ts › Whole curve › Péronnet–Thibault fitted to the bests of pace",
+      "tests/unit/whole-curve.test.ts › Whole curve › Omni-domain model fitted to the bests of power",
+      "tests/unit/whole-curve.test.ts › Curve model chosen › Predicted times of the whole curve",
+      "tests/unit/whole-curve.test.ts › Curve model chosen › Chosen in the settings, Riegel by default",
+      "tests/unit/whole-curve.test.ts › Curve model chosen › What if predicts by the model chosen, as Capacity does"
+    ] },
+    { "element": "78f0d290-3f7c-4890-8cdd-3c0826103232", "name": "Curve as an envelope of the bests", "tests": [
+      "tests/unit/whole-curve.test.ts › Whole curve as an envelope › No best above it; easy long runs do not pull it down",
+      "tests/unit/whole-curve.test.ts › Whole curve as an envelope › Riegel and critical speed: no value under 2 minutes",
+      "tests/unit/curve.test.ts › Pace curve › Critical model as an envelope",
+      "tests/unit/curve.test.ts › Pace curve › Curve bent as the critical model, the power law past it"
     ] }
   ]
 }

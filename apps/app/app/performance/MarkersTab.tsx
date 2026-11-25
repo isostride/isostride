@@ -6,6 +6,7 @@ import type { RunsIndex } from '@/lib/kernel';
 import { MARKER_DAYS, markersOverTime, vdotOverTime, type LoadSummary, type MarkerWeek } from '@/lib/load';
 import { duration as fmtDuration, pace as fmtPace } from '@/lib/format';
 import { TimeChart } from './TimeChart';
+import type { CurveModel } from '@/lib/settings';
 
 const RACES: [number, string][] = [[5000, '5 km'], [10000, '10 km'], [21097.5, msg('half')], [42195, msg('marathon')]];
 const time = (d: string) => new Date(`${d}T12:00:00`).getTime();
@@ -19,7 +20,7 @@ const delta = (a: number | null, b: number | null, fmt: (v: number) => string, l
 };
 const empty = () => <div className="card empty">{t('Nothing yet: it needs, within {days} days, bests of at least three lengths between 2 and 20 minutes.', { days: MARKER_DAYS })}</div>;
 
-interface Props { runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; today: string }
+interface Props { runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; today: string; /** the curve model chosen in Settings: the predicted times follow it */ model?: CurveModel }
 
 /**
  * Critical speed and power (requirement "Fitness markers over time"): the Monod–Scherrer model
@@ -60,8 +61,8 @@ export function CriticalTab({ runs, summaries, today }: Props) {
  * Predicted race times and VDOT (requirements "Fitness markers over time" and "VO2max estimates"):
  * Riegel's law through the same bests, and the VO2max the predicted 5 km implies.
  */
-export function PredictionsTab({ runs, summaries, today }: Props) {
-  const weeks = useMemo(() => markersOverTime(runs, summaries, today), [runs, summaries, today]);
+export function PredictionsTab({ runs, summaries, today, model = 'riegel' }: Props) {
+  const weeks = useMemo(() => markersOverTime(runs, summaries, today, model), [runs, summaries, today, model]);
   const vdots = useMemo(() => vdotOverTime(weeks), [weeks]);
   if (!weeks.some((w) => w.predictions.length > 0)) return empty();
   const now = weeks[weeks.length - 1];

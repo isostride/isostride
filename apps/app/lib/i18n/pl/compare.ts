@@ -184,6 +184,8 @@ export const COMPARE: Dictionary = {
   Run: 'Bieg',
   'No run with an effort yet: add a run or the runs matching a period.': 'Jeszcze żaden bieg nie ma wysiłku: dodaj bieg albo biegi z danego okresu.',
   'estimate {value}': 'szacunek {value}',
+  'extrapolated {value}': 'ekstrapolacja {value}',
+  'no model of the curve describes this length': 'żaden model krzywej nie opisuje tej długości',
   'measured {value}': 'zmierzone {value}',
 
   // The picker: Add segment or run.

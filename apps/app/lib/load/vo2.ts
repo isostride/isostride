@@ -71,8 +71,8 @@ export function hrVo2Now(perRun: { startTime: string; vo2max: number }[]): { val
 
 /** What the fitted model takes for a performance: VO2max from heart rate, a mean per day; or the weekly VDOT. */
 export type Criterion = 'hr' | 'vdot';
-export function performancesFor(criterion: Criterion, rows: LoadRow[], summaries: Record<string, LoadSummary>, restHr: number, maxHr: number | null, today: string): { date: string; value: number }[] {
-  if (criterion === 'vdot') return vdotOverTime(markersOverTime(rows, summaries, today)).flatMap((w) => (w.vdot === null ? [] : [{ date: w.end, value: w.vdot }]));
+export function performancesFor(criterion: Criterion, rows: LoadRow[], summaries: Record<string, LoadSummary>, restHr: number, maxHr: number | null, today: string, curve: 'riegel' | 'whole' = 'riegel'): { date: string; value: number }[] {
+  if (criterion === 'vdot') return vdotOverTime(markersOverTime(rows, summaries, today, curve)).flatMap((w) => (w.vdot === null ? [] : [{ date: w.end, value: w.vdot }]));
   if (!maxHr) return [];
   const by = new Map<string, number[]>();
   for (const r of hrVo2Runs(rows, summaries, restHr, maxHr)) { const d = dayOf(r.startTime); (by.get(d) ?? by.set(d, []).get(d)!).push(r.vo2max); }

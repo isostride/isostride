@@ -27,7 +27,7 @@ const signed = (v: number) => `${v > 0 ? '+' : ''}${number(Math.round(v) || 0)}`
  * Settings, fitness (CTL) and fatigue (ATL), form (TSB) and the acute:chronic ratio, over the
  * period chosen, with today's values. Loaded when the tab opens.
  */
-export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
+export function FormTab({ runs, whatIf }: { runs: RunsIndex['runs']; /** a scenario of What if: its runs, drawn after today */ whatIf?: { planned: { startTime: string; load: number }[]; from: string; until: string } }) {
   const { folder } = useOpenFolder();
   const params = useSearchParams();
   const router = useRouter();
@@ -47,10 +47,12 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
   const model = LOAD_MODELS.find((m) => m.key === p.load)!;
   const withLoad = runs.filter((r) => typeof r.load === 'number');
   const today = localDay(new Date());
-  const all = useMemo(() => formSeries(withLoad.map((r) => ({ startTime: r.startTime, load: r.load as number })), p, today),
+  const all = useMemo(() => formSeries([...withLoad.map((r) => ({ startTime: r.startTime, load: r.load as number })), ...(whatIf?.planned ?? [])], p, whatIf?.until ?? today),
     // withLoad follows runs.
-    [runs, p, today]);
-  const days: FormDay[] = period[2] === null ? all : all.slice(-period[2]);
+    [runs, p, today, whatIf]);
+  // With a scenario of What if the period is the past before it, the scenario's days after.
+  const ahead = whatIf ? all.filter((d) => d.date >= whatIf.from).length : 0;
+  const days: FormDay[] = period[2] === null ? all : all.slice(-(period[2] + ahead));
   const now = all[all.length - 1];
 
   if (!withLoad.length) {
@@ -91,6 +93,8 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
   const fitnessArea = `M${xs(days[0])},${yLoad(0)}${days.map((d) => `L${xs(d)},${yLoad(d.fitness).toFixed(1)}`).join('')}L${xs(last)},${yLoad(0)}Z`;
   const formArea = `M${xs(days[0])},${yForm(0)}${days.map((d) => `L${xs(d)},${yForm(d.form).toFixed(1)}`).join('')}L${xs(last)},${yForm(0)}Z`;
   const barW = Math.max(2, Math.min(10, step * 0.6));
+  const plannedFrom = whatIf && whatIf.from >= days[0].date ? x(whatIf.from) - step / 2 : null;
+  const planned = (d: FormDay) => !!whatIf && d.date >= whatIf.from;
   const ends: [string, number | null, (v: number) => number][] = [['var(--series-1)', last.fitness, yLoad], ['var(--series-2)', last.fatigue, yLoad], ['var(--series-3)', last.form, yForm], ['var(--series-4)', last.acwr, yAcwr]];
 
   return (
@@ -101,13 +105,13 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
         </div>
       </div>
       <div className="card chart">
-        <dl className="form-figures" aria-label={t('Form today')}>
+        {!whatIf && <dl className="form-figures" aria-label={t('Form today')}>
           <div><dt>{t('Fitness (CTL)')}</dt><dd className="tnum">{number(Math.round(now.fitness))}</dd></div>
           <div><dt>{t('Fatigue (ATL)')}</dt><dd className="tnum">{number(Math.round(now.fatigue))}</dd></div>
           <div><dt>{t('Form (TSB)')}</dt><dd className="tnum">{signed(now.fitness - now.fatigue)}</dd></div>
           <div><dt>{t('Acute:chronic')}</dt><dd className="tnum">{now.acwr === null ? '–' : number(now.acwr, 2)}</dd></div>
           <div><dt>{t('Load, last 7 days')}</dt><dd className="tnum">{number(Math.round(all.slice(-7).reduce((s, d) => s + d.load, 0)))} <span className="unit">{model.unit}</span></dd></div>
-        </dl>
+        </dl>}
         <div className="form-keys">
           <Key color="var(--axis)" label={t('daily load')} kind="dot" />
           <Key color="var(--series-1)" label={t('fitness (CTL)')} />
@@ -117,6 +121,13 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
         </div>
         <div ref={box} style={{ position: 'relative' }}>
           <svg width={width} height={H} role="img" aria-label={t('Form over time')} onMouseMove={move} onMouseLeave={() => setHover(null)} style={{ display: 'block' }}>
+            {/* The days of the scenario: a band from tomorrow, its name at its top. */}
+            {plannedFrom !== null && (
+              <g className="form-whatif">
+                <rect x={plannedFrom} width={Math.max(0, width - M.r - plannedFrom)} y={top.load - 4} height={H - PANELS.axis - top.load + 4} fill="var(--band)" opacity={0.6} />
+                <text x={width - M.r - 6} y={top.load + 10} textAnchor="end" fontSize="11" fontWeight="600" fill="var(--muted)">{t('What if')}</text>
+              </g>
+            )}
             {/* Load, fitness and fatigue. */}
             {loadTicks.map((v) => (
               <g key={`l${v}`}>
@@ -126,7 +137,7 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
             ))}
             <defs><WashGradient id={washId} color="var(--series-1)" top={top.load} base={yLoad(0)} strength={0.2} /></defs>
             <text x={M.l} y={top.load - 10} className="panel-title">{t('Daily load, fitness and fatigue')} <tspan fill="var(--muted)" fontWeight="400">· {model.unit}</tspan></text>
-            {days.map((d, i) => d.load > 0 && <path key={d.date} className="form-load" d={columnPath(x(d.date) - barW / 2, barW, yLoad(d.load), yLoad(0), 2)} fill="var(--axis)" opacity={hover === null || hover === i ? 1 : 0.5} />)}
+            {days.map((d, i) => d.load > 0 && <path key={d.date} className="form-load" d={columnPath(x(d.date) - barW / 2, barW, yLoad(d.load), yLoad(0), 2)} fill={planned(d) ? 'var(--series-2)' : 'var(--axis)'} opacity={(hover === null || hover === i ? 1 : 0.5) * (planned(d) ? 0.55 : 1)} />)}
             <path className="form-fitness-wash" d={fitnessArea} fill={`url(#${washId})`} />
             <polyline className="form-fitness" points={line((d) => d.fitness, yLoad)} fill="none" stroke="var(--series-1)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
             <polyline className="form-fatigue" points={line((d) => d.fatigue, yLoad)} fill="none" stroke="var(--series-2)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
@@ -161,7 +172,7 @@ export function FormTab({ runs }: { runs: RunsIndex['runs'] }) {
           </svg>
           {h && (
             <div className="tooltip" style={{ left: x(h.date) > width - 260 ? x(h.date) - 248 : x(h.date) + 14, top: 8 }}>
-              <div className="tip-value">{dayLabel(timeOf(h.date))}</div>
+              <div className="tip-value">{dayLabel(timeOf(h.date))}{planned(h) && <span className="muted"> · {t('what if')}</span>}</div>
               <TipRow kind="dot" color="var(--axis)" label={t('load')} value={`${number(Math.round(h.load))} ${model.unit}`} />
               <TipRow color="var(--series-1)" label={t('fitness')} value={number(Math.round(h.fitness))} />
               <TipRow color="var(--series-2)" label={t('fatigue')} value={number(Math.round(h.fatigue))} />

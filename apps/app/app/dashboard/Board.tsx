@@ -182,7 +182,7 @@ export function DashboardPage() {
 function AddTile({ tiles, data, onAdd, onReset }: { tiles: Tile[]; data: Data; onAdd: (kind: TileKind, ref?: string, name?: string) => void; onReset: () => void }) {
   const [kind, setKind] = useState<TileKind>('week');
   const of = TILE_KINDS.find((k) => k.kind === kind)?.of;
-  const choices: [string, string][] = of === 'perf' ? TABS.flatMap((x) => x.views.map((v): [string, string] => [`${x.key}/${v.key}`, perfName(`${x.key}/${v.key}`)])) : of === 'run' ? [...data.runs].reverse().map((r) => [r.id, `${runTitle(r)} · ${km(r.distance)} km`]) : of === 'segment' ? data.defs.map((d) => [d.id, d.name]) : of === 'analysis' ? data.analyses.map((a) => [a.id, a.name]) : of === 'model' ? MODELS.map(([k, n]) => [k, t(n)]) : [];
+  const choices: [string, string][] = of === 'perf' ? TABS.filter((x) => x.key !== 'whatif').flatMap((x) => x.views.map((v): [string, string] => [`${x.key}/${v.key}`, perfName(`${x.key}/${v.key}`)])) : of === 'run' ? [...data.runs].reverse().map((r) => [r.id, `${runTitle(r)} · ${km(r.distance)} km`]) : of === 'segment' ? data.defs.map((d) => [d.id, d.name]) : of === 'analysis' ? data.analyses.map((a) => [a.id, a.name]) : of === 'model' ? MODELS.map(([k, n]) => [k, t(n)]) : [];
   const [ref, setRef] = useState('');
   const chosen = of ? (choices.some(([id]) => id === ref) ? ref : choices[0]?.[0] ?? '') : undefined;
   const taken = tiles.some((x) => x.kind === kind && x.ref === (chosen || undefined));

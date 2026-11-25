@@ -16,7 +16,9 @@ export interface CurveLine {
   points: { duration: number; value: number; note: string; href?: string }[];
   /** the estimated curve, drawn dashed */
   estimate?: { duration: number; value: number }[];
-  /** the estimate at any length of time, read under the pointer */
+  /** the estimate past the lengths it was fitted to, drawn dotted and fainter: an extrapolation */
+  extrapolate?: { duration: number; value: number }[];
+  /** the estimate at any length of time, read under the pointer; NaN where no model describes that length (no gap is measured there) */
   estimateAt?: (duration: number) => number;
 }
 
@@ -42,7 +44,7 @@ export function CurveChart({ label, lines, durations, format, tick, gap, higherI
   const pts = lines.flatMap((l) => l.points);
   const scale = useMemo(() => {
     if (!pts.length) return null;
-    const all = [...pts, ...lines.flatMap((l) => l.estimate ?? [])];
+    const all = [...pts, ...lines.flatMap((l) => [...(l.estimate ?? []), ...(l.extrapolate ?? [])])];
     const ds = all.map((p) => Math.log(p.duration));
     const vs = all.map((p) => p.value);
     const span = Math.max(...vs) - Math.min(...vs) || Math.abs(vs[0]) * 0.05 || 1;
@@ -58,6 +60,8 @@ export function CurveChart({ label, lines, durations, format, tick, gap, higherI
   const durationAt = (px: number) => Math.exp(d0 + ((px - M.l) / (width - M.l - M.r)) * (d1 - d0 || 1));
   // The better, the higher: a lower pace, a higher power.
   const y = (v: number) => (higherIsBetter ? H - M.b - ((v - lo) / (hi - lo)) * (H - T - M.b) : T + ((v - lo) / (hi - lo)) * (H - T - M.b));
+  /** Past the lengths the line's estimate was fitted to. */
+  const beyond = (l: CurveLine, d: number) => !!l.extrapolate?.length && !!l.estimate?.length && d > Math.max(...l.estimate.map((p) => p.duration)) * 1.0001;
   const xTicks = durations.filter((d) => Math.log(d) >= d0 - 1e-9 && Math.log(d) <= d1 + 1e-9);
   const move = (e: MouseEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -84,16 +88,20 @@ export function CurveChart({ label, lines, durations, format, tick, gap, higherI
         {/* What the bests fall short of the estimate: the area between the two, in the item's colour. */}
         {lines.map((l) => {
           if (!l.estimateAt || l.points.length < 2) return null;
-          const sorted = [...l.points].sort((a, b) => a.duration - b.duration);
+          const sorted = [...l.points].sort((a, b) => a.duration - b.duration).filter((p) => Number.isFinite(l.estimateAt!(p.duration)));
+          if (sorted.length < 2) return null;
           const top = sorted.map((p) => `${x(p.duration).toFixed(1)},${y(l.estimateAt!(p.duration)).toFixed(1)}`);
           const bottom = [...sorted].reverse().map((p) => `${x(p.duration).toFixed(1)},${y(p.value).toFixed(1)}`);
           return <polygon key={`s${l.key}`} className="curve-shortfall" points={[...top, ...bottom].join(' ')} fill={l.color} opacity={lines.length > 1 ? 0.06 : 0.1} />;
         })}
-        {lines.map((l) => l.estimateAt && l.points.map((p) => (
+        {lines.map((l) => l.estimateAt && l.points.filter((p) => Number.isFinite(l.estimateAt!(p.duration))).map((p) => (
           <line key={`g${l.key}${p.duration}`} className="curve-gap" x1={x(p.duration)} x2={x(p.duration)} y1={y(p.value)} y2={y(l.estimateAt!(p.duration))} stroke={l.color} strokeWidth="1" opacity="0.45" strokeDasharray="2 2" />
         )))}
         {lines.map((l) => l.estimate && l.estimate.length > 1 && (
           <polyline key={`e${l.key}`} className="curve-estimate" points={[...l.estimate].sort((a, b) => a.duration - b.duration).map((p) => `${x(p.duration).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ')} fill="none" stroke={l.color} strokeWidth="1.75" strokeDasharray="6 4" strokeLinecap="round" opacity="0.85" />
+        ))}
+        {lines.map((l) => l.extrapolate && l.extrapolate.length > 1 && (
+          <polyline key={`x${l.key}`} className="curve-extrapolate" points={[...l.extrapolate].sort((a, b) => a.duration - b.duration).map((p) => `${x(p.duration).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ')} fill="none" stroke={l.color} strokeWidth="1.75" strokeDasharray="1 5" strokeLinecap="round" opacity="0.7" />
         ))}
         {lines.map((l) => {
           const sorted = [...l.points].sort((a, b) => a.duration - b.duration);
@@ -110,10 +118,10 @@ export function CurveChart({ label, lines, durations, format, tick, gap, higherI
       {hover && (
         <div className="tooltip" style={{ left: hover.mx > width - 300 ? hover.mx - 288 : hover.mx + 16, top: 8 }}>
           <div className="tip-value">{durationLabel(hover.duration)}</div>
-          {lines.map((l) => l.estimateAt && <div key={l.key}><ItemKey shape={l.shape} color={l.color} /> {t('estimate {value}', { value: format(l.estimateAt(hover.duration)) })}</div>)}
+          {lines.map((l) => l.estimateAt && Number.isFinite(l.estimateAt(hover.duration)) && <div key={l.key}><ItemKey shape={l.shape} color={l.color} /> {beyond(l, hover.duration) ? t('extrapolated {value}', { value: format(l.estimateAt(hover.duration)) }) : t('estimate {value}', { value: format(l.estimateAt(hover.duration)) })}</div>)}
           {hover.near && (
             <div style={{ marginTop: 4 }}>
-              <div><ItemKey shape={hover.near.l.shape} color={hover.near.l.color} /> {durationLabel(hover.near.p.duration)} · {t('measured {value}', { value: format(hover.near.p.value) })}{hover.near.l.estimateAt ? ` · ${gap(hover.near.p.value, hover.near.l.estimateAt(hover.near.p.duration))}` : ''}</div>
+              <div><ItemKey shape={hover.near.l.shape} color={hover.near.l.color} /> {durationLabel(hover.near.p.duration)} · {t('measured {value}', { value: format(hover.near.p.value) })}{hover.near.l.estimateAt ? ` · ${Number.isFinite(hover.near.l.estimateAt(hover.near.p.duration)) ? gap(hover.near.p.value, hover.near.l.estimateAt(hover.near.p.duration)) : t('no model of the curve describes this length')}` : ''}</div>
               <div className="muted">{hover.near.p.note}</div>
               {hover.near.p.href && <div className="muted tip-hint">{t('Click to open the run')}</div>}
             </div>

@@ -1,4 +1,4 @@
-import { estimateCurve } from '@/lib/curve';
+import { CS_RANGE, estimateCurve, fitWholeCurve, wholePredictions } from '@/lib/curve';
 import { dayOf } from '@/lib/gear';
 import { zoneOf } from '@/lib/settings';
 import type { FormDay } from './form';
@@ -69,9 +69,10 @@ export const MARKER_DAYS = 90;
 /**
  * The fitness markers at the end of each week, from the best of each length of 2–20 minutes over
  * the runs of the MARKER_DAYS days up to it: critical speed and D′, critical power and W′, and
- * the predicted race times.
+ * the predicted race times: Riegel's law over the same bests, or with the whole curve chosen
+ * Péronnet–Thibault over the bests of every length, 30 s to 2 h.
  */
-export function markersOverTime(rows: LoadRow[], summaries: Record<string, LoadSummary>, until?: string): MarkerWeek[] {
+export function markersOverTime(rows: LoadRow[], summaries: Record<string, LoadSummary>, until?: string, model: 'riegel' | 'whole' = 'riegel'): MarkerWeek[] {
   const runs = rows.filter((r) => summaries[r.id]).map((r) => ({ t: Date.parse(r.startTime), s: summaries[r.id], day: dayOf(r.startTime) })).sort((a, b) => a.t - b.t);
   if (!runs.length) return [];
   const last = until ?? runs[runs.length - 1].day;
@@ -82,7 +83,12 @@ export function markersOverTime(rows: LoadRow[], summaries: Record<string, LoadS
     const inside = runs.filter((r) => r.t > from && r.t <= to);
     const speed = new Map<number, number>();
     const power = new Map<number, number>();
+    // Every length, 30 s to 2 h, for the whole curve's predicted times.
+    const all = new Map<number, number>();
+    if (model === 'whole') for (const r of inside) for (const b of r.s.bests) if (b.speed !== null && b.speed > (all.get(b.duration) ?? 0)) all.set(b.duration, b.speed);
+    // The markers of 2–20 minutes, as they were fitted before the summaries held every length.
     for (const r of inside) for (const b of r.s.bests) {
+      if (b.duration < CS_RANGE[0] || b.duration > CS_RANGE[1]) continue;
       if (b.speed !== null && b.speed > (speed.get(b.duration) ?? 0)) speed.set(b.duration, b.speed);
       if (b.power !== null && b.power > (power.get(b.duration) ?? 0)) power.set(b.duration, b.power);
     }
@@ -92,7 +98,7 @@ export function markersOverTime(rows: LoadRow[], summaries: Record<string, LoadS
       end, runs: inside.length,
       cs: sp?.critical?.rate ?? null, dPrime: sp?.critical?.reserve ?? null,
       cp: pw?.critical?.rate ?? null, wPrime: pw?.critical?.reserve ?? null,
-      predictions: sp?.predictions ?? [],
+      predictions: model === 'whole' ? wholePredictions(fitWholeCurve([...all].map(([duration, v]) => ({ duration, value: 1000 / v })), 'speed')) : sp?.predictions ?? [],
     });
   }
   return out;

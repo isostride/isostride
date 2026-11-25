@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { dateText, msg, number, t, tn } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
-import { EFFORT_DURATIONS, MARKER_DAYS, pairEfforts, type BestEffort, type Effort, type PerformanceNow } from '@/lib/load';
-import { estimateCurve, estimatedValue, type CurveMetric } from '@/lib/curve';
+import { MARKER_DAYS, pairEfforts, type BestEffort, type Effort, type PerformanceNow } from '@/lib/load';
+import { WHOLE_AXIS, type CurveMetric } from '@/lib/curve';
 import { date, pace as fmtPace } from '@/lib/format';
 import { CellBar, METRIC_VIEW } from '@/components';
 import { CurveChart } from '../compare/CurveChart';
 import { runHref } from '../compare/links';
+import { CurveModelNote, drawnCurve } from './curveModel';
+import type { CurveModel } from '@/lib/settings';
 
 const EFFORT_LABEL: Record<Effort, string> = { allout: msg('all-out'), hard: msg('hard, not all-out'), easy: msg('not all-out'), unknown: msg('no heart rate') };
 /** A day short: without the year when it is this year's. */
@@ -26,7 +28,7 @@ const day = (iso: string) => {
  * they come from two efforts (uphill the power is high and the pace slow) it says each. What
  * "all-out" rests on is behind the view's "Why?".
  */
-export function EffortsTab({ now, runs }: { now: PerformanceNow; runs: RunsIndex['runs'] }) {
+export function EffortsTab({ now, runs, model }: { now: PerformanceNow; runs: RunsIndex['runs']; /** the curve model chosen in Settings */ model: CurveModel }) {
   const title = new Map(runs.map((r) => [r.id, r.title ?? null]));
   const withPower = now.powerEfforts.some((e) => e !== null);
   const rows = pairEfforts(now.efforts, withPower ? now.powerEfforts : []);
@@ -57,7 +59,7 @@ export function EffortsTab({ now, runs }: { now: PerformanceNow; runs: RunsIndex
 
   return (
     <>
-      <Curve now={now} runs={runs} metric={withPower ? metric : 'speed'} onMetric={withPower ? setMetric : null} focus={focus} />
+      <Curve now={now} runs={runs} metric={withPower ? metric : 'speed'} onMetric={withPower ? setMetric : null} focus={focus} model={model} />
     <div className="card chart efforts-card" style={{ marginTop: 12 }}>
       <h3 className="chart-title">{t('Best efforts of each length')}{withPower && <span className="muted"> · {t('pace and power')}</span>}</h3>
       <div className="table-scroll">
@@ -97,14 +99,15 @@ export function EffortsTab({ now, runs }: { now: PerformanceNow; runs: RunsIndex
  * critical speed and D′ (or the critical power and W′) it gives, by the function Compare fits with.
  * A row of the table under the pointer is ringed on it.
  */
-function Curve({ now, runs, metric, onMetric, focus }: { now: PerformanceNow; runs: RunsIndex['runs']; metric: CurveMetric; onMetric: ((m: CurveMetric) => void) | null; focus: number | null }) {
+function Curve({ now, runs, metric, onMetric, focus, model }: { now: PerformanceNow; runs: RunsIndex['runs']; metric: CurveMetric; onMetric: ((m: CurveMetric) => void) | null; focus: number | null; model: CurveModel }) {
   const title = new Map(runs.map((r) => [r.id, r.title ?? null]));
   const power = metric === 'power';
-  const efforts = (power ? now.powerEfforts : now.efforts).filter((e): e is BestEffort => e !== null);
+  // Every length of the curve, 30 s to 2 h (an older summary holds 2–20 minutes alone).
+  const efforts = (power ? now.powerCurve : now.curve).filter((e): e is BestEffort => e !== null);
   // The chart's values: a pace in s/km, a power in W.
   const points = efforts.map((e) => ({ duration: e.duration, value: power ? e.value : 1000 / e.value, note: `${date(e.startTime)}${title.get(e.runId) ? ` · ${title.get(e.runId)}` : ''}`, href: runHref(e.runId, e.at?.[0], e.at?.[1]) }));
-  const fit = estimateCurve(points, metric);
-  const estimate = fit ? Array.from({ length: 25 }, (_, k) => { const d = EFFORT_DURATIONS[0] * Math.pow(EFFORT_DURATIONS[EFFORT_DURATIONS.length - 1] / EFFORT_DURATIONS[0], k / 24); return { duration: d, value: estimatedValue(fit, d) }; }) : undefined;
+  const drawn = drawnCurve(points, metric, model);
+  const fit = drawn.fit;
   const view = METRIC_VIEW.find((x) => x.key === metric)!;
   const gap = (m: number, e: number) => {
     const d = Math.round(m - e);
@@ -126,8 +129,8 @@ function Curve({ now, runs, metric, onMetric, focus }: { now: PerformanceNow; ru
         )}
       </div>
       {points.length ? (
-        <CurveChart label={power ? t('Your power curve') : t('Your pace curve')} higherIsBetter={power} lines={[{ key: 'you', label: t('Bests of the last {days} days', { days: MARKER_DAYS }), color: 'var(--series-1)', shape: 'circle', points, estimate, estimateAt: fit ? (d) => estimatedValue(fit, d) : undefined }]}
-          durations={EFFORT_DURATIONS} format={(v) => (power ? `${number(Math.round(v))} W` : `${fmtPace(1000 / v)} /km`)} tick={view.tick} minSpan={view.minSpan} gap={gap} highlight={focus === null ? null : { key: 'you', duration: focus }} height={240} />
+        <CurveChart label={power ? t('Your power curve') : t('Your pace curve')} higherIsBetter={power} lines={[{ key: 'you', label: t('Bests of the last {days} days', { days: MARKER_DAYS }), color: 'var(--series-1)', shape: 'circle', points, estimate: drawn.estimate, extrapolate: drawn.extrapolate, estimateAt: drawn.at }]}
+          durations={WHOLE_AXIS} format={(v) => (power ? `${number(Math.round(v))} W` : `${fmtPace(1000 / v)} /km`)} tick={view.tick} minSpan={view.minSpan} gap={gap} highlight={focus === null ? null : { key: 'you', duration: focus }} height={240} />
       ) : <p className="muted small">{t('No best in the last {days} days.', { days: MARKER_DAYS })}</p>}
       <p className="chart-note">
         {c ? (power
@@ -135,6 +138,7 @@ function Curve({ now, runs, metric, onMetric, focus }: { now: PerformanceNow; ru
           : <>{t('Critical speed')} <b className="tnum">{fmtPace(c.rate)} /km</b>{t(', the pace you could hold for about half an hour to an hour; D′')} <b className="tnum">{number(Math.round(c.reserve))} m</b>{t(', the distance above it you can spend.')}</>)
           : t('The curve needs bests of at least three lengths of 2–20 minutes.')}{' '}{t('Compare draws the curves of runs, periods or shoes side by side.')}
       </p>
+      <CurveModelNote curve={drawn} metric={metric} />
     </div>
   );
 }

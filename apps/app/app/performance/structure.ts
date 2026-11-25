@@ -8,7 +8,8 @@ import type { ModelGroup, ModelKey } from '@/lib/load';
  * wrazenie ze wszystkie modele sa pomieszane"). The names and the evidence are keys, shown through t();
  * an evidence keeps its colon in every language (the map of the models shows the part after it).
  */
-export type Tab = 'overview' | ModelGroup;
+/** What if is no group of models: it feeds those of Capacity and Load with what did not happen. */
+export type Tab = 'overview' | ModelGroup | 'whatif';
 
 export interface View {
   key: string;
@@ -44,6 +45,14 @@ export const TABS: { key: Tab; name: string; /** the evidence a group's models r
     key: 'response', name: msg('Response'), evidence: msg('how load turns into performance: from your loads and a measure of performance'), views: [
       { key: 'hr', name: msg('On VO2max from heart rate'), models: ['fittedHr'] },
       { key: 'vdot', name: msg('On VDOT'), models: ['fittedVdot'] },
+    ],
+  },
+  {
+    // The runner's request of 25 Nov 2026: "co gdybym mial takie a nie inne obciazenia; jak by krzywa
+    // mocy wygladala gdybym 20 min przebiegl 3 minuty szybciej", and "podoba mi sie what if na ekranie performance".
+    key: 'whatif', name: msg('What if'), views: [
+      { key: 'curve', name: msg('An effort'), models: ['cs', 'predictions', 'vdot'] },
+      { key: 'load', name: msg('Weeks of load'), models: ['load', 'form', 'acwr'] },
     ],
   },
 ];
