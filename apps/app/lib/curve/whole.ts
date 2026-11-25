@@ -86,7 +86,7 @@ export function fitWholeCurve(points: { duration: number; value: number }[], met
     const mas0 = near(PT_TMAP).r * 0.95;
     const s0 = Math.max(20, (pts[0].r - mas0) * pts[0].t);
     const params = (x: number[]) => ({ mas: Math.exp(x[0]), s: Math.exp(x[1]), a: Math.exp(x[2]) });
-    const p = params(fitEnvelope(pts, (x, t) => ptRate(params(x), t), [Math.log(mas0), Math.log(s0), Math.log(mas0 * 0.04)], [0.1, 0.5, 1]));
+    const p = params(fitEnvelope('pt', pts, (x, t) => ptRate(params(x), t), [Math.log(mas0), Math.log(s0), Math.log(mas0 * 0.04)], [0.1, 0.5, 1]));
     const { error, far } = envelopeGaps(pts, (t) => ptRate(p, t));
     return { model: 'pt', metric, params: p, range, n: pts.length, error, far, decline: true };
   }
@@ -97,7 +97,7 @@ export function fitWholeCurve(points: { duration: number; value: number }[], met
   // Pmax above CP by its logarithm; the decline fixed at 0 without a best past TCPmax.
   const params = (x: number[]) => ({ cp: Math.exp(x[0]), wp: Math.exp(x[1]), pmax: Math.exp(x[0]) + Math.exp(x[2]), a: decline ? Math.exp(x[3]) : 0 });
   const x0 = [Math.log(cp0), Math.log(wp0), Math.log(Math.max(1, pmax0 - cp0)), Math.log(cp0 * 0.03)];
-  const p = params(fitEnvelope(pts, (x, t) => ompdRate(params(x), t), decline ? x0 : x0.slice(0, 3), [0.1, 0.5, 0.3, 1].slice(0, decline ? 4 : 3)));
+  const p = params(fitEnvelope(decline ? 'ompd' : 'ompd-flat', pts, (x, t) => ompdRate(params(x), t), decline ? x0 : x0.slice(0, 3), [0.1, 0.5, 0.3, 1].slice(0, decline ? 4 : 3)));
   const { error, far } = envelopeGaps(pts, (t) => ompdRate(p, t));
   return { model: 'ompd', metric, params: p, range, n: pts.length, error, far, decline };
 }

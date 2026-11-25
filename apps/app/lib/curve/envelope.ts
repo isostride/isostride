@@ -27,20 +27,38 @@ export function envelopeCost(model: number, best: number, reach = ENVELOPE_REACH
   return e < 0 ? ENVELOPE_WEIGHT * e * e : c2 * (1 - Math.exp(-(e * e) / c2));
 }
 
+/** Fits already made, by the model's name and its bests: the weeks of the markers over time share their bests, mostly. */
+const FITTED = new Map<string, number[]>();
+/** How many fits are kept (model's choice): past it the oldest go. */
+const FITTED_KEPT = 500;
+
 /**
  * The parameters of a model fitted to bests (t in s, r a rate) by the envelope's cost, from a start
- * (a least-squares fit, or a guess from the bests) and the size of the first steps.
+ * (a least-squares fit, or a guess from the bests) and the size of the first steps. `model` names the
+ * rate function: the same model and bests give the fit made before.
  */
-export function fitEnvelope(points: { t: number; r: number }[], rate: (x: number[], t: number) => number, x0: number[], step: number[]): number[] {
+export function fitEnvelope(model: string, points: { t: number; r: number }[], rate: (x: number[], t: number) => number, x0: number[], step: number[]): number[] {
+  const key = JSON.stringify([model, points, x0, step]);
+  const known = FITTED.get(key);
+  if (known) return [...known];
+  const x = fit(points, rate, x0, step);
+  if (FITTED.size >= FITTED_KEPT) FITTED.delete(FITTED.keys().next().value!);
+  FITTED.set(key, x);
+  return [...x];
+}
+
+function fit(points: { t: number; r: number }[], rate: (x: number[], t: number) => number, x0: number[], step: number[]): number[] {
   // The cost of a best far below levels off, and a curve far above most bests rests on that flat: a local
   // minimum. So the reach narrows by steps (graduated non-convexity): wide, the cost is all but quadratic
   // and every best pulls; each step starts from the one before, and the bests far below let go one by one.
   // Run from the start given and from the ordinary least squares of the relative error; the lower cost wins.
   const cost = (x: number[], reach = ENVELOPE_REACH) => points.reduce((s, p) => s + envelopeCost(rate(x, p.t), p.r, reach), 0);
-  const ordinary = nelderMead((x) => points.reduce((s, p) => { const e = rate(x, p.t) / p.r - 1; return s + (Number.isFinite(e) ? e * e : 1e6); }, 0), x0, step, 4000).x;
+  const ordinary = nelderMead((x) => points.reduce((s, p) => { const e = rate(x, p.t) / p.r - 1; return s + (Number.isFinite(e) ? e * e : 1e6); }, 0), x0, step, 1000, 1e-8).x;
   const fits = [x0, ordinary].map((start) => {
     let x = start;
-    for (const reach of [0.5, 0.25, 0.12, 0.06, ENVELOPE_REACH]) x = nelderMead((y) => cost(y, reach), x, step, 3000).x;
+    // The wide reaches only lead the way, each to a rough minimum; the envelope's own reach to the end.
+    for (const reach of [0.5, 0.25, 0.12, 0.06]) x = nelderMead((y) => cost(y, reach), x, step, 500, 1e-6).x;
+    x = nelderMead((y) => cost(y), x, step, 3000, 1e-10).x;
     return { x, value: cost(x) };
   });
   return fits.reduce((a, b) => (b.value < a.value ? b : a)).x;
