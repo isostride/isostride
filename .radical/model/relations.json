@@ -3660,6 +3660,12 @@
     "targetId": "72290154-1cea-4ab3-87ce-510728d1f077"
   },
   {
+    "id": "70658eed-0e78-4890-aab8-77af35971538",
+    "relationType": "verifies",
+    "sourceId": "868dcd0f-3b38-48f6-b9f0-08ef0f8391f4",
+    "targetId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69"
+  },
+  {
     "id": "70bfb88b-d696-4344-b4de-a260aeea0fbf",
     "relationType": "illustrates",
     "sourceId": "29452319-21e3-42fa-a4e2-87267d468dc4",
@@ -5141,6 +5147,13 @@
     "quote": "(użytkownik) Podnieść budżet do 220 KB",
     "relationType": "derives",
     "sourceId": "36038f78-a505-4196-a7a7-9dbac6a637e8",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "9bc96548-ab34-4b98-a831-856afea82056",
+    "quote": "wzialem 2 biegi podobnej dlugsoci ... w analize .. w wysilkach jest pusto\n1 ma lapy, 2-i nie ma\nw czartach sie cos dziwnego dzieje",
+    "relationType": "derives",
+    "sourceId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {

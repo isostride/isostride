@@ -29,8 +29,10 @@ interface Figure {
  * run, the newest first, a column for each figure (as wide however many efforts: "a co jak bedzie 50 serii"):
  * each run's mean and its last effort against its first; a run opened shows each effort; on top the change from the previous run and from the first, and the trend per week.
  */
-export function EffortsByRun({ efforts, columns, titleOf, isReference }: {
+export function EffortsByRun({ efforts, columns, titleOf, isReference, totals = false }: {
   efforts: BlockInstance[];
+  /** a run's time and distance the sum of its efforts (runs added whole, their laps the efforts), not their mean */
+  totals?: boolean;
   /** the effort that is the part compared from (Compare similar), marked */
   isReference: (e: BlockInstance) => boolean;
   /** the figures shown as columns, chosen above ('pace', 'time', 'distance' or a metric's key) */
@@ -51,8 +53,8 @@ export function EffortsByRun({ efforts, columns, titleOf, isReference }: {
   const seconds = (d: number) => `${signed(d, (v) => number(Math.round(v)))} s`;
   const figures: Figure[] = [
     { key: 'pace', label: t('Pace (min/km)'), of: (x) => x.pace, mean: (x) => x.meanPace, fmt: pace.tick, diff: seconds, direction: 'lower', drift: true },
-    { key: 'time', label: t('Time'), of: (x) => x.durations, fmt: duration, diff: seconds, direction: 'neutral' },
-    { key: 'distance', label: t('Distance (km)'), of: (x) => x.distances, fmt: km, diff: (d) => `${signed(d, (v) => number(Math.round(v)))} m`, direction: 'neutral' },
+    { key: 'time', label: t('Time'), of: (x) => x.durations, ...(totals ? { mean: (x: RunEfforts) => x.durations.reduce((a, b) => a + b, 0) } : {}), fmt: duration, diff: seconds, direction: 'neutral' },
+    { key: 'distance', label: t('Distance (km)'), of: (x) => x.distances, ...(totals ? { mean: (x: RunEfforts) => x.distances.reduce((a, b) => a + b, 0) } : {}), fmt: km, diff: (d) => `${signed(d, (v) => number(Math.round(v)))} m`, direction: 'neutral' },
     ...held.map((m): Figure => {
       const v = view(m);
       // The unit in the head, not again in each change ("nachodzi na siebie").
@@ -150,7 +152,8 @@ export function EffortsByRun({ efforts, columns, titleOf, isReference }: {
                   const vs = f.of(x);
                   const a = vs[0] ?? null;
                   const b = vs[n - 1] ?? null;
-                  const drift = f.drift && n > 1 && a !== null && b !== null ? b - a : null;
+                  // Not for runs added whole: their laps are of every length (a warm-up, reps, a cool-down).
+                  const drift = !totals && f.drift && n > 1 && a !== null && b !== null ? b - a : null;
                   return (
                     <td key={f.key} className="num tnum">
                       <span className="strong">{cell(meanOfRun(f, x), f.fmt)}</span>

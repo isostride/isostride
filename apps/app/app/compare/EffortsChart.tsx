@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { clock, ensureSpan, niceTicks, robustExtent, smoothPaths, useMetrics, useWidth } from '@/components';
 import { figuresInWorker, type EffortFigures } from '@/lib/client';
-import { date } from '@/lib/format';
+import { date, time } from '@/lib/format';
 import type { DataFolder } from '@/lib/fs';
 import { number, t, tn } from '@/lib/i18n';
 import { readSettings, zoneColor, zoneRanges } from '@/lib/settings';
@@ -100,7 +100,9 @@ export function EffortsChart({ efforts, handle, folder, metrics: given }: { effo
     }
     return units.sort((a, b) => Number(b.e.reference) - Number(a.e.reference)).map(({ e, fs, n }) => {
       const f = averaged(fs);
-      const name = e.reference ? t('This selection · {date}', { date: date(f.runStart) }) : date(f.runStart);
+      // Two runs of one day told apart by their time.
+      const day = units.filter((u) => u.fs[0] && date(u.fs[0].runStart) === date(f.runStart)).length > 1 ? `${date(f.runStart)} · ${time(f.runStart)}` : date(f.runStart);
+      const name = e.reference ? t('This selection · {date}', { date: day }) : day;
       return { e, f, color: e.reference ? 'var(--text)' : `var(--series-${++k})`, name: n > 1 ? `${name} · ${tn(n, 'mean of {n} effort', 'mean of {n} efforts')}` : name };
     });
   }, [figures, efforts]);
