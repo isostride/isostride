@@ -507,13 +507,15 @@ test.describe('Back to the previous screen', () => {
     await page.locator('tr.row').nth(0).click();
     await expect(page.getByRole('link', { name: '← Runs' })).toBeVisible();
     const a = page.url();
+    // A run by its id: the screen adds its view to the link a moment after it opens, so the whole link is no match.
+    const runOf = (url: string) => new RegExp(`[?&]id=${new URL(url).searchParams.get('id')}(&|$)`);
     // From that run to another (⌘K): back to the first run, named by its date, as the back arrow goes.
     await openFromPalette(1);
-    await expect(page).not.toHaveURL(a);
+    await expect(page).not.toHaveURL(runOf(a));
     const toRun = page.getByRole('link', { name: /^← Run of / });
     await expect(toRun).toBeVisible();
     await toRun.click();
-    await expect(page).toHaveURL(a);
+    await expect(page).toHaveURL(runOf(a));
     await expect(page.getByRole('link', { name: '← Runs' })).toBeVisible();
     // From the Dashboard: back to the Dashboard, not to Runs.
     await page.locator('.sidebar').getByRole('link', { name: /Dashboard$/ }).click();
