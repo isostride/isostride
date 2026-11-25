@@ -8,7 +8,7 @@ import { t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import { autoMaxHr, criticalByRun, type LoadSummary } from '@/lib/load';
 import { DEFAULT_PERFORMANCE, parsePerformance, readSettings, writeSettings, type PerformanceSettings } from '@/lib/settings';
-import { LoadModelChoice } from './LoadModelPicker';
+import { CurveModelChoice, LoadModelChoice } from './LoadModelPicker';
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 const parsePace = (t: string): number | null | undefined => {
@@ -48,7 +48,7 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
       setP(q);
       const typed = { restHr: String(q.restHr), maxHr: q.maxHr === null ? '' : String(q.maxHr), thresholdPace: q.thresholdPace === null ? '' : mmss(q.thresholdPace), thresholdPower: q.thresholdPower === null ? '' : String(q.thresholdPower), fitnessDays: String(q.fitnessDays), fatigueDays: String(q.fatigueDays) };
       setTexts(typed);
-      setSaved(JSON.stringify({ t: typed, load: q.load, sex: q.sex }));
+      setSaved(JSON.stringify({ t: typed, load: q.load, curve: q.curve, sex: q.sex }));
       setRead((r) => ({ ...r, settings: true }));
     });
     // What "auto" stands for now: the maximum heart rate of the runs, the critical speed and power of the last 90 days.
@@ -74,13 +74,13 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
   const next = parsePerformance({ ...p, ...Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined)), confirmed: true });
   const edit = (k: keyof typeof texts, v: string) => { setTexts((x) => ({ ...x, [k]: v })); setStatus(null); };
 
-  const now = JSON.stringify({ t: texts, load: p.load, sex: p.sex });
+  const now = JSON.stringify({ t: texts, load: p.load, curve: p.curve, sex: p.sex });
   const dirty = saved !== '' && now !== saved;
   /** The changes not saved left: the values as saved. */
   const discard = () => {
-    const s = JSON.parse(saved) as { t: typeof texts; load: PerformanceSettings['load']; sex: PerformanceSettings['sex'] };
+    const s = JSON.parse(saved) as { t: typeof texts; load: PerformanceSettings['load']; curve: PerformanceSettings['curve']; sex: PerformanceSettings['sex'] };
     setTexts(s.t);
-    setP((q) => ({ ...q, load: s.load, sex: s.sex }));
+    setP((q) => ({ ...q, load: s.load, curve: s.curve, sex: s.sex }));
     setStatus(null);
   };
   const save = async () => {
@@ -120,6 +120,10 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
       <div className="form-section">
         <h3>{t('Load of a run, counted as')}</h3>
         <LoadModelChoice value={p.load} onChoose={(load) => { setP((q) => ({ ...q, load })); setStatus(null); }} runs={have.runs} summaries={have.sums} performance={p} defaultZones={have.defaultZones} criticalSpeed={have.cs} />
+      </div>
+      <div className="form-section">
+        <h3>{t('Curve of your bests, and the predicted times, by')}</h3>
+        <CurveModelChoice value={p.curve} onChoose={(curve) => { setP((q) => ({ ...q, curve })); setStatus(null); }} />
       </div>
       <div className="form-section">
         <h3>{t('Heart rate')}</h3>

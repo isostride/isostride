@@ -42,7 +42,7 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
       await page.getByRole('region', { name: /^Why:/ }).waitFor();
       found.push(...(await serious(page, `Performance · Why (${scheme})`)));
       await page.keyboard.press('Escape');
-      for (const [tab, views] of [['Load', ['Form', 'Weekly load', 'Intensity']], ['Capacity', ['Best efforts', 'Critical speed and power', 'Predictions and VDOT']], ['Aerobic', ['Efficiency', 'Decoupling', 'VO2max from heart rate']], ['Response', ['On VO2max from heart rate', 'On VDOT']]] as const) {
+      for (const [tab, views] of [['Load', ['Form', 'Weekly load', 'Intensity']], ['Capacity', ['Best efforts', 'Critical speed and power', 'Predictions and VDOT']], ['Aerobic', ['Efficiency', 'Decoupling', 'VO2max from heart rate']], ['Response', ['On VO2max from heart rate', 'On VDOT']], ['What if', ['An effort', 'Weeks of load']]] as const) {
         await page.getByRole('tab', { name: tab, exact: true }).click();
         for (const view of views) {
           await page.getByRole('radio', { name: view, exact: true }).click();

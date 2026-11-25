@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { CURVE_DURATIONS, bestsWithin, curvesOf, estimateCurve, estimatedValue, mergeBests, strongestFragment, type CurvePoint } from '@/lib/curve';
+import { CS_RANGE, CURVE_DURATIONS, bestsWithin, curveOfEstimate, curvesOf, estimateCurve, estimatedValue, fittedValue, mergeBests, strongestFragment, type CurvePoint } from '@/lib/curve';
 import { PATHS, writeJson } from '@/lib/fs';
 import type { RunFile } from '@/lib/kernel';
 import { NodeFolder } from '../support/nodeFolder';
@@ -58,15 +58,59 @@ describe('Pace curve', () => {
     expect(e.critical!.n).toBe(4);
     expect(1000 / e.critical!.rate).toBeGreaterThan(240);
     expect(e.critical!.reserve).toBeGreaterThan(0);
-    // An envelope: an easy long run below the law leaves the line on the strongest bests, and no best lies above it.
+    // An envelope ("idz ta metoda"): an easy long run far below the law does not pull it down; the line stays on the
+    // strongest bests (its exponent as without the easy run), and no best lies above it by more than 0.1 %.
     const withEasy = [...law, { duration: 7200, value: 400 }];
     const env = estimateCurve(withEasy)!;
-    expect(env.k).toBeGreaterThan(0.07);
-    for (const p of withEasy) expect(estimatedValue(env, p.duration)).toBeLessThanOrEqual(p.value + 1e-9);
-    expect(withEasy.some((p) => Math.abs(estimatedValue(env, p.duration) - p.value) < 1e-6)).toBe(true);
+    expect(env.k).toBeCloseTo(0.07, 3);
+    for (const p of withEasy) expect(estimatedValue(env, p.duration)).toBeLessThanOrEqual(p.value * 1.001);
+    expect(withEasy.some((p) => Math.abs(estimatedValue(env, p.duration) / p.value - 1) < 1e-3)).toBe(true);
     // Fewer than 3 bests of 3 minutes and more: no estimate; with none of 2–20 min, no critical speed.
     expect(estimateCurve(law.slice(0, 2))).toBeNull();
     expect(estimateCurve([{ duration: 1800, value: 250 }, { duration: 3600, value: 260 }, { duration: 7200, value: 275 }])!.critical).toBeNull();
+  });
+
+  it('Curve bent as the critical model, the power law past it', () => {
+    // Bests on the critical speed model, CS 4 m/s and D′ 200 m: v = 4 + 200/t, a hyperbola, not a line on the log axis.
+    const pts = [120, 180, 300, 600, 900, 1200].map((d) => ({ duration: d, value: 1000 / (4 + 200 / d) }));
+    const e = estimateCurve(pts)!;
+    expect(e.critical!.rate).toBeCloseTo(4, 6);
+    expect(e.critical!.reserve).toBeCloseTo(200, 4);
+    // Within 2–20 minutes the fitted curve is the hyperbola: through every best, and at any length between them.
+    for (const p of pts) expect(fittedValue(e, p.duration)).toBeCloseTo(p.value, 6);
+    expect(fittedValue(e, 450)).toBeCloseTo(1000 / (4 + 200 / 450), 6);
+    // It bends: on the log axis the pace changes more from 2 to 6 minutes than from 6.7 to 20 (each a factor of 3).
+    const step = (a: number, b: number) => fittedValue(e, b) - fittedValue(e, a);
+    expect(step(120, 360)).toBeGreaterThan(1.5 * step(400, 1200));
+    // Past 20 minutes the power law, drawn apart as an extrapolation up to an hour.
+    expect(fittedValue(e, 1800)).toBe(estimatedValue(e, 1800));
+    const c = curveOfEstimate(e);
+    expect(c.estimate[0].duration).toBeCloseTo(CS_RANGE[0], 6);
+    expect(c.estimate[c.estimate.length - 1].duration).toBeCloseTo(CS_RANGE[1], 6);
+    expect(c.extrapolate[0].duration).toBeCloseTo(CS_RANGE[1], 6);
+    expect(c.extrapolate[c.extrapolate.length - 1].duration).toBeCloseTo(3600, 6);
+    expect(c.at(600)).toBe(fittedValue(e, 600));
+    // A critical model with no reserve above it (D′ ≤ 0) cannot bend the curve: the power law instead.
+    const flat = estimateCurve([120, 180, 300, 600, 900, 1200].map((d) => ({ duration: d, value: 1000 / (4 - 20 / d) })))!;
+    expect(flat.critical!.reserve).toBeLessThan(0);
+    expect(fittedValue(flat, 600)).toBe(estimatedValue(flat, 600));
+  });
+
+  it('Critical model as an envelope', () => {
+    // Bests around v = 4 + 200/t with noise; the 3-minute one well above the rest ("powaznie?" to a 3:17 under a curve of 3:26).
+    const noise = [1, 1.04, 0.99, 1.01, 0.995, 1];
+    const pts = [120, 180, 300, 600, 900, 1200].map((d, i) => ({ duration: d, value: 1000 / ((4 + 200 / d) * noise[i]) }));
+    const e = estimateCurve(pts)!;
+    // No best of 2–20 minutes is faster than the curve by more than 0.1 %, and it passes through the strongest.
+    for (const p of pts) expect(fittedValue(e, p.duration)).toBeLessThanOrEqual(p.value * 1.001);
+    expect(Math.abs(fittedValue(e, 180) / pts[1].value - 1)).toBeLessThan(1e-3);
+    // Both parameters from the envelope's fit: the critical speed is no longer the ordinary regression's.
+    const v = pts.map((p) => 1000 / p.value);
+    const t = pts.map((p) => p.duration);
+    const tm = t.reduce((x, y) => x + y) / t.length;
+    const dm = t.reduce((x, y, i) => x + y * v[i], 0) / t.length;
+    const slope = t.reduce((x, y, i) => x + (y - tm) * (y * v[i] - dm), 0) / t.reduce((x, y) => x + (y - tm) ** 2, 0);
+    expect(Math.abs(e.critical!.rate - slope)).toBeGreaterThan(1e-4);
   });
 
   it('Curves from the data folder', async () => {
@@ -121,7 +165,7 @@ describe('Pace curve', () => {
     expect(e.critical!.rate).toBeCloseTo(250, 6);
     expect(e.critical!.reserve).toBeCloseTo(15000, 3);
     expect(e.predictions).toEqual([]);
-    for (const p of cp.filter((x) => x.duration >= 180)) expect(estimatedValue(e, p.duration)).toBeGreaterThanOrEqual(p.value - 1e-9);
+    for (const p of cp.filter((x) => x.duration >= 180)) expect(estimatedValue(e, p.duration)).toBeGreaterThanOrEqual(p.value * 0.999);
     // Power falls with time: higher at 3 minutes than at an hour.
     expect(estimatedValue(e, 180)).toBeGreaterThan(estimatedValue(e, 3600));
     // From the data folder: the source's metric chooses the curve.

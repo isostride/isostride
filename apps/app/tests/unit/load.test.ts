@@ -24,8 +24,10 @@ describe('Performance model', () => {
     expect(s.normPower!).toBeGreaterThan(250);
     expect(s.normPower!).toBeLessThan(300);
     expect(normalised([0, 1, 2], [null, null, null])).toBeNull();
-    expect(s.bests.map((b) => b.duration)).toEqual([120, 180, 300, 600, 900, 1200]);
-    expect(s.bests[0].speed).toBeCloseTo(3, 2);
+    // Every length of the curve, 30 s to 2 h; those longer than the run have no best.
+    expect(s.bests.map((b) => b.duration)).toEqual([30, 60, 120, 180, 300, 600, 900, 1200, 1800, 2700, 3600, 5400, 7200]);
+    expect(s.bests.filter((b) => b.speed !== null).map((b) => b.duration)).toEqual([30, 60, 120, 180, 300, 600, 900, 1200, 1800]);
+    expect(s.bests[2].speed).toBeCloseTo(3, 2);
 
     // Banister: 30 min at half the heart rate reserve (rest 60, max 180: 120 bpm), men 0.64·e^(1.92·0.5).
     expect(banisterTrimp(steady(30, 120), 60, 180, 'male')!).toBeCloseTo(30 * 0.5 * 0.64 * Math.exp(0.96), 6);

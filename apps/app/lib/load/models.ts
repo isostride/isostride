@@ -1,4 +1,4 @@
-import { estimateCurve, type CurveMetric } from '@/lib/curve';
+import { CS_RANGE, estimateCurve, type CurveMetric } from '@/lib/curve';
 import { LOAD_MODELS, zoneOf, type PerformanceSettings } from '@/lib/settings';
 import type { LoadSummary } from './summary';
 
@@ -73,6 +73,7 @@ export function criticalByRun(rows: LoadRow[], summaries: Record<string, LoadSum
     const best = new Map<number, number>();
     for (let k = from; k <= i; k++) {
       for (const b of summaries[sorted[k].id].bests) {
+        if (b.duration < CS_RANGE[0] || b.duration > CS_RANGE[1]) continue;
         const v = metric === 'power' ? b.power : b.speed;
         if (v !== null && v > (best.get(b.duration) ?? 0)) best.set(b.duration, v);
       }

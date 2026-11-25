@@ -100,6 +100,12 @@
     "targetId": "a694fdc9-58ad-462b-a996-c49812b6da79"
   },
   {
+    "id": "034a227b-6277-4f32-a64a-9ef05096186a",
+    "relationType": "verifies",
+    "sourceId": "78f0d290-3f7c-4890-8cdd-3c0826103232",
+    "targetId": "2b61dfcd-5b1d-4162-be5d-353933843c37"
+  },
+  {
     "id": "03d03fef-cb80-470a-982c-9264f83df838",
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
@@ -276,6 +282,12 @@
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
     "targetId": "8203dd81-c013-42ab-bdf8-4f057bac3787"
+  },
+  {
+    "id": "09e0c3c7-3d9c-4170-85ef-d1f906d19e34",
+    "relationType": "satisfies",
+    "sourceId": "49354ed3-2ed2-4462-b304-0688c5ddb16c",
+    "targetId": "2b61dfcd-5b1d-4162-be5d-353933843c37"
   },
   {
     "id": "0a154552-e615-40e5-bd88-393686ae2020",
@@ -1843,6 +1855,12 @@
     "relationType": "implements",
     "sourceId": "f1c03f5c-4092-4ddf-aaa9-efc717d56dc7",
     "targetId": "93361e28-caed-42b4-9f93-7d5759c549ac"
+  },
+  {
+    "id": "33963656-b720-4488-882f-f280db2d1c19",
+    "relationType": "verifies",
+    "sourceId": "5762a6d2-55c5-4b43-86ff-a001c119f058",
+    "targetId": "2b61dfcd-5b1d-4162-be5d-353933843c37"
   },
   {
     "id": "33b3e066-08d4-4d17-afc4-c2a4ea78a75c",
@@ -3434,6 +3452,12 @@
     "targetId": "7379e576-1802-487b-bc76-a9d745b2e2bd"
   },
   {
+    "id": "684fbdb0-622c-4218-9176-4be699f82568",
+    "relationType": "verifies",
+    "sourceId": "78f0d290-3f7c-4890-8cdd-3c0826103232",
+    "targetId": "7e820091-6148-431b-b28d-880efea10233"
+  },
+  {
     "id": "6853e84b-e06d-4507-b606-7a99a9aaa1fe",
     "relationType": "verifies",
     "sourceId": "49ca3dc4-6bd9-4cc2-9e66-d0167cd137c8",
@@ -3777,6 +3801,13 @@
     "relationType": "satisfies",
     "sourceId": "0e952c97-92a0-4037-846e-9154619a2261",
     "targetId": "e6a5afbb-9945-4524-9a7e-6aa34d59ea8e"
+  },
+  {
+    "id": "72c0f84b-77e6-4c6f-a04c-84486424ffe2",
+    "quote": "co gdybym mial takie a nie inne obciazenia; jak by kryzwa mocy wyhladala",
+    "relationType": "derives",
+    "sourceId": "d6e83e7b-9fee-4c63-9437-767f86bf5aed",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "72d554e2-6dcb-490e-af0d-a8637559fa95",
@@ -4534,6 +4565,12 @@
     "relationType": "verifies",
     "sourceId": "d4a34021-26c1-48ed-8a79-3dc483b373c7",
     "targetId": "5745b107-b2ee-4266-9c18-4e5286ed032c"
+  },
+  {
+    "id": "88df2d02-07bc-4af0-ba13-74276c8f05a3",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "d6e83e7b-9fee-4c63-9437-767f86bf5aed"
   },
   {
     "id": "89135969-1fa0-41a9-b7cc-9977171ccc62",
@@ -6352,6 +6389,12 @@
     "targetId": "a818e503-7a21-40b5-b96e-8b4b23a95c79"
   },
   {
+    "id": "c06a853c-7646-4759-8ffb-83a793f2c23e",
+    "relationType": "traces-to",
+    "sourceId": "2b61dfcd-5b1d-4162-be5d-353933843c37",
+    "targetId": "27bfbb75-0d7b-42a4-abeb-12bbcbb68e50"
+  },
+  {
     "id": "c0ab6bf3-6297-4ee1-b214-3c52ef25747b",
     "relationType": "verifies",
     "sourceId": "e0555ad8-2a1d-4143-9ff5-5d5c7a198792",
@@ -7408,6 +7451,12 @@
     "targetId": "d366613a-126e-4c7f-859e-3e075bf3a0b7"
   },
   {
+    "id": "e242000b-5d9a-4c6b-80a5-515b957d97aa",
+    "relationType": "satisfies",
+    "sourceId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d",
+    "targetId": "2b61dfcd-5b1d-4162-be5d-353933843c37"
+  },
+  {
     "id": "e246703c-9ff0-41d3-ae52-eb4f8fd07c4e",
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
@@ -7639,6 +7688,12 @@
     "relationType": "traces-to",
     "sourceId": "75f224bd-f1e1-4ead-8e4c-d59ae2778000",
     "targetId": "23148674-0c62-4887-a3a2-346dbfb72e3b"
+  },
+  {
+    "id": "e83ca8a6-657b-4d9c-86ee-2e450aa94d0d",
+    "relationType": "verifies",
+    "sourceId": "b8dbbd3f-7059-4138-ad35-ed1a58d0ec9b",
+    "targetId": "d6e83e7b-9fee-4c63-9437-767f86bf5aed"
   },
   {
     "id": "e86626b5-01fe-48a8-beda-ec173f4a0aad",
@@ -8008,6 +8063,13 @@
     "targetId": "d87e0d82-063d-4c7c-b571-c0a59b6a4ef7"
   },
   {
+    "id": "f3fa0dbb-9c39-49f2-9c42-00b9fe4e0bba",
+    "quote": "chce moc wybrac model ... ktory pozniej powinien byc uzywany tu i tu",
+    "relationType": "derives",
+    "sourceId": "2b61dfcd-5b1d-4162-be5d-353933843c37",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "f424dd4d-5e36-4a1d-99cf-b9798b938429",
     "quote": "Kolumnowy JSON.\nColumnar JSON (one array per field)",
     "relationType": "derives",
@@ -8111,6 +8173,12 @@
     "relationType": "derives",
     "sourceId": "de34688d-e396-4d2a-9461-bfc5d27540a6",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "f7a86e71-f9f8-47e4-9ad5-3f074c3a9a2f",
+    "relationType": "satisfies",
+    "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
+    "targetId": "d6e83e7b-9fee-4c63-9437-767f86bf5aed"
   },
   {
     "id": "f7af54fa-b50c-465b-bd34-fdf3111078c9",

@@ -16,7 +16,7 @@ const time = (d: string) => new Date(`${d}T12:00:00`).getTime();
  */
 export function FittedTab({ criterion, runs, summaries, performance, days, today }: { criterion: Criterion; runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; performance: PerformanceSettings; days: FormDay[]; today: string }) {
   const maxHr = performance.maxHr ?? autoMaxHr(Object.values(summaries));
-  const perfs = useMemo(() => performancesFor(criterion, runs, summaries, performance.restHr, maxHr, today), [criterion, runs, summaries, today, maxHr, performance.restHr]);
+  const perfs = useMemo(() => performancesFor(criterion, runs, summaries, performance.restHr, maxHr, today, performance.curve), [criterion, runs, summaries, today, maxHr, performance.restHr, performance.curve]);
   const fit = useMemo(() => fitBanister(days.map((d) => ({ date: d.date, load: d.load })), perfs), [days, perfs]);
   if (!fit) return <div className="card empty">{t('No fit yet: it needs {points} performances or more over {span} days or more ({n} now), and gains that come out positive.', { points: BANISTER_MIN_POINTS, span: BANISTER_MIN_SPAN, n: number(perfs.length) })}</div>;
   const measured = new Map(perfs.map((p) => [p.date, p.value]));

@@ -3,7 +3,7 @@
 import { t, tn } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import type { LoadSummary } from '@/lib/load';
-import { LOAD_MODELS, type LoadModel, type PerformanceSettings } from '@/lib/settings';
+import { CURVE_MODELS, LOAD_MODELS, type CurveModel, type LoadModel, type PerformanceSettings } from '@/lib/settings';
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
@@ -60,6 +60,24 @@ export function LoadModelChoice({ value, onChoose, runs, summaries, performance,
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * How the curve of the bests is modelled, chosen in Settings › Models (the runner's "chce moc wybrac
+ * model ... ktory pozniej powinien byc uzywany tu i tu"): the curve drawn, the predicted times, VDOT
+ * and the response fitted to it follow the choice.
+ */
+export function CurveModelChoice({ value, onChoose }: { value: CurveModel; onChoose: (m: CurveModel) => void }) {
+  return (
+    <div className="perf-models curve-models" role="radiogroup" aria-label={t('Curve model')}>
+      {CURVE_MODELS.map((m) => (
+        <button key={m.key} type="button" role="radio" aria-checked={value === m.key} className={`perf-model ${value === m.key ? 'on' : ''}`} onClick={() => onChoose(m.key)}>
+          <b>{t(m.name)}</b>
+          <span className="muted small">{t(m.about)}</span>
+        </button>
+      ))}
     </div>
   );
 }

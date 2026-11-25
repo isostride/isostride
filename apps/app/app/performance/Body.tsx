@@ -8,7 +8,7 @@ import { PATHS, readJson } from '@/lib/fs';
 import { t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import { LOAD_SUMMARY_VERSION, formSeries, onLoad, performanceReport, type LoadSummary, type ModelKey, type ModelReport } from '@/lib/load';
-import { LOAD_MODELS, readSettings, type SettingsFile } from '@/lib/settings';
+import { CURVE_MODELS, LOAD_MODELS, readSettings, type SettingsFile } from '@/lib/settings';
 import { PinButton } from '../dashboard/PinButton';
 import { WhyBar } from './Assumptions';
 import { EfficiencyTab } from './EfficiencyTab';
@@ -21,6 +21,7 @@ import { CriticalTab, PredictionsTab } from './MarkersTab';
 import { OverviewTab } from './OverviewTab';
 import { TABS, type Tab } from './structure';
 import { Vo2Tab } from './Vo2Tab';
+import { CurveWhatIfView, LoadWhatIfView } from './WhatIfTab';
 
 const localDay = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
@@ -73,6 +74,7 @@ export function Body({ tab, view, embedded = false }: { tab: Tab; view: string; 
   if (!data || !report || !by) {
     return <div className="card chart muted small" style={{ padding: 18 }} role="status">{preparing ? t('Preparing the summaries of your runs, once…') : t('Reading the runs…')}</div>;
   }
+  const curveName = t(CURVE_MODELS.find((m) => m.key === data.settings.performance.curve)!.name);
   // What the load model chosen changes, marked so wherever it shows.
   const loadName = LOAD_MODELS.find((m) => m.key === data.settings.performance.load)?.name;
   const byLoad = { set: onLoad(report.models), name: loadName ? t(loadName) : t('the load model'), unit: report.now.loadUnit };
@@ -88,12 +90,14 @@ export function Body({ tab, view, embedded = false }: { tab: Tab; view: string; 
       case 'load/form': return <FormTab runs={runs} />;
       case 'load/weekly': return <LoadTab days={days} unit={unit} />;
       case 'load/intensity': return <IntensityTab runs={runs} summaries={summaries} hrZones={hrZones} />;
-      case 'capacity/efforts': return <EffortsTab now={report.now} runs={runs} />;
+      case 'capacity/efforts': return <EffortsTab now={report.now} runs={runs} model={settings.performance.curve} />;
       case 'capacity/critical': return <CriticalTab runs={runs} summaries={summaries} today={today} />;
-      case 'capacity/predictions': return <PredictionsTab runs={runs} summaries={summaries} today={today} />;
+      case 'capacity/predictions': return <PredictionsTab runs={runs} summaries={summaries} today={today} model={settings.performance.curve} />;
       case 'aerobic/efficiency': return <EfficiencyTab part="ef" runs={runs} summaries={summaries} hrZones={hrZones} />;
       case 'aerobic/decoupling': return <EfficiencyTab part="decoupling" runs={runs} summaries={summaries} hrZones={hrZones} />;
       case 'aerobic/vo2': return <Vo2Tab runs={runs} summaries={summaries} performance={settings.performance} />;
+      case 'whatif/curve': return <CurveWhatIfView now={report.now} runs={runs} summaries={summaries} model={settings.performance.curve} />;
+      case 'whatif/load': return <LoadWhatIfView runs={runs} performance={settings.performance} unit={unit} today={today} />;
       case 'response/hr': return <FittedTab criterion="hr" runs={runs} summaries={summaries} performance={settings.performance} days={days} today={today} />;
       default: return <FittedTab criterion="vdot" runs={runs} summaries={summaries} performance={settings.performance} days={days} today={today} />;
     }
@@ -103,14 +107,20 @@ export function Body({ tab, view, embedded = false }: { tab: Tab; view: string; 
   // to the data folder, so it stays the English one (the keys), whatever the language in use.
   return (
     <>
-      {(tab === 'load' || tab === 'response') && (
+      {(['capacity/efforts', 'capacity/predictions', 'whatif/curve', 'response/vdot'].includes(`${tab}/${shown.key}`)) && (
+        <p className="load-using muted small" role="note" aria-label={t('Curve model in use')}>
+          {t('The curve of your bests and the predicted times come from')} <span className="by-load">{curveName}</span>. <Link href="/settings?tab=models">{t('Change it in Settings →')}</Link>
+        </p>
+      )}
+      {(tab === 'load' || tab === 'response' || `${tab}/${shown.key}` === 'whatif/load') && (
         <p className="load-using muted small" role="note" aria-label={t('Load model in use')}>
           {t('The load of a run is counted as')} <span className="by-load">{byLoad.name}</span>{t(': what is marked by it follows that choice; Capacity and Aerobic do not depend on it.')} <Link href="/settings?tab=models">{t('Change it in Settings →')}</Link>
         </p>
       )}
       <WhyBar key={`${tab}/${shown.key}`} models={shown.models} by={by} byLoad={byLoad} />
       <div className="pin-host perf-widget">
-        <PinButton folder={folder} kind="perf" target={`${tab}/${shown.key}`} name={`${TABS.find((tb) => tb.key === tab)!.name} · ${shown.name}`} />
+        {/* A scenario lives in the link, so it is no widget of the Dashboard. */}
+        {tab !== 'whatif' && <PinButton folder={folder} kind="perf" target={`${tab}/${shown.key}`} name={`${TABS.find((tb) => tb.key === tab)!.name} · ${shown.name}`} />}
         {content}
       </div>
     </>

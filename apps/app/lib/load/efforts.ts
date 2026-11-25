@@ -58,14 +58,15 @@ export interface BestEffort {
 const DAY = 86_400_000;
 
 /**
- * The best of each length of 2–20 minutes over the runs of the `days` days up to `today` (the
- * window of the fitness markers), for speed or for power; null where no run has one.
+ * The best of each length of 2–20 minutes (or of the `durations` given: the whole curve's, 30 s to
+ * 2 h) over the runs of the `days` days up to `today` (the window of the fitness markers), for speed
+ * or for power; null where no run has one.
  */
-export function bestEfforts(rows: LoadRow[], summaries: Record<string, LoadSummary>, kind: 'speed' | 'power', maxHr: number | null, today: string, days = MARKER_DAYS): (BestEffort | null)[] {
+export function bestEfforts(rows: LoadRow[], summaries: Record<string, LoadSummary>, kind: 'speed' | 'power', maxHr: number | null, today: string, days = MARKER_DAYS, durations: number[] = EFFORT_DURATIONS): (BestEffort | null)[] {
   const to = new Date(`${today}T23:59:59`).getTime();
   const from = to - days * DAY;
   const inside = rows.filter((r) => { const t = Date.parse(r.startTime); return summaries[r.id] && t > from && t <= to; });
-  return EFFORT_DURATIONS.map((duration) => {
+  return durations.map((duration) => {
     let best: BestEffort | null = null;
     for (const r of inside) {
       const b = summaries[r.id].bests.find((x) => x.duration === duration);

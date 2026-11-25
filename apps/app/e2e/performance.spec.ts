@@ -152,7 +152,7 @@ test.describe('Performance model', () => {
     await nav(page, 'Performance');
     const tabs = page.getByRole('tablist', { name: 'Performance sections' });
     // No Model tab ("mam wrazenie ze wszystkie modele sa pomieszane"): the load model is chosen at the top of Load, its values set in Settings › Models.
-    await expect(tabs.getByRole('tab')).toHaveText(['Overview', 'Load', 'Capacity', 'Aerobic', 'Response']);
+    await expect(tabs.getByRole('tab')).toHaveText(['Overview', 'Load', 'Capacity', 'Aerobic', 'Response', 'What if']);
     await expect(tabs.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
     await expect(page).toHaveURL(/\/performance$/);
     // The overview is the map of the models: each with its name, what it says now, its trust and a "Why?"; no list repeats it.
@@ -336,9 +336,15 @@ test.describe('Performance model', () => {
     // Your curve now above them ("czy krzywa mocy i predkosci powinna byc w performance"): the bests as points, the fitted curve and its critical speed; power on a switch.
     const curve = page.getByRole('img', { name: 'Your pace curve' });
     await expect(curve).toBeVisible();
+    // Riegel and critical speed until another curve model is chosen: the hyperbola up to 20 minutes, Riegel's law past them, dotted.
+    await expect(curve.locator('.curve-estimate')).toHaveCount(1);
+    await expect(curve.locator('.curve-extrapolate')).toHaveCount(1);
+    await expect(page.locator('.chart-note[data-model="riegel"]')).toBeVisible();
+    await expect(page.getByRole('note', { name: 'Curve model in use' })).toContainText('come from Riegel and critical speed');
     await expect(page.locator('.chart-note').filter({ hasText: /^Critical speed [2-9]:\d\d \/km/ })).toBeVisible();
     await page.getByRole('group', { name: 'Curve of' }).getByRole('button', { name: 'Power' }).click();
     await expect(page.getByRole('img', { name: 'Your power curve' })).toBeVisible();
+    await expect(page.locator('.chart-note[data-model="riegel"]')).toBeVisible();
     await expect(page.locator('.chart-note').filter({ hasText: /^Critical power \d+ W/ })).toBeVisible();
     // Pace and power in one table ("czy to nie to samo"): a row a length with both bests; one effort said once, two efforts each.
     const efforts = page.getByRole('table', { name: 'Best efforts' });
@@ -480,5 +486,118 @@ test.describe('Performance model', () => {
     await expect(edge('efforts', 'cs')).toHaveClass(/lit/);
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/performance\?tab=capacity&view=critical/);
+  });
+  test('What if drawn', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openWithFolder(page, await fitFiles(30, '2026-08-20'));
+    await importAll(page);
+    // An effort that did not happen: 20 minutes first, at the best pace of that length, so nothing changes yet.
+    await page.goto('/performance?tab=whatif&view=curve');
+    const table = page.getByRole('table', { name: 'What the models say now and with the effort' });
+    const row = (name: string) => table.getByRole('row').filter({ has: page.getByRole('cell', { name, exact: true }) });
+    await expect(row('Critical speed')).toContainText('no change', { timeout: 60_000 });
+    for (const name of ['D′', '5 km', '10 km', 'half', 'marathon', 'VDOT']) await expect(row(name)).toContainText(/no change|–/);
+    await expect(page.locator('p.warn-text')).toHaveCount(0);
+    await expect(page.getByRole('note').filter({ hasText: 'Effort 1 is your best of that length' })).toBeVisible();
+    const time = page.getByRole('textbox', { name: 'Effort 1: time' });
+    await expect(time).toHaveValue('20:00');
+    // 20 minutes 20 s/km faster: critical speed and VDOT rise, the predicted times fall; the scenario is in the link.
+    const pace = page.getByRole('textbox', { name: 'Effort 1: pace' });
+    const [m, s] = (await pace.inputValue()).split(':').map(Number);
+    const faster = m * 60 + s - 20;
+    await pace.fill(`${Math.floor(faster / 60)}:${String(faster % 60).padStart(2, '0')}`);
+    // The distance follows: 20 minutes at that pace.
+    await expect(page.getByRole('textbox', { name: 'Effort 1: distance' })).toHaveValue(((1200 / faster)).toFixed(2));
+    await expect(page).toHaveURL(new RegExp(`effort=1200-${Math.round((1200 / faster) * 10000) / 10}`.replace('.', '\\.')));
+    await expect(row('Critical speed')).toContainText('↑');
+    await expect(row('10 km')).toContainText('↑');
+    await expect(row('VDOT')).toContainText('↑');
+    await expect(page.getByRole('img', { name: 'Pace curve now and with the effort' })).toBeVisible();
+    await expect(page.locator('.chart-note[data-model="riegel"]')).toBeVisible();
+    // The distance follows the pace; written in its place, the pace follows it.
+    const distance = page.getByRole('textbox', { name: 'Effort 1: distance' });
+    await distance.fill('3');
+    await expect(pace).toHaveValue('6:40');
+    // The distance written last stays when the time changes: 5 km in 17 minutes is 3:24 /km.
+    await distance.fill('5');
+    await time.fill('17:00');
+    await expect(pace).toHaveValue('3:24');
+    await expect(page).toHaveURL(/effort=1020-5000\b/);
+    // 17 minutes counts as the best of 15 minutes and less, as the import would count it; 25 as that of 20.
+    await expect(page.getByRole('note').filter({ hasText: 'counts as your best of 15 min' })).toBeVisible();
+    await time.fill('25:00');
+    await expect(page.getByRole('note').filter({ hasText: 'counts as your best of 20 min' })).toBeVisible();
+    await pace.fill('6:40');
+    await expect(page.getByRole('note').filter({ hasText: 'no faster than your bests' })).toBeVisible();
+    // Weeks of load: a build of three weeks and a recovery week by default, its weeks from tomorrow, the form chart with the scenario.
+    await page.goto('/performance?tab=whatif&view=load');
+    const weeks = page.getByRole('table', { name: 'The weeks of the scenario' });
+    await expect(weeks.getByRole('spinbutton')).toHaveCount(4, { timeout: 60_000 });
+    await expect(page.getByRole('button', { name: 'Build 3 + 1' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.form-whatif')).toHaveCount(1);
+    // As now: each week as the recent weeks, its load the load of a week of them.
+    await page.getByRole('button', { name: 'As now' }).click();
+    const recent = Number((await page.locator('.chart-title').filter({ hasText: 'The weeks' }).textContent())!.match(/\((\d+) \S+ a week\)/)![1]);
+    for (const cell of await weeks.locator('tbody tr').filter({ has: page.getByRole('spinbutton') }).locator('td:nth-child(3)').all()) {
+      expect(Math.abs(Number((await cell.textContent())!.match(/\d+/)![0]) - recent)).toBeLessThanOrEqual(1);
+    }
+    await page.getByRole('button', { name: 'Taper' }).click();
+    await expect(page).toHaveURL(/weeks=80%2C60%2C40|weeks=80,60,40/);
+    await expect(weeks.getByRole('spinbutton')).toHaveCount(3);
+    await page.getByRole('button', { name: '+ Add a week' }).click();
+    await expect(weeks.getByRole('spinbutton')).toHaveCount(4);
+    await weeks.getByRole('spinbutton').first().fill('200');
+    await expect(page).toHaveURL(/weeks=200/);
+    // No Pin: a scenario lives in the link.
+    await expect(page.locator('.perf-widget .pin-btn, .perf-widget [aria-label^="Pin"]')).toHaveCount(0);
+  });
+  test('Curve model chosen in Settings', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openWithFolder(page, await fitFiles(30, '2026-08-20'));
+    await importAll(page);
+    const tenKm = async () => (await page.getByLabel('Predictions now').locator('div').filter({ hasText: /^10 km/ }).locator('dd').first().textContent())!;
+    await page.goto('/performance?tab=capacity&view=predictions');
+    await expect(page.getByLabel('Predictions now')).toContainText(/10 km(\d+:)?\d+:\d\d/, { timeout: 60_000 });
+    const riegel = await tenKm();
+    // Chosen once in Settings › Models ("chce moc wybrac model ... ktory pozniej powinien byc uzywany tu i tu"), saved to the folder.
+    await page.getByRole('note', { name: 'Curve model in use' }).getByRole('link', { name: 'Change it in Settings →' }).click();
+    const card = page.getByRole('region', { name: 'Performance model' });
+    const curves = card.getByRole('radiogroup', { name: 'Curve model' });
+    await expect(curves.getByRole('radio', { name: /^Riegel and critical speed/ })).toHaveAttribute('aria-checked', 'true');
+    await curves.getByRole('radio', { name: /^Péronnet–Thibault and omni-domain/ }).click();
+    await card.getByRole('button', { name: 'Save and recompute' }).click();
+    await expect(card.getByRole('status')).toHaveText(/^Saved/, { timeout: 60_000 });
+    expect(JSON.parse(await readText(page, '.isostride/user/settings.json')).performance).toMatchObject({ curve: 'whole' });
+    // The predicted times follow it, and say so.
+    await page.goto('/performance?tab=capacity&view=predictions');
+    await expect(page.getByRole('note', { name: 'Curve model in use' })).toContainText('come from Péronnet–Thibault and omni-domain', { timeout: 60_000 });
+    await expect(page.getByLabel('Predictions now')).toContainText(/10 km(\d+:)?\d+:\d\d/);
+    const whole = await tenKm();
+    expect(whole).not.toBe(riegel);
+    // The curve drawn by Péronnet–Thibault, its parameters believable on real runs: a maximal aerobic speed of 2:30–6:00 /km,
+    // a reserve under a kilometre, a fit within 10 %; power by the omni-domain model.
+    await page.goto('/performance?tab=capacity&view=efforts');
+    const pt = page.locator('.chart-note[data-model="pt"]');
+    await expect(pt).toBeVisible({ timeout: 60_000 });
+    const [, mas, reserve] = (await pt.textContent())!.match(/maximal aerobic speed (\d:\d\d) \/km.*reserve of (\d+) m/)!;
+    const masSeconds = Number(mas.split(':')[0]) * 60 + Number(mas.split(':')[1]);
+    expect(masSeconds).toBeGreaterThanOrEqual(150);
+    expect(masSeconds).toBeLessThanOrEqual(360);
+    expect(Number(reserve)).toBeGreaterThan(0);
+    expect(Number(reserve)).toBeLessThan(1000);
+    expect(Number((await page.locator('.chart-note').filter({ hasText: /^It rests on your strongest bests/ }).first().textContent())!.match(/by ([\d.]+) %/)![1])).toBeLessThan(10);
+    await page.getByRole('group', { name: 'Curve of' }).getByRole('button', { name: 'Power' }).click();
+    const ompd = page.locator('.chart-note[data-model="ompd"]');
+    await expect(ompd).toBeVisible();
+    const [, cp, wp, pmax] = (await ompd.textContent())!.match(/critical power (\d+) W, W′ ([\d.]+) kJ .*sprint of (\d+) W/)!.map(Number);
+    expect(cp).toBeGreaterThan(100);
+    expect(pmax).toBeGreaterThan(cp);
+    expect(wp).toBeGreaterThan(0);
+    expect(wp).toBeLessThan(60);
+    // What if: now the same 10 km as Capacity, drawn by the same model.
+    await page.goto('/performance?tab=whatif&view=curve');
+    const table = page.getByRole('table', { name: 'What the models say now and with the effort' });
+    await expect(table.getByRole('row').filter({ has: page.getByRole('cell', { name: '10 km', exact: true }) }).getByRole('cell').nth(1)).toHaveText(whole, { timeout: 60_000 });
+    await expect(page.locator('.chart-note[data-model="pt"]')).toBeVisible();
   });
 });

@@ -1,5 +1,5 @@
 import { decouplingOf } from '@/lib/blocks';
-import { CS_RANGE, CURVE_DURATIONS, bestsWithin } from '@/lib/curve';
+import { CURVE_DURATIONS, bestsWithin } from '@/lib/curve';
 import { metricSeries, type RunFile, type Series } from '@/lib/kernel';
 
 /**
@@ -18,7 +18,7 @@ export interface LoadSummary {
   normSpeed: number | null;
   /** normalised power, W, the same way */
   normPower: number | null;
-  /** the bests of 2–20 minutes, for the critical speed and power */
+  /** the bests of every length of the curve, 30 s to 2 h (before version 4, 2–20 minutes): the critical speed and power and Riegel's law take those of 2–20 minutes, the whole-curve models all */
   bests: BestOfLength[];
   /** time moving, s: the 10 s windows with movement */
   moving: number;
@@ -56,8 +56,8 @@ export interface BestOfLength {
 /** The heart rate takes about this long to follow an effort, s: left out of a stretch's mean heart rate. */
 export const HR_LAG = 90;
 
-/** Raised when the summary changes, so every run is summarised again (3: where each best lies and the heart rate in it). */
-export const LOAD_SUMMARY_VERSION = 3;
+/** Raised when the summary changes, so every run is summarised again (3: where each best lies and the heart rate in it; 4: the bests of every length of the curve, 30 s to 2 h; 5: the curve fitted as an envelope moves the critical speed and power, so the loads of rTSS and Power TSS are counted again). */
+export const LOAD_SUMMARY_VERSION = 5;
 
 /** A sample counts until the next one, but no longer than this, s: a pause counts as nothing. */
 const HOLD = 5;
@@ -106,7 +106,9 @@ export function summarizeLoad(run: RunFile): LoadSummary {
   let hrPeak: number | null = null;
   for (let k = hr.length - 1; k >= 0; k--) { held += hr[k]; if (held >= 10) { hrPeak = hrFrom + k; break; } }
   const effort = effortPace.some((v) => v !== null && v > 0) ? effortPace : speed;
-  const durations = CURVE_DURATIONS.filter((d) => d >= CS_RANGE[0] && d <= CS_RANGE[1]);
+  // Every length of the curve, 30 s to 2 h: the whole-curve models need the sprint and the long bests;
+  // critical speed, Riegel's law and the best efforts take those of 2–20 minutes from them.
+  const durations = CURVE_DURATIONS;
   const whole: [number, number][] = [[0, 1e9]];
   const fast = new Map(bestsWithin(run, whole, 'speed', durations).map((b) => [b.duration, b]));
   const strong = new Map(bestsWithin(run, whole, 'power', durations).map((b) => [b.duration, b]));

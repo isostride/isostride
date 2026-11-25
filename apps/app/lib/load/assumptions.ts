@@ -1,3 +1,4 @@
+import { CURVE_DURATIONS } from '@/lib/curve';
 import { duration as fmtDuration, pace as fmtPace } from '@/lib/format';
 import { msg, number, t, tn } from '@/lib/i18n';
 import { LOAD_MODELS, type PerformanceSettings } from '@/lib/settings';
@@ -82,6 +83,9 @@ export interface PerformanceNow {
   evidence: EffortEvidence;
   powerEfforts: (BestEffort | null)[];
   powerEvidence: EffortEvidence;
+  /** the bests of every length of the curve, 30 s to 2 h, in the window of the markers: pace and power */
+  curve: (BestEffort | null)[];
+  powerCurve: (BestEffort | null)[];
   ef: number | null;
   decoupling: number | null;
   vo2hr: number | null;
@@ -200,11 +204,14 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
   const inWindow = have.filter((r) => { const at = Date.parse(r.startTime); return at > end - MARKER_DAYS * DAY && at <= end; });
 
   // The values now.
-  const weeks = markersOverTime(have, summaries, today);
+  const weeks = markersOverTime(have, summaries, today, p.curve);
   const marker = weeks[weeks.length - 1] ?? null;
   const vdot = marker ? vdotOverTime([marker])[0].vdot : null;
   const efforts = bestEfforts(have, summaries, 'speed', maxHr, today);
   const powerEfforts = bestEfforts(have, summaries, 'power', maxHr, today);
+  // The bests of every length of the curve, 30 s to 2 h, for the whole-curve models.
+  const curve = bestEfforts(have, summaries, 'speed', maxHr, today, MARKER_DAYS, CURVE_DURATIONS);
+  const powerCurve = bestEfforts(have, summaries, 'power', maxHr, today, MARKER_DAYS, CURVE_DURATIONS);
   const evidence = effortEvidence(efforts, today);
   const powerEvidence = effortEvidence(powerEfforts, today);
   const effRuns = efficiencyRuns(have, summaries, hrZones);
@@ -217,13 +224,13 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
   const loadWeeks = weeklyLoad(days);
   const loads = days.map((d) => ({ date: d.date, load: d.load }));
   const fitted = {
-    hr: fitBanister(loads, performancesFor('hr', have, summaries, p.restHr, maxHr, today)),
-    vdot: fitBanister(loads, performancesFor('vdot', have, summaries, p.restHr, maxHr, today)),
+    hr: fitBanister(loads, performancesFor('hr', have, summaries, p.restHr, maxHr, today, p.curve)),
+    vdot: fitBanister(loads, performancesFor('vdot', have, summaries, p.restHr, maxHr, today, p.curve)),
   };
   const now: PerformanceNow = {
     loadModel: t(model.name), loadUnit: model.unit, restHr: p.restHr, maxHr,
     day: days[days.length - 1] ?? null, week: loadWeeks[loadWeeks.length - 1] ?? null, shares,
-    marker, vdot, efforts, evidence, powerEfforts, powerEvidence,
+    marker, vdot, efforts, evidence, powerEfforts, powerEvidence, curve, powerCurve,
     ef: eff.ef, decoupling: eff.decoupling, vo2hr: vo2.value, uth, fitted,
   };
 
@@ -311,7 +318,8 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
 
   const powerRuns = inWindow.filter((r) => summaries[r.id].normPower !== null);
   const powerWatches = new Set(powerRuns.map((r) => r.device ?? t('unknown')));
-  const longest = 1200;
+  // The longest best the predictions were fitted to: 20 minutes for Riegel's law, the longest best of the window for the whole curve.
+  const longest = p.curve === 'whole' ? Math.max(1200, ...curve.filter((e): e is BestEffort => e !== null).map((e) => e.duration)) : 1200;
   const race = (d: number) => marker?.predictions.find((x) => x.distance === d)?.seconds ?? null;
   const pointsLabel = t('{points} performances or more over {days} days', { points: BANISTER_MIN_POINTS, days: BANISTER_MIN_SPAN });
   const fittedDef = (fit: BanisterFit | null, name: string): Pick<Def, 'has' | 'checks'> => ({
@@ -380,7 +388,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
       checks: effortChecks(evidence, t('the critical speed')),
     },
     cs: {
-      key: 'cs', group: 'capacity', depth: 1, name: t('Critical speed and D′'), method: t('distance = CS·time + D′ fitted to the bests (Monod & Scherrer 1965; Jones & Vanhatalo 2017)'), tells: t('the fastest pace you can hold in a steady state, and the reserve above it'),
+      key: 'cs', group: 'capacity', depth: 1, name: t('Critical speed and D′'), method: t('distance = CS·time + D′ fitted to the bests as their envelope: none lies above it (Monod & Scherrer 1965; Jones & Vanhatalo 2017)'), tells: t('the fastest pace you can hold in a steady state, and the reserve above it'),
       inputs: [], parents: ['efforts'], where: { tab: 'capacity', view: 'critical' }, has: (marker?.cs ?? null) !== null,
       checks: marker?.dPrime === null || marker?.dPrime === undefined ? [] : [
         check('dprime', t("D′ comes out as a runner's ({from}–{to} m)", { from: T.dPrime[0], to: T.dPrime[1] }), marker.dPrime >= T.dPrime[0] && marker.dPrime <= T.dPrime[1] ? 'met' : 'doubt',
@@ -390,11 +398,11 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
       ],
     },
     predictions: {
-      key: 'predictions', group: 'capacity', depth: 1, name: t('Predicted race times'), method: t('Riegel’s law fitted to the bests of 3–20 min (Riegel 1981)'), tells: t('the times your bests imply at race distances'),
-      inputs: [t('a power law of time beyond the efforts')], parents: ['efforts'], where: { tab: 'capacity', view: 'predictions' }, has: (marker?.predictions.length ?? 0) > 0,
+      key: 'predictions', group: 'capacity', depth: 1, name: t('Predicted race times'), method: p.curve === 'whole' ? t('Péronnet–Thibault fitted to the bests of 30 s to 2 h (Péronnet & Thibault 1989)') : t('Riegel’s law fitted to the bests of 3–20 min (Riegel 1981)'), tells: t('the times your bests imply at race distances'),
+      inputs: [p.curve === 'whole' ? t('maximal aerobic speed, an anaerobic reserve and its decline past 7 minutes') : t('a power law of time beyond the efforts')], parents: ['efforts'], where: { tab: 'capacity', view: 'predictions' }, has: (marker?.predictions.length ?? 0) > 0,
       checks: race(21097.5) === null ? [] : [
         check('near', t('The 5 km and 10 km lie near the efforts fitted'), (race(10000) ?? Infinity) <= 3 * longest ? 'met' : 'doubt',
-          t('10 km in {time}: {times} × the longest effort fitted (20 min)', { time: fmtDuration(Math.round(race(10000)!)), times: number(race(10000)! / longest, 1) })),
+          t('10 km in {time}: {times} × the longest effort fitted ({longest} min)', { time: fmtDuration(Math.round(race(10000)!)), times: number(race(10000)! / longest, 1), longest: number(Math.round(longest / 60)) })),
         check('endurance', t('You have the endurance of the half and the marathon'), 'doubt',
           t('they last {half} × and {full} × the longest effort fitted: the law holds that far only for a runner trained for the distance', { half: number(race(21097.5)! / longest, 1), full: number(race(42195)! / longest, 1) })),
       ],
@@ -403,7 +411,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
       key: 'vdot', group: 'capacity', depth: 2, name: t('VO2max as VDOT'), method: t('the VO2max a race time implies (Daniels & Gilbert 1979)'), tells: t('your capacity as one number, comparable with race tables'),
       inputs: [t('the predicted 5 km')], parents: ['efforts'], where: { tab: 'capacity', view: 'predictions' }, has: vdot !== null,
       checks: race(5000) === null ? [] : [
-        check('near', t('The predicted 5 km lies within the lengths fitted'), race(5000)! <= 1.5 * longest ? 'met' : 'doubt', t('5 km in {time}, against efforts of 3–20 min', { time: fmtDuration(Math.round(race(5000)!)) })),
+        check('near', t('The predicted 5 km lies within the lengths fitted'), race(5000)! <= 1.5 * longest ? 'met' : 'doubt', p.curve === 'whole' ? t('5 km in {time}, against efforts of 30 s to {longest} min', { time: fmtDuration(Math.round(race(5000)!)), longest: number(Math.round(longest / 60)) }) : t('5 km in {time}, against efforts of 3–20 min', { time: fmtDuration(Math.round(race(5000)!)) })),
       ],
     },
     powerEfforts: {
@@ -418,7 +426,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
       ],
     },
     cp: {
-      key: 'cp', group: 'capacity', depth: 1, name: t('Critical power and W′'), method: t('work = CP·time + W′ fitted to the bests (Monod & Scherrer 1965)'), tells: t('the highest power you can hold in a steady state, and the work above it'),
+      key: 'cp', group: 'capacity', depth: 1, name: t('Critical power and W′'), method: t('work = CP·time + W′ fitted to the bests as their envelope: none lies above it (Monod & Scherrer 1965)'), tells: t('the highest power you can hold in a steady state, and the work above it'),
       inputs: [], parents: ['powerEfforts'], where: { tab: 'capacity', view: 'critical' }, has: (marker?.cp ?? null) !== null,
       checks: marker?.wPrime === null || marker?.wPrime === undefined ? [] : [
         check('wprime', t('W′ comes out positive'), marker.wPrime > 0 ? 'met' : 'doubt',

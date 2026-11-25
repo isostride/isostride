@@ -50,4 +50,11 @@ export const SETTINGS: Dictionary = {
   'Diagnostics failed: {error}': 'Diagnostyka nie powiodła się: {error}',
   'On the Over time charts of Compare: each segment’s efforts joined in date order.': 'Na wykresach „W czasie” w Porównaj: wysiłki każdego segmentu połączone w kolejności dat.',
   'On the Over time charts of Compare: the fitted trend of each segment, its band the noise between its efforts.': 'Na wykresach „W czasie” w Porównaj: dopasowany trend każdego segmentu, jego pasmo to szum między wysiłkami.',
+  // The curve model.
+  'Riegel and critical speed': 'Riegel i prędkość krytyczna',
+  'the bests of 2–20 minutes: the critical speed or power model up to 20 minutes, Riegel’s law past them and for the predicted times (Monod & Scherrer 1965; Riegel 1981)': 'najlepsze wyniki z 2–20 minut: model prędkości lub mocy krytycznej do 20 minut, prawo Riegela powyżej nich i dla prognoz czasów (Monod i Scherrer 1965; Riegel 1981)',
+  'Péronnet–Thibault and omni-domain': 'Péronnet–Thibault i omni-domain',
+  'the bests of 30 seconds to 2 hours: Péronnet–Thibault for pace and the predicted times (1989), the omni-domain model for power (Puchowicz 2020)': 'najlepsze wyniki od 30 sekund do 2 godzin: Péronnet–Thibault dla tempa i prognoz czasów (1989), model omni-domain dla mocy (Puchowicz 2020)',
+  'Curve model': 'Model krzywej',
+  'Curve of your bests, and the predicted times, by': 'Krzywa twoich najlepszych wyników i prognozy czasów według',
 };
