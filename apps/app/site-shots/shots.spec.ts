@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { test, type Page } from '@playwright/test';
-import { TEST_DATA, addFromPicker, chooseFolder, clearAnalysis, fakeFolderPicker, nav, showList } from '../e2e/support';
+import { expect, test, type Page } from '@playwright/test';
+import { TEST_DATA, addFromPicker, chooseFolder, clearAnalysis, fakeFolderPicker, nav, openData, showList } from '../e2e/support';
 
 /**
  * The site's screenshots (apps/site/public/shots): the whole window of the app on the demo data of a
@@ -60,9 +60,13 @@ test('site shots', async ({ page }) => {
   await put(page, ['.isostride', 'user'], await read(path.join(DEMO, '.isostride/user'), ['gear.json', 'run-tags.json', 'settings.json', 'block-definitions.json', 'dashboard.json']));
   await chooseFolder(page);
   await page.getByRole('heading', { name: 'Runs' }).waitFor();
-  await page.locator('.sidebar .brand').click();
-  await page.getByRole('button', { name: 'Import folder' }).click();
-  await page.getByText(/^Imported \d+ runs?/).waitFor({ timeout: 600_000 });
+  // The app imports the folder by itself: wait on the Data tab of Settings until every file is read.
+  await openData(page);
+  await expect(async () => {
+    await expect(page.locator('.folder-page .folder-progress')).toHaveCount(0);
+    await expect(page.locator('.folder-new')).toHaveCount(0);
+    await expect(page.getByLabel('What the folder holds')).not.toContainText('FIT files read0');
+  }).toPass({ timeout: 600_000 });
   await page.waitForTimeout(4000);
 
   await page.goto('/dashboard');
@@ -91,8 +95,7 @@ test('site shots', async ({ page }) => {
     const t = (await b.textContent()) ?? '';
     if (!['Pace', 'Ground contact'].includes(t.trim())) await b.click();
   }
-  await page.getByRole('table', { name: 'Changes' }).waitFor({ timeout: 120_000 });
-  console.log('changes:', ((await page.getByRole('table', { name: 'Changes' }).innerText()) ?? '').replace(/\s+/g, ' ').slice(0, 400));
+  await page.getByRole('img', { name: /^Over time · Ground contact/ }).waitFor({ timeout: 120_000 });
   await shot(page, 'trend');
 
   await page.getByRole('tab', { name: 'A/B' }).click();
@@ -107,4 +110,24 @@ test('site shots', async ({ page }) => {
     if (view === 'critical') console.log(view + ':', ((await page.locator('.perf-widget').innerText().catch(() => '')) ?? '').replace(/\s+/g, ' ').slice(0, 300));
     await shot(page, view || 'performance');
   }
+
+  // The curve of the 90 days, by the model in use, with the bests on it.
+  await page.goto('/performance?tab=capacity&view=efforts');
+  await page.getByRole('heading', { name: 'Performance' }).waitFor({ timeout: 60_000 });
+  await page.locator('.chart-note[data-model]').first().waitFor({ timeout: 60_000 });
+  await page.waitForTimeout(3000);
+  await shot(page, 'curve');
+
+  // What if: 20 minutes 10 s/km faster than the best of that length.
+  await page.goto('/performance?tab=whatif&view=curve');
+  const pace = page.getByRole('textbox', { name: 'Effort 1: pace' });
+  await pace.waitFor({ timeout: 60_000 });
+  await page.waitForTimeout(2000);
+  const [m, sec] = (await pace.inputValue()).split(':').map(Number);
+  const faster = m * 60 + sec - 10;
+  await pace.fill(`${Math.floor(faster / 60)}:${String(faster % 60).padStart(2, '0')}`);
+  await pace.blur();
+  await page.getByRole('img', { name: 'Pace curve now and with the effort' }).waitFor({ timeout: 60_000 });
+  await page.waitForTimeout(3000);
+  await shot(page, 'whatif');
 });

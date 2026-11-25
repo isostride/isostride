@@ -52,7 +52,10 @@ const MODEL_ROWS_EN: [string, string][] = [
   ['Training load of a run', 'Banister TRIMP (1991), Edwards TRIMP (1993), rTSS, power TSS'],
   ['Fitness, fatigue and form', 'Banister’s impulse-response model (CTL, ATL, TSB), also fitted to your own results'],
   ['Critical speed and D′, critical power and W′', 'Monod and Scherrer (1965)'],
-  ['Race time predictions', 'Riegel’s power law (1981)'],
+  ['Race time predictions', 'Riegel’s power law (1981), or the whole curve below'],
+  ['The whole curve, from a sprint to two hours', 'Péronnet and Thibault (1989) for pace, the omni-domain model of Puchowicz, Baker and Clarke (2020) for power; chosen in Settings in place of Riegel and critical speed'],
+  ['How the curves are fitted', 'To your best efforts as their envelope: no best lies above the curve, and easy runs below it do not pull it down'],
+  ['What if', 'An effort or weeks of training load that did not happen, run through the same models: the curve, predictions and form beside the real ones'],
   ['VO2max', 'From heart rate, and VDOT after Daniels and Gilbert (1979)'],
   ['Intensity distribution', 'Time in heart rate zones; low, moderate and high after Seiler'],
   ['Aerobic efficiency', 'Efficiency factor and pace to heart rate decoupling'],
@@ -129,6 +132,8 @@ export const CONTENT: Record<Lang, Content> = {
       shots: [
         ['critical', 'The Performance screen: critical speed and critical power over five months, fitted to the best efforts.', 'Critical speed and D′, critical power and W′, fitted to the best efforts of the last 90 days.'],
         ['form', 'The Performance screen: daily load, fitness, fatigue and form over time.', 'Fitness, fatigue and form from the load of every run.'],
+        ['curve', 'The Performance screen: the pace curve of the last 90 days, the best of each length on it and the model fitted to them.', 'The curve of your bests, fitted as their envelope by the model chosen in Settings.'],
+        ['whatif', 'The Performance screen, What if: the pace curve now and with a 20-minute effort that did not happen, and what the models say before and after.', 'What if: an effort that did not happen, and what it would change in the curve, the predictions and VDOT.'],
       ],
     },
     open: {
@@ -227,7 +232,10 @@ export const CONTENT: Record<Lang, Content> = {
         ['Obciążenie treningowe', 'TRIMP Banistera (1991), TRIMP Edwardsa (1993), rTSS, TSS z mocy'],
         ['Sprawność, zmęczenie i forma', 'Model impuls–odpowiedź Banistera (CTL, ATL, TSB), także dopasowany do Twoich wyników'],
         ['Prędkość krytyczna i D′, moc krytyczna i W′', 'Monod i Scherrer (1965)'],
-        ['Prognozy czasów na zawodach', 'Wzór potęgowy Riegla (1981)'],
+        ['Prognozy czasów na zawodach', 'Wzór potęgowy Riegla (1981) albo cała krzywa, opisana niżej'],
+        ['Cała krzywa, od sprintu do dwóch godzin', 'Péronnet i Thibault (1989) dla tempa, model omni-domain Puchowicza, Bakera i Clarke’a (2020) dla mocy; wybierasz go w Ustawieniach zamiast Riegla i prędkości krytycznej'],
+        ['Jak dopasowane są krzywe', 'Do Twoich najlepszych wysiłków jako ich obwiednia: żaden najlepszy wynik nie leży nad krzywą, a spokojne biegi pod nią nie ściągają jej w dół'],
+        ['Co jeśli', 'Wysiłek albo tygodnie obciążenia, których nie było, przeliczone tymi samymi modelami: krzywa, prognozy i forma obok prawdziwych'],
         ['VO2max', 'Z tętna oraz VDOT według Danielsa i Gilberta (1979)'],
         ['Rozkład intensywności', 'Czas w strefach tętna, w podziale na niską, umiarkowaną i wysoką intensywność według Seilera'],
         ['Wydolność tlenowa', 'Współczynnik efektywności i dryf tętna względem tempa (decoupling)'],
@@ -235,6 +243,8 @@ export const CONTENT: Record<Lang, Content> = {
       shots: [
         ['critical', 'Ekran Wydolność: prędkość i moc krytyczna na przestrzeni pięciu miesięcy, dopasowane do najlepszych wysiłków.', 'Prędkość krytyczna i D′ oraz moc krytyczna i W′, dopasowane do najlepszych wysiłków z ostatnich 90 dni.'],
         ['form', 'Ekran Wydolność: dzienne obciążenie, sprawność, zmęczenie i forma w czasie.', 'Sprawność, zmęczenie i forma liczone z obciążenia każdego biegu.'],
+        ['curve', 'Ekran Wydolność: krzywa tempa z ostatnich 90 dni, najlepszy wynik każdej długości na niej i dopasowany do nich model.', 'Krzywa Twoich najlepszych wyników, dopasowana jako ich obwiednia modelem wybranym w Ustawieniach.'],
+        ['whatif', 'Ekran Wydolność, Co jeśli: krzywa tempa teraz i z 20-minutowym wysiłkiem, którego nie było, oraz co modele mówią przed i po.', 'Co jeśli: wysiłek, którego nie było, i co zmieniłby w krzywej, prognozach i VDOT.'],
       ],
     },
     open: {
