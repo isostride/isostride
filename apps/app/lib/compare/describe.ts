@@ -53,10 +53,11 @@ const DELTA = {
  * better or worse where the metric's direction is known or set: "3 bpm lower, better"; a metric with no
  * direction says only higher or lower.
  */
-export function describeDelta(metric: BlockMetric, d: number, w: MetricWords = wordsOf(metric)): string {
+export function describeDelta(metric: BlockMetric, d: number, w: MetricWords = wordsOf(metric), judged = true): string {
   const pace = w.unit === 's/km';
   const word = pace ? (d < 0 ? 'faster' : 'slower') : d > 0 ? 'higher' : 'lower';
-  return t(DELTA[word][betterOrWorse(d, w)], { value: amount(w, Math.abs(d)) });
+  // Not judged better or worse (a change within the noise): its size and way alone.
+  return t(DELTA[word][judged ? betterOrWorse(d, w) : 0], { value: amount(w, Math.abs(d)) });
 }
 
 /** 1 for a change for the better, 2 for the worse, 0 in a metric whose direction is neither known nor set. */

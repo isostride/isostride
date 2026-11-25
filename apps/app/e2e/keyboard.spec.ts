@@ -59,7 +59,7 @@ test.describe('Accessible to WCAG 2.2 AA', () => {
     await tabTo(page, 'tab', 'A/B');
     await page.keyboard.press('Enter');
     await expect(page.getByRole('tab', { name: 'A/B' })).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByRole('group', { name: 'Metric' })).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Metrics', exact: true })).toBeVisible();
     await recordMeasure('keyboardJourneyCompleted', 1);
     await recordMeasure('keyboardJourneyTabs', presses);
   });

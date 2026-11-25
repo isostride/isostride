@@ -95,9 +95,12 @@ export interface ChartSettings {
   smooth: boolean;
   axis: 'time' | 'distance';
   blocks: boolean;
+  /** on the Over time charts of Compare: the points joined in date order, and the fitted trend line ("lacz punkty, linia trenigu ma byc w settingach") */
+  join: boolean;
+  trend: boolean;
 }
-const CHART_KEYS = { layout: 'strideprism.runChartLayout', smooth: 'strideprism.runChartSmooth', axis: 'strideprism.runChartAxis', blocks: 'strideprism.runChartBlocks' };
-export const DEFAULT_CHART: ChartSettings = { layout: 'bands', smooth: true, axis: 'time', blocks: false };
+const CHART_KEYS = { layout: 'strideprism.runChartLayout', smooth: 'strideprism.runChartSmooth', axis: 'strideprism.runChartAxis', blocks: 'strideprism.runChartBlocks', join: 'strideprism.overTimeJoin', trend: 'strideprism.overTimeTrend' };
+export const DEFAULT_CHART: ChartSettings = { layout: 'bands', smooth: true, axis: 'time', blocks: false, join: true, trend: true };
 
 /** The chart settings kept in this browser (the keys the run screen kept its last choices under). */
 export function readChartSettings(): ChartSettings {
@@ -107,6 +110,8 @@ export function readChartSettings(): ChartSettings {
       smooth: localStorage.getItem(CHART_KEYS.smooth) !== 'raw',
       axis: localStorage.getItem(CHART_KEYS.axis) === 'distance' ? 'distance' : 'time',
       blocks: localStorage.getItem(CHART_KEYS.blocks) === 'on',
+      join: localStorage.getItem(CHART_KEYS.join) !== 'off',
+      trend: localStorage.getItem(CHART_KEYS.trend) !== 'off',
     };
   } catch {
     return DEFAULT_CHART;
@@ -137,6 +142,8 @@ export function useChartSettings(): [ChartSettings, (change: Partial<ChartSettin
       localStorage.setItem(CHART_KEYS.smooth, next.smooth ? 'smooth' : 'raw');
       localStorage.setItem(CHART_KEYS.axis, next.axis);
       localStorage.setItem(CHART_KEYS.blocks, next.blocks ? 'on' : 'off');
+      localStorage.setItem(CHART_KEYS.join, next.join ? 'on' : 'off');
+      localStorage.setItem(CHART_KEYS.trend, next.trend ? 'on' : 'off');
     } catch { /* this visit only */ }
     window.dispatchEvent(new Event('chart-settings'));
   };

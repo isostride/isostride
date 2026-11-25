@@ -1178,3 +1178,98 @@ Q: (model) Jak wybierać schemat lapów w kreatorze? [Z listy znalezionych (Reco
 A: (użytkownik) Z listy znalezionych (Recommended)
 Q: (model) Co znaczy „podobny” schemat (obok „identyczny” = te same okrążenia od rozgrzewki do schłodzenia)? [Te same serie (Recommended): ta sama liczba i długość serii (3 × 10 min), dowolna rozgrzewka, przerwy i schłodzenie | Serie ±10% | Co najmniej tyle serii]
 A: (użytkownik) Te same serie (Recommended)
+A: (użytkownik) ok juz jest ... teraz creator to dlugi formularz z milionem pol ... chce go bardziej ustruktyrowac
+Q: (model) Jak uporządkować kreator segmentów? [Sekcje + „Dodaj warunek” (Recommended): trzy zwijane sekcje z jednolinijkowym podsumowaniem; pola widoczne tylko gdy ustawione, reszta z menu „+ Dodaj warunek”; podgląd z prawej, zawsze widoczny | Kroki (kreator 1-2-3) | Zakładki]
+A: (użytkownik) Sekcje + „Dodaj warunek” (Recommended)
+Q: (model) Zmiany ze schematem okrążeń (lokalne, niezacommitowane) mają też poprawkę budżetu, która naprawia czerwone CI w PR #24. Co z nimi? [Dorzuć do #24 teraz (Recommended) | Razem z przebudową | Nie pushuj]
+A: (użytkownik) Dorzuć do #24 teraz (Recommended) (no requirement)
+A: (użytkownik) dopasowania maja byc lista rozwijana ... w naglowko ilosc dopasowac dopiero po otwarciu listy biegi ...
+A: (użytkownik) ok podoba mi sie idea wizard ... chce aby to byl prawdziwy wizard ... z krokami ....
+A: (użytkownik) upenij sie ze ten kresator ma sens ... mam: 1. z kazdego biegu 2. w ktorych biegach . no sie kupy nie trzyma
+A: (użytkownik) przy zmienie opcji ... gorne kafelki wizarda sie przesuwaja
+A: (użytkownik) moze kafelki w pionie a nie w poziomie ?
+A: (użytkownik) w 1 - biegi masz filtr filtr biegow a w 2 - segment ... czy to nie jest redundance ? a w 3 - masz warunki ?
+A: (model) Each step does another thing: 1 chooses runs by what the whole run is, 2 the stretch cut from each, 3 drops the stretches by their own figures. The real redundancy: the lap layout chosen twice (a filter in 1, Workout reps in 2), and the number of laps beside it.
+Q: (model) Schemat okrążeń wybiera się dziś dwa razy (filtr w kroku 1 i „Serie treningu” w kroku 2). Gdzie ma zostać? [Tylko w kroku 1 (Recommended) | Tylko w kroku 2: krok 1 bez schematu; schemat wybiera się tylko w „Serie treningu”]
+A: (użytkownik) Tylko w kroku 2
+Q: (model) Ile kroków? [4: Biegi → Segment → Warunki → Nazwa (Recommended) | 3: Biegi → Segment z warunkami → Nazwa]
+A: (użytkownik) 4: Biegi → Segment → Warunki → Nazwa (Recommended) (no requirement: replaced by the 5 steps the runner laid out next)
+Q: (model) Drobne porządki przy okazji? [Usuń „Okrążeń w biegu” | „Tętno z” → „Czujnik tętna”]
+A: (użytkownik) Usuń „Okrążeń w biegu”
+A: (użytkownik) najlepeszy wysilek i osobno rowny wysilek - wytlumacz roznice
+A: (model) Best effort: a set length (min or km), the fastest stretch of it in each run. Steady effort: a stretch of any length, at least N min, that keeps the "always" conditions of step 3 in each 10 s window.
+A: (użytkownik) kurwa ... roznica jest tylko taka ... czy to ma byc czas czy dystans ... czemu komplikujesz
+A: (model) Done: Steady effort no longer offered in the editor; Best effort (a time or a distance) stays, with the conditions of step 3; an older steady segment still works and shows its shape when edited.
+A: (użytkownik) chce 1. Okres - filtrowanie biegow po dacie ... tak jaj jest teraz ... ale nie nazywaj to biegi 2. Schemat biegu - tutaj lapy itp 3. Segment - calybieg, czas lub dystans 4. dodaktowe warunki - tagi, buty it p
+Q: (model) Gdzie wybiera się okrążenia / serie (np. każda 10-minutówka z 3 × 10 min jako osobny segment)? [W kroku 3 Segment (Recommended) | W kroku 2 Schemat biegu: krok 2 wybiera schemat i od razu, czy brać serie; krok 3 Segment to tylko cały bieg / czas / dystans]
+A: (użytkownik) W kroku 2 Schemat biegu
+Q: (model) Gdzie nazwa segmentu i Zapisz? [Nazwa w lewej kolumnie (Recommended) | Piąty krok „Nazwa i zapis”: jak teraz, osobny ostatni krok z nazwą i Zapisz]
+A: (użytkownik) Piąty krok „Nazwa i zapis”
+A: (użytkownik) stworzylem segmenty 10 minutowe ... seria po serii porownanie nie dziala
+A: (użytkownik) ok chce powornwanie seria po serii a nie bieg z seria vs bieg z seriami
+Q: (model) Jak ma wyglądać porównanie seria po serii? [Każda seria osobno: kolumna na każdą serię (wysiłek segmentu) z wybranych biegów, obok siebie; wiersze to metryki | Dwie dowolne serie | Serie w jednym biegu]
+A: (użytkownik) Każda seria osobno
+A: (użytkownik) w seria po serii .. wybor 2 dat nie ma sensu
+A: (użytkownik) w seria po serii chce statystyki ... jak zmieniaja sie metryki
+Q: (model) Jakie statystyki zmian metryk w „Seria po serii”? (możesz wybrać kilka) [Średnia biegu + zmiana: pod seriami każdego biegu jego średnia; na końcu kolumna „Zmiana”: ostatni bieg vs pierwszy | Zmiana w biegu (1. → ostatnia): dla każdego biegu o ile ostatnia seria różni się od pierwszej | Trend w czasie: jak metryka zmienia się na tydzień (linia trendu po średnich biegów)]
+A: (użytkownik) Średnia biegu + zmiana, Zmiana w biegu (1. → ostatnia), Trend w czasie
+A: (użytkownik) a co jak bedzie 50 serii ... jak to pokazesz?
+Q: (model) Jak pokazać „Seria po serii”, gdy serii jest dużo (np. 50)? [Wiersz na bieg, rozwijany (Recommended): wiersz = bieg (najnowszy na górze): średnie metryk i zmiana 1→N; klik w bieg rozwija jego serie jako podwiersze; na górze podsumowanie: zmiana pierwszy→ostatni bieg i trend na tydzień; kolumny to metryki | Wykres + tabela biegów]
+A: (użytkownik) Wiersz na bieg, rozwijany (Recommended)
+A: (użytkownik) jeszcze nie skonczyles ... najpierw ja ci powiem ze jest dobrze i pozniej bedzie modyfikowal model
+A: (użytkownik) z tego co widze tab wysilek robi prawie to samo
+Q: (model) Co zrobić z nakładającymi się zakładkami „Wysiłki” i „Seria po serii”? [Połącz w „Wysiłki” (Recommended): jedna zakładka: tabela wiersz-na-bieg (rozwijane serie, wszystkie metryki, zmiana i trend) + nakładka przebiegów i ranking jak teraz; „Seria po serii” znika; link z ekranu biegu otwiera Wysiłki z segmentem „Serie 3 × 10 min” | Zostaw obie, rozdziel role | Usuń „Wysiłki”]
+A: (użytkownik) Połącz w „Wysiłki” (Recommended)
+A: (użytkownik) chce tak jak bylo mozliwoc wyboru metryk
+A: (użytkownik) jak wybiore pojawia sie diagram i mam tam znowu wybor metryk
+A: (użytkownik) chce toogle ... tabela/wykres
+A: (użytkownik) tryb wykres i tak wyswietla tabele tylko ponizej
+A: (użytkownik) jaki jest sens zaznaczenia (checkbox) w widoku tabeli?
+Q: (model) Jak wybierać wysiłki do narysowania na wykresie? [Pigułki nad wykresem (Recommended): w widoku Wykres lista biegów z ich seriami jako pigułki, najwyżej 4; tabela bez checkboxów | Wybór biegów: w widoku Wykres wybierasz biegi (np. dziś i poprzedni), a wykres rysuje średni przebieg serii każdego biegu — jedna linia na bieg]
+A: (użytkownik) Wybór biegów
+A: (użytkownik) ok ... w wielu miejscach mam skorygowana i surowa ...
+A: (użytkownik) co to oznacza
+A: (model) Corrected: each effort's value moved to the segment's mean pace by a regression of the metric on pace across its efforts (pace itself not corrected; under 3 efforts the same). The toggle is on Trends and A/B, each on its own. Proposed: one checkbox "Even out to the same pace" with a hint, one for all of Analysis, kept in the link.
+A: (użytkownik) tak zrob ....
+A: (użytkownik) fdiltr metryk jest na trendy, wysilki i a/b .... moze daj je powyzej ?
+Q: (model) Gdy metryki wybiera się raz nad zakładkami (kilka naraz), co pokazuje A/B? [Werdykt dla każdej (Recommended): lista, wiersz na każdą wybraną metrykę z różnicą, przedziałem i werdyktem; klik w wiersz pokazuje szczegóły | Tylko pierwsza wybrana]
+A: (użytkownik) Werdykt dla każdej (Recommended)
+A: (użytkownik) [screenshot of the Trends tab: the Changes table, a row for the segment “Serie 3 × 10 min, dowolny układ” with its chip and Compare A/B →, the pace cell “o 11 s/km szybciej, lepiej −4,5%” with “brak wykrywalnej zmiany · szum ±6,5 s/km · 6 wysiłków”; under it the folded “werdykty słowami”] w trendach mam: czy jest sens czy usunac ?
+A: (model) The Changes table: keep (only place saying whether a change is beyond the noise), but a change within the noise not green "better"; the chip repeating the name dropped; the verdicts in words removed.
+A: (użytkownik) tak zrob
+A: (użytkownik) lacz punkty, linia trenigu ma byc w settingach,
+A: (użytkownik) [the same screenshot of the Changes table] myslalem ze bardziej uprosisz : po co mi tutaj link do a/b? mam przycisk na gorze; nazwa jest powielona ... przeciez wiem w ktorej analizie jestem
+A: (użytkownik) ok usun mi to wogole z dolu
+A: (użytkownik) czy krzywa tempa i mocy ma sens w analizie segmentow?
+A: (model) Little: on a segment it ends at the segment's length and shows its fastest minutes; the mean-max curve belongs on whole runs, where the Performance screen has Best efforts and Critical speed and power. Proposed: the tab removed, its old links open Trends.
+A: (użytkownik) usun
+A: (użytkownik) ok ... przegladnij caly modul compare pod katem UI ... troche gora wyglada kiepsko ... filtry sie zlewaja z podstronami
+A: (użytkownik) [screenshot of Compare with no analysis chosen: the tabs Trendy, Wysiłki, A/B over the saved analyses and a long paragraph telling to press + Dodaj segment lub bieg] zobacz co widze gdy nie wybiore zadnej abalizy
+A: (użytkownik) dodaj segemnt lub bieg mam w 2 miejscach na erkanie
+A: (użytkownik) [screenshot of the empty Compare: the saved analyses, the card Zacznij analizę with its button Nowy segment, + Dodaj segment lub bieg top right] czym sie rozni przycisk na dole od tego w prawym gornym rogu?
+A: (model) Next to nothing: the one on top opens the list of segments, suggestions and runs, with New segment… at its foot; the one below opens the Segments screen's editor. The card removed; with no analysis saved, one line.
+A: (użytkownik) [screenshot of the saved analyses list] jakis header ? kipesko wyglada ta tabela
+A: (użytkownik) wyrowanie do kolumny nie dziala
+A: (użytkownik) klikanie na caly wierszu powinno otwierac nie tylko na nazwiem, tak jak w segmentach
+A: (użytkownik) [screenshot of the underlined tabs Trendy, Wysiłki, A/B] - tylko tutaj mam taki styl menu .. . chce aby wygladalyu jak w reszcie
+A: (użytkownik) klikniecie na segment otwiera analize ... czym to sie rozni od zapisyanych analiz?
+A: (model) A segment is what is cut from the runs; clicking it opens Compare on it alone. A saved analysis keeps a view: up to 4 items, the metrics, the tab, the pace choice; it adds something only with several items.
+Q: (model) Co z zapisanymi analizami? [Usuń je (Recommended) | Zostaw]
+A: (użytkownik) Zostaw
+A: (użytkownik) ok ... gotowe ... wykonaj testy e2e upewnij sie ze na widoku mobile wszystko bedzie ok i stworz pr
+A: (użytkownik) [screenshot of the Efforts toolbar: Tabela | Wykres beside Po biegach | Ranking] jeszcze jedno te 2 menu sa kolo siebie ... przy czym 2-i to filtr albo sortowanie
+A: (użytkownik) usun tytul: Wysiłki... bo jest juz u goty
+A: (użytkownik) i przycisk tabela/wykres daj na peirwszy miejsciu - czyli po lewej
+A: (użytkownik) albo srotuj daj ponizej ... sortuj daj ponizej wyboru - tabela/wykres
+A: (użytkownik) a moze sortowanie na headerze kolumn ?
+Q: (model) Sortowanie w nagłówkach kolumn — co z rankingiem pojedynczych wysiłków? [Jedna tabela, bez rankingu (Recommended): zostaje tabela „Po biegach” z sortowaniem po kliknięciu w nagłówek; płaski ranking i „top N” znikają; link „Podobne” i oznaczenie „Twoje zaznaczenie” przechodzą do wierszy wysiłków | Dwie tabele, obie sortowane nagłówkiem]
+A: (użytkownik) Jedna tabela, bez rankingu (Recommended)
+A: (użytkownik) usun przycisk podobne
+A: (użytkownik) [screenshot of Efforts by run: the head band and the change row] TROCHE RAMKI NAJEZDZAJA NA SIEBIE
+A: (użytkownik) troche popracuj nad szerokocia kolumn
+A: (użytkownik) kolumna bieg za szeroka
+A: (użytkownik) co sie bedzie dzialo przy dlugiej liscie ? heaedr zawsze bedzie widoczny ? a przy skrolowaniu w prawo ... 1 kolumna zawsze bedzie widoczna?
+A: (model) The first column stays when scrolled right; the head did not stay on a long list (the table's box scrolled only sideways). The table now scrolls within the window's height: the head stays on top, the first column on the left.
+A: (użytkownik) [screenshot: many metric columns, the change and 1→3 texts running into each other] nachodzi na siebie
+A: (użytkownik) naglowki moga miec 2 wiersze
+A: (użytkownik) ok juz jest ok.. e2e i pozniej pr

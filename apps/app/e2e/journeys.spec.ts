@@ -80,7 +80,7 @@ test.describe('Journeys', () => {
     // Block definition: on the Analysis screen, take a suggested route segment (about 4.5 min, so pace, not HR).
     await nav(page, 'Compare');
     // Analysis opens empty; the segment is taken from the picker.
-    await expect(page.getByText(/^Choose the data to analyse/)).toBeVisible();
+    await expect(page.getByText('Start an analysis with + Add segment or run.')).toBeVisible();
     await expect(page.locator('.item-chip')).toHaveCount(0);
     await addFromPicker(page, /^1\.6 km/);
     await expect(page.locator('.item-chip')).toHaveCount(1, { timeout: 30_000 });
@@ -88,7 +88,7 @@ test.describe('Journeys', () => {
     // Analysis: the block over time, its verdict in words.
     await page.getByRole('button', { name: 'Pace', exact: true }).click();
     await expect(page.getByRole('img', { name: 'Over time' })).toBeVisible();
-    await expect(page.getByRole('table', { name: 'Changes' })).toBeVisible();
+    await expect(page.getByRole('img', { name: /^Over time · / }).first()).toBeVisible({ timeout: 30_000 });
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export CSV' }).click();
     expect((await download).suggestedFilename()).toMatch(/-instances\.csv$/);

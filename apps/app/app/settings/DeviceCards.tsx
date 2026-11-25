@@ -25,7 +25,7 @@ function Choice<T extends string | boolean>({ name, hint, label, value, options,
  * settings - charts"): its lines, their smoothing, its x axis, the kept blocks drawn on it. Kept in
  * this browser; every chart follows a change at once.
  */
-export function ChartsCard() {
+export function ChartsCard({ compare = true }: { /** the switches of Compare's Over time charts too (Settings; not the setup wizard) */ compare?: boolean } = {}) {
   const [chart, setChart] = useChartSettings();
   const set = <K extends keyof ChartSettings>(k: K) => (v: ChartSettings[K]) => setChart({ [k]: v } as Partial<ChartSettings>);
   return (
@@ -41,6 +41,21 @@ export function ChartsCard() {
         </label>
         <input id="chart-blocks" type="checkbox" className="switch" checked={chart.blocks} onChange={(e) => setChart({ blocks: e.target.checked })} />
       </div>
+      {/* The Over time charts of Compare ("lacz punkty, linia trenigu ma byc w settingach"); in Settings, not in the setup wizard. */}
+      {compare && <><div className="display-row">
+        <label htmlFor="chart-join">
+          <div className="display-name">{t('Join points')}</div>
+          <div className="muted small">{t('On the Over time charts of Compare: each segment’s efforts joined in date order.')}</div>
+        </label>
+        <input id="chart-join" type="checkbox" className="switch" checked={chart.join} onChange={(e) => setChart({ join: e.target.checked })} />
+      </div>
+      <div className="display-row">
+        <label htmlFor="chart-trend">
+          <div className="display-name">{t('Trend line')}</div>
+          <div className="muted small">{t('On the Over time charts of Compare: the fitted trend of each segment, its band the noise between its efforts.')}</div>
+        </label>
+        <input id="chart-trend" type="checkbox" className="switch" checked={chart.trend} onChange={(e) => setChart({ trend: e.target.checked })} />
+      </div></>}
     </section>
   );
 }

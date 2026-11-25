@@ -48,4 +48,6 @@ export const SETTINGS: Dictionary = {
   Copied: 'Skopiowano',
   Copy: 'Kopiuj',
   'Diagnostics failed: {error}': 'Diagnostyka nie powiodła się: {error}',
+  'On the Over time charts of Compare: each segment’s efforts joined in date order.': 'Na wykresach „W czasie” w Porównaj: wysiłki każdego segmentu połączone w kolejności dat.',
+  'On the Over time charts of Compare: the fitted trend of each segment, its band the noise between its efforts.': 'Na wykresach „W czasie” w Porównaj: dopasowany trend każdego segmentu, jego pasmo to szum między wysiłkami.',
 };

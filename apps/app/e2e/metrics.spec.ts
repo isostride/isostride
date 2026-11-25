@@ -29,7 +29,7 @@ test.describe('Every metric offered everywhere', () => {
     await expect(metrics.getByRole('button', { name: /Respiration/ })).toHaveCount(0);
     // The segments of the rule computed: the export holds them.
     await expect(page.locator('.chart-loading')).toHaveCount(0, { timeout: 30_000 });
-    await expect(page.getByRole('table', { name: 'Changes' })).toBeVisible();
+    await expect(page.getByRole('img', { name: /^Over time · / }).first()).toBeVisible({ timeout: 30_000 });
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export CSV' }).click();
     const csv = await fs.readFile(await (await download).path(), 'utf8');

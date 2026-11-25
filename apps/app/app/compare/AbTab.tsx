@@ -20,7 +20,7 @@ export interface AbItem {
  * The A/B tab of Analysis (requirements "A/B comparison" and "A/B as a tab of Analysis"): two sets
  * of the segments of one item that differ in one context field. Loaded when the tab opens.
  */
-export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
+export function AbTab({ items, all, chosen: chosenItem, onChoose, computing, corrected, metrics }: {
   items: AbItem[];
   /** the instances of the items: kept and computed now */
   all: BlockInstance[];
@@ -29,12 +29,15 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
   onChoose: (id: string) => void;
   /** a rule's segments are still being computed */
   computing: boolean;
+  /** the values evened out to the same pace (one choice for Analysis, beside its tabs) */
+  corrected: boolean;
+  /** the metrics chosen above the tabs: a verdict for each ("Werdykt dla każdej") */
+  metrics: BlockMetric[];
 }) {
   const known = useMetrics();
   // The folder's metrics, ground contact time first ("A/B butow": the shoes show in it).
   const METRICS = useMemo(() => [...known.blockKeys].sort((a, b) => (a === 'groundContactTime' ? -1 : b === 'groundContactTime' ? 1 : 0)).map(known.view), [known]);
   const [chosen, setMetric] = useState<BlockMetric | null>(null);
-  const [corrected, setCorrected] = useState(true);
   const [field, setField] = useState<ContextField>('shoes');
   const [pair, setPair] = useState<[string, string] | null>(null);
   const [panel, setPanel] = useState(false);
@@ -42,8 +45,8 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
 
   const item = items.find((i) => i.id === chosenItem) ?? items[0];
   const defId = item?.defId ?? '';
-  // Opens on ground contact time, or the first metric with accepted instances.
-  const metric = useMemo(() => chosen ?? firstUsableMetric(all, defId, METRICS.map((x) => x.key), 2 * MIN_AB_INSTANCES), [chosen, all, defId, METRICS]);
+  // The details of one of the metrics chosen above the tabs: the one clicked, else the first with enough efforts.
+  const metric = useMemo(() => (chosen && metrics.includes(chosen) ? chosen : firstUsableMetric(all, defId, metrics.length ? metrics : METRICS.map((x) => x.key), 2 * MIN_AB_INSTANCES)), [chosen, all, defId, metrics, METRICS]);
   useEffect(() => setMetric(null), [defId]);
   const m = METRICS.find((x) => x.key === metric)!;
   const mine = useMemo(() => all.filter((i) => i.definitionId === defId && i.status === 'accepted'), [all, defId]);
@@ -66,6 +69,12 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
     // Named in the language in use; the bootstrap's seed from the values themselves, so a verdict is the same in every language.
     () => (activeField ? computeAb(all, defId, metric, byField(activeField, va, vb), [contextValue(va), contextValue(vb)], {}, corrected, hash(defId + metric + [va, vb].join('|'))) : null),
     [all, defId, metric, activeField, va, vb, corrected],
+  );
+
+  // A verdict for each metric chosen above the tabs, on the same split.
+  const verdicts = useMemo(
+    () => (activeField ? metrics.map((mt) => ({ mt, r: computeAb(all, defId, mt, byField(activeField, va, vb), [contextValue(va), contextValue(vb)], {}, corrected, hash(defId + mt + [va, vb].join('|'))) })) : []),
+    [all, defId, metrics, activeField, va, vb, corrected],
   );
 
   const download = (name: string, text: string) => {
@@ -91,11 +100,6 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
             {items.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
           </select>
         )}
-        <div className="metric-picker" role="group" aria-label={t('Metric')}>{METRICS.map((x) => <button key={x.key} className={`pill ${metric === x.key ? 'on' : ''}`} aria-pressed={metric === x.key} title={x.name} onClick={() => setMetric(x.key)}>{x.short}</button>)}</div>
-        <div className="segmented">
-          <button className={!corrected ? 'on' : ''} onClick={() => setCorrected(false)}>{t('Raw')}</button>
-          <button className={corrected ? 'on' : ''} onClick={() => setCorrected(true)}>{t('Corrected')}</button>
-        </div>
         {fields.length > 0 && (
           <>
             <span className="muted small">{t('Split by')}</span>
@@ -119,6 +123,27 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing }: {
       ) : (
         <>
           {result.warnings.map((w) => <div key={w} className="banner warn">⚠ {w}</div>)}
+          {/* A verdict for each metric chosen above; a row clicked shows its details below. */}
+          {verdicts.length > 1 && (
+            <div className="card" style={{ marginBottom: 12, overflowX: 'auto' }}>
+              <table className="data ab-verdicts" aria-label={t('Verdicts')}>
+                <thead><tr><th>{t('Metric')}</th><th className="num">{t('{b} against {a}', { a: result.a.label, b: result.b.label })}</th><th>{t('Verdict')}</th></tr></thead>
+                <tbody>
+                  {verdicts.map(({ mt, r }) => {
+                    const d = describeAb(r, mt, MIN_AB_INSTANCES, wordsOf(mt, known.catalog, known.directions));
+                    const on = mt === metric;
+                    return (
+                      <tr key={mt} className={on ? 'on' : ''}>
+                        <td><button type="button" className="reps-toggle" aria-pressed={on} onClick={() => setMetric(mt)}>{on ? '▾' : '▸'} {known.view(mt).name}</button></td>
+                        <td className="num tnum">{d.headline}</td>
+                        <td><span className={`verdict-chip ${d.change ? 'yes' : 'no'}`}>{r.verdict === null ? t('no verdict') : d.change ? t('Change') : t('no detectable change')}</span></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
           {(() => {
             const d = describeAb(result, metric, MIN_AB_INSTANCES, wordsOf(metric, known.catalog, known.directions));
             return (

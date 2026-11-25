@@ -322,7 +322,7 @@ export function Wizard() {
             <div className="setup-device">
               <LanguageCard />
               <DisplayCard />
-              <ChartsCard />
+              <ChartsCard compare={false} />
             </div>
           </>
         )}

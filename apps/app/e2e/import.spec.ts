@@ -42,7 +42,7 @@ test.describe('Pick data folder', () => {
     await expect(step('Zones').getByLabel('Power zones', { exact: true })).toHaveValue(/^\d+, \d+, \d+, \d+$/);
     await page.getByRole('button', { name: 'Next' }).click();
     // Gear: a pair of shoes, from the first run's day.
-    await step('Gear').getByLabel('Name').fill('Test shoes');
+    await step('Gear').getByLabel('Name', { exact: true }).fill('Test shoes');
     await step('Gear').getByRole('button', { name: 'Add', exact: true }).click();
     await expect(step('Gear').getByRole('list', { name: 'Your gear' })).toContainText('Test shoes');
     await page.getByRole('button', { name: 'Next' }).click();

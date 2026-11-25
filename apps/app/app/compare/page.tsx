@@ -4,12 +4,11 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EditButton, ItemKey, useDataVersion, useMetrics, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup, eager } from '@/components';
-import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, asRule, definitionFromProfile, definitionFromRoute, shapeName, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule, ruleOf } from '@/lib/blocks';
-import { curvesInWorker, instancesInWorker, runInWorker, similarInWorker, useOpenFolder } from '@/lib/client';
+import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, asRule, definitionFromProfile, definitionFromRoute, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule, ruleOf } from '@/lib/blocks';
+import { instancesInWorker, runInWorker, similarInWorker, useChartSettings, useOpenFolder } from '@/lib/client';
 import { MAX_ITEMS, addItem, computeTrend, firstUsableMetric, formatItems, instancesCsv, parseItems, runMean, type AnalysisItem } from '@/lib/compare';
-import type { CurveMetric, CurvePoint, CurveSource } from '@/lib/curve';
 import { PATHS, isOutdated, readJson, readManifest, readRunFile } from '@/lib/fs';
-import { msg, number, t } from '@/lib/i18n';
+import { msg, t } from '@/lib/i18n';
 import { readGear, type Gear } from '@/lib/gear';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { runName, segmentName, similarName } from './names';
@@ -17,12 +16,10 @@ import { runHref } from './links';
 import type { BuilderOptions } from '../segments/RuleBuilder';
 import { isUnsaved, keepUnsaved, readUnsaved } from './unsaved';
 
-// The curve tab's chart, figures and table load when the tab is first opened (ADR "Built with React": 200 KB of script per route).
+// The tabs' parts load when the tab is first opened (ADR "Built with React": 200 KB of script per route).
 const AbTab = eager(() => import('./AbTab').then((m) => m.AbTab), () => <div className="card chart muted small" style={{ padding: 18 }}>{t('Loading the A/B comparison…')}</div>);
 /** The picker and the sheet that edits a block, loaded when they open. */
 /** The saved analyses: loaded after the screen (requirement "Saved analyses"). */
-/** The verdicts under the trends' charts: loaded with the tab. */
-const TrendVerdicts = eager(() => import('./TrendVerdicts').then((m) => m.TrendVerdicts));
 const SavedAnalyses = eager(() => import('./SavedAnalyses').then((m) => m.SavedAnalyses));
 /** Pin to the Dashboard, in the Over time card's corner: loaded after the screen, as the budget wants. */
 const PinButton = eager(() => import('../dashboard/PinButton').then((m) => m.PinButton));
@@ -30,9 +27,6 @@ const SavedList = eager(() => import('./SavedAnalyses').then((m) => m.SavedList)
 const AddDialog = eager(() => import('./AddDialog').then((m) => m.AddDialog));
 const BlockSheet = eager(() => import('../segments/BlockSheet').then((m) => m.BlockSheet));
 const EffortsPanel = eager(() => import('./EffortsPanel').then((m) => m.EffortsPanel), () => <div className="card muted small" style={{ padding: 18 }}>{t('Loading the efforts…')}</div>);
-/** The Rep by rep tab: loaded when it opens. */
-const RepsTab = eager(() => import('./RepsTab').then((m) => m.RepsTab), () => <div className="card muted small" style={{ padding: 18 }}>{t('Reading the runs…')}</div>);
-const CurveTab = eager(() => import('./CurveTab').then((m) => m.CurveTab), () => <div className="card chart muted small" style={{ padding: 18 }}>{t('Loading the curve…')}</div>);
 
 const DAY = 86_400_000;
 /** The item Analysis opens with: every run, whole (a rule with nothing set). */
@@ -40,18 +34,9 @@ const ALL_RUNS = encodeRule(ruleOf({ type: 'run' }));
 
 
 /** The sections of the screen, one at a time (requirement "Analysis sections as tabs"). */
-type Tab = 'trends' | 'segments' | 'ab' | 'curve' | 'reps';
-const TABS: [Tab, string][] = [['trends', msg('Trends')], ['segments', msg('Efforts')], ['ab', 'A/B'], ['curve', msg('Pace / power curve')], ['reps', msg('Rep by rep')]];
-/** What sets a block apart, shown under its name: its kind, how its segments start, where its heart rate is read from. */
-function attributes(d: BlockDefinition | null): string[] {
-  if (!d) return [];
-  const start = d.params.type === 'rule' ? d.params.conditions.start : d.tolerances.start;
-  return [
-    shapeName(asRule(d.params, d.tolerances).shape),
-    ...(start !== 'any' ? [start === 'standing' ? t('standing start') : t('flying start')] : []),
-    ...(d.tolerances.hrSkip !== null ? [t('heart rate from minute {minute}', { minute: number(d.tolerances.hrSkip / 60) })] : []),
-  ];
-}
+// No pace or power curve here ("czy krzywa tempa i mocy ma sens w analizie segmentow?" ... "usun"): the Performance screen has the best efforts.
+type Tab = 'trends' | 'segments' | 'ab';
+const TABS: [Tab, string][] = [['trends', msg('Trends')], ['segments', msg('Efforts')], ['ab', 'A/B']];
 /** The run screen of a run, with a stretch of it selected when one is given. */
 /** A part of a run as a link carries it: <run id>~<from s>~<to s>; null when it is not one. */
 function partOf(text: string | null): { runId: string; from: number; to: number } | null {
@@ -77,7 +62,7 @@ export default function AnalysisPageWrapper() {
  * Analysis (requirements "Analysis workspace" and "Blocks defined in Analysis"): the runner
  * chooses the data, blocks built from a rule here, kept blocks, blocks found in the runs, or
  * single runs; the app selects their segments and compares them for several metrics on stacked
- * Over time charts, with each block's verdict in words, its segments listed and a pace curve.
+ * Over time charts, its efforts by run, and A/B.
  * The items live in the URL.
  */
 function AnalysisPage() {
@@ -99,13 +84,18 @@ function AnalysisPage() {
   const [optionsRead, setOptionsRead] = useState(false);
   const [files, setFiles] = useState<Map<string, RunFile>>(new Map());
   const [adhoc, setAdhoc] = useState<Map<string, BlockInstance[]>>(new Map());
-  // The curves computed, with the metric they were computed for (a curve of the other metric is not shown).
-  const [curves, setCurves] = useState<{ metric: CurveMetric; by: Map<string, CurvePoint[]>; key?: string }>({ metric: 'speed', by: new Map() });
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [joinPoints, setJoin] = useState(true);
-  const [trendLine, setTrend] = useState(true);
-  const [corrected, setCorrected] = useState(true);
+  // Join points and the trend line: in Settings, Charts ("lacz punkty, linia trenigu ma byc w settingach").
+  const [{ join: joinPoints, trend: trendLine }] = useChartSettings();
+  // Each segment's values evened out to the same pace, or as recorded: one choice for Trends and A/B, kept in the
+  // link (pace=raw when off) ("w wielu miejscach mam skorygowana i surowa").
+  const corrected = params.get('pace') !== 'raw';
+  const setCorrected = (on: boolean) => {
+    const q = new URLSearchParams(params.toString());
+    if (on) q.delete('pace'); else q.set('pace', 'raw');
+    router.replace(`/compare?${q.toString()}`);
+  };
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<AnalysisItem | null>(null);
   // What the editor offers to choose runs by: read when the editor first opens (the screen's script stays small).
@@ -200,7 +190,7 @@ function AnalysisPage() {
     q.set('m', next.join(','));
     router.replace(`/compare?${q.toString()}`);
   };
-  // The tab, in the URL (tab=segments, tab=curve; Trends when left out; an older link with curve= opens the curve tab).
+  // The tab, in the URL (tab=segments, tab=ab; Trends when left out).
   const tabParam = params.get('tab');
   // A part of a run to compare with the efforts like it (Compare similar on the Run screen, Similar by an
   // effort): similar=<run id>~<from s>~<to s>. Its efforts on the same route and of the same profile are found
@@ -233,7 +223,9 @@ function AnalysisPage() {
     return () => controller.abort();
     // The search follows the part asked for only.
   }, [similar]);
-  const tab: Tab = TABS.some(([k]) => k === tabParam) ? (tabParam as Tab) : params.has('curve') ? 'curve' : 'trends';
+  // The Rep by rep tab, merged into Efforts ("Połącz w „Wysiłki”"): its links open Efforts.
+  // Links of the tabs gone: Rep by rep opens Efforts, the curve Trends.
+  const tab: Tab = tabParam === 'reps' ? 'segments' : TABS.some(([k]) => k === tabParam) ? (tabParam as Tab) : 'trends';
   // The form, a tab of Analysis at first, is the Performance screen: its old links open there.
   useEffect(() => { if (tabParam === 'form') router.replace('/performance?tab=load'); }, [tabParam, router]);
   // The A/B screen's old links (/compare?def=…, before A/B was a tab here) open A/B on that segment.
@@ -254,16 +246,6 @@ function AnalysisPage() {
     router.replace(`/compare?${q.toString()}`);
   };
   /** The link of this screen on the A/B tab, splitting an item. */
-  const abHref = (id: string) => { const q = new URLSearchParams(params.toString()); q.set('tab', 'ab'); q.set('ab', id); return `/compare?${q.toString()}`; };
-  // The curve, Speed or Power (curve=power; Speed when left out), read from the runs only while its tab is open.
-  const curveMetric: CurveMetric = params.get('curve') === 'power' ? 'power' : 'speed';
-  const curve: CurveMetric | null = tab === 'curve' ? curveMetric : null;
-  const setCurve = (m: CurveMetric) => {
-    const q = new URLSearchParams(params.toString());
-    q.set('tab', 'curve');
-    if (m === 'power') q.set('curve', 'power'); else q.delete('curve');
-    router.replace(`/compare?${q.toString()}`);
-  };
 
   const color = (i: AnalysisItem) => SLOT_COLORS[i.slot % SLOT_COLORS.length];
   const shape = (i: AnalysisItem) => SLOT_SHAPES[i.slot % SLOT_SHAPES.length];
@@ -304,33 +286,6 @@ function AnalysisPage() {
   const allT = groupsByMetric.flatMap((g) => g.groups.flatMap((x) => x.points.map((p) => p.t)));
   const domain: [number, number] | undefined = allT.length ? [Math.min(...allT) - 4 * DAY, Math.max(...allT) + 4 * DAY] : undefined;
   const markers: Marker[] = useMemo(() => gear.map((g) => ({ date: `${g.from}T00:00:00`, label: `${g.type === 'shoes' ? '👟' : '♥'} ${g.name}` })), [gear]);
-
-  // The curve of each item, from the stretches it holds: a block's segments, a run whole.
-  const sourcesKey = useMemo(() => {
-    if (!curve) return '[]';
-    const sources: CurveSource[] = items.map((i) => {
-      if (i.kind === 'run') return { key: i.id, metric: curve, ranges: { [i.id]: [[0, 1e9] as [number, number]] } };
-      const id = i.kind === 'rule' ? ruleId(i.id) : i.id;
-      const ranges: Record<string, [number, number][]> = {};
-      for (const x of all) if (x.definitionId === id && x.status === 'accepted') (ranges[x.runId] ??= []).push([x.start, x.end]);
-      return { key: i.id, metric: curve, ranges };
-    });
-    return JSON.stringify(sources);
-  }, [curve, items, all]);
-  useEffect(() => {
-    const list = JSON.parse(sourcesKey) as CurveSource[];
-    if (!list.length) return;
-    const controller = new AbortController();
-    let live = true;
-    curvesInWorker(list, handle, (p) => live && setProgress({ done: p.done, total: p.total }), controller.signal)
-      .then((got) => live && setCurves({ metric: list[0].metric ?? 'speed', by: new Map(Object.entries(got)), key: sourcesKey }))
-      .catch(() => undefined)
-      .finally(() => live && setProgress(null));
-    return () => { live = false; controller.abort(); };
-  }, [sourcesKey, handle]);
-
-  // The items drawn on the curve, once their bests are read for the metric shown.
-  const curveItems = curve && curves.metric === curve ? items.filter((i) => curves.by.has(i.id)).map((i) => ({ key: i.id, label: label(i), color: color(i), shape: shape(i) })) : [];
 
   const exportCsv = () => {
     const names = new Map(blocks.map((i) => [defId(i), label(i)]));
@@ -405,21 +360,52 @@ function AnalysisPage() {
         </div>
       )}
 
-      {items.length > 0 && <div className="items-bar">
-        {items.map((i) => (
-          <span key={i.id} className="item-chip">
-            <ItemKey shape={shape(i)} color={color(i)} />
-            <span>{label(i)}</span>
-            {i.kind === 'rule' && <button className="item-save" title={t('Keep this segment in the folder: it stays in the list and can be compared A/B')} disabled={!!busy} onClick={() => saveItem(i)}>{t('Save')}</button>}
-            {i.kind !== 'run' && <EditButton small name={label(i)} disabled={!!busy} onClick={() => setEditing(i)} />}
-            <button className="item-remove" aria-label={t('Remove {name}', { name: label(i) })} onClick={() => setItems(items.filter((x) => x.id !== i.id))}>×</button>
-          </span>
-        ))}
-        {items.length >= MAX_ITEMS && <span className="muted small">{t('Up to {n} at once.', { n: MAX_ITEMS })}</span>}
-      </div>}
+      {/* What is compared, apart from the tabs that show it ("filtry sie zlewaja z podstronami"): the data, then the metrics
+          and how the values are read, one choice for Trends, Efforts and A/B. */}
+      {items.length > 0 && (
+        <section className="card analysis-filters" aria-label={t('What is compared')}>
+          <div className="filter-row">
+            <span className="filter-label">{t('Data')}</span>
+            <div className="items-bar">
+            {items.map((i) => (
+              <span key={i.id} className="item-chip">
+                <ItemKey shape={shape(i)} color={color(i)} />
+                <span>{label(i)}</span>
+                {i.kind === 'rule' && <button className="item-save" title={t('Keep this segment in the folder: it stays in the list and can be compared A/B')} disabled={!!busy} onClick={() => saveItem(i)}>{t('Save')}</button>}
+                {i.kind !== 'run' && <EditButton small name={label(i)} disabled={!!busy} onClick={() => setEditing(i)} />}
+                <button className="item-remove" aria-label={t('Remove {name}', { name: label(i) })} onClick={() => setItems(items.filter((x) => x.id !== i.id))}>×</button>
+              </span>
+            ))}
+            {items.length >= MAX_ITEMS && <span className="muted small">{t('Up to {n} at once.', { n: MAX_ITEMS })}</span>}
+            </div>
+          </div>
+          <div className="filter-row">
+            <span className="filter-label">{t('Metrics')}</span>
+            <div className="metric-picker" role="group" aria-label={t('Metrics')}>
+              {METRICS.map((x) => <button key={x.key} className={`pill ${metrics.includes(x.key) ? 'on' : ''}`} aria-pressed={metrics.includes(x.key)} title={x.name} onClick={() => toggleMetric(x.key)}>{x.short}</button>)}
+            </div>
+            <label className="setting inline pace-even" title={t('Each value moved to the segment’s mean pace, by how the metric goes with the pace across its efforts: what is left is what the pace does not explain (technique, form). The pace itself is never moved.')}>
+              <input type="checkbox" checked={corrected} onChange={(e) => setCorrected(e.target.checked)} /> {t('Even out to the same pace')}
+            </label>
+          </div>
+        </section>
+      )}
 
+      {/* No analysis chosen: no tabs to show nothing ("zobacz co widze gdy nie wybiore zadnej analizy"); the analyses saved, then a start. */}
+      {!items.length && (
+        <div className="analysis-empty">
+          {finding && <div className="card empty" role="status">{finding}</div>}
+          {!similar && (
+            <>
+              {/* The analyses saved; none: one line (the head's button starts one, its list makes a new segment too: "czym sie rozni przycisk na dole od tego w prawym gornym rogu?"). */}
+              <SavedList folder={folder} onOpen={(q) => router.replace(`/compare${q ? `?${q}` : ''}`)}
+                empty={<p className="muted analysis-start">{t('Start an analysis with + Add segment or run.')}</p>} />
+            </>
+          )}
+        </div>
+      )}
 
-      <>
+      {items.length > 0 && <>
         {/* The progress stands in the row of the tabs, which keeps its height: nothing below moves (Core Web Vitals). */}
         <div className="tabs-row">
           <div className="tabs analysis-tabs" role="tablist" aria-label={t('Compare sections')}>
@@ -437,27 +423,8 @@ function AnalysisPage() {
         </div>
         <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="analysis-panel">
           {finding && <div className="card empty" role="status">{finding}</div>}
-          {!items.length && !similar && (
-            <>
-              <SavedList folder={folder} onOpen={(q) => router.replace(`/compare${q ? `?${q}` : ''}`)} />
-              <div className="card empty">
-                {t('Choose the data to analyse: press')} <b>{t('+ Add segment or run')}</b> {t('and add one of your segments (your best 5 minutes with the heart rate above 160, the laps of 3 to 5 km, a route…), one found in your runs, All runs, or a single run; or open an analysis you saved. New segments are made on the Segments screen.')}
-              </div>
-            </>
-          )}
           {items.length > 0 && tab === 'trends' && (
             <>
-              <div className="toolbar">
-                <div className="metric-picker" role="group" aria-label={t('Metrics')}>
-                  {METRICS.map((x) => <button key={x.key} className={`pill ${metrics.includes(x.key) ? 'on' : ''}`} aria-pressed={metrics.includes(x.key)} title={x.name} onClick={() => toggleMetric(x.key)}>{x.short}</button>)}
-                </div>
-                <div className="segmented" role="group" aria-label={t('Segment values')} title={t('Corrected: residual pace difference removed by regression')}>
-                  <button className={!corrected ? 'on' : ''} onClick={() => setCorrected(false)}>{t('Raw')}</button>
-                  <button className={corrected ? 'on' : ''} onClick={() => setCorrected(true)}>{t('Corrected')}</button>
-                </div>
-                <label className="setting inline"><input type="checkbox" checked={joinPoints} onChange={(e) => setJoin(e.target.checked)} /> {t('Join points')}</label>
-                <label className="setting inline"><input type="checkbox" checked={trendLine} onChange={(e) => setTrend(e.target.checked)} /> {t('Trend line')}</label>
-              </div>
               <div className="card chart pin-host">
                 <PinButton folder={folder} kind="compare" target={pinQuery} name={t('Over time · {items}', { items: items.map(label).join(', ') })} />
                 <h3 className="chart-title">{t('Over time')} <span className="muted">· {t("each segment's efforts with its trend line, each run's average")}</span></h3>
@@ -473,39 +440,18 @@ function AnalysisPage() {
                 <div className="chart-note">{t("Thin line: the points in date order. Thick line: the fitted trend, its band the noise between a segment's efforts (±1 standard deviation). Click a point to open its run.")}</div>
               </div>
 
-              <TrendVerdicts metrics={metrics} all={all} corrected={corrected} trendsBy={trendsBy}
-                rows={blocks.map((i) => ({ id: i.id, defId: defId(i), label: label(i), shape: shape(i), color: color(i), attributes: attributes(defOf(i)), abHref: abHref(i.id), pending: i.kind === 'rule' && !adhoc.has(i.id) }))} />
+              {/* No table of changes under the charts ("ok usun mi to wogole z dolu"): the Efforts tab has the changes by run. */}
             </>
           )}
           {items.length > 0 && tab === 'segments' && blocks.length > 0 && (
-            <EffortsPanel blocks={blocks.map((i) => ({ id: i.id, defId: defId(i), label: label(i) }))} item={tableItem} onItem={setTableItem} all={all} metric={metrics[0]}
-              reference={reference} titleOf={titleOf} computing={computing} handle={handle} folder={folder}
-              similarHref={(e) => { const q = new URLSearchParams(params.toString()); q.set('similar', `${e.runId}~${e.start}~${e.end}`); return `/compare?${q.toString()}`; }} />
+            <EffortsPanel blocks={blocks.map((i) => ({ id: i.id, defId: defId(i), label: label(i) }))} item={tableItem} onItem={setTableItem} all={all} metric={metrics[0]} metrics={metrics}
+              reference={reference} titleOf={titleOf} computing={computing} handle={handle} folder={folder} />
           )}
           {items.length > 0 && tab === 'ab' && (
-            <AbTab items={blocks.map((i) => ({ id: i.id, defId: defId(i), label: label(i) }))} all={all} chosen={abChosen} onChoose={chooseAb} computing={computing} />
-          )}
-          {items.length > 0 && tab === 'curve' && (
-            <>
-              <div className="toolbar">
-                <div className="segmented" role="group" aria-label={t('Curve')} title={t("For each length of time, the best effort of that length inside the item's efforts: the fastest, or the highest average power")}>
-                  {([['speed', msg('Speed')], ['power', msg('Power')]] as const).map(([m, name]) => (
-                    <button key={m} className={curveMetric === m ? 'on' : ''} aria-pressed={curveMetric === m} onClick={() => setCurve(m)}>{t(name)}</button>
-                  ))}
-                </div>
-                <span className="muted small">{curveMetric === 'speed' ? t('The best effort of each length of time, as a pace.') : t('The highest average power of each length of time.')}</span>
-              </div>
-              {/* Drawn once its bests are read for the metric shown, not empty first and then pushed apart (layout shift 0). */}
-              {curve && curves.metric === curve && curves.key === sourcesKey && !computing && <CurveTab metric={curve} items={curveItems} bests={curves.by} missingPower={curve === 'power' && curves.metric === 'power' && items.some((i) => (curves.by.get(i.id)?.length ?? 0) === 0)} />}
-
-            </>
-          )}
-          {items.length > 0 && tab === 'reps' && (
-            <RepsTab runIds={items.filter((i) => i.kind === 'run').map((i) => i.id)} rows={runs} files={files} read={(id) => readRunFile(folder, id)}
-              onAdd={(id) => setItems(addItem(latest.current, 'run', id))} />
+            <AbTab items={blocks.map((i) => ({ id: i.id, defId: defId(i), label: label(i) }))} all={all} chosen={abChosen} onChoose={chooseAb} computing={computing} corrected={corrected} metrics={metrics} />
           )}
         </div>
-      </>
+      </>}
 
       {adding && <AddDialog defs={defs} recs={recs} runs={runs} items={items} allRuns={ALL_RUNS}
         onAdd={(kind, id) => { setItems(addItem(items, kind, id)); setAdding(false); }} onAccept={acceptSuggestion} onDismiss={dismissSuggestion} onClose={() => setAdding(false)} />}

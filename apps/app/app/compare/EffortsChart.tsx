@@ -14,6 +14,29 @@ export interface ChartEffort {
   from: number;
   to: number;
   reference: boolean;
+  /** efforts of one group (a run) drawn as one line, their mean window by window ("Wybór biegów") */
+  group?: string;
+}
+
+/**
+ * Efforts averaged into one: each 10 s window from their start the mean of theirs (as many windows as the
+ * shortest has), each figure the mean of theirs; the first's run and title.
+ */
+function averaged(fs: EffortFigures[]): EffortFigures {
+  if (fs.length === 1) return fs[0];
+  const n = Math.min(...fs.map((f) => f.series.t.length));
+  const mean = (xs: (number | null | undefined)[]) => { const v = xs.filter((x): x is number => typeof x === 'number'); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const keys = [...new Set(fs.flatMap((f) => Object.keys(f.series.values)))];
+  const series = {
+    d: Array.from({ length: n }, (_, j) => mean(fs.map((f) => f.series.d[j])) ?? 0),
+    t: Array.from({ length: n }, (_, j) => mean(fs.map((f) => f.series.t[j])) ?? 0),
+    values: Object.fromEntries(keys.map((k) => [k, Array.from({ length: n }, (_, j) => mean(fs.map((f) => f.series.values[k]?.[j])))])),
+  };
+  const first = fs[0] as unknown as Record<string, unknown>;
+  // Each figure the mean of theirs, kept to a tenth (a climb of 4.7 m, not 4.666… m).
+  const tenth = (v: number | null) => (v === null ? null : Math.round(v * 10) / 10);
+  const figures = Object.fromEntries(Object.keys(first).filter((k) => k !== 'series').map((k) => [k, typeof first[k] === 'number' ? tenth(mean(fs.map((f) => (f as unknown as Record<string, unknown>)[k] as number))) : first[k]]));
+  return { ...(figures as unknown as EffortFigures), series };
 }
 
 type Metric = string;
@@ -43,10 +66,11 @@ function smooth(ys: (number | null)[], on: boolean): (number | null)[] {
  * the bands with every effort's values; and a table of each effort's figures under it. The selection
  * compared from is drawn in ink, the others in the colours of the series.
  */
-export function EffortsChart({ efforts, handle, folder }: { efforts: ChartEffort[]; handle: FileSystemDirectoryHandle; folder: DataFolder }) {
+export function EffortsChart({ efforts, handle, folder, metrics: given }: { efforts: ChartEffort[]; handle: FileSystemDirectoryHandle; folder: DataFolder; /** the metrics drawn, chosen above the chart (its own pills left out) */ metrics?: Metric[] }) {
   const [figures, setFigures] = useState<Record<string, EffortFigures> | null>(null);
   const [zones, setZones] = useState<Record<string, number[]>>({});
-  const [metrics, setMetrics] = useState<Metric[]>(DEFAULT_METRICS);
+  const [own, setMetrics] = useState<Metric[]>(DEFAULT_METRICS);
+  const metrics = given ?? own;
   // The metrics of the chart, as the run chart offers them: those of the folder's segments and the elevation.
   const known = useMetrics();
   const METRICS = [...known.blockKeys, 'altitude'].map(known.view);
@@ -62,13 +86,22 @@ export function EffortsChart({ efforts, handle, folder }: { efforts: ChartEffort
   }, [key, handle]);
   useEffect(() => { readSettings(folder).then((s) => setZones(s.zones)).catch(() => undefined); }, [folder]);
 
-  // The efforts drawn: the selection first, in ink; the others in the colours of the series.
+  // The efforts drawn: the selection first, in ink; the others in the colours of the series. Efforts of one
+  // group (a run) as one line, their mean, named by the run and how many.
   const lines = useMemo(() => {
     if (!figures) return [];
     let k = 0;
-    return [...efforts].sort((a, b) => Number(b.reference) - Number(a.reference)).flatMap((e) => {
+    const units: { e: ChartEffort; fs: EffortFigures[]; n: number }[] = [];
+    for (const e of efforts) {
       const f = figures[`${e.runId}:${e.from}`];
-      return f ? [{ e, f, color: e.reference ? 'var(--text)' : `var(--series-${++k})`, name: e.reference ? t('This selection · {date}', { date: date(f.runStart) }) : date(f.runStart) }] : [];
+      if (!f) continue;
+      const u = e.group ? units.find((x) => x.e.group === e.group) : undefined;
+      if (u) { u.fs.push(f); u.n++; if (e.reference) u.e = { ...u.e, reference: true }; } else units.push({ e, fs: [f], n: 1 });
+    }
+    return units.sort((a, b) => Number(b.e.reference) - Number(a.e.reference)).map(({ e, fs, n }) => {
+      const f = averaged(fs);
+      const name = e.reference ? t('This selection · {date}', { date: date(f.runStart) }) : date(f.runStart);
+      return { e, f, color: e.reference ? 'var(--text)' : `var(--series-${++k})`, name: n > 1 ? `${name} · ${tn(n, 'mean of {n} effort', 'mean of {n} efforts')}` : name };
     });
   }, [figures, efforts]);
 
@@ -129,14 +162,14 @@ export function EffortsChart({ efforts, handle, folder }: { efforts: ChartEffort
         </div>
         <label className="setting inline"><input type="checkbox" checked={smoothed} onChange={(e) => setSmoothed(e.target.checked)} /> {t('Smoothed')}</label>
       </div>
-      <div className="effort-chart-metrics">
+      {!given && <div className="effort-chart-metrics">
         <div className="metric-picker" role="group" aria-label={t('Metrics drawn')}>
           {METRICS.filter((x) => has(x.key)).map((x) => (
             <button key={x.key} type="button" className={`pill ${metrics.includes(x.key) ? 'on' : ''}`} aria-pressed={metrics.includes(x.key)}
               onClick={() => setMetrics((ms) => (ms.includes(x.key) ? (ms.length > 1 ? ms.filter((y) => y !== x.key) : ms) : METRICS.map((y) => y.key).filter((y) => y === x.key || ms.includes(y))))}>{x.short}</button>
           ))}
         </div>
-      </div>
+      </div>}
       <div className="effort-legend" role="list" aria-label={t('Efforts drawn')}>
         {lines.map((l) => <span key={`${l.e.runId}:${l.e.from}`} role="listitem"><i style={{ background: l.color }} aria-hidden="true" />{l.name}</span>)}
       </div>

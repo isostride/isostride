@@ -512,17 +512,8 @@
     { "element": "20280dd4-9d43-4d15-bb62-dd3ca3050e95", "name": "Statistic of a segment", "tests": [
       "tests/unit/rule.test.ts › Blocks defined in Analysis › Statistic of a segment"
     ] },
-    { "element": "37de8939-dd70-4e96-827e-5901e301a79b", "name": "Pace curve inside the segments", "tests": [
-      "tests/unit/curve.test.ts › Pace curve › Pace curve inside the segments"
-    ] },
-    { "element": "1d96c647-cd03-485d-9f23-63e8b54e8571", "name": "Pace curve drawn for blocks", "tests": [
-      "e2e/analysis.spec.ts › Analysis workspace › Rule blocks compared, ranked and curved"
-    ] },
     { "element": "e52ebeb4-a468-47dd-8fb2-2983ba904533", "name": "Estimate fitted to the bests", "tests": [
       "tests/unit/curve.test.ts › Pace curve › Estimate fitted to the bests"
-    ] },
-    { "element": "3b2a5032-9b62-4e79-a7f6-b568f1399963", "name": "Curves from the data folder", "tests": [
-      "tests/unit/curve.test.ts › Pace curve › Curves from the data folder"
     ] },
     { "element": "9a3ab334-a085-4061-90a7-8bfc04c8fc8f", "name": "Run opened from a point of a chart", "tests": [
       "e2e/analysis.spec.ts › Analysis workspace › Rule blocks compared, ranked and curved"
@@ -636,9 +627,6 @@
     ] },
     { "element": "aa326b0c-6268-4a06-919c-2df55b327a96", "name": "Runs searched and the calendar browsed", "tests": [
       "e2e/runs.spec.ts › Search runs › Runs searched and the calendar browsed"
-    ] },
-    { "element": "b88206c8-f882-4add-996c-d84e0d10edc0", "name": "Power curve inside the segments", "tests": [
-      "tests/unit/curve.test.ts › Pace curve › Power curve inside the segments"
     ] },
     { "element": "e19e4f19-1db7-4d9c-bce0-0c85790643a5", "name": "Back link chosen from the trail", "tests": [
       "tests/unit/screenTrail.test.ts › Back to the previous screen › Back link chosen from the trail"
@@ -906,13 +894,10 @@
       "tests/integration/copy.test.ts › Phone reads from a copy › A file left empty in the copy read from the folder and mended"
     ] },
     { "element": "93ce685a-e1b3-4be5-9797-463055592ec2", "name": "Previous 2 × 3 min compared rep by rep", "tests": [
-      "e2e/reps.spec.ts › Rep by rep › Previous workout compared rep by rep"
+      "e2e/reps.spec.ts › Efforts by run › Previous workout compared rep by rep"
     ] },
     { "element": "57aab67e-c55c-476d-9cac-50cc36dc08aa", "name": "Reps' changes computed", "tests": [
-      "tests/unit/reps.test.ts › Workouts compared rep by rep › Reps paired and their changes computed",
-      "tests/unit/reps.test.ts › Workouts compared rep by rep › Changes that go both ways have no verdict",
-      "tests/unit/reps.test.ts › Workouts compared rep by rep › Runs of other layouts compared by their efforts in order",
-      "tests/unit/reps.test.ts › Previous workout of a layout › Previous run of the layout found"
+      "tests/unit/reps.test.ts › Workouts compared rep by rep › How the figures change: a run’s mean, and the trend per week"
     ] },
     { "element": "457c8016-90e8-4e54-b595-90b2639a7b21", "name": "Back to what was shown before", "tests": [
       "e2e/run.spec.ts › Back to the previous screen › Back to what was shown before the run",
@@ -925,6 +910,13 @@
       "tests/unit/layouts.test.ts › Segments by lap layout › Layouts found in the runs",
       "tests/unit/layouts.test.ts › Segments by lap layout › Reps of a layout, identical or similar",
       "tests/unit/layouts.test.ts › Segments by lap layout › Runs filtered by a layout"
+    ] },
+    { "element": "ec716e4f-f43e-48f1-a4dd-685308c44f52", "name": "Segment made step by step", "tests": [
+      "e2e/block-definition.spec.ts › Every block on one screen › Block built from a rule with a live count"
+    ] },
+    { "element": "1bc34159-180e-454b-839c-a600d58988c1", "name": "A segment's efforts rep by rep", "tests": [
+      "e2e/reps.spec.ts › Efforts by run › A segment’s efforts in every run, rep by rep",
+      "tests/unit/reps.test.ts › Workouts compared rep by rep › A segment’s efforts grouped by run"
     ] }
   ]
 }

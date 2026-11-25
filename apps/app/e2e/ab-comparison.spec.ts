@@ -4,11 +4,11 @@ import { setUpWithBlock } from './support';
 test.describe('Result transparency', () => {
   test('Open instances of A/B', async ({ page }) => {
     await setUpWithBlock(page);
-    // A/B is a tab of Analysis, not a screen of the navigation; the block's "Compare A/B" opens it on that block.
+    // A/B is a tab of Analysis, not a screen of the navigation; its tab opens it on the block.
     await expect(page.locator('.sidebar').getByRole('link', { name: /A\/B comparison$/ })).toHaveCount(0);
     const block = new URL(page.url()).searchParams.get('items')!.split(':')[1];
-    await page.getByRole('table', { name: 'Changes' }).getByRole('link', { name: 'Compare A/B →' }).click();
-    await expect(page).toHaveURL(new RegExp(`tab=ab&ab=${block}`));
+    await page.getByRole('tablist', { name: 'Compare sections' }).getByRole('tab', { name: 'A/B' }).click();
+    await expect(page).toHaveURL(/tab=ab/);
     await expect(page.getByRole('tab', { name: 'A/B' })).toHaveAttribute('aria-selected', 'true');
     await page.getByRole('button', { name: /^Efforts: \d+ in · \d+ left out$/ }).click();
     const panel = page.locator('aside.sheet');

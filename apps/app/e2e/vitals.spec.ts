@@ -80,10 +80,10 @@ test.describe('Core Web Vitals met', () => {
       const b = page.getByRole('button', { name: m, exact: true });
       if (await b.count()) await b.click();
     }
-    await page.getByRole('button', { name: 'Corrected' }).click();
+    await page.getByRole('checkbox', { name: 'Even out to the same pace' }).click();
     worst.inp = Math.max(worst.inp, (await vitals(page)).INP);
     await page.goto(`${analysis}&tab=ab`);
-    const abMetrics = page.getByRole('group', { name: 'Metric' });
+    const abMetrics = page.getByRole('group', { name: 'Metrics', exact: true });
     await abMetrics.waitFor();
     for (const m of ['Pace', 'Heart rate', 'Ground contact']) await abMetrics.getByRole('button', { name: m, exact: true }).click();
     worst.inp = Math.max(worst.inp, (await vitals(page)).INP);
