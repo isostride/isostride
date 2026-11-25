@@ -1,8 +1,8 @@
-import { DEFAULT_TOLERANCES, bestProfileMatch, hasAlways, lapKey, lapSubject, matchesRunFilter, meetsConditions, runSubject, stretchSubject, stretches, trackOf, type Conditions, type Rule, type Tolerances } from '@/lib/blocks';
+import { DEFAULT_TOLERANCES, bestProfileMatch, followsLayout, hasAlways, repLaps, lapKey, lapSubject, matchesRunFilter, meetsConditions, runSubject, stretchSubject, stretches, trackOf, type Conditions, type Rule, type Tolerances } from '@/lib/blocks';
 import { resample, type TrackPoint } from '@/lib/geo';
 import { metricSeries, type IndexedRun, type RunFile } from '@/lib/kernel';
 import { startKind, stopTimes } from './instance';
-import { effortIn, followsPattern, mainEffort } from './logical';
+import { effortIn, mainEffort } from './logical';
 import { findPasses } from './routeMatch';
 
 /**
@@ -106,6 +106,9 @@ function steady(rule: Rule, run: RunFile, acc: Int32Array | null): Segment[] {
 /** The segments of one run a rule selects: none when the run is not one the rule draws from. */
 export function ruleSegments(rule: Rule, run: RunFile, row: IndexedRun, ctx: { track?: TrackPoint[]; tolerances?: Tolerances } = {}): Segment[] {
   if (!matchesRunFilter(rule.runs, row)) return [];
+  // Runs of a layout of laps, identical or similar (requirement "Segments by lap layout").
+  const layout = rule.runs.layout;
+  if (layout && !followsLayout(run, layout.laps, layout.match)) return [];
   const c = rule.conditions;
   const acc = hasAlways(c) ? brokenBefore(run, c) : null;
   const speed = metricSeries(run.samples, 'speed');
@@ -126,7 +129,8 @@ export function ruleSegments(rule: Rule, run: RunFile, row: IndexedRun, ctx: { t
     const m = mainEffort(run);
     candidates = [{ from: m.from, to: m.to, ...(m.lap === null ? {} : { lap: m.lap }) }];
   } else if (shape.type === 'pattern') {
-    candidates = followsPattern(run.laps, shape.laps, shape.tolerance) ? shape.laps.flatMap((l, i) => (l.effort ? [{ from: run.laps[i].start, to: run.laps[i].end, lap: i + 1 }] : [])) : [];
+    // The reps of the layout: its effort laps in a run of the same laps, a run's own in one of the same reps.
+    candidates = followsLayout(run, shape.laps, shape.match, shape.tolerance) ? repLaps(run, shape.laps, shape.match).map((i) => ({ from: run.laps[i].start, to: run.laps[i].end, lap: i + 1 })) : [];
   } else if (shape.type === 'route') {
     // A run without GPS has no passes.
     const pts = ctx.track ?? resample(run.samples.lat, run.samples.lon, run.samples.t, 10);

@@ -1,6 +1,6 @@
 import type { Lap } from '@/lib/kernel';
 import { lapKey } from './structure';
-import type { PatternLap } from './types';
+import type { LayoutMatch, PatternLap } from './types';
 import { SAVED_WORDS, type Words } from './words';
 
 /** Names and lap patterns of the logical blocks (pure; the pages and the detection share them). */
@@ -48,4 +48,36 @@ export function patternName(pattern: PatternLap[], w: Words = SAVED_WORDS): stri
   for (const p of pattern.filter((x) => x.effort)) efforts.set(label(p), (efforts.get(label(p)) ?? 0) + 1);
   const body = [...efforts.entries()].map(([l, n]) => (n > 1 ? `${n} × ${l}` : l));
   return [...lead, ...body].join(' + ') || w.t('Lap pattern');
+}
+
+/** The key of a layout's reps: its effort laps by length, in order ("time:600|time:600|time:600"). */
+export function repsKey(pattern: PatternLap[]): string {
+  // i18n-ignore: a key, not a text
+  return pattern.filter((p) => p.effort && p.kind !== 'free').map((p) => `${p.kind}:${p.target}`).join('|');
+}
+
+/** "3 × 10 min": a layout's reps alone. */
+export function repsName(pattern: PatternLap[], w: Words = SAVED_WORDS): string {
+  return patternName(pattern.filter((p) => p.effort), w);
+}
+
+/** A run's laps read as a layout: the pattern of its laps by its average pace. */
+export function layoutOf(run: { laps: Lap[]; duration: number; distance: number }): PatternLap[] {
+  return patternOf(run.laps, run.distance > 0 ? run.duration / run.distance : 0);
+}
+
+/**
+ * True when a run follows a layout (requirement "Segments by lap layout"): identical, its laps as the
+ * layout's within the tolerance; similar, the same reps in its own layout.
+ */
+export function followsLayout(run: { laps: Lap[]; duration: number; distance: number }, layout: PatternLap[], match: LayoutMatch | undefined, tolerance = 0.03): boolean {
+  if (match !== 'similar') return followsPattern(run.laps, layout, tolerance);
+  const reps = repsKey(layout);
+  return reps !== '' && repsKey(layoutOf(run)) === reps;
+}
+
+/** The effort laps a run gives for a layout, by index: the layout's for an identical one, the run's own for a similar one. */
+export function repLaps(run: { laps: Lap[]; duration: number; distance: number }, layout: PatternLap[], match: LayoutMatch | undefined): number[] {
+  const pattern = match === 'similar' ? layoutOf(run) : layout;
+  return pattern.flatMap((p, i) => (p.effort ? [i] : []));
 }

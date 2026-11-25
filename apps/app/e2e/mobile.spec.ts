@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { devices, expect, test, type Page } from '@playwright/test';
-import { addFromPicker, fakeFolderPicker, fitFiles, nav, putFitFiles, recordMeasure } from './support';
+import { addFromPicker, fakeFolderPicker, fitFiles, nav, putFitFiles, recordMeasure, goToStep } from './support';
 
 // A phone: its width, a touch screen (requirement "Layout that fits a phone").
 test.use({ ...devices['Pixel 7'] });
@@ -144,9 +144,10 @@ test.describe('Layout that fits a phone', () => {
     await nav(page, 'Segments');
     await page.getByRole('button', { name: 'New segment' }).click();
     const rule = page.getByRole('dialog');
-    await rule.getByRole('group', { name: 'Period' }).waitFor();
-    const period = (await rule.getByRole('group', { name: 'Period' }).boundingBox())!;
-    expect((await rule.getByText('Period', { exact: true }).boundingBox())!.y).toBeLessThan(period.y);
+    // The editor a wizard: the period on its first step, the runs.
+    await rule.getByRole('group', { name: 'Period', exact: true }).waitFor();
+    const period = (await rule.getByRole('group', { name: 'Period', exact: true }).boundingBox())!;
+    expect((await rule.locator('.wizard-body').getByText('Period', { exact: true }).boundingBox())!.y).toBeLessThan(period.y);
     await check('Segments · new segment', true);
     await page.keyboard.press('Escape');
 
@@ -155,7 +156,7 @@ test.describe('Layout that fits a phone', () => {
     await addFromPicker(page, 'All runs');
     await page.locator('.item-chip').first().waitFor({ timeout: 30_000 });
     await check('Compare · Trends', true);
-    for (const tab of ['Efforts', 'A/B', 'Pace / power curve']) {
+    for (const tab of ['Efforts', 'A/B']) {
       await page.getByRole('tab', { name: tab }).click();
       await check(`Compare · ${tab}`);
     }

@@ -3,19 +3,23 @@
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, SCREEN_LEAVE, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget, eager } from '@/components';
+import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, SCREEN_LEAVE, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget, previousPage, runStartOf, eager } from '@/components';
 import { readChartSettings, runInWorker, useChartSettings, useLocale, useOpenFolder } from '@/lib/client';
 import { msg, number, t, tn } from '@/lib/i18n';
 import { readGear, readRunTags, writeRunTags, type Gear, type RunTag, type RunTagsFile } from '@/lib/gear';
-import { TagEditor } from './TagEditor';
 import { PATHS, readJson, readRunFile, markRunsSeen } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { asRule, efficiencyOf, rangeStats, readDefinitions, reasonText, shownName, zoneShares, type BlockInstance, type Rule } from '@/lib/blocks';
 import { date, duration, km, pace, time } from '@/lib/format';
 import { LOAD_MODELS, readSettings, zoneOf, zoneTint } from '@/lib/settings';
-import { PinButton } from '../dashboard/PinButton';
 import { runMetricsOf, secondsOf, seriesOf, withSecondExtremes, type WindowKey } from './metrics';
 
+/** Pin to the Dashboard, in the board's corner: loaded after the screen, as the budget wants. */
+const PinButton = eager(() => import('../dashboard/PinButton').then((m) => m.PinButton));
+/** The editor of the run's tags: loaded when it opens. */
+const TagEditor = eager(() => import('./TagEditor').then((m) => m.TagEditor));
+/** Compare with the previous run of a workout's layout: loaded after the screen. */
+const WorkoutLink = eager(() => import('./WorkoutLink').then((m) => m.WorkoutLink));
 /** The map made large, coloured by a metric: loaded when it opens. */
 const RouteExpanded = eager(() => import('./RouteExpanded').then((m) => m.RouteExpanded));
 
@@ -75,10 +79,19 @@ function RunPage() {
   const router = useRouter();
   // A run opened is no longer new (requirement "New runs marked new").
   useEffect(() => { if (id) markRunsSeen(folder, [id]).catch(() => undefined); }, [folder, id]);
-  // The back link: the screen the run was opened from, as it was left (requirement "Back to the previous screen").
-  const [back, setBack] = useState<{ href: string; label: string; viaHistory: boolean }>({ href: '/', label: msg('Runs'), viaHistory: false });
-  useEffect(() => { setBack(backTarget(window.sessionStorage)); }, []);
-  const goBack = (e: MouseEvent) => { if (back.viaHistory && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); router.back(); } };
+  // The back link (requirement "Back to the previous screen"): what was shown before the run, as the back
+  // arrow goes, from the browser's history; without its Navigation API, the screen the tab remembers.
+  const [back, setBack] = useState<{ href: string; label: string; run?: string | null; steps: number }>({ href: '/', label: msg('Runs'), steps: 0 });
+  useEffect(() => {
+    const nav = (window as unknown as { navigation?: { currentEntry: { index: number } | null; entries: () => { url: string | null }[] } }).navigation;
+    const path = (u: string | null) => { if (!u) return ''; const a = new URL(u); return a.origin === location.origin ? a.pathname + a.search : ''; };
+    const prev = nav?.currentEntry ? previousPage(nav.entries().map((e) => path(e.url)), nav.currentEntry.index) : null;
+    if (prev || nav) { setBack(prev ?? { href: '/', label: msg('Runs'), steps: 0 }); return; }
+    const kept = backTarget(window.sessionStorage);
+    setBack({ href: kept.href, label: kept.label, steps: kept.viaHistory ? 1 : 0 });
+  }, [id]);
+  const goBack = (e: MouseEvent) => { if (back.steps && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); history.go(-back.steps); } };
+  const backName = back.run !== undefined ? (runStartOf(back.run ?? null) ? t('Run of {date}', { date: date(runStartOf(back.run ?? null)!) }) : t('Run')) : t(back.label);
   const [run, setRun] = useState<RunFile | null | undefined>(undefined);
   const [title, setTitle] = useState<string | null>(null);
   /** the run's workout type, technique cue and note, as the index holds them */
@@ -292,7 +305,7 @@ function RunPage() {
   const mapMetrics = useMemo(() => (bigMap && view ? metricsOfRun.filter((m) => view.series[m.key]?.some((v) => v !== null)).map((m) => ({ key: m.key, title: m.title, format: m.format, invert: m.invert, values: rollingMean(view.wx, view.wseries[m.key], 30), zones: zones[m.key] })) : []), [bigMap, view, metricsOfRun, zones]);
 
   if (run === undefined) return <div className="page muted">{t('Loading…')}</div>;
-  if (!run || !view) return <div className="page">{t('Run not found.')} <Link href="/" className="muted">← {t('Runs')}</Link></div>;
+  if (!run || !view) return <div className="page">{t('Run not found.')} <Link href={back.href} onClick={goBack} className="muted">← {backName}</Link></div>;
   const { x, laps, series, total, dmap } = view;
   /** the x axis drawn: by distance only when the run has one */
   const xAxis = axis === 'distance' && dmap.max > 0 ? 'distance' : 'time';
@@ -358,7 +371,7 @@ function RunPage() {
     <div ref={pageRef} className="page run-page">
       <div className="page-head run-head">
         <div>
-          <div className="eyebrow"><Link href={back.href} onClick={goBack}>← {t(back.label)}</Link>{title && <span> · {date(run.startTime)} · {time(run.startTime)}</span>}</div>
+          <div className="eyebrow"><Link href={back.href} onClick={goBack}>← {backName}</Link>{title && <span> · {date(run.startTime)} · {time(run.startTime)}</span>}</div>
           <h1>{title ?? <>{date(run.startTime)} <span className="muted">· {time(run.startTime)}</span></>}</h1>
         </div>
         <dl className="run-figures">
@@ -378,6 +391,7 @@ function RunPage() {
         {tagged.note && <span className="muted small run-note" title={tagged.note}>✉ {tagged.note}</span>}
         <button type="button" className="btn" onClick={() => void editTags()} title={t("The run's title, workout type, technique cue, shoes and a note")}>{t('Tags and note')}</button>
         <Link className="btn" href={`/compare?items=r:${run.id}:0`} title={t('Open this run in Compare, beside your segments and other runs')}>{t('Compare this run')}</Link>
+        <WorkoutLink run={run} />
       </div>
       {tagEdit && <TagEditor title={title ?? `${date(run.startTime)} ${time(run.startTime)}`} tag={tagEdit.file.tags[id] ?? {}} gear={tagEdit.gear} dictionary={tagEdit.file.dictionary} onSave={(tag) => void saveTags(tag)} onCancel={() => setTagEdit(null)} />}
       <div className="card run-board pin-host">

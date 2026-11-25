@@ -76,20 +76,24 @@ test.describe('Analysis workspace', () => {
     }
     const months = async (c: typeof pace) => (await c.locator('text').allTextContents()).filter((t) => /^[A-Z][a-z]{2}$/.test(t));
     expect(await months(pace)).toEqual(await months(hr));
-    // The table of changes: one row per block, one column per metric, each with its verdict.
-    const table = page.getByRole('table', { name: 'Changes' });
-    await expect(table.getByRole('row')).toHaveCount(2);
-    await expect(table.getByRole('columnheader')).toHaveText(['Segment', 'Pace', 'Heart rate']);
-    await expect(table.getByText(/no detectable change|^change ·/).first()).toBeVisible();
-    // Switching off the joined points and the trend line hides them on every chart.
-    await page.getByRole('checkbox', { name: 'Join points' }).uncheck();
-    await page.getByRole('checkbox', { name: 'Trend line' }).uncheck();
+    // No table of changes under the charts ("ok usun mi to wogole z dolu").
+    await expect(page.getByRole('table', { name: 'Changes' })).toHaveCount(0);
+    // Switching off the joined points and the trend line, in Settings, Look & feel ("lacz punkty, linia trenigu ma byc w settingach"), hides them on every chart.
+    const charts = async (on: boolean) => {
+      await nav(page, 'Settings');
+      await page.getByRole('tab', { name: 'Look & feel' }).click();
+      for (const name of [/^Join points/, /^Trend line/]) await page.getByRole('checkbox', { name }).setChecked(on);
+      // Back to Compare as it was left, however many entries Settings added.
+      while (!/\/compare\?/.test(page.url())) await page.goBack();
+      await expect(pace).toBeVisible({ timeout: 30_000 });
+    };
+    await expect(page.getByRole('checkbox', { name: 'Join points' })).toHaveCount(0);
+    await charts(false);
     for (const c of [pace, hr]) {
       await expect(c.locator('.join-line')).toHaveCount(0);
       await expect(c.locator('.trend-line')).toHaveCount(0);
     }
-    await page.getByRole('checkbox', { name: 'Join points' }).check();
-    await page.getByRole('checkbox', { name: 'Trend line' }).check();
+    await charts(true);
 
     // Add a run and a second block through the picker.
     const add = async (search: string) => {

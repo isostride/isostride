@@ -33,11 +33,11 @@ test.describe('App in English and Polish', () => {
     await page.goto(SITE);
     await expect(page).toHaveURL(`${SITE}pl`);
     await expect(page.locator('html')).toHaveAttribute('lang', 'pl');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('IsoStride: otwarta platforma do analizy biegów.');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('IsoStride: otwarta platforma do analizy treningu biegowego.');
     await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute('href', 'https://isostride.com');
     await page.getByRole('link', { name: 'English' }).click();
     await expect(page).toHaveURL(SITE);
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('IsoStride is an open platform for analysing your runs.');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('IsoStride is an open platform for analysing your running training.');
     await page.reload();
     await expect(page).toHaveURL(SITE);
     await page.getByRole('link', { name: 'Polski' }).click();

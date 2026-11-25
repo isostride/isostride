@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addFromPicker, clearAnalysis, fitFiles, headGap, importAll, nav, openPicker, openRun, openWithFolder, setChart, showList } from './support';
+import { addField, addFromPicker, goToStep, saveSegment, clearAnalysis, fitFiles, headGap, importAll, nav, openPicker, openRun, openWithFolder, setChart, showList } from './support';
 
 test.describe('Accept or reject recommendation', () => {
   test('Accept recommendation', async ({ page }) => {
@@ -90,7 +90,7 @@ test.describe('Definition from selection', () => {
     await page.getByRole('link', { name: 'Compare similar' }).click();
     await expect(page.getByRole('heading', { name: 'Compare', level: 1 })).toBeVisible();
     const sections = page.getByRole('tablist', { name: 'Compare sections' });
-    await expect(sections.getByRole('tab')).toHaveText(['Trends', 'Efforts', 'A/B', 'Pace / power curve']);
+    await expect(sections.getByRole('tab')).toHaveText(['Trends', 'Efforts', 'A/B']);
     const route = page.locator('.item-chip', { hasText: /^Same route as \w{3} \d+, 2026 · \d\.\d km/ });
     const profileChip = page.locator('.item-chip', { hasText: /^Same profile as / });
     await expect(route).toHaveCount(1, { timeout: 60_000 });
@@ -98,17 +98,31 @@ test.describe('Definition from selection', () => {
     await expect(route.getByRole('button', { name: 'Save' })).toBeVisible();
     await expect(sections.getByRole('tab', { selected: true })).toHaveText('Efforts');
     // Its efforts, the selection marked among them; it and the two newest others drawn over each other by distance.
-    const efforts = page.getByRole('table', { name: 'Efforts' });
-    // Read in the worker: the table fills once the efforts are found, each at a like pace (within 10 %).
-    await expect.poll(() => efforts.getByRole('checkbox').count(), { timeout: 60_000 }).toBeGreaterThanOrEqual(2);
-    const n = await efforts.getByRole('checkbox').count();
+    const efforts = page.getByRole('table', { name: 'Efforts by run' });
+    // Read in the worker: the table fills once the efforts are found, the selection's run open, the selection marked; every run opened, each effort at a like pace (within 10 %).
+    await expect.poll(() => efforts.locator('tbody tr.reps-run-row').count(), { timeout: 60_000 }).toBeGreaterThanOrEqual(2);
     await expect(efforts.locator('tr.reference')).toHaveCount(1);
     await expect(efforts.locator('tr.reference')).toContainText('your selection');
-    const paces = (await efforts.locator('tbody tr').allTextContents()).map((t) => t.match(/(\d+):(\d\d) \/km/)!).map((m) => Number(m[1]) * 60 + Number(m[2]));
-    const own = paces[await efforts.locator('tbody tr').evaluateAll((rows) => rows.findIndex((r) => r.classList.contains('reference')))];
-    expect(paces.every((p) => Math.abs(p / own - 1) <= 0.12)).toBe(true);
-    const drawn = Math.min(3, n);
-    // Drawn on a chart as rich as the run's: pace, heart rate and cadence in their bands, by distance.
+    for (const toggle of await efforts.getByRole('button', { expanded: false }).all()) await toggle.click();
+    const paceCells = await efforts.locator('tbody tr.reps-rep-row').evaluateAll((rows) => rows.map((r) => ({ ref: r.classList.contains('reference'), text: r.children[2]?.textContent ?? '' })));
+    const paces = paceCells.map((c) => { const m = c.text.match(/(\d+):(\d\d)/)!; return { ref: c.ref, p: Number(m[1]) * 60 + Number(m[2]) }; });
+    const own = paces.find((x) => x.ref)!.p;
+    expect(paces.every((x) => Math.abs(x.p / own - 1) <= 0.12)).toBe(true);
+    // Drawn on a chart as rich as the run's, by the toggle (the chart alone): its runs chosen above it, at first the
+    // selection's and the two newest others, each the mean of its efforts; pace, heart rate and cadence in their bands, by distance.
+    const viewToggle = page.getByRole('radiogroup', { name: 'View' });
+    // Its lines the metrics chosen above the tabs.
+    const chosenMetrics = page.getByRole('group', { name: 'Metrics', exact: true });
+    for (const m of ['Pace', 'Heart rate', 'Cadence']) {
+      const b = chosenMetrics.getByRole('button', { name: m, exact: true });
+      if ((await b.getAttribute('aria-pressed')) !== 'true') await b.click();
+    }
+    await viewToggle.getByRole('radio', { name: 'Chart' }).click();
+    await expect(efforts).toHaveCount(0);
+    const runsDrawn = page.getByRole('group', { name: 'Runs drawn' });
+    const drawn = await runsDrawn.getByRole('button', { pressed: true }).count();
+    expect(drawn).toBeGreaterThanOrEqual(2);
+    expect(drawn).toBeLessThanOrEqual(3);
     const effortChart = page.getByRole('img', { name: `Pace, Heart rate, Cadence of ${drawn} efforts, by distance` });
     await expect(effortChart).toBeVisible({ timeout: 60_000 });
     await expect(page.getByRole('list', { name: 'Efforts drawn' }).getByRole('listitem').first()).toContainText(/^This selection · /);
@@ -118,29 +132,32 @@ test.describe('Definition from selection', () => {
     await page.mouse.move(cb.x + cb.width * 0.5, cb.y + 40);
     await expect(page.locator('.effort-card')).toContainText(/Pace.*\d:\d\d \/km/);
     await page.mouse.move(0, 0);
-    // One taken off; elevation added; along the time instead of the distance.
-    await efforts.locator('tbody tr:not(.reference)').getByRole('checkbox', { checked: true }).first().uncheck();
+    // One run taken off; ground contact time added above the tabs; along the time instead of the distance.
+    await runsDrawn.getByRole('button', { pressed: true }).last().click();
     const left = drawn - 1;
-    await page.getByRole('group', { name: 'Metrics drawn' }).getByRole('button', { name: 'Elevation' }).click();
+    await chosenMetrics.getByRole('button', { name: 'Ground contact', exact: true }).click();
     await page.getByRole('radiogroup', { name: 'Along' }).getByRole('radio', { name: 'Time' }).click();
-    await expect(page.getByRole('img', { name: new RegExp(`^Pace, Heart rate, Cadence, Elevation of ${left} efforts?, by time$`) })).toBeVisible();
+    await expect(page.getByRole('img', { name: new RegExp(`^Pace, Heart rate, Cadence, Ground contact of ${left} efforts?, by time$`) })).toBeVisible();
     // The same profile's efforts: the other segment of the list.
     const pick = page.getByLabel('Segment', { exact: true });
     await pick.selectOption({ label: (await pick.locator('option', { hasText: /^Same profile as / }).textContent())! });
-    await expect.poll(() => efforts.getByRole('checkbox').count(), { timeout: 60_000 }).toBeGreaterThanOrEqual(2);
+    await viewToggle.getByRole('radio', { name: 'Table' }).click();
+    await expect.poll(() => efforts.locator('tbody tr').count(), { timeout: 60_000 }).toBeGreaterThanOrEqual(2);
     await expect(efforts.locator('tr.reference')).toHaveCount(1);
     // Its parameters in the editor ("jak klikne edit to wszystko jest puste"): the route taken from the run as
     // its part of each run, the pace band around the selection's pace as its condition.
     await route.getByRole('button', { name: /^Edit / }).click();
     const sheet = page.getByRole('dialog', { name: 'Segment' });
+    await goToStep(sheet, 'Segment');
     await expect(sheet.getByRole('radio', { name: /^Same route: \d\.\d km \w+-bound$/ })).toHaveAttribute('aria-checked', 'true');
+    await goToStep(sheet, 'Further conditions');
     const [lo, hi] = [await sheet.getByLabel('Pace from').inputValue(), await sheet.getByLabel('Pace to').inputValue()].map((v) => { const [m, x] = v.split(':').map(Number); return m * 60 + x; });
     expect(hi / lo).toBeGreaterThan(1.2);
     expect(hi / lo).toBeLessThan(1.25);
     await page.keyboard.press('Escape');
     // On Trends, the same route's trend; kept from its chip, it is the runner's own.
     await sections.getByRole('tab', { name: 'Trends' }).click();
-    await expect(page.getByRole('table', { name: 'Changes' }).getByRole('row').nth(1)).toContainText(/\d+ efforts?/, { timeout: 60_000 });
+    await expect(page.getByRole('img', { name: /^Over time · / }).first().locator('.trend-line').first()).toBeVisible({ timeout: 60_000 });
     await route.getByRole('button', { name: 'Save' }).click();
     await expect(page.locator('.item-chip', { hasText: /^Same route as / }).getByRole('button', { name: 'Save' })).toHaveCount(0, { timeout: 30_000 });
 
@@ -162,19 +179,23 @@ test.describe('Block attributes', () => {
     await addFromPicker(page, /effort/);
     const chip = page.locator('.item-chip', { hasText: /effort/ });
     await expect(chip).toHaveCount(1, { timeout: 30_000 });
-    // Heart rate from minute 5 of every instance, by default for an effort: shown with the block.
-    const row = page.getByRole('table', { name: 'Changes' }).getByRole('row').nth(1);
-    await expect(row.getByText('heart rate from minute 5')).toBeVisible();
-    // A standing start, set in the block's sheet, shows with the block.
+    // Its attributes in its editor (no table of changes under the charts): heart rate from minute 5 of every instance, by default for an effort.
     // Edited in the one editor: the effort is a stretch like any other block's.
     await chip.getByRole('button', { name: /^Edit / }).click();
     const sheet = page.getByRole('dialog', { name: 'Segment' });
-    await expect(sheet.getByRole('radio', { name: 'Best effort' })).toHaveAttribute('aria-checked', 'true');
+    await goToStep(sheet, 'Further conditions');
+    await sheet.getByText('Matching checks').click();
+    await expect(sheet.getByLabel(/^Heart rate from minute/)).toHaveValue('5');
+    await goToStep(sheet, 'Segment');
+    await expect(sheet.getByRole('radio', { name: 'Time' })).toHaveAttribute('aria-checked', 'true');
     await expect(sheet.getByRole('checkbox', { name: /^Only when run as an effort/ })).toBeChecked();
-    await sheet.getByText('More: start, how many per run, statistic').click();
+    await addField(sheet, 'condition', 'Start of the effort');
     await sheet.getByRole('combobox', { name: 'Start of the effort' }).selectOption('standing');
-    await sheet.getByRole('button', { name: /Save/ }).click();
-    await expect(row.getByText('standing start')).toBeVisible({ timeout: 30_000 });
+    await saveSegment(sheet);
+    // A standing start, set in the editor, kept with the block.
+    await chip.getByRole('button', { name: /^Edit / }).click();
+    await goToStep(page.getByRole('dialog', { name: 'Segment' }), 'Further conditions');
+    await expect(page.getByRole('dialog', { name: 'Segment' }).getByRole('combobox', { name: 'Start of the effort' })).toHaveValue('standing', { timeout: 30_000 });
   });
 });
 
@@ -200,13 +221,37 @@ test.describe('Every block on one screen', () => {
     const dialog = page.getByRole('dialog', { name: 'New segment' });
     const count = dialog.locator('.preview-count');
     // Whole runs: every run is a segment; narrowed as the runner types, a distance range, then the title.
-    await dialog.getByRole('radio', { name: 'Whole runs' }).click();
+    // The wizard ("1. Okres ... 2. Schemat biegu ... 3. Segment ... 4. dodaktowe warunki"), opened on the period.
+    await expect(dialog.locator('.wizard-steps .wizard-title')).toHaveText(['Period', 'Run layout', 'Segment', 'Further conditions', 'Name and save']);
+    await expect(dialog.locator('.wizard-steps button[aria-current="step"] .wizard-title')).toHaveText('Period');
+    await goToStep(dialog, 'Segment');
+    // The steps stay where they are while the count beside them changes ("gorne kafelki wizarda sie przesuwaja").
+    const steps = dialog.locator('.wizard-steps');
+    await expect(count).not.toContainText('Looking for efforts', { timeout: 30_000 });
+    const before = await steps.boundingBox();
+    await dialog.getByRole('radio', { name: 'Whole run' }).click();
+    await expect(count).toContainText('Looking for efforts');
+    expect(await steps.boundingBox()).toEqual(before);
     await expect(count).toContainText('12 efforts in 12 runs', { timeout: 30_000 });
+    expect(await steps.boundingBox()).toEqual(before);
+    // The editor in sections: a field shown once added ("+ Add a condition", "+ Add a filter of the runs"), the sections' heads saying what is set.
+    await addField(dialog, 'condition', 'Distance');
     await dialog.getByLabel('Distance from').fill('0.5');
     await dialog.getByLabel('Distance to').fill('100');
-    await dialog.getByLabel('Title contains').fill('coros');
+    await addField(dialog, 'filter', 'Title contains');
+    await dialog.getByLabel('Title contains', { exact: true }).fill('coros');
+    // The steps name what each sets.
+    await expect(dialog.locator('.step-summary')).toHaveText(['All runs', 'Any layout', 'Runs', 'Title contains · Distance', 'Runs · 0.5–100 km · “coros”']);
     await expect(count).toContainText('1 effort in 1 run', { timeout: 30_000 });
-    await expect(dialog.getByLabel('Name')).toHaveValue('Runs · 0.5–100 km · “coros”');
+    // The matches: their count in the head, the runs listed only once it is opened.
+    await expect(dialog.locator('.preview-list')).toBeHidden();
+    await count.click();
+    await expect(dialog.locator('.preview-list li')).toHaveCount(1);
+    // Save on the last step only; Back and Next before it.
+    await expect(dialog.getByRole('button', { name: 'Save', exact: true })).toHaveCount(0);
+    await goToStep(dialog, 'Name and save');
+    await expect(dialog.getByLabel('Name', { exact: true })).toHaveValue('Runs · 0.5–100 km · “coros”');
+    await expect(dialog.locator('.builder-actions button')).toHaveText(['Cancel', 'Back', 'Save']);
     await dialog.getByRole('button', { name: 'Save', exact: true }).click();
     // On the screen: the block, the stretch it takes, its segments, their runs and the latest.
     const table = page.getByRole('region', { name: 'Segments', exact: true });
@@ -223,18 +268,21 @@ test.describe('Every block on one screen', () => {
     await expect(kept).toHaveCount(1, { timeout: 30_000 });
     const tabs = page.getByRole('tablist', { name: 'Compare sections' });
     await tabs.getByRole('tab', { name: 'Efforts' }).click();
-    const segments = page.getByRole('table', { name: 'Efforts' });
-    await expect(segments.getByRole('row')).toHaveCount(2);
-    await expect(segments.getByRole('row').nth(1)).toContainText('COROS test');
+    const segments = page.getByRole('table', { name: 'Efforts by run' });
+    await expect(segments.locator('tbody tr.reps-run-row')).toHaveCount(1, { timeout: 30_000 });
+    await expect(segments.locator('tbody tr.reps-run-row')).toContainText('COROS test');
     // Changed in the same editor from the Blocks screen: the fastest 5 minutes with the heart rate never below 100.
     await nav(page, 'Segments');
     await row.getByRole('button', { name: /^Edit / }).click();
     const sheet = page.getByRole('dialog', { name: 'Segment' });
-    await sheet.getByRole('radio', { name: 'Best effort' }).click();
-    await sheet.getByLabel('Title contains').fill('');
-    await sheet.getByLabel('Heart rate never below').fill('100');
+    await goToStep(sheet, 'Segment');
+    await sheet.getByRole('radio', { name: 'Time' }).click();
+    await goToStep(sheet, 'Further conditions');
+    await sheet.getByLabel('Title contains', { exact: true }).fill('');
+    await addField(sheet, 'condition', 'Heart rate never below / above');
+    await sheet.getByLabel('Heart rate never below', { exact: true }).fill('100');
     await expect(sheet.locator('.preview-count')).toContainText(/^\d+ efforts in \d+ runs/, { timeout: 30_000 });
-    await sheet.getByRole('button', { name: 'Save', exact: true }).click();
+    await saveSegment(sheet);
     await expect(table.getByRole('row').nth(1).getByRole('cell').nth(1)).toHaveText('Fastest 5 min', { timeout: 30_000 });
     // Pinned to the Dashboard (scenario "Dashboard of the runner's tiles"): first in the menu, its tiles at first this week,
     // the form, the last run, the weekly distance and recent runs; the segment pinned joins them with its efforts' pace.
@@ -283,7 +331,7 @@ test.describe('Every block on one screen', () => {
     await expect(sheet).toHaveCount(0);
     // Its editor a dialog as every other: Cancel and ✕ close it too; Delete, Cancel and Save at its foot.
     await table.getByRole('row').nth(1).getByRole('button', { name: /^Edit / }).click();
-    await expect(sheet.locator('.builder-actions button')).toHaveText(['Delete', 'Cancel', 'Save']);
+    await expect(sheet.locator('.builder-actions button')).toHaveText(['Delete', 'Cancel', 'Next']);
     await sheet.getByRole('button', { name: 'Cancel', exact: true }).click();
     await expect(sheet).toHaveCount(0);
     await table.getByRole('row').nth(1).getByRole('button', { name: /^Edit / }).click();
@@ -306,5 +354,38 @@ test.describe('Every block on one screen', () => {
     await del.click();
     await confirm.getByRole('button', { name: 'Delete' }).click();
     await expect(page.getByText(/^No segment yet/)).toBeVisible({ timeout: 30_000 });
+  });
+
+  test('Reps of a lap layout', async ({ page }) => {
+    // The runs of 2 to 29 March: two of them 5 min + 25 min + 2 × 3 min.
+    await openWithFolder(page, await fitFiles(16, '2026-03-02'));
+    await importAll(page);
+    await nav(page, 'Segments');
+    await page.getByRole('button', { name: 'New segment' }).click();
+    const dialog = page.getByRole('dialog', { name: 'New segment' });
+    const count = dialog.locator('.preview-count');
+    // The run's layout: the layouts found in the runs, with their runs; its reps the segments, identical, then the same reps in any layout.
+    await goToStep(dialog, 'Run layout');
+    const layout = dialog.getByLabel('Layout of laps', { exact: true });
+    await expect(layout.locator('option', { hasText: '5 min + 25 min + 2 × 3 min (2 runs)' })).toHaveCount(1);
+    await layout.selectOption({ label: '5 min + 25 min + 2 × 3 min (2 runs)' });
+    await dialog.getByRole('radio', { name: 'The reps' }).click();
+    await expect(dialog.getByRole('radio', { name: /^Identical layout/ })).toHaveAttribute('aria-checked', 'true');
+    await expect(count).toContainText('6 efforts in 2 runs', { timeout: 30_000 });
+    await expect(dialog.locator('.step-summary').nth(4)).toHaveText('Reps of 5 min + 25 min + 2 × 3 min');
+    await dialog.getByRole('radio', { name: /^The same reps: 25 min \+ 2 × 3 min/ }).click();
+    await expect(count).toContainText('6 efforts in 2 runs', { timeout: 30_000 });
+    await expect(dialog.locator('.step-summary').nth(4)).toHaveText('Reps of 25 min + 2 × 3 min, any layout');
+    // Not split: the layout chooses the runs, the segment the whole run (step 3).
+    await dialog.getByRole('radio', { name: /^No: whole run/ }).click();
+    await goToStep(dialog, 'Segment');
+    await dialog.getByRole('radio', { name: 'Whole run' }).click();
+    await expect(count).toContainText('2 efforts in 2 runs', { timeout: 30_000 });
+    await expect(dialog.locator('.step-summary').nth(4)).toHaveText('Runs · runs with 25 min + 2 × 3 min');
+    // The number of laps is no longer offered.
+    await goToStep(dialog, 'Further conditions');
+    const offered = dialog.getByLabel('+ Add a condition', { exact: true }).locator('option');
+    await expect(offered.filter({ hasText: /^Title contains$/ })).toHaveCount(1);
+    await expect(offered.filter({ hasText: /^Laps in the run$/ })).toHaveCount(0);
   });
 });

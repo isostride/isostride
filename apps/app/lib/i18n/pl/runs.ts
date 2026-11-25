@@ -307,4 +307,7 @@ export const RUNS: Dictionary = {
   '{n} could not be read': { one: '{n} nie dał się wczytać', few: '{n} nie dały się wczytać', many: '{n} nie dało się wczytać', other: '{n} nie dało się wczytać' },
   'Files of a run already imported from another file: left out.': 'Pliki biegu zaimportowanego już z innego pliku: pominięte.',
   'the run it repeats': 'bieg, który powtarza',
+  'Compare this workout rep by rep with the previous run of its layout': 'Porównaj ten trening seria po serii z poprzednim biegiem w tym samym układzie',
+  'Compare with the previous {layout}': 'Porównaj z poprzednim {layout}',
+  'Run of {date}': 'Bieg z {date}',
 };

@@ -13,7 +13,7 @@ const text = all(en);
 describe('Site in plain statements', () => {
   it('Site says what it is', () => {
     // The heading says what it is; the sections, in their order.
-    expect(en.hero.h1).toBe('IsoStride is an open platform for analysing your runs.');
+    expect(en.hero.h1).toBe('IsoStride is an open platform for analysing your running training.');
     expect(home).toContain('<span className="wordmark">IsoStride</span>');
     expect([en.why.h2, en.local.h2, en.metrics.h2, en.models.h2, en.open.h2, en.start.h2]).toEqual(['Why it exists', 'Local and open source', 'Analysis of metrics', 'Performance models', 'An open platform', 'Getting started']);
     // Why: training logs with limited analysis, few open tools; no replacement for a log.
@@ -30,8 +30,10 @@ describe('Site in plain statements', () => {
     expect(text).toMatch(/Your own model/);
     expect(text).toMatch(/Your own analysis/);
     expect(text).toMatch(/Code or ideas, both help\./);
-    // Screenshots of the whole app on demo data only: a made-up runner, critical speed about 3:15 /km.
-    expect(text).toMatch(/demo data of a made-up runner with a critical speed of about 3:15 \/km/);
+    // Screenshots of the whole app on demo data only, said so without a word of the runner behind them.
+    expect(text).toMatch(/The screens on this page show demo data;/);
+    expect(text).not.toMatch(/made-up|critical speed of about/);
+    expect(JSON.stringify(CONTENT.pl)).not.toMatch(/fikcyjn/);
     const shots = ['dashboard', ...en.metrics.shots.map(([name]) => name), ...en.models.shots.map(([name]) => name)];
     expect(shots.length).toBeGreaterThanOrEqual(5);
     for (const s of shots) expect(fs.existsSync(path.join(SITE, 'public/shots', `${s}.webp`)), s).toBe(true);
@@ -46,7 +48,7 @@ describe('Site in plain statements', () => {
     const pl = CONTENT.pl;
     const shape = (c: typeof en) => [c.nav.length, c.why.paragraphs.length, c.local.qa.length, c.metrics.rows.length, c.metrics.shots.map(([n]) => n), c.models.rows.length, c.models.shots.map(([n]) => n), c.open.rows.length, c.start.steps.length];
     expect(shape(pl)).toEqual(shape(en));
-    expect(pl.hero.h1).toBe('IsoStride: otwarta platforma do analizy biegów.');
+    expect(pl.hero.h1).toBe('IsoStride: otwarta platforma do analizy treningu biegowego.');
     expect([pl.why.h2, pl.local.h2, pl.metrics.h2, pl.models.h2, pl.open.h2, pl.start.h2]).toEqual(['Dlaczego IsoStride', 'Dane zostają u Ciebie', 'Analiza metryk', 'Modele wydolności', 'Otwarty kod, otwarta platforma', 'Jak zacząć']);
     // Its screenshots are of the app in Polish, each there (apps/site/public/shots/pl).
     for (const s of ['dashboard', ...pl.metrics.shots.map(([n]) => n), ...pl.models.shots.map(([n]) => n)]) expect(fs.existsSync(path.join(SITE, 'public/shots/pl', `${s}.webp`)), s).toBe(true);

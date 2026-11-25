@@ -35,7 +35,7 @@ export function AboutSplash({ onClose }: { onClose: () => void }) {
       <div ref={box} className="splash" role="dialog" aria-modal="true" aria-labelledby="splash-name" onClick={(e) => e.stopPropagation()}>
         <Logo size={72} />
         <h2 id="splash-name" className="splash-name"><span className="brand-name">Iso<i className="brand-dot">Stride</i></span></h2>
-        <p className="splash-tagline">{t('An open platform for analysing your runs')}</p>
+        <p className="splash-tagline">{t('An open platform for analysing your running training')}</p>
         <p className="splash-text">{t('Compare the same segments of your runs in the same context, and see changes the watch averages hide.')}</p>
         <p className="splash-text muted small">🔒 {t('Your data never leaves this computer.')}</p>
         <div className="splash-version">

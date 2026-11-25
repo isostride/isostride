@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { EditButton, EditDialog, useConfirm } from '@/components';
 import { SAVED_PARAM, analysisChanged, parseItems, defaultAnalysisName, removeAnalysis, upsertAnalysis, type SavedAnalysesFile, type SavedAnalysis } from '@/lib/compare';
 import { date } from '@/lib/format';
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
-import { t, tn } from '@/lib/i18n';
+import { number, t } from '@/lib/i18n';
 
 /** The link of a saved analysis, with its id, so the screen knows which one is open. */
 const linkOf = (a: SavedAnalysis) => `${a.query}${a.query ? '&' : ''}${SAVED_PARAM}=${encodeURIComponent(a.id)}`;
@@ -59,9 +59,10 @@ export function SavedAnalyses({ folder, query, labels, hasItems, onOpen }: {
   return (
     <div className="saved-analyses">
       {/* No list to open one from here ("nie ma chyba sensu"): the saved analyses are listed on the empty screen, each opened by its row. */}
-      <button type="button" className="btn" disabled={!hasItems && !current} onClick={() => setDialog(true)}>
+      {/* Nothing to save, no button (a disabled one is only noise on the empty screen). */}
+      {(hasItems || current) && <button type="button" className="btn" onClick={() => setDialog(true)}>
         {current ? (changed ? t('Save changes…') : t('Saved')) : t('Save analysis')}
-      </button>
+      </button>}
       {dialog && <SaveDialog current={current} changed={changed} offered={current?.name ?? defaultAnalysisName(labels)} onSave={save} onDelete={remove} onClose={() => setDialog(false)} />}
       {confirmDialog}
     </div>
@@ -109,7 +110,7 @@ function SaveDialog({ current, changed, offered, onSave, onDelete, onClose }: {
  * Edit ("jak zapisze to chce open oraz edit"; ADR "One way to add, edit and delete"), which renames it
  * in its dialog or deletes it after asking; nothing when none is saved.
  */
-export function SavedList({ folder, onOpen }: { folder: DataFolder; onOpen: (query: string) => void }) {
+export function SavedList({ folder, onOpen, empty }: { folder: DataFolder; onOpen: (query: string) => void; /** shown once read when none is saved */ empty?: ReactNode }) {
   const [list, setList] = useState<SavedAnalysis[] | null>(null);
   /** the analysis being edited, with its name as typed */
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
@@ -134,24 +135,25 @@ export function SavedList({ folder, onOpen }: { folder: DataFolder; onOpen: (que
     setEditing(null);
     await write(removeAnalysis(list, a.id));
   };
-  if (!list?.length) return confirmDialog ? <>{confirmDialog}</> : null;
+  if (!list?.length) return <>{list && empty}{confirmDialog}</>;
   return (
+    // A table of the app's own: a head, a row for each, the name opening it ("jakis header ? kiepsko wyglada ta tabela").
     <section className="card saved-list" aria-label={t('Your saved analyses')}>
-      <h2>{t('Saved analyses')} <span className="muted">· {list.length}</span></h2>
-      <ul>
-        {list.map((a) => {
-          const n = parseItems(new URLSearchParams(a.query).get('items')).length;
-          return (
-            <li key={a.id} className="saved-item">
-              <button type="button" className="saved-row" aria-label={t('Open {name}', { name: a.name })} onClick={() => onOpen(linkOf(a))}>
-                <b>{a.name}</b>
-                <span className="muted small">{tn(n, '{n} item · saved {date}', '{n} items · saved {date}', { date: date(a.savedAt) })}</span>
-              </button>
-              <EditButton name={a.name} onClick={() => setEditing({ id: a.id, name: a.name })} />
-            </li>
-          );
-        })}
-      </ul>
+      <h2 className="chart-title">{t('Saved analyses')} <span className="muted">· {list.length}</span></h2>
+      <table className="data saved-table" aria-label={t('Saved analyses')}>
+        <thead><tr><th>{t('Analysis')}</th><th className="num">{t('Segments and runs')}</th><th className="num">{t('Saved')}</th><th><span className="sr-only">{t('Edit')}</span></th></tr></thead>
+        <tbody>
+          {list.map((a) => (
+            // The whole row opens it, as on the Segments screen ("klikanie na calym wierszu powinno otwierac"); Edit only edits.
+            <tr key={a.id} className="row saved-item" onClick={() => onOpen(linkOf(a))}>
+              <td><button type="button" className="saved-row" aria-label={t('Open {name}', { name: a.name })} onClick={(e) => { e.stopPropagation(); onOpen(linkOf(a)); }}>{a.name}</button></td>
+              <td className="num tnum">{number(parseItems(new URLSearchParams(a.query).get('items')).length)}</td>
+              <td className="num tnum muted">{date(a.savedAt)}</td>
+              <td className="row-actions" onClick={(e) => e.stopPropagation()}><EditButton name={a.name} onClick={() => setEditing({ id: a.id, name: a.name })} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
       {editing && (() => {
         const a = list.find((x) => x.id === editing.id)!;
         return (

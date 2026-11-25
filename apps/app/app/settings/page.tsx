@@ -5,13 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { runInWorker, useLocale, useOpenFolder } from '@/lib/client';
 import { msg, number, t } from '@/lib/i18n';
-import { GearTags } from './GearTags';
 import { AboutCard, ChartsCard, DisplayCard, LanguageCard } from './DeviceCards';
 import { METRICS_CHANGED, useMetrics, eager } from '@/components';
 import { metricInfo } from '@/lib/kernel';
 
 /** The folder, its import and the integrations: the first tab, loaded with it. */
 const DataTab = eager(() => import('./DataTab').then((m) => m.DataTab));
+/** The Gears tab: loaded when it opens, as the budget wants. */
+const GearTags = eager(() => import('./GearTags').then((m) => m.GearTags), () => <div className="card muted small" style={{ padding: 18 }}>{t('Loading…')}</div>);
 /** The thresholds of the models' checks: loaded with their tab. */
 const ModelsCard = eager(() => import('./ModelsCard').then((m) => m.ModelsCard));
 import { DEFAULT_ZONES, zoneMetricsOf, formatBoundaries, parseBoundaries, readSettings, writeSettings, zoneRanges, zoneTint, zonesFromMaxHr, type ZoneMetric } from '@/lib/settings';

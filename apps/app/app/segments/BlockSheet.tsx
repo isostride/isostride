@@ -93,10 +93,12 @@ export function BlockSheet({ def, kept, options, handle, onClose, onSave, onDele
             {/* Delete, Cancel and Save, the words of every editor of the app ("delete segment -> tekst ujednolic .. poprostu delete"; ADR "One way to add, edit and delete"). */}
             {kept && onDelete && <button type="button" className="btn danger edit-delete" onClick={remove}>{t('Delete')}</button>}
             <button type="button" className="btn" onClick={onClose}>{t('Cancel')}</button>
-            <button type="button" className="btn primary" disabled={!s.segments} onClick={() => onSave({ ...one, name: s.name, params: { type: 'rule', ...s.rule }, tolerances: tol })}>{t('Save')}</button>
+            {/* The wizard's Back and Next; Save on its last step (requirement "Segment editor as a wizard"). */}
+            {s.nav}
+            {s.last && <button type="button" className="btn primary" disabled={!s.segments} onClick={() => onSave({ ...one, name: s.name, params: { type: 'rule', ...s.rule }, tolerances: tol })}>{t('Save')}</button>}
           </>
         )}>
-          <details className="builder-section matching-checks">
+          <details className="matching-checks">
             <summary>{t('Matching checks')} <span className="muted small">· {t('what every effort is checked for besides the rule; empty: not checked')}</span></summary>
             {fields.map((f) => (
               <label key={f.key} className="field">

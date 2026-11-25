@@ -13,7 +13,7 @@ export const COMMON: Dictionary = {
   Back: 'Wstecz',
   Forward: 'Dalej',
   'Version {version}': 'Wersja {version}',
-  'An open platform for analysing your runs': 'Otwarta platforma do analizy biegów',
+  'An open platform for analysing your running training': 'Otwarta platforma do analizy treningu biegowego',
   'Version {version}, commit {commit}': 'Wersja {version}, commit {commit}',
   'Search runs, segments, screens (⌘K)': 'Szukaj biegów, segmentów, ekranów (⌘K)',
   'Search…': 'Szukaj…',

@@ -50,6 +50,12 @@
     "targetId": "c0171ff7-cd96-4397-bfa6-0dc87e93beb7"
   },
   {
+    "id": "014d3726-e523-430a-9e0b-4ea597ab0dbe",
+    "relationType": "verifies",
+    "sourceId": "57aab67e-c55c-476d-9cac-50cc36dc08aa",
+    "targetId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69"
+  },
+  {
     "id": "01680cc3-f768-41ca-909b-a26819786196",
     "relationType": "traces-to",
     "sourceId": "c811d742-0659-4f3a-b7b9-da09229a7bf0",
@@ -68,10 +74,10 @@
     "targetId": "f3de29b6-3564-4a94-96f5-ea8dd99f97ec"
   },
   {
-    "id": "0221589c-bfe2-4179-9230-ff8118d6eb18",
-    "quote": "to krzywych dodaj estymowana krzywa i parametry ... oraz mozliwosc skokow do odbpowiednij segmentow biegow z ktorych ta krzywa powsytala",
+    "id": "024845f3-2c64-49a9-aa7c-5329fae04350",
+    "quote": "jak wybiore pojawia sie diagram i mam tam znowu wybor metryk\nchce toogle ... tabela/wykres\ntryb wykres i tak wyswietla tabele tylko ponizej\nWybór biegów",
     "relationType": "derives",
-    "sourceId": "a16730bb-1a33-42d0-aa2a-cbba367474ec",
+    "sourceId": "83720867-f025-4cd7-9162-1ea53afba93f",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
@@ -98,6 +104,12 @@
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
     "targetId": "8e01d6f8-adf0-46be-8b36-9c17029cd39c"
+  },
+  {
+    "id": "03d89319-ae75-4bcb-90dd-fa97a607e515",
+    "relationType": "verifies",
+    "sourceId": "1bc34159-180e-454b-839c-a600d58988c1",
+    "targetId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69"
   },
   {
     "id": "03fa370c-ab5d-48e3-8897-37f9402fb311",
@@ -174,6 +186,13 @@
     "targetId": "2a60339a-0a2c-4da8-b12e-4227eba8f4d1"
   },
   {
+    "id": "073d6213-ee6e-4c9f-8982-bfb5fda53f76",
+    "quote": "Auto + ręcznie (Recommended)",
+    "relationType": "derives",
+    "sourceId": "8fb79d8d-79eb-4aba-80b4-9d59d5d7bb0c",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "0749e952-572b-4de0-8611-75965b43689d",
     "quote": "F3. Quality flags on 10 s windows: stopped, first 150 s of the run, grade, missing sensor signal.",
     "relationType": "derives",
@@ -206,13 +225,6 @@
     "targetId": "60e86846-3529-4650-bb51-62d720d3242f"
   },
   {
-    "id": "0809bbdd-e094-403e-92a4-67ebf9b9e4c0",
-    "quote": "ok chce miec mozliwosc zbduowanej kryzwej predkosci .. tzn os x czas, os y - tempo, i taki wykres powinien byc tworzony ze wszystkich problem\nsystem wybiera mi wszystkie segmenty i je uzywa",
-    "relationType": "derives",
-    "sourceId": "e84ad3f8-43b0-4d2e-a541-5f69d06f66ac",
-    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
-  },
-  {
     "id": "0876bb51-316d-4330-b304-c7138da84e46",
     "quote": "runs entirely in the browser\nThere is no server and no database, and the data never leaves the computer.\nlocally on their own computer",
     "relationType": "derives",
@@ -231,6 +243,13 @@
     "relationType": "interacts",
     "sourceId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1",
     "targetId": "0765fef0-4b2e-4087-a745-30d31c103732"
+  },
+  {
+    "id": "091a96f5-ddd1-48a5-b123-0aad4f6c861e",
+    "quote": "zmien tez naglowek Po co  - powinno byc dlaczego",
+    "relationType": "derives",
+    "sourceId": "94c0358a-e500-4a46-915b-1c5bc0b2dd38",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "event": "91dffe7a-a202-4302-9438-c0c3055367ed",
@@ -391,6 +410,19 @@
     "relationType": "verifies",
     "sourceId": "eedbc272-266e-498a-871e-850ef29657ce",
     "targetId": "79d48e18-956c-4108-9eaf-18e7dd467f81"
+  },
+  {
+    "id": "0d08a6a7-bfca-4cbd-96f6-b54cac8c87a6",
+    "quote": "jak to pokazesz?\nWiersz na bieg, rozwijany (Recommended)",
+    "relationType": "derives",
+    "sourceId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "0d226ce8-9e41-4e03-b536-6d0f48375d35",
+    "relationType": "verifies",
+    "sourceId": "ec716e4f-f43e-48f1-a4dd-685308c44f52",
+    "targetId": "400ec5b1-5434-4245-b147-aa3648c52c95"
   },
   {
     "id": "0d241330-84b1-45ee-ae95-817c18a3cb69",
@@ -585,6 +617,13 @@
     "relationType": "verifies",
     "sourceId": "0a1697f1-3f2b-4e08-91aa-334b85d1e5d8",
     "targetId": "e9118911-4a30-4e28-92b3-10b03ce2cbfc"
+  },
+  {
+    "id": "12103489-f5f1-4727-9317-081101f81ab8",
+    "quote": "1. Okres - filtrowanie biegow po dacie ... tak jaj jest teraz ... ale nie nazywaj to biegi 2. Schemat biegu - tutaj lapy itp 3. Segment - calybieg, czas lub dystans 4. dodaktowe warunki - tagi, buty it p\nW kroku 2 Schemat biegu\nPiąty krok „Nazwa i zapis”",
+    "relationType": "derives",
+    "sourceId": "400ec5b1-5434-4245-b147-aa3648c52c95",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "121b6197-5a81-4ec2-a8bf-7d98b841cf15",
@@ -1020,6 +1059,13 @@
     "relationType": "constrains",
     "sourceId": "84bc4ef9-d9e6-4de4-a4e1-2b2e46e1ad73",
     "targetId": "cbb5fc4a-220e-4316-97b6-63afe40c8cc8"
+  },
+  {
+    "id": "1c500aa3-3dc4-4307-b21d-8f107220bd43",
+    "quote": "upenij sie ze ten kresator ma sens\nno sie kupy nie trzyma",
+    "relationType": "derives",
+    "sourceId": "400ec5b1-5434-4245-b147-aa3648c52c95",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "1d11e2ba-9fd8-4545-b4e8-d636c50b197d",
@@ -1459,6 +1505,12 @@
     "targetId": "be3423a1-1145-46d6-97c5-40b0abf4f00b"
   },
   {
+    "id": "29584c57-73b0-4d7e-8756-5fc92b6573b1",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69"
+  },
+  {
     "id": "297f29c7-58c4-435f-824a-ccc738bc6c04",
     "relationType": "satisfies",
     "sourceId": "39491f93-4fcc-4f9c-960b-e12750deef8f",
@@ -1561,12 +1613,6 @@
     "relationType": "verifies",
     "sourceId": "b56414c2-a1f2-48bf-b827-2da00a91bfe3",
     "targetId": "de34688d-e396-4d2a-9461-bfc5d27540a6"
-  },
-  {
-    "id": "2c6ea002-237e-415b-8a26-ebb3580a051d",
-    "relationType": "verifies",
-    "sourceId": "3b2a5032-9b62-4e79-a7f6-b568f1399963",
-    "targetId": "e84ad3f8-43b0-4d2e-a541-5f69d06f66ac"
   },
   {
     "actions": "add the imported files to manifest.json; refresh the Runs screen",
@@ -1725,12 +1771,6 @@
     "relationType": "illustrates",
     "sourceId": "45412314-e70a-445a-bb9e-27340722d02c",
     "targetId": "318c99a5-6ed7-45ae-98f1-d7daa3f364c2"
-  },
-  {
-    "id": "2ffecdb7-9232-43e6-aa95-8a0e2644df4d",
-    "relationType": "verifies",
-    "sourceId": "37de8939-dd70-4e96-827e-5901e301a79b",
-    "targetId": "e84ad3f8-43b0-4d2e-a541-5f69d06f66ac"
   },
   {
     "id": "3068965a-23a7-4844-bedd-2c6c384857b5",
@@ -1898,10 +1938,37 @@
     "targetId": "a0e2d555-fcc7-45bd-a3e4-a9e4403028cb"
   },
   {
+    "id": "3635b875-7b0b-4468-8085-00fe699d034f",
+    "quote": "w seria po serii chce statystyki ... jak zmieniaja sie metryki\nŚrednia biegu + zmiana, Zmiana w biegu (1. → ostatnia), Trend w czasie",
+    "relationType": "derives",
+    "sourceId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "3725d08d-6057-49df-a157-8f7f3590678d",
+    "quote": "nie pisz nic o fikcyjnym biegaczu",
+    "relationType": "derives",
+    "sourceId": "94c0358a-e500-4a46-915b-1c5bc0b2dd38",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "372f39e2-2b2f-4bc4-a334-41bdde411ca7",
     "relationType": "illustrates",
     "sourceId": "338e617d-2563-4e79-997a-bf7596ac10aa",
     "targetId": "063a771e-2d84-49e2-8c92-d15fc52a2bce"
+  },
+  {
+    "id": "37612b3d-a63e-4cee-bfbd-7f0cd2a76e22",
+    "quote": "roznica jest tylko taka ... czy to ma byc czas czy dystans ... czemu komplikujesz",
+    "relationType": "derives",
+    "sourceId": "400ec5b1-5434-4245-b147-aa3648c52c95",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "3781e5ad-37e0-4cbb-b9df-cfcf0f2f1bac",
+    "relationType": "verifies",
+    "sourceId": "93ce685a-e1b3-4be5-9797-463055592ec2",
+    "targetId": "8fb79d8d-79eb-4aba-80b4-9d59d5d7bb0c"
   },
   {
     "id": "37b84fc6-ca6e-42c7-ae11-9f41dd526b03",
@@ -2541,6 +2608,13 @@
     "technology": "File System Access API"
   },
   {
+    "id": "4b2f721c-6add-4f83-9250-eed6d0bc51ff",
+    "quote": "czy to nie jest redundance ?\nTylko w kroku 2",
+    "relationType": "derives",
+    "sourceId": "993f5e93-1328-41e0-bd41-40d71f889daf",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "4b629fbc-830d-43f5-b691-146377536331",
     "relationType": "implements",
     "sourceId": "b0e29eb0-ab9e-4b68-be1e-f42e6071ba9f",
@@ -2619,6 +2693,13 @@
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
     "targetId": "fd0a299b-2073-4758-a3c8-abd7a18087be"
+  },
+  {
+    "id": "4e22c2ae-1364-457e-a836-f6445a8799ef",
+    "quote": "moze sz zostawic ale to pwoinien byc return to tego co bylo wczensiej",
+    "relationType": "derives",
+    "sourceId": "ce948ace-bcae-4bc0-843b-68941b12e0c3",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "4e309e3a-ddb5-4ee6-99a5-afc062fc3821",
@@ -2722,6 +2803,20 @@
     "relationType": "implements",
     "sourceId": "714b331c-200a-490e-85f7-6a72d565f28a",
     "targetId": "db7bc61d-5dad-4fc7-a241-5d1fa31ca854"
+  },
+  {
+    "id": "52545b3b-b8b8-415b-960b-b18da13fafbf",
+    "quote": "seria po serii porownanie nie dziala\nchce powornwanie seria po serii a nie bieg z seria vs bieg z seriami\nKażda seria osobno",
+    "relationType": "derives",
+    "sourceId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "52e9f845-52c2-4925-a808-186968997a01",
+    "quote": "w compare ... chcialbym moc pokazac takie statystyki\nNowa zakładka (Recommended)",
+    "relationType": "derives",
+    "sourceId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "cardinality": "many",
@@ -2865,6 +2960,13 @@
     "relationType": "illustrates",
     "sourceId": "45412314-e70a-445a-bb9e-27340722d02c",
     "targetId": "bb318d07-1e0a-48d4-942c-8ecad440f7c5"
+  },
+  {
+    "id": "590cdddf-658c-41c4-9f03-9f9a7ef68b16",
+    "quote": "jakis header ? kipesko wyglada ta tabela\nklikanie na caly wierszu powinno otwierac nie tylko na nazwiem, tak jak w segmentach\ndodaj segemnt lub bieg mam w 2 miejscach na erkanie\n(użytkownik) Zostaw",
+    "relationType": "derives",
+    "sourceId": "1f3b890f-c7bc-4503-87ca-92e0a78d4900",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "591af95f-5cb5-44f7-91f0-49dd2b012dae",
@@ -3074,6 +3176,13 @@
     "relationType": "verifies",
     "sourceId": "29f50ece-2ad0-4c25-89e6-6e8a9a02f783",
     "targetId": "b216608f-bffe-457b-9a77-8a87ae614c9d"
+  },
+  {
+    "id": "608d0e54-338c-45ec-9c3e-743ad826e429",
+    "quote": "creator to dlugi formularz z milionem pol ... chce go bardziej ustruktyrowac\nSekcje + „Dodaj warunek” (Recommended)\ndopasowania maja byc lista rozwijana ... w naglowko ilosc dopasowac dopiero po otwarciu listy biegi\nchce aby to byl prawdziwy wizard ... z krokami",
+    "relationType": "derives",
+    "sourceId": "400ec5b1-5434-4245-b147-aa3648c52c95",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "60b79b7f-0319-488c-a4e9-668b39d8c21f",
@@ -3487,12 +3596,6 @@
     "targetId": "c096803c-059b-4a7c-b3d5-4a8fec7df6c1"
   },
   {
-    "id": "6e64845b-704c-41a8-b12c-37546c5ea2e4",
-    "relationType": "verifies",
-    "sourceId": "1d96c647-cd03-485d-9f23-63e8b54e8571",
-    "targetId": "a16730bb-1a33-42d0-aa2a-cbba367474ec"
-  },
-  {
     "id": "6ea7a979-f47d-47be-8527-cfbc77489ba6",
     "quote": "doloz podstawowe sprawy dotyczace z przesukiwaniem kalendarza",
     "relationType": "derives",
@@ -3714,6 +3817,12 @@
     "targetId": "e6909b1e-ea15-4395-b4e5-0ecdb64eef5b"
   },
   {
+    "id": "73c484da-22e4-4d80-a739-9944d8d7e21b",
+    "relationType": "verifies",
+    "sourceId": "457c8016-90e8-4e54-b595-90b2639a7b21",
+    "targetId": "ce948ace-bcae-4bc0-843b-68941b12e0c3"
+  },
+  {
     "id": "74e3db91-459a-4942-ba8f-6926081af95c",
     "quote": "chce angielski i polski i kolejne w przyszlosci",
     "relationType": "derives",
@@ -3776,6 +3885,12 @@
     "relationType": "interacts",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
     "targetId": "ae98bcc0-d501-45fc-b39d-c304e5a7b242"
+  },
+  {
+    "id": "763f29fa-d0f4-4b68-ad17-eb17e6f32af9",
+    "relationType": "verifies",
+    "sourceId": "6172cc9d-2288-4fe7-b704-f2627f10c17e",
+    "targetId": "993f5e93-1328-41e0-bd41-40d71f889daf"
   },
   {
     "id": "767977df-e60c-4125-a12c-4d7ff2042d6d",
@@ -4389,6 +4504,13 @@
     "targetId": "54b0cf3c-0a56-4033-bed3-328f9cc75395"
   },
   {
+    "id": "886bedb5-d6ca-420f-8f48-d1dce51e1123",
+    "quote": "w wielu miejscach mam skorygowana i surowa\ntak zrob ....\nfdiltr metryk jest na trendy, wysilki i a/b .... moze daj je powyzej ?\nlacz punkty, linia trenigu ma byc w settingach,\nok usun mi to wogole z dolu",
+    "relationType": "derives",
+    "sourceId": "f6e6082a-1b7a-49e5-8f92-3bca3c726419",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "889abbd7-e83d-4c6a-a819-170cc001cd14",
     "relationType": "illustrates",
     "sourceId": "a58faa23-2592-4664-90ca-6b1c0143af21",
@@ -4532,6 +4654,12 @@
     "targetId": "f38be323-1d87-49bf-bcaa-54521f704865"
   },
   {
+    "id": "8c8b136d-5d86-4ebb-bd4f-5e178db05238",
+    "relationType": "verifies",
+    "sourceId": "fc1c8315-1671-4f38-993f-109ee6458bbc",
+    "targetId": "993f5e93-1328-41e0-bd41-40d71f889daf"
+  },
+  {
     "id": "8c9d64d0-3ebb-402d-aeb6-7fbda1d15578",
     "quote": "Tak, zastąp (Recommended)",
     "relationType": "derives",
@@ -4576,6 +4704,13 @@
     "targetId": "81c6cd6b-1573-4ed9-b51b-20dbc36e51f3"
   },
   {
+    "id": "8d8c65cd-e5bb-4710-b15a-4775922b8c3d",
+    "quote": "z tego co widze tab wysilek robi prawie to samo\nPołącz w „Wysiłki” (Recommended)\na moze sortowanie na headerze kolumn ?\nJedna tabela, bez rankingu (Recommended)\nusun przycisk podobne\nusun tytul: Wysiłki... bo jest juz u goty\nkolumna bieg za szeroka\nnaglowki moga miec 2 wiersze",
+    "relationType": "derives",
+    "sourceId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "8dcdd4e4-ad33-48c3-9d93-a56c1ac486a5",
     "relationType": "verifies",
     "sourceId": "4af56562-2cf3-4808-a6a5-5cd7d3dd13fd",
@@ -4611,12 +4746,6 @@
     "relationType": "verifies",
     "sourceId": "8ee457a0-fea5-4014-981a-799594c60b47",
     "targetId": "53251c56-3638-4ae7-909e-759e305873ad"
-  },
-  {
-    "id": "8e6d993f-5885-4175-8d4d-0844bf7a52fa",
-    "relationType": "verifies",
-    "sourceId": "1d96c647-cd03-485d-9f23-63e8b54e8571",
-    "targetId": "e84ad3f8-43b0-4d2e-a541-5f69d06f66ac"
   },
   {
     "id": "8e9ca50b-d5fd-4861-8263-f6b87e12fd15",
@@ -4753,6 +4882,12 @@
     "relationType": "emits",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
     "targetId": "abf40e24-6f3f-4f08-aadc-ec6a4a6f5368"
+  },
+  {
+    "id": "93c6b2c7-9909-4e3f-b50c-cd47e03cf975",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "993f5e93-1328-41e0-bd41-40d71f889daf"
   },
   {
     "id": "93caf066-5097-4192-9e09-becb82e1ed08",
@@ -5370,6 +5505,13 @@
     "targetId": "318c99a5-6ed7-45ae-98f1-d7daa3f364c2"
   },
   {
+    "id": "a9abf08e-b758-442d-95a3-bf21f98a0ffd",
+    "quote": "dodaj mi do kreatora segmentow opcje wyboru identycznego lub podobnego schematu lapow\nJedno i drugie\nZ listy znalezionych (Recommended)\nTe same serie (Recommended)",
+    "relationType": "derives",
+    "sourceId": "993f5e93-1328-41e0-bd41-40d71f889daf",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "a9b8ed52-b7d9-427d-887e-6f315ec073b3",
     "relationType": "verifies",
     "sourceId": "f81ab94c-a0cd-46bd-a65e-743f1e67144e",
@@ -5661,13 +5803,6 @@
     "targetId": "39491f93-4fcc-4f9c-960b-e12750deef8f"
   },
   {
-    "id": "b13b589e-edfd-4f70-a39b-6b9902092270",
-    "quote": "do analiz ... dodaj - krzywe z wyborem predkosci i mocy",
-    "relationType": "derives",
-    "sourceId": "7570b76a-388d-4831-877a-56995a61903f",
-    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
-  },
-  {
     "id": "b1696b27-443e-4faf-9ca9-05b4f45592d8",
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
@@ -5835,6 +5970,13 @@
     "targetId": "9af04b42-1352-4b04-880f-a46bcd62caf2"
   },
   {
+    "id": "b5b05ec7-fde7-42db-b60b-c6676e16c460",
+    "quote": "filtry sie zlewaja z podstronami\nchce aby wygladalyu jak w reszcie\nzobacz co widze gdy nie wybiore zadnej abalizy\nczy krzywa tempa i mocy ma sens w analizie segmentow?\n(użytkownik) usun",
+    "relationType": "derives",
+    "sourceId": "62fbb21f-afe7-4bc8-a566-5a86a6480fed",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "b5ca90c7-535f-4163-92bc-3ed3b69b655d",
     "relationType": "verifies",
     "sourceId": "0d40d086-746a-4574-9906-9fd84865b734",
@@ -5891,23 +6033,11 @@
     "targetId": "f3de29b6-3564-4a94-96f5-ea8dd99f97ec"
   },
   {
-    "id": "b6d46dbe-84ed-4cd5-a382-0accb902cc9e",
-    "relationType": "verifies",
-    "sourceId": "1d96c647-cd03-485d-9f23-63e8b54e8571",
-    "targetId": "7570b76a-388d-4831-877a-56995a61903f"
-  },
-  {
     "event": "b3f88c5c-0502-4dfc-bd38-79369ff7b1de",
     "id": "b6e4365e-0e36-4ec3-97a5-49c2b7d5d8c6",
     "relationType": "transition",
     "sourceId": "03e4345b-f2e8-4c9f-a605-6cf5afd24cf4",
     "targetId": "c25342cc-2eb8-4dac-841f-f66766123332"
-  },
-  {
-    "id": "b6eeeac3-763b-4dbc-9764-e6cbd991aba3",
-    "relationType": "satisfies",
-    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
-    "targetId": "a16730bb-1a33-42d0-aa2a-cbba367474ec"
   },
   {
     "id": "b7671022-e273-4161-8669-ca85c39ad646",
@@ -5932,12 +6062,6 @@
     "relationType": "illustrates",
     "sourceId": "3326b1ec-d31e-42a2-8e92-81f30f7ec6ef",
     "targetId": "491ff68d-2460-4e0e-9670-529cf7a1195f"
-  },
-  {
-    "id": "b7c226a5-9138-413e-9f00-6eaf81e61fd9",
-    "relationType": "satisfies",
-    "sourceId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d",
-    "targetId": "7570b76a-388d-4831-877a-56995a61903f"
   },
   {
     "id": "b7d86ede-c97a-49f4-a1fb-445c4908f091",
@@ -6160,12 +6284,6 @@
     "targetId": "5f000913-f470-4fb5-8bd5-8121a2631948"
   },
   {
-    "id": "be224036-2799-47c1-83cd-13c9859e2821",
-    "relationType": "verifies",
-    "sourceId": "1d96c647-cd03-485d-9f23-63e8b54e8571",
-    "targetId": "7e820091-6148-431b-b28d-880efea10233"
-  },
-  {
     "id": "be333b40-abb0-4975-bd5a-8b5dbb87f5c6",
     "relationType": "satisfies",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
@@ -6289,12 +6407,6 @@
     "targetId": "a694fdc9-58ad-462b-a996-c49812b6da79"
   },
   {
-    "id": "c2f1c3be-3141-4c18-8ff4-764e0402dcc2",
-    "relationType": "satisfies",
-    "sourceId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d",
-    "targetId": "e84ad3f8-43b0-4d2e-a541-5f69d06f66ac"
-  },
-  {
     "actions": "created by CandidateFound",
     "id": "c32c6725-2143-4b3b-be97-68b91f93fe0d",
     "relationType": "transition",
@@ -6410,12 +6522,6 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
-    "id": "c6769d84-2b76-4173-a902-8df405a31797",
-    "relationType": "verifies",
-    "sourceId": "b88206c8-f882-4add-996c-d84e0d10edc0",
-    "targetId": "7570b76a-388d-4831-877a-56995a61903f"
-  },
-  {
     "id": "c68d4501-740b-4508-a1ea-fadf46e7e05f",
     "quote": "dodaktowo chce ekran w ktorym mam wszystkie bloki",
     "relationType": "derives",
@@ -6522,12 +6628,6 @@
     "targetId": "a1eb87ee-eaa2-4c04-8c19-56379ad448ec"
   },
   {
-    "id": "c97c3e7d-fb84-4814-97b9-624f8befdd09",
-    "relationType": "verifies",
-    "sourceId": "37de8939-dd70-4e96-827e-5901e301a79b",
-    "targetId": "a16730bb-1a33-42d0-aa2a-cbba367474ec"
-  },
-  {
     "id": "ca75d215-8c55-4b19-b300-c6ac5fe728c8",
     "relationType": "satisfies",
     "sourceId": "26cc095b-c47f-45bc-a2d5-e9927468dfb8",
@@ -6545,12 +6645,6 @@
     "relationType": "satisfies",
     "sourceId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1",
     "targetId": "22398764-dd5b-45b9-9d1e-db0474ec13dc"
-  },
-  {
-    "id": "cab4041a-3301-4f8a-9d36-1c96bf6f8893",
-    "relationType": "satisfies",
-    "sourceId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d",
-    "targetId": "a16730bb-1a33-42d0-aa2a-cbba367474ec"
   },
   {
     "id": "caf3862e-9d62-4fa8-86f3-5138b9589840",
@@ -6671,6 +6765,12 @@
     "relationType": "traces-to",
     "sourceId": "fd0a299b-2073-4758-a3c8-abd7a18087be",
     "targetId": "a7abb030-0525-410d-91de-f857c91ba688"
+  },
+  {
+    "id": "cddbd5a6-0b91-44ba-a9a4-43c3d9389409",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "400ec5b1-5434-4245-b147-aa3648c52c95"
   },
   {
     "id": "ce792ff4-4a36-4307-bf72-dac169a17369",
@@ -7046,6 +7146,12 @@
     "relationType": "satisfies",
     "sourceId": "3614e7f4-9407-407b-a23b-56e0b424d992",
     "targetId": "d3295c52-b649-4492-aa82-5539aa4a1a1b"
+  },
+  {
+    "id": "da1a0be7-997a-4c65-9487-aa61bf917071",
+    "relationType": "verifies",
+    "sourceId": "93ce685a-e1b3-4be5-9797-463055592ec2",
+    "targetId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69"
   },
   {
     "id": "da3fcbae-affc-4e8a-9ce2-f5d43a4ffa73",
@@ -7424,6 +7530,13 @@
     "targetId": "b0289efc-ad5a-46b3-b57d-9abbb703ae9a"
   },
   {
+    "id": "e6a4cf83-c527-4ff8-a8a4-d686d5f4592e",
+    "quote": "w seria po serii .. wybor 2 dat nie ma sensu",
+    "relationType": "derives",
+    "sourceId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "e6d91950-480d-4faf-9af6-4826e30066ef",
     "relationType": "satisfies",
     "sourceId": "0e952c97-92a0-4037-846e-9154619a2261",
@@ -7440,6 +7553,13 @@
     "relationType": "constrains",
     "sourceId": "a7abb030-0525-410d-91de-f857c91ba688",
     "targetId": "340e82f0-6223-4f6f-85eb-5418fff8ddec"
+  },
+  {
+    "id": "e7015e90-ddf9-46cc-b56a-9f76dfd96fdc",
+    "quote": "Werdykt dla każdej (Recommended)",
+    "relationType": "derives",
+    "sourceId": "b44139fd-e3bb-4b10-9e60-0c2aa1907358",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "e7070307-ba64-4c18-9023-d5dae398b174",
@@ -7519,12 +7639,6 @@
     "relationType": "traces-to",
     "sourceId": "a1eb87ee-eaa2-4c04-8c19-56379ad448ec",
     "targetId": "3e608f71-04ae-42e1-aabe-194a07a8a79f"
-  },
-  {
-    "id": "e8a47679-e009-4c72-987f-a594d2b100b1",
-    "relationType": "satisfies",
-    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
-    "targetId": "e84ad3f8-43b0-4d2e-a541-5f69d06f66ac"
   },
   {
     "id": "e8f298b4-8be1-476f-83a3-9a307f3ff860",
@@ -7607,12 +7721,6 @@
     "sourceId": "39491f93-4fcc-4f9c-960b-e12750deef8f",
     "targetId": "2ca6a82b-6302-4406-a3b5-7ad433a6dea2",
     "technology": "IndexedDB"
-  },
-  {
-    "id": "eb20277d-8674-4763-85cc-db388450f0b3",
-    "relationType": "illustrates",
-    "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
-    "targetId": "e84ad3f8-43b0-4d2e-a541-5f69d06f66ac"
   },
   {
     "id": "eb5cd0b0-6f89-4246-88b1-125b4ed83f0d",
@@ -7742,6 +7850,12 @@
     "targetId": "2f223517-a575-43e4-bac5-c331d15faa41"
   },
   {
+    "id": "ef1588eb-e086-444b-8004-97775f9844d5",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "8fb79d8d-79eb-4aba-80b4-9d59d5d7bb0c"
+  },
+  {
     "id": "ef4fb321-3d4b-495d-bcb5-7212a4433066",
     "quote": "The code in this element must stay easy to understand, test and change as it grows and as people come and go. That needs parts with clear boundaries: a change to one part should not ripple through the others, each part should be testable on its own, and the rules about what may depend on what should hold because the build checks them, not because everyone remembers them. The checks below share one layout: each part lives in src/modules/<name> with its published API in src/modules/<name>/index.ts and its declarations in src/modules/<name>/module.json; shared code, where allowed, lives in src/shared-kernel; the rules are in .dependency-cruiser.cjs and run as `npm run check:deps` (depcruise src --config .dependency-cruiser.cjs); known violations, where frozen, are in .dependency-cruiser-known-violations.json.",
     "relationType": "derives",
@@ -7810,12 +7924,6 @@
     "relationType": "satisfies",
     "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
     "targetId": "2cc97e54-4899-4f94-9b8c-24845459f7c0"
-  },
-  {
-    "id": "f1397459-9208-4f55-bcc8-84a62f0068c5",
-    "relationType": "satisfies",
-    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
-    "targetId": "7570b76a-388d-4831-877a-56995a61903f"
   },
   {
     "id": "f1922c3b-c169-4f6f-8dcb-21a4b8577a04",
@@ -7998,6 +8106,13 @@
     "targetId": "2ee5b387-72f8-482a-95d0-9159fd6bb065"
   },
   {
+    "id": "f7b792d2-3b9d-4ca9-b04c-3e51bd0e3d68",
+    "quote": "Usuń „Okrążeń w biegu”\nmoze kafelki w pionie a nie w poziomie ?\ngorne kafelki wizarda sie przesuwaja",
+    "relationType": "derives",
+    "sourceId": "400ec5b1-5434-4245-b147-aa3648c52c95",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "f7bbed64-9658-466d-b050-e2ff402c1b9d",
     "relationType": "verifies",
     "sourceId": "385669e9-e7d8-422e-876a-a2b367a5aafa",
@@ -8104,6 +8219,13 @@
     "relationType": "verifies",
     "sourceId": "ee5830e5-5f44-4c16-b3a4-a2e0b6692085",
     "targetId": "0e952c97-92a0-4037-846e-9154619a2261"
+  },
+  {
+    "id": "fa3a7763-779c-422b-9604-38fd20eb0c07",
+    "quote": "brzmi malo profesjonalnie\n…treningu biegowego (Recommended)\nPopup i strona (Recommended)",
+    "relationType": "derives",
+    "sourceId": "94c0358a-e500-4a46-915b-1c5bc0b2dd38",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "fa58f666-5d6c-43cb-bbbc-35e3094d51e0",

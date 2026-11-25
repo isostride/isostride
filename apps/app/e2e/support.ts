@@ -276,3 +276,24 @@ export async function headGap(table: Locator): Promise<number> {
     return td.getBoundingClientRect().top - head;
   });
 }
+
+/** In the segment editor, a wizard: opens a step by its name (Period, Run layout, Segment, Further conditions, Name and save). */
+export async function goToStep(scope: Locator, title: string): Promise<void> {
+  const exact = new RegExp(`^${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
+  await scope.locator('.wizard-steps button').filter({ has: scope.page().locator('.wizard-title', { hasText: exact }) }).click();
+  await expect(scope.locator('.wizard-steps button[aria-current="step"] .wizard-title')).toHaveText(title);
+}
+
+/** In the segment editor: adds a filter of the runs or a condition by its name, on its step. */
+export async function addField(scope: Locator, kind: 'filter' | 'condition', name: string): Promise<void> {
+  // Both kinds on the step Further conditions, the run's and the segment's in one list.
+  void kind;
+  await goToStep(scope, 'Further conditions');
+  await scope.getByLabel('+ Add a condition', { exact: true }).selectOption({ label: name });
+}
+
+/** In the segment editor: saves it, on the wizard's last step. */
+export async function saveSegment(scope: Locator): Promise<void> {
+  await goToStep(scope, 'Name and save');
+  await scope.getByRole('button', { name: 'Save', exact: true }).click();
+}

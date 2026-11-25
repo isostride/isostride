@@ -10,8 +10,9 @@ import { computeTrend } from './trend';
 const isPace = (m: BlockMetric) => m === 'speed' || m === 'effortPace';
 const STOPPED_SPEED = 0.5;
 
-/** A run's average of one metric over its moving samples (pace from the mean moving speed). */
-export function runMean(run: RunFile, metric: BlockMetric): number | null {
+/** A run's average of one metric over its moving samples (pace from the mean moving speed); within [from, to) s when given (a lap). */
+export function runMean(run: RunFile, metric: BlockMetric, span: { from: number; to: number } = { from: -Infinity, to: Infinity }): number | null {
+  const within = (t: number) => t >= span.from && t < span.to;
   // Efficiency: the run's mean moving speed per mean heart rate, over the samples that have both.
   if (metric === 'efficiency') {
     const s = run.samples;
@@ -21,7 +22,7 @@ export function runMean(run: RunFile, metric: BlockMetric): number | null {
     for (let i = 0; i < s.t.length; i++) {
       const v = (s.values.speed?.[i] ?? null);
       const h = (s.values.heartRate?.[i] ?? null);
-      if (v !== null && h !== null && v >= STOPPED_SPEED) { sp += v; hr += h; n++; }
+      if (v !== null && h !== null && v >= STOPPED_SPEED && within(s.t[i])) { sp += v; hr += h; n++; }
     }
     return n ? efficiencyOf(sp / n, hr / n) : null;
   }
@@ -31,7 +32,7 @@ export function runMean(run: RunFile, metric: BlockMetric): number | null {
   for (let i = 0; i < s.t.length; i++) {
     const v = series[i];
     const sp = (s.values.speed?.[i] ?? null);
-    if (v !== null && (sp === null || sp >= STOPPED_SPEED)) vals.push(v);
+    if (v !== null && (sp === null || sp >= STOPPED_SPEED) && within(s.t[i])) vals.push(v);
   }
   if (!vals.length) return null;
   const m = vals.reduce((a, b) => a + b, 0) / vals.length;
