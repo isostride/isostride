@@ -6,7 +6,7 @@ import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 import { reasonSummary, selectInstances } from '@/lib/compare';
 import type { DataFolder } from '@/lib/fs';
 import { t } from '@/lib/i18n';
-import { date } from '@/lib/format';
+import { date, time } from '@/lib/format';
 
 const EffortsChart = eager(() => import('./EffortsChart').then((m) => m.EffortsChart));
 const EffortsByRun = eager(() => import('./EffortsByRun').then((m) => m.EffortsByRun), () => <div className="muted small" style={{ padding: 18 }}>{t('Loading the efforts…')}</div>);
@@ -51,7 +51,13 @@ export function EffortsPanel({ blocks, item, onItem, all, metric, metrics, refer
   const firstRuns = refRun ? [refRun, ...runList.filter((r) => r.id !== refRun).slice(0, 2).map((r) => r.id)] : runList.slice(0, 2).map((r) => r.id);
   const chartRuns = picked[tableFor.id] ?? firstRuns;
   const toggleRun = (id: string) => setPicked((p) => ({ ...p, [tableFor.id]: chartRuns.includes(id) ? (chartRuns.length > 1 ? chartRuns.filter((x) => x !== id) : chartRuns) : chartRuns.length >= 4 ? chartRuns : [...chartRuns, id] }));
-  const toDraw = segments.filter(({ i }) => chartRuns.includes(i.runId)).map(({ i }) => ({ runId: i.runId, from: i.start, to: i.end, reference: isReference(i), group: i.runId }));
+  // Runs added whole: each run drawn whole, from its first lap to its last; not its laps averaged, a warm-up over the reps
+  // over a cool-down ("w czartach sie cos dziwnego dzieje").
+  const whole = tableFor.defId.startsWith('~');
+  const chosenEfforts = segments.filter(({ i }) => chartRuns.includes(i.runId)).map(({ i }) => i);
+  const toDraw = whole
+    ? chartRuns.flatMap((id) => { const xs = chosenEfforts.filter((i) => i.runId === id); return xs.length ? [{ runId: id, from: Math.min(...xs.map((i) => i.start)), to: Math.max(...xs.map((i) => i.end)), reference: false, group: id }] : []; })
+    : chosenEfforts.map((i) => ({ runId: i.runId, from: i.start, to: i.end, reference: isReference(i), group: i.runId }));
   // The metrics chosen above the tabs ("moze daj je powyzej"): the table's columns, after the time and the distance, and the chart's lines.
   // i18n-ignore: figure keys
   const cols = [...(metrics.includes('speed') ? ['pace'] : []), 'time', 'distance', ...metrics.filter((m) => m !== 'speed')];
@@ -75,13 +81,13 @@ export function EffortsPanel({ blocks, item, onItem, all, metric, metrics, refer
       {/* The chart: the efforts drawn over each other by distance ("tak" to the overlay for any segment's efforts), its lines the figures chosen above. */}
       {mode === 'chart' && (
         <div className="metric-picker reps-metrics" role="group" aria-label={t('Runs drawn')} style={{ padding: '0 18px' }}>
-          {runList.map((r) => { const on = chartRuns.includes(r.id); return <button key={r.id} type="button" className={`pill ${on ? 'on' : ''}`} aria-pressed={on} disabled={!on && chartRuns.length >= 4} title={!on && chartRuns.length >= 4 ? t('At most 4 at once') : titleOf(r.id) ?? undefined} onClick={() => toggleRun(r.id)}>{date(r.start)}</button>; })}
+          {runList.map((r) => { const on = chartRuns.includes(r.id); const sameDay = runList.filter((x) => date(x.start) === date(r.start)).length > 1; return <button key={r.id} type="button" className={`pill ${on ? 'on' : ''}`} aria-pressed={on} disabled={!on && chartRuns.length >= 4} title={!on && chartRuns.length >= 4 ? t('At most 4 at once') : titleOf(r.id) ?? undefined} onClick={() => toggleRun(r.id)}>{date(r.start)}{sameDay ? ` · ${time(r.start)}` : ''}</button>; })}
         </div>
       )}
       {mode === 'chart' && toDraw.length > 0 && <EffortsChart efforts={toDraw} handle={handle} folder={folder} metrics={metrics} />}
       {/* The chart alone ("tryb wykres i tak wyswietla tabele"), its runs chosen above it ("Wybór biegów"). */}
       {mode === 'table' && (
-        <EffortsByRun key={tableFor.id} efforts={all.filter((e) => e.definitionId === tableFor.defId)} columns={cols} titleOf={titleOf} isReference={isReference} />
+        <EffortsByRun key={tableFor.id} efforts={all.filter((e) => e.definitionId === tableFor.defId)} columns={cols} titleOf={titleOf} isReference={isReference} totals={tableFor.defId.startsWith('~')} />
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addFromPicker, fitFiles, goToStep, importAll, nav, openRun, openWithFolder, saveSegment } from './support';
+import { addFromPicker, fitFiles, goToStep, importAll, nav, openPicker, openRun, openWithFolder, saveSegment } from './support';
 
 test.describe('Efforts by run', () => {
   test('Previous workout compared rep by rep', async ({ page }) => {
@@ -71,5 +71,26 @@ test.describe('Efforts by run', () => {
     const efforts = Number(await rows.nth(3).getByRole('cell').nth(1).textContent());
     await rows.nth(3).getByRole('button').click();
     await expect(rows).toHaveCount(runs + 3 + efforts);
+  });
+
+  test('Runs added whole, lap by lap', async ({ page }) => {
+    // Two runs added whole, one with laps and one without ("wzialem 2 biegi ... w wysilkach jest pusto"; "1 ma lapy, 2-i nie ma").
+    await openWithFolder(page, await fitFiles(16, '2026-03-02'));
+    await importAll(page);
+    await nav(page, 'Compare');
+    for (let k = 0; k < 2; k++) {
+      const picker = await openPicker(page);
+      await picker.getByRole('textbox').fill('Mar 29');
+      await picker.locator('.palette-item').first().click();
+      await expect(page.locator('.item-chip')).toHaveCount(k + 1, { timeout: 30_000 });
+    }
+    await page.getByRole('tab', { name: 'Efforts' }).click();
+    // A row for each run, its time and distance the whole run's; opened, its laps.
+    const table = page.getByRole('table', { name: 'Efforts by run' });
+    const runRows = table.locator('tbody tr.reps-run-row');
+    await expect(runRows).toHaveCount(2, { timeout: 30_000 });
+    await expect(runRows.nth(0).getByRole('cell').nth(4)).toHaveText(/^\d+\.\d\d$/);
+    await expect(table.locator('tbody tr.reps-rep-row')).toHaveCount(8);
+    await expect(table.locator('.reps-drift')).toHaveCount(0);
   });
 });

@@ -6,7 +6,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { EditButton, ItemKey, useDataVersion, useMetrics, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup, eager } from '@/components';
 import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, asRule, definitionFromProfile, definitionFromRoute, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule, ruleOf } from '@/lib/blocks';
 import { instancesInWorker, runInWorker, similarInWorker, useChartSettings, useOpenFolder } from '@/lib/client';
-import { MAX_ITEMS, addItem, computeTrend, firstUsableMetric, formatItems, instancesCsv, parseItems, runMean, type AnalysisItem } from '@/lib/compare';
+import { MAX_ITEMS, addItem, lapEfforts, computeTrend, firstUsableMetric, formatItems, instancesCsv, parseItems, runMean, type AnalysisItem } from '@/lib/compare';
 import { PATHS, isOutdated, readJson, readManifest, readRunFile } from '@/lib/fs';
 import { msg, t } from '@/lib/i18n';
 import { readGear, type Gear } from '@/lib/gear';
@@ -174,6 +174,11 @@ function AnalysisPage() {
   }, [want, handle]);
 
   const all = useMemo(() => [...kept, ...[...adhoc.values()].flat()], [kept, adhoc]);
+  // The runs added whole, on the Efforts tab as one more choice: each run a row, its laps its efforts ("w wysilkach jest pusto").
+  const runIds = useMemo(() => items.filter((i) => i.kind === 'run').map((i) => i.id), [items]);
+  // i18n-ignore: an id, never shown
+  const RUNS_ITEM = '~runs';
+  const runEfforts = useMemo(() => runIds.flatMap((id) => { const f = files.get(id); return f ? lapEfforts(f, RUNS_ITEM, known.blockKeys) : []; }), [runIds, files, known.blockKeys]);
 
   // The metrics chosen live in the URL too (m=speed,heartRate); none given: the first with a result.
   const firstBlock = blocks[0] ? defId(blocks[0]) : null;
@@ -443,8 +448,8 @@ function AnalysisPage() {
               {/* No table of changes under the charts ("ok usun mi to wogole z dolu"): the Efforts tab has the changes by run. */}
             </>
           )}
-          {items.length > 0 && tab === 'segments' && blocks.length > 0 && (
-            <EffortsPanel blocks={blocks.map((i) => ({ id: i.id, defId: defId(i), label: label(i) }))} item={tableItem} onItem={setTableItem} all={all} metric={metrics[0]} metrics={metrics}
+          {items.length > 0 && tab === 'segments' && (blocks.length > 0 || runIds.length > 0) && (
+            <EffortsPanel blocks={[...blocks.map((i) => ({ id: i.id, defId: defId(i), label: label(i) })), ...(runIds.length ? [{ id: RUNS_ITEM, defId: RUNS_ITEM, label: t('The runs added, lap by lap') }] : [])]} item={tableItem} onItem={setTableItem} all={runEfforts.length ? [...all, ...runEfforts] : all} metric={metrics[0]} metrics={metrics}
               reference={reference} titleOf={titleOf} computing={computing} handle={handle} folder={folder} />
           )}
           {items.length > 0 && tab === 'ab' && (

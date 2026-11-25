@@ -1273,3 +1273,8 @@ A: (model) The first column stays when scrolled right; the head did not stay on 
 A: (użytkownik) [screenshot: many metric columns, the change and 1→3 texts running into each other] nachodzi na siebie
 A: (użytkownik) naglowki moga miec 2 wiersze
 A: (użytkownik) ok juz jest ok.. e2e i pozniej pr
+A: (użytkownik) wzialem 2 biegi podobnej dlugsoci ... w analize .. w wysilkach jest pusto
+A: (użytkownik) 1 ma lapy, 2-i nie ma
+A: (użytkownik) w czartach sie cos dziwnego dzieje
+A: (model) Done: on the Efforts tab, the runs added whole as one more choice, "The runs added, lap by lap": a row for each run (its time and distance the whole run's), opened its laps (the whole run when it has none), no last lap against the first; on the chart each run drawn whole; two runs of one day told apart by their time.
+A: (użytkownik) wyglada dobrze ... wypchnij pr

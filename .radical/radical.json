@@ -917,6 +917,10 @@
     { "element": "1bc34159-180e-454b-839c-a600d58988c1", "name": "A segment's efforts rep by rep", "tests": [
       "e2e/reps.spec.ts › Efforts by run › A segment’s efforts in every run, rep by rep",
       "tests/unit/reps.test.ts › Workouts compared rep by rep › A segment’s efforts grouped by run"
+    ] },
+    { "element": "868dcd0f-3b38-48f6-b9f0-08ef0f8391f4", "name": "Runs added whole, lap by lap", "tests": [
+      "e2e/reps.spec.ts › Efforts by run › Runs added whole, lap by lap",
+      "tests/unit/reps.test.ts › Workouts compared rep by rep › A run added whole: its laps its efforts, or the whole run"
     ] }
   ]
 }

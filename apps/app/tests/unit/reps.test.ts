@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { effortsByRun, meanOf, trendPerWeek, valueOf } from '@/lib/compare';
+import { effortsByRun, lapEfforts, meanOf, trendPerWeek, valueOf } from '@/lib/compare';
+import { syntheticRun } from '../support/synthetic';
 import { inst } from '../support/instances';
 
 describe('Workouts compared rep by rep', () => {
@@ -29,5 +30,18 @@ describe('Workouts compared rep by rep', () => {
     const at = (d: string) => `2026-11-${d}T18:00:00.000Z`;
     expect(trendPerWeek([{ at: at('03'), value: 240 }, { at: at('10'), value: 242 }, { at: at('17'), value: 244 }])).toBeCloseTo(2, 6);
     expect(trendPerWeek([{ at: at('03'), value: 240 }, { at: at('10'), value: null }, { at: at('17'), value: 244 }])).toBeNull();
+  });
+
+  it('A run added whole: its laps its efforts, or the whole run', () => {
+    // Two laps: 5:00/km then 4:00/km, heart rate 140 then 160 ("1 ma lapy, 2-i nie ma").
+    const laps = [{ start: 0, end: 600, duration: 600, distance: 2000 }, { start: 600, end: 1200, duration: 600, distance: 2500 }];
+    const run = { ...syntheticRun(1200, (t) => ({ speed: t < 600 ? 1000 / 300 : 1000 / 240, heartRate: t < 600 ? 140 : 160 }), laps), id: 'r1' };
+    const efforts = lapEfforts(run, '~runs', ['heartRate']);
+    expect(efforts.map((e) => [e.definitionId, e.start, e.end, e.distance])).toEqual([['~runs', 0, 600, 2000], ['~runs', 600, 1200, 2500]]);
+    expect(efforts.map((e) => [Math.round(valueOf(e, 'speed')!), valueOf(e, 'heartRate')])).toEqual([[300, 140], [240, 160]]);
+    // No laps: one effort, the whole run.
+    const whole = lapEfforts({ ...run, laps: [] }, '~runs', ['heartRate']);
+    expect(whole.map((e) => [e.start, e.duration])).toEqual([[0, 1200]]);
+    expect(valueOf(whole[0], 'heartRate')).toBeCloseTo(150, 1);
   });
 });

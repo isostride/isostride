@@ -250,4 +250,5 @@ export const COMPARE: Dictionary = {
   'What is compared': 'Co porównujesz',
   'Start an analysis with + Add segment or run.': 'Zacznij analizę przyciskiem + Dodaj segment lub bieg.',
   'Sort by {column}': 'Sortuj według: {column}',
+  'The runs added, lap by lap': 'Dodane biegi, okrążenie po okrążeniu',
 };
