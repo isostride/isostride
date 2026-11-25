@@ -941,6 +941,30 @@
       "tests/unit/whole-curve.test.ts › Whole curve as an envelope › Riegel and critical speed: no value under 2 minutes",
       "tests/unit/curve.test.ts › Pace curve › Critical model as an envelope",
       "tests/unit/curve.test.ts › Pace curve › Curve bent as the critical model, the power law past it"
+    ] },
+    { "element": "aef4a927-aa66-42ac-bce2-a1144b1d4cc1", "name": "A best of its whole length", "tests": [
+      "tests/unit/model-review.test.ts › Performance models reviewed › A best is a stretch of its whole length"
+    ] },
+    { "element": "1625c3af-559f-4f8f-a46f-f01ab5d577d1", "name": "Bests of pace from the effort pace", "tests": [
+      "tests/unit/model-review.test.ts › Performance models reviewed › Bests of pace from the effort pace, a downhill left out"
+    ] },
+    { "element": "87a8392b-d82c-4f02-8389-06ac2cb0bff3", "name": "P–T decline from long bests", "tests": [
+      "tests/unit/model-review.test.ts › Performance models reviewed › Péronnet–Thibault: the decline from long bests only"
+    ] },
+    { "element": "54355ac3-9e2f-425f-86a0-237f3ffca525", "name": "Markers of the week up to today", "tests": [
+      "tests/unit/model-review.test.ts › Performance models reviewed › The markers of the current week up to today"
+    ] },
+    { "element": "eca23ec3-e158-4cff-9709-f40a557b940a", "name": "Monotony of the week so far", "tests": [
+      "tests/unit/model-review.test.ts › Performance models reviewed › The monotony of the current week over its days so far"
+    ] },
+    { "element": "f28e62ba-e487-412d-a3d5-b4b237199edd", "name": "VO2max past the warm-up", "tests": [
+      "tests/unit/model-review.test.ts › Performance models reviewed › VO2max from heart rate past the warm-up"
+    ] },
+    { "element": "da8b9c51-8194-4ccd-bf71-7f5cb7006e4f", "name": "Edwards under half the maximum", "tests": [
+      "tests/unit/model-review.test.ts › Performance models reviewed › Edwards counts nothing under half the maximum"
+    ] },
+    { "element": "57e12626-04a5-48ed-91c5-a77303df52bc", "name": "What if keeps the runs' start", "tests": [
+      "tests/unit/model-review.test.ts › Performance models reviewed › What if leaves the start of the averages to the runs"
     ] }
   ]
 }

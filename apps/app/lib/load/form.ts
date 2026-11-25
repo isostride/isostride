@@ -21,25 +21,57 @@ export interface FormDay {
   acwr: number | null;
 }
 
-/** The acute and chronic windows of the ratio, days (Williams et al. 2017: exponentially weighted). */
+/** The acute and chronic windows of the ratio, days (Williams et al. 2017: exponentially weighted, λ = 2/(N+1)). */
 export const ACWR_DAYS: [number, number] = [7, 28];
+/**
+ * Every average starts from the mean daily load of this many first days of the history (model's choice: 28):
+ * an imported history begins in the middle of training, and averages started from zero would read its
+ * first months as a sharp rise of the load (a ratio of 1.55 on day 28 of a constant load).
+ */
+export const SEED_DAYS = 28;
+
+/** The mean daily load of the first SEED_DAYS days from the first day of `perDay` (all of them when fewer). */
+export function seedLoad(perDay: Map<string, number>, first: string, last: string): number {
+  let sum = 0;
+  let n = 0;
+  for (let day = first; day <= last && n < SEED_DAYS; day = next(day)) { sum += perDay.get(day) ?? 0; n++; }
+  return n ? sum / n : 0;
+}
 
 const next = (day: string) => { const d = new Date(`${day}T12:00:00`); d.setDate(d.getDate() + 1); return dayOf(d.toISOString()); };
 
-/** The daily series from the first run's day to `until` (a day, default the last run's), every day present. */
-export function formSeries(runs: { startTime: string; load: number }[], p: { fitnessDays: number; fatigueDays: number }, until?: string): FormDay[] {
-  if (!runs.length) return [];
+/** The loads of the runs by day, the days in order, and the last day of the series (`until` when later). */
+function byDay(runs: { startTime: string; load: number }[], until?: string): { perDay: Map<string, number>; days: string[]; last: string } {
   const perDay = new Map<string, number>();
   for (const r of runs) { const d = dayOf(r.startTime); perDay.set(d, (perDay.get(d) ?? 0) + r.load); }
   const days = [...perDay.keys()].sort();
-  const last = until && until > days[days.length - 1] ? until : days[days.length - 1];
+  return { perDay, days, last: until && until > days[days.length - 1] ? until : days[days.length - 1] };
+}
+
+/** The load the averages of formSeries start from for these runs, up to `until`; 0 without runs. */
+export function formSeed(runs: { startTime: string; load: number }[], until?: string): number {
+  if (!runs.length) return 0;
+  const { perDay, days, last } = byDay(runs, until);
+  return seedLoad(perDay, days[0], last);
+}
+
+/**
+ * The daily series from the first run's day to `until` (a day, default the last run's), every day
+ * present; the averages start from `seed` when given (a scenario's, those of the runs alone), else from
+ * formSeed of the runs.
+ */
+export function formSeries(runs: { startTime: string; load: number }[], p: { fitnessDays: number; fatigueDays: number }, until?: string, seed?: number): FormDay[] {
+  if (!runs.length) return [];
+  const { perDay, days, last } = byDay(runs, until);
   const k = (tau: number) => 1 - Math.exp(-1 / tau);
-  const [kf, ka, k7, k28] = [k(p.fitnessDays), k(p.fatigueDays), k(ACWR_DAYS[0]), k(ACWR_DAYS[1])];
+  const williams = (n: number) => 2 / (n + 1);
+  const [kf, ka, k7, k28] = [k(p.fitnessDays), k(p.fatigueDays), williams(ACWR_DAYS[0]), williams(ACWR_DAYS[1])];
   const out: FormDay[] = [];
-  let fitness = 0;
-  let fatigue = 0;
-  let acute = 0;
-  let chronic = 0;
+  const start = seed ?? seedLoad(perDay, days[0], last);
+  let fitness = start;
+  let fatigue = start;
+  let acute = start;
+  let chronic = start;
   let n = 0;
   for (let day = days[0]; day <= last; day = next(day)) {
     const load = perDay.get(day) ?? 0;

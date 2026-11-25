@@ -28,20 +28,25 @@ export function vdotOverTime(weeks: MarkerWeek[]): { end: string; vdot: number |
   });
 }
 
-/** A run counts for the heart rate estimate when this long (s) and this hard (fraction of the reserve). */
+/** A run counts for the heart rate estimate when this long (s, past the warm-up) and this hard (fraction of the reserve). */
 export const HR_VO2_MIN_SECONDS = 20 * 60;
 export const HR_VO2_MIN_RESERVE = 0.5;
 
 /**
  * VO2max from a run's pace and heart rate: the ACSM running equation on level ground
  * (VO2 = 0.2·v + 3.5 ml/kg/min, v in m/min) over the run's fraction of the heart rate reserve
- * (Swain 1997: %HRR ≈ %VO2R). Null for a short or easy run, where the relation is loose.
+ * (Swain 1997: %HRR ≈ %VO2R), both from the run past its warm-up (summary.ts, WARMUP) and the speed the
+ * effort pace where the watch gives it. Null for a short or easy run, where the relation is loose. A
+ * summary made before the steady part was kept reads the whole run.
  */
 export function hrVo2max(s: LoadSummary, restHr: number, maxHr: number): number | null {
-  if (s.ef === null || s.avgHr === null || s.moving < HR_VO2_MIN_SECONDS || maxHr <= restHr) return null;
-  const reserve = (s.avgHr - restHr) / (maxHr - restHr);
+  const kept = s.steadyMoving !== undefined;
+  const avgHr = kept ? s.steadyHr ?? null : s.avgHr;
+  const speed = kept ? s.steadySpeed ?? null : s.ef !== null && s.avgHr !== null ? (s.ef * s.avgHr) / 60 : null;
+  const moving = kept ? s.steadyMoving! : s.moving;
+  if (speed === null || avgHr === null || moving < HR_VO2_MIN_SECONDS || maxHr <= restHr) return null;
+  const reserve = (avgHr - restHr) / (maxHr - restHr);
   if (reserve < HR_VO2_MIN_RESERVE || reserve >= 1) return null;
-  const speed = (s.ef * s.avgHr) / 60;
   const vo2 = 0.2 * speed * 60 + 3.5;
   return Math.round(((vo2 - 3.5) / reserve + 3.5) * 10) / 10;
 }

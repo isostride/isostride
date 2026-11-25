@@ -102,7 +102,11 @@ describe('Model assumptions', () => {
     expect(never.by.cp).toMatchObject({ trust: 'no', cappedBy: 'powerEfforts' });
     // What rests on them falls too: rTSS against the critical speed, and the response fitted to the VDOT.
     const rtss = report(NEVER_ALL_OUT, { ...SET, load: 'rtss' });
-    expect(rtss.by.load).toMatchObject({ parents: ['cs'], own: 'ok', trust: 'no', cappedBy: 'cs' });
+    // No bests of an all-out reserve: no automatic threshold, every load counted from its duration.
+    expect(rtss.by.load).toMatchObject({ parents: ['cs'], own: 'no', trust: 'no' });
+    expect(status(rtss.by.load, 'threshold')).toBe('unmet');
+    // All-out bests: the threshold from the bests of the 90 days.
+    expect(status(report(ALL_OUT, { ...SET, load: 'rtss' }).by.load, 'threshold')).toBe('met');
     expect(rtss.by.form.trust).toBe('no');
     expect(report(NEVER_ALL_OUT, { ...SET, load: 'rtss', thresholdPace: 250 }).by.load).toMatchObject({ parents: [], trust: 'ok' });
 
@@ -119,7 +123,11 @@ describe('Model assumptions', () => {
     const edwards = report(ALL_OUT, { ...SET, load: 'trimpEdwards' }, { zonesOwn: false });
     expect(status(edwards.by.load, 'zones')).toBe('unmet');
     expect(edwards.by.load.trust).toBe('no');
-    expect(edwards.by.intensity.trust).toBe('no');
+    // The intensity shares read Seiler's shares of the maximum, not the zones: the default zones do not
+    // lower them, a maximum taken from the runs leaves them in doubt.
+    expect(edwards.by.intensity.checks.some((c) => c.key === 'zones')).toBe(false);
+    expect(status(edwards.by.intensity, 'maxhr')).toBe('met');
+    expect(status(report(ALL_OUT, { ...SET, maxHr: null }).by.intensity, 'maxhr')).toBe('doubt');
     // Three weeks of history: the form's averages have not settled; too few performances for a fitted model.
     expect(status(good.by.form, 'history')).toBe('unmet');
     expect(good.by.fittedHr.trust).toBe('nodata');

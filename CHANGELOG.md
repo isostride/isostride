@@ -11,6 +11,15 @@ The versions of IsoStride (the app at app.isostride.com and the site at isostrid
 ### On a phone
 - Every screen, dialog and step of the setup wizard fits a phone: the wizard's steps, the rule of a new segment, the tables (their secondary columns left out), the map of the models read down the screen.
 
+### Performance models, reviewed
+- rTSS and Power TSS: the automatic threshold is taken only from bests that show all-out short efforts (D′ worth 12 s or more at the critical speed); weeks of easy running keep the last such threshold instead of lowering it to the easy pace.
+- Péronnet–Thibault: the decline past 7 minutes is fitted only with bests of 30 minutes or more; without them it is Riegel's 1.06, and the note says so. The anaerobic reserve declines by the authors' constant.
+- Fitness, fatigue, form and the acute:chronic ratio start from the mean load of the first 28 days, not from zero; the ratio is computed as Williams et al. 2017.
+- A best of a length is a stretch of that whole length (a 30 s best was taken from 28 s). The bests of pace on Performance come from the effort pace where the watch gives it, else leave out downhills.
+- Intensity shares by Seiler's zones of the maximum heart rate (under 82 %, 82–87 %, above 87 %), apart from the zones of Settings.
+- The fitted Banister model needs 15 performances and is judged by its cross-validated R².
+- The automatic maximum heart rate from a 10 s window, a sensor's spike left out; VO2max from heart rate past the warm-up and on the effort pace; Edwards' TRIMP counts nothing under 50 % of the maximum; the current week's markers and monotony up to today.
+
 ### Other
 - Release notes of the version shown, from Settings › About and the site's footer.
 

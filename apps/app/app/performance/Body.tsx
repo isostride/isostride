@@ -89,7 +89,7 @@ export function Body({ tab, view, embedded = false }: { tab: Tab; view: string; 
     switch (`${tab}/${shown.key}`) {
       case 'load/form': return <FormTab runs={runs} />;
       case 'load/weekly': return <LoadTab days={days} unit={unit} />;
-      case 'load/intensity': return <IntensityTab runs={runs} summaries={summaries} hrZones={hrZones} />;
+      case 'load/intensity': return <IntensityTab runs={runs} summaries={summaries} hrZones={hrZones} maxHr={report.now.maxHr} />;
       case 'capacity/efforts': return <EffortsTab now={report.now} runs={runs} model={settings.performance.curve} />;
       case 'capacity/critical': return <CriticalTab runs={runs} summaries={summaries} today={today} />;
       case 'capacity/predictions': return <PredictionsTab runs={runs} summaries={summaries} today={today} model={settings.performance.curve} />;

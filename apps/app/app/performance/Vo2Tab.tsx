@@ -27,8 +27,8 @@ export function Vo2Tab({ runs, summaries, performance }: { runs: RunsIndex['runs
   return (
     <div className="card chart">
       <dl className="form-figures" aria-label={t('VO2max now')}>
-        <div><dt>{t('VO2max from heart rate')}</dt><dd className="tnum">{now.value == null ? '–' : number(now.value)}</dd></div>
-        <div><dt>{t('Uth ratio')}</dt><dd className="tnum">{number(uth)}</dd></div>
+        <div><dt>{t('VO2max from heart rate')}</dt><dd className="tnum">{now.value == null ? '–' : number(now.value, 1)}</dd></div>
+        <div><dt>{t('Uth ratio')}</dt><dd className="tnum">{number(uth, 1)}</dd></div>
       </dl>
       <h3 className="chart-title">{t('VO2max from heart rate')}</h3>
       <TimeChart label={t('VO2max from heart rate over time')} times={times} height={240} guide={{ value: uth, label: t('Uth {value}', { value: number(uth) }) }}

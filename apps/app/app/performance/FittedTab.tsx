@@ -27,6 +27,7 @@ export function FittedTab({ criterion, runs, summaries, performance, days, today
     <div className="card chart">
       <dl className="form-figures" aria-label={t('Fitted model figures')}>
         <div><dt>{t('Fit (R²)')}</dt><dd className="tnum">{number(fit.r2, 2)}</dd></div>
+        <div><dt>{t('Prediction (cross-validated R²)')}</dt><dd className="tnum">{number(fit.r2cv, 2)}</dd></div>
         <div><dt>{t('Fitness τ1')}</dt><dd className="tnum">{number(fit.tau1)} d</dd></div>
         <div><dt>{t('Fatigue τ2')}</dt><dd className="tnum">{number(fit.tau2)} d</dd></div>
         <div><dt>{t('Peak if you rest')}</dt><dd className="tnum">{peakIn <= 1 ? t('now') : t('in {n} d', { n: number(peakIn) })}</dd></div>

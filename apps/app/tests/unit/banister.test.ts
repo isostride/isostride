@@ -23,7 +23,9 @@ describe('Fitted model and VO2max', () => {
     // Loads of 200 days and performances every third day from a known model: p0 50, k1 0.1, k2 0.25, τ1 40, τ2 8.
     const loads = Array.from({ length: 200 }, (_, i) => (i % 7 === 6 ? 0 : 60 + 40 * Math.sin(i / 9)));
     const days = loads.map((load, i) => ({ date: day(i), load }));
-    const sum = (i: number, tau: number) => { let s = 0; for (let k = 0; k < i; k++) s += loads[k] * Math.exp(-(i - k) / tau); return s; };
+    // The history starts in the steady state of the mean load of its first 28 days, as the form's averages do.
+    const seed = loads.slice(0, 28).reduce((s, v) => s + v, 0) / 28;
+    const sum = (i: number, tau: number) => { let s = (seed * Math.exp(-(i + 1) / tau)) / (1 - Math.exp(-1 / tau)); for (let k = 0; k < i; k++) s += loads[k] * Math.exp(-(i - k) / tau); return s; };
     const truth = (i: number) => 50 + 0.1 * sum(i, 40) - 0.25 * sum(i, 8);
     const perf = Array.from({ length: 66 }, (_, k) => ({ date: day(3 * k + 2), value: truth(3 * k + 2) }));
     const fit = fitBanister(days, perf)!;
@@ -33,6 +35,8 @@ describe('Fitted model and VO2max', () => {
     expect(fit.k2).toBeCloseTo(0.25, 4);
     expect(fit.p0).toBeCloseTo(50, 2);
     expect(fit.r2).toBeCloseTo(1, 6);
+    // Left out of the fit, each block of performances is still predicted.
+    expect(fit.r2cv).toBeGreaterThan(0.99);
     expect(fit.n).toBe(66);
     expect(fit.fitted[100].value).toBeCloseTo(truth(100), 1);
     // Resting from the day after the last load: fatigue fades first, so performance rises to a peak, then falls.
@@ -42,8 +46,14 @@ describe('Fitted model and VO2max', () => {
     expect(peakAt).toBeGreaterThan(0);
     expect(peakAt).toBeLessThan(41);
     expect(fit.peak.value).toBeGreaterThan(fit.projection[0].value);
-    // Too few performances, or over too short a span: no fit.
-    expect(fitBanister(days, perf.slice(0, 7))).toBeNull();
-    expect(fitBanister(days, perf.slice(0, 12).map((p, k) => ({ ...p, date: day(k) })))).toBeNull();
+    // Too few performances (under 15), or over too short a span: no fit.
+    expect(fitBanister(days, perf.slice(0, 14))).toBeNull();
+    expect(fitBanister(days, perf.slice(0, 20).map((p, k) => ({ ...p, date: day(k) })))).toBeNull();
+    // Performances of pure noise: the grid finds a fit, but it predicts nothing left out of it.
+    let state = 7;
+    const noise = () => { state = (state * 16807) % 2147483647; return state / 2147483647; };
+    const random = Array.from({ length: 20 }, (_, k) => ({ date: day(30 + 8 * k), value: 50 + (noise() - 0.5) * 6 }));
+    const lucky = fitBanister(days, random);
+    if (lucky) expect(lucky.r2cv).toBeLessThan(0.3);
   });
 });

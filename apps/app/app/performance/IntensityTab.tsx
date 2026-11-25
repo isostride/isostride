@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { msg, number, t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
-import { intensityShares, zonesByWeek, type LoadSummary } from '@/lib/load';
+import { SEILER_SHARES, intensityShares, seilerByWeek, zonesByWeek, type LoadSummary } from '@/lib/load';
 import { zoneColor, zoneRanges } from '@/lib/settings';
 import { TimeChart } from './TimeChart';
 
@@ -15,15 +15,18 @@ const width = (v: number) => `${(v * 100).toFixed(2)}%`;
 
 /**
  * The intensity distribution (requirement "Intensity distribution"): each week's time in the heart
- * rate zones of Settings, and the shares of low, moderate and high intensity over the period shown.
+ * rate zones of Settings, and the shares of low, moderate and high intensity over the period shown, by
+ * Seiler's three zones of the maximum heart rate.
  */
-export function IntensityTab({ runs, summaries, hrZones }: { runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; hrZones: number[] }) {
+export function IntensityTab({ runs, summaries, hrZones, maxHr }: { runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; hrZones: number[]; maxHr: number | null }) {
   const [period, setPeriod] = useState(PERIODS[0]);
   const all = useMemo(() => zonesByWeek(runs, summaries, hrZones), [runs, summaries, hrZones]);
+  const seiler = useMemo(() => seilerByWeek(runs, summaries, maxHr), [runs, summaries, maxHr]);
   if (!hrZones.length) return <div className="card empty">{t('Set the heart rate zones in Settings to see the time in each.')}</div>;
   if (!all.length) return <div className="card empty">{t('No run with a heart rate yet.')}</div>;
   const weeks = period[1] === null ? all : all.slice(-period[1]);
-  const shares = intensityShares(weeks);
+  const shares = intensityShares(seiler.filter((w) => w.start >= weeks[0].start));
+  const [lt1, lt2] = SEILER_SHARES.map((f) => pct(f));
   const ranges = zoneRanges('heartRate', hrZones);
   const n = ranges.length;
   const zoneName = (k: number) => { const r = ranges[k]; return `Z${k + 1} ${r.lo === null ? `< ${r.hi}` : r.hi === null ? `≥ ${r.lo}` : `${r.lo}–${r.hi}`}`; };
@@ -36,9 +39,9 @@ export function IntensityTab({ runs, summaries, hrZones }: { runs: RunsIndex['ru
       </div>
       <div className="card chart">
         <dl className="form-figures" aria-label={t('Intensity shares')}>
-          <div><dt>{t('Low (Z1–Z2)')}</dt><dd className="tnum">{pct(shares.low)}</dd></div>
-          <div><dt>{t('Moderate (Z3)')}</dt><dd className="tnum">{pct(shares.moderate)}</dd></div>
-          <div><dt>{t('High (Z4+)')}</dt><dd className="tnum">{pct(shares.high)}</dd></div>
+          <div><dt>{t('Low (under {lt1} of max HR)', { lt1 })}</dt><dd className="tnum">{pct(shares.low)}</dd></div>
+          <div><dt>{t('Moderate ({lt1}–{lt2})', { lt1, lt2 })}</dt><dd className="tnum">{pct(shares.moderate)}</dd></div>
+          <div><dt>{t('High (above {lt2})', { lt2 })}</dt><dd className="tnum">{pct(shares.high)}</dd></div>
           <div><dt>{t('Time with heart rate')}</dt><dd className="tnum">{number(Math.round(shares.seconds / 3600))} <span className="unit">h</span></dd></div>
         </dl>
         <div className="intensity-bar" role="img" aria-label={t('Low {low}, moderate {moderate}, high {high}; reference 80 % low', { low: pct(shares.low), moderate: pct(shares.moderate), high: pct(shares.high) })}>

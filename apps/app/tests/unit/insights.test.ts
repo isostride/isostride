@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { efficiencyRuns, formSeries, intensityShares, markersOverTime, summarizeLoad, trailingMean, weekOf, weeklyLoad, zonesByWeek, type LoadSummary } from '@/lib/load';
+import { efficiencyRuns, formSeries, intensityShares, markersOverTime, seilerByWeek, summarizeLoad, trailingMean, weekOf, weeklyLoad, zonesByWeek, type LoadSummary } from '@/lib/load';
 import { syntheticRun } from '../support/synthetic';
 
 const HR_ZONES = [114, 133, 152, 171];
@@ -40,16 +40,22 @@ describe('Performance markers', () => {
   });
 
   it('Intensity in the zones', () => {
-    // 40 min in Z1 and Z2, 10 in Z3, 10 in Z4 and Z5, in one week: 2/3 low, 1/6 moderate, 1/6 high.
     const hr = Array(80).fill(0);
     hr[110 - 100] = 1200; hr[120 - 100] = 1200; hr[140 - 100] = 600; hr[160 - 100] = 300; hr[175 - 100] = 300;
     const weeks = zonesByWeek([row('a', '2026-11-03T07:00:00Z')], { a: base({ hrFrom: 100, hr }) }, HR_ZONES);
     expect(weeks).toEqual([{ start: '2026-11-02', seconds: [1200, 1200, 600, 300, 300] }]);
-    const s = intensityShares(weeks);
+    // Seiler's shares by the maximum (200 bpm): under 164 low, 164–174 moderate, from 174 high; 40 min low, 10
+    // moderate, 10 high: 2/3, 1/6, 1/6, whatever the zones of Settings (their Z3, 133–152, is low here).
+    const seiler = Array(100).fill(0);
+    seiler[150 - 100] = 1200; seiler[160 - 100] = 1200; seiler[165 - 100] = 600; seiler[180 - 100] = 600;
+    const sw = seilerByWeek([row('a', '2026-11-03T07:00:00Z')], { a: base({ hrFrom: 100, hr: seiler }) }, 200);
+    expect(sw).toEqual([{ start: '2026-11-02', seconds: [2400, 600, 600] }]);
+    const s = intensityShares(sw);
     expect(s.low).toBeCloseTo(2 / 3, 6);
     expect(s.moderate).toBeCloseTo(1 / 6, 6);
     expect(s.high).toBeCloseTo(1 / 6, 6);
     expect(intensityShares([])).toEqual({ low: 0, moderate: 0, high: 0, seconds: 0 });
+    expect(seilerByWeek([row('a', '2026-11-03T07:00:00Z')], { a: base({ hrFrom: 100, hr: seiler }) }, null)).toEqual([]);
   });
 
   it('Efficiency and decoupling', () => {
