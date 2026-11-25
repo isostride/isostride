@@ -27,6 +27,8 @@ export interface RunFilter {
   /** laps recorded in the run */
   lapsMin: number | null;
   lapsMax: number | null;
+  /** runs of a layout of laps, identical or similar; left out or null for any */
+  layout?: LayoutFilter | null;
 }
 
 /**
@@ -43,9 +45,21 @@ export type RuleShape =
   | { type: 'fastest'; kind: 'time' | 'distance'; /** s or m */ target: number; /** only when it was run as an effort */ effort?: boolean }
   | { type: 'steady'; /** s */ minDuration: number }
   | { type: 'main' }
-  | { type: 'pattern'; laps: PatternLap[]; tolerance: number }
+  | { type: 'pattern'; laps: PatternLap[]; tolerance: number; /** the runs of the same laps (identical, as when left out) or of the same reps in any layout (similar) */ match?: LayoutMatch }
   | { type: 'route'; track: RefPoint[]; length: number; heading: number }
   | { type: 'profile'; key: ProfileKey; minScore: number };
+
+/**
+ * How a run follows a layout of laps (requirement "Segments by lap layout"): identical, the same laps
+ * from the warm-up to the cool-down; similar, the same reps (as many, as long) whatever is around them.
+ */
+export type LayoutMatch = 'identical' | 'similar';
+
+/** A layout of laps a rule draws its runs from. */
+export interface LayoutFilter {
+  laps: PatternLap[];
+  match: LayoutMatch;
+}
 
 /** The shapes that take their reference from a run: they are made from a run, not typed in. */
 export const REFERENCE_SHAPES = ['main', 'pattern', 'route', 'profile'] as const;

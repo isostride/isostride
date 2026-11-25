@@ -1171,3 +1171,10 @@ Q: (model) Gdzie zmienić to motto? [Popup i strona (Recommended): to samo zdani
 A: (użytkownik) Popup i strona (Recommended)
 A: (użytkownik) popraw tekst Pulpit. Zrzuty na tej stronie pokazują dane demonstracyjne fikcyjnego biegacza z prędkością krytyczną około 3:15 /km. Kliknij zrzut, żeby go powiększyć. .... nie pisz nic o fikcyjnym biegaczu
 A: (użytkownik) zmien tez naglowek Po co  - powinno byc dlaczego
+A: (użytkownik) dodaj mi do kreatora segmentow opcje wyboru identycznego lub podobnego schematu lapow .. ma na mysli np. wszystkie gdzie jest 3 x 10 min .....
+Q: (model) Co ma być segmentem, gdy w kreatorze wybierzesz schemat lapów (np. 3 × 10 min)? [Serie z tych biegów (Recommended): nowa opcja w „Z każdego biegu”: „Serie treningu” — segmentami są okrążenia-serie z biegów o tym schemacie | Filtr biegów: nowe pole w „W których biegach”: schemat lapów; łączy się z każdym kształtem | Jedno i drugie: opcja „Serie treningu” i osobno filtr biegów po schemacie]
+A: (użytkownik) Jedno i drugie
+Q: (model) Jak wybierać schemat lapów w kreatorze? [Z listy znalezionych (Recommended): lista schematów znalezionych w Twoich biegach z liczbą biegów, np. „2 km + 3 × 10 min (4 biegi)” | Wpisać serie | Oba]
+A: (użytkownik) Z listy znalezionych (Recommended)
+Q: (model) Co znaczy „podobny” schemat (obok „identyczny” = te same okrążenia od rozgrzewki do schłodzenia)? [Te same serie (Recommended): ta sama liczba i długość serii (3 × 10 min), dowolna rozgrzewka, przerwy i schłodzenie | Serie ±10% | Co najmniej tyle serii]
+A: (użytkownik) Te same serie (Recommended)

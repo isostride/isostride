@@ -12,9 +12,10 @@ import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { asRule, efficiencyOf, rangeStats, readDefinitions, reasonText, shownName, zoneShares, type BlockInstance, type Rule } from '@/lib/blocks';
 import { date, duration, km, pace, time } from '@/lib/format';
 import { LOAD_MODELS, readSettings, zoneOf, zoneTint } from '@/lib/settings';
-import { PinButton } from '../dashboard/PinButton';
 import { runMetricsOf, secondsOf, seriesOf, withSecondExtremes, type WindowKey } from './metrics';
 
+/** Pin to the Dashboard, in the board's corner: loaded after the screen, as the budget wants. */
+const PinButton = eager(() => import('../dashboard/PinButton').then((m) => m.PinButton));
 /** The editor of the run's tags: loaded when it opens. */
 const TagEditor = eager(() => import('./TagEditor').then((m) => m.TagEditor));
 /** Compare with the previous run of a workout's layout: loaded after the screen. */

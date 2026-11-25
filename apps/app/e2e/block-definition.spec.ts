@@ -307,4 +307,30 @@ test.describe('Every block on one screen', () => {
     await confirm.getByRole('button', { name: 'Delete' }).click();
     await expect(page.getByText(/^No segment yet/)).toBeVisible({ timeout: 30_000 });
   });
+
+  test('Reps of a lap layout', async ({ page }) => {
+    // The runs of 2 to 29 March: two of them 5 min + 25 min + 2 × 3 min.
+    await openWithFolder(page, await fitFiles(16, '2026-03-02'));
+    await importAll(page);
+    await nav(page, 'Segments');
+    await page.getByRole('button', { name: 'New segment' }).click();
+    const dialog = page.getByRole('dialog', { name: 'New segment' });
+    const count = dialog.locator('.preview-count');
+    // Workout reps: the layouts found in the runs, with their runs; the reps of the identical layout, then of the same reps in any layout.
+    await dialog.getByRole('radio', { name: 'Workout reps' }).click();
+    const layout = dialog.getByLabel('Layout of laps', { exact: true });
+    await expect(layout.locator('option', { hasText: '5 min + 25 min + 2 × 3 min (2 runs)' })).toHaveCount(1);
+    await layout.selectOption({ label: '5 min + 25 min + 2 × 3 min (2 runs)' });
+    await expect(dialog.getByRole('radio', { name: /^Identical layout/ })).toHaveAttribute('aria-checked', 'true');
+    await expect(count).toContainText('6 efforts in 2 runs', { timeout: 30_000 });
+    await expect(dialog.getByLabel('Name')).toHaveValue('Reps of 5 min + 25 min + 2 × 3 min');
+    await dialog.getByRole('radio', { name: /^The same reps: 25 min \+ 2 × 3 min/ }).click();
+    await expect(count).toContainText('6 efforts in 2 runs', { timeout: 30_000 });
+    await expect(dialog.getByLabel('Name')).toHaveValue('Reps of 25 min + 2 × 3 min, any layout');
+    // Whole runs of that layout: the filter of the runs.
+    await dialog.getByRole('radio', { name: 'Whole runs' }).click();
+    await dialog.getByLabel('Lap layout', { exact: true }).selectOption({ label: '5 min + 25 min + 2 × 3 min (2 runs)' });
+    await expect(count).toContainText('2 efforts in 2 runs', { timeout: 30_000 });
+    await expect(dialog.getByLabel('Name')).toHaveValue('Runs · runs of 5 min + 25 min + 2 × 3 min');
+  });
 });

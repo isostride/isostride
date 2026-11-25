@@ -3837,6 +3837,12 @@
     "targetId": "ae98bcc0-d501-45fc-b39d-c304e5a7b242"
   },
   {
+    "id": "763f29fa-d0f4-4b68-ad17-eb17e6f32af9",
+    "relationType": "verifies",
+    "sourceId": "6172cc9d-2288-4fe7-b704-f2627f10c17e",
+    "targetId": "993f5e93-1328-41e0-bd41-40d71f889daf"
+  },
+  {
     "id": "767977df-e60c-4125-a12c-4d7ff2042d6d",
     "relationType": "satisfies",
     "sourceId": "c14dbde0-de4f-48ba-a569-779a0fdfc5c8",
@@ -4591,6 +4597,12 @@
     "targetId": "f38be323-1d87-49bf-bcaa-54521f704865"
   },
   {
+    "id": "8c8b136d-5d86-4ebb-bd4f-5e178db05238",
+    "relationType": "verifies",
+    "sourceId": "fc1c8315-1671-4f38-993f-109ee6458bbc",
+    "targetId": "993f5e93-1328-41e0-bd41-40d71f889daf"
+  },
+  {
     "id": "8c9d64d0-3ebb-402d-aeb6-7fbda1d15578",
     "quote": "Tak, zastąp (Recommended)",
     "relationType": "derives",
@@ -4812,6 +4824,12 @@
     "relationType": "emits",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
     "targetId": "abf40e24-6f3f-4f08-aadc-ec6a4a6f5368"
+  },
+  {
+    "id": "93c6b2c7-9909-4e3f-b50c-cd47e03cf975",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "993f5e93-1328-41e0-bd41-40d71f889daf"
   },
   {
     "id": "93caf066-5097-4192-9e09-becb82e1ed08",
@@ -5427,6 +5445,13 @@
     "relationType": "verifies",
     "sourceId": "7d17eb04-3492-4f0e-aeeb-19d8c09e5022",
     "targetId": "318c99a5-6ed7-45ae-98f1-d7daa3f364c2"
+  },
+  {
+    "id": "a9abf08e-b758-442d-95a3-bf21f98a0ffd",
+    "quote": "dodaj mi do kreatora segmentow opcje wyboru identycznego lub podobnego schematu lapow\nJedno i drugie\nZ listy znalezionych (Recommended)\nTe same serie (Recommended)",
+    "relationType": "derives",
+    "sourceId": "993f5e93-1328-41e0-bd41-40d71f889daf",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "a9b8ed52-b7d9-427d-887e-6f315ec073b3",

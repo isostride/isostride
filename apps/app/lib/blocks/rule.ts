@@ -1,5 +1,6 @@
 import { isPace, metricInfo, secondsPerKm, type IndexedRun, type RunFile } from '@/lib/kernel';
 import { SAVED_WORDS, SHOWN_WORDS, lengthName, routeName, type Words } from './words';
+import { patternName, repsName } from './logical';
 import { STAT_LABEL, efficiencyOf, type BlockMetric, type BlockParams, type Conditions, type Rule, type RuleShape, type RunFilter, type Stat, type Tolerances } from './types';
 
 /**
@@ -44,7 +45,9 @@ export function matchesRunFilter(f: RunFilter, row: IndexedRun): boolean {
     inList(row.shoes, f.shoes) &&
     inList(row.heartRateSource, f.heartRateSources) &&
     inList(row.device, f.devices) &&
-    inRange(row.laps, f.lapsMin, f.lapsMax)
+    inRange(row.laps, f.lapsMin, f.lapsMax) &&
+    // An identical layout has as many laps: the others' files need not be read.
+    (!f.layout || f.layout.match === 'similar' || row.laps === f.layout.laps.length)
   );
 }
 
@@ -128,7 +131,7 @@ export function shapeName(shape: RuleShape, w: Words = SHOWN_WORDS): string {
   if (shape.type === 'lap') return shape.planned ? w.t('Laps set up as {length}', { length: lengthName(shape.planned.kind, shape.planned.target, w) }) : w.t('Laps');
   if (shape.type === 'steady') return w.t('Steady {min} min or more', { min: w.num(+(shape.minDuration / 60).toFixed(1)) });
   if (shape.type === 'main') return w.t('Main effort of the run');
-  if (shape.type === 'pattern') return w.tn(shape.laps.length, 'Effort laps of {n}-lap workouts', 'Effort laps of {n}-lap workouts');
+  if (shape.type === 'pattern') return shape.match === 'similar' ? w.t('Reps of {reps}, any layout', { reps: repsName(shape.laps, w) }) : w.t('Reps of {layout}', { layout: patternName(shape.laps, w) });
   if (shape.type === 'route') return w.t('Same route: {route}', { route: routeName(shape.length, shape.heading, w) });
   if (shape.type === 'profile') {
     const k = shape.key;
@@ -186,6 +189,7 @@ export function ruleName(r: Rule, w: Words = SAVED_WORDS): string {
     ...f.workoutTypes, ...f.techniqueCues, ...f.shoes, ...f.heartRateSources, ...f.devices,
     f.dateFrom && f.dateTo ? `${w.day(f.dateFrom)} – ${w.day(f.dateTo)}` : f.dateFrom ? w.t('since {date}', { date: w.day(f.dateFrom) }) : f.dateTo ? w.t('to {value}', { value: w.day(f.dateTo) }) : null,
     f.lapsMin !== null || f.lapsMax !== null ? w.t('{range} laps', { range: range(w, f.lapsMin, f.lapsMax, (v) => w.num(v), '') ?? '' }) : null,
+    f.layout ? (f.layout.match === 'similar' ? w.t('runs with {reps}', { reps: repsName(f.layout.laps, w) }) : w.t('runs of {layout}', { layout: patternName(f.layout.laps, w) })) : null,
     r.shape.type !== 'run' && r.shape.type !== 'fastest' && r.pick === 'best' ? w.t('best of each run') : null,
     r.shape.type === 'fastest' && r.pick === 'all' ? w.t('every one') : null,
     r.stat !== 'avg' ? w.t(STAT_LABEL[r.stat]) : null,
@@ -215,7 +219,8 @@ export function decodeRule(code: string): Rule | null {
   try {
     const o = JSON.parse(fromBase64Url(code)) as { s?: RuleShape; f?: Partial<RunFilter>; c?: Partial<Conditions>; p?: Rule['pick']; t?: Stat };
     const shape = o.s;
-    if (!shape || !['run', 'lap', 'fastest', 'steady'].includes(shape.type)) return null;
+    if (!shape || !['run', 'lap', 'fastest', 'steady', 'pattern'].includes(shape.type)) return null;
+    if (shape.type === 'pattern' && !(Array.isArray(shape.laps) && shape.laps.some((l) => l.effort) && shape.tolerance >= 0)) return null;
     if (shape.type === 'fastest' && !(shape.target > 0 && (shape.kind === 'time' || shape.kind === 'distance'))) return null;
     if (shape.type === 'steady' && !(shape.minDuration > 0)) return null;
     const base = ruleOf(shape);

@@ -95,7 +95,7 @@ function AnalysisPage() {
   const [recs, setRecs] = useState<Recommendation[]>([]);
   const [runs, setRuns] = useState<RunsIndex['runs']>([]);
   const [gear, setGear] = useState<Gear[]>([]);
-  const [options, setOptions] = useState<BuilderOptions>({ workoutTypes: [], techniqueCues: [], shoes: [], heartRateSources: [], devices: [] });
+  const [options, setOptions] = useState<BuilderOptions>({ workoutTypes: [], techniqueCues: [], shoes: [], heartRateSources: [], devices: [], layouts: [] });
   const [optionsRead, setOptionsRead] = useState(false);
   const [files, setFiles] = useState<Map<string, RunFile>>(new Map());
   const [adhoc, setAdhoc] = useState<Map<string, BlockInstance[]>>(new Map());

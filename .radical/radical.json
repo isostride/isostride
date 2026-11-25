@@ -917,6 +917,14 @@
     { "element": "457c8016-90e8-4e54-b595-90b2639a7b21", "name": "Back to what was shown before", "tests": [
       "e2e/run.spec.ts › Back to the previous screen › Back to what was shown before the run",
       "tests/unit/screenTrail.test.ts › Back to the previous screen › Back to what was shown before, from the history"
+    ] },
+    { "element": "fc1c8315-1671-4f38-993f-109ee6458bbc", "name": "Reps of a layout made a segment", "tests": [
+      "e2e/block-definition.spec.ts › Every block on one screen › Reps of a lap layout"
+    ] },
+    { "element": "6172cc9d-2288-4fe7-b704-f2627f10c17e", "name": "Layouts matched identical or similar", "tests": [
+      "tests/unit/layouts.test.ts › Segments by lap layout › Layouts found in the runs",
+      "tests/unit/layouts.test.ts › Segments by lap layout › Reps of a layout, identical or similar",
+      "tests/unit/layouts.test.ts › Segments by lap layout › Runs filtered by a layout"
     ] }
   ]
 }

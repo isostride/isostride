@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useMetrics } from '@/components';
-import { PERIOD_PRESETS, REFERENCE_SHAPES, RULE_TOLERANCES, SHOWN_WORDS, STATS, STAT_LABEL, STRETCH_PRESETS, lengthName, presetDates, ruleName, ruleOf, shownName, type BlockDefinition, type BlockInstance, type BlockStart, type Conditions, type PeriodPreset, type Pick, type Rule, type RuleShape, type RunFilter, type Stat, type Tolerances, shapeName } from '@/lib/blocks';
+import { PERIOD_PRESETS, REFERENCE_SHAPES, patternKey, patternName, repsName, type LayoutFilter, RULE_TOLERANCES, SHOWN_WORDS, STATS, STAT_LABEL, STRETCH_PRESETS, lengthName, presetDates, ruleName, ruleOf, shownName, type BlockDefinition, type BlockInstance, type BlockStart, type Conditions, type PeriodPreset, type Pick, type Rule, type RuleShape, type RunFilter, type Stat, type Tolerances, shapeName } from '@/lib/blocks';
 import { instancesInWorker, useLocale } from '@/lib/client';
 import { date, pace as fmtPace } from '@/lib/format';
 import { msg, number, t, tn } from '@/lib/i18n';
+import type { FoundLayout } from './options';
 
 export interface BuilderOptions {
   workoutTypes: string[];
@@ -13,6 +14,8 @@ export interface BuilderOptions {
   shoes: string[];
   heartRateSources: string[];
   devices: string[];
+  /** the layouts of laps the runs follow (requirement "Segments by lap layout") */
+  layouts: FoundLayout[];
 }
 
 const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
@@ -27,7 +30,7 @@ const parseNum = (text: string, scale = 1): number | null => {
   return Number.isFinite(n) ? n * scale : null;
 };
 const PRESET_LABEL: Record<PeriodPreset, string> = { all: msg('All runs'), month: msg('Last 30 days'), quarter: msg('Last 3 months'), year: msg('This year') };
-const SHAPES: [RuleShape['type'], string][] = [['run', msg('Whole runs')], ['lap', msg('Laps')], ['fastest', msg('Best effort')], ['steady', msg('Steady effort')]];
+const SHAPES: [RuleShape['type'], string][] = [['run', msg('Whole runs')], ['lap', msg('Laps')], ['pattern', msg('Workout reps')], ['fastest', msg('Best effort')], ['steady', msg('Steady effort')]];
 const PICKS: [Pick, string][] = [['best', msg('The fastest one')], ['all', msg('Every one')]];
 /** A preset length as its pill shows it: "5 min", "10 km". */
 const stretchLabel = (w: { kind: 'time' | 'distance'; target: number }) => lengthName(w.kind, w.target, SHOWN_WORDS);
@@ -64,6 +67,41 @@ function Picks({ label, options, chosen, onChange }: { label: string; options: s
         ))}
       </span>
     </div>
+  );
+}
+
+/**
+ * A layout of laps chosen from those the runs follow, and how a run follows it: the same laps
+ * (identical) or the same reps in any layout (similar). With `any`, none may be chosen.
+ */
+function LayoutField({ label, value, layouts, any, onChange }: { label: string; value: LayoutFilter | null; layouts: FoundLayout[]; any?: boolean; onChange: (v: LayoutFilter | null) => void }) {
+  const key = value ? patternKey(value.laps) : '';
+  // The layout of a segment kept from before stays offered, though no run follows it now.
+  const listed = value && !layouts.some((l) => patternKey(l.laps) === key) ? [{ laps: value.laps, runs: 0, similar: 0 }, ...layouts] : layouts;
+  const chosen = listed.find((l) => patternKey(l.laps) === key);
+  const runsOf = (n: number) => tn(n, '{n} run', '{n} runs');
+  return (
+    <>
+      <label className="field">
+        <span>{label}</span>
+        <select className="select small" aria-label={label} value={key} onChange={(e) => { const l = listed.find((x) => patternKey(x.laps) === e.target.value); onChange(l ? { laps: l.laps, match: value?.match ?? 'identical' } : null); }}>
+          {any && <option value="">{t('Any layout')}</option>}
+          {listed.map((l) => <option key={patternKey(l.laps)} value={patternKey(l.laps)}>{l.runs ? `${patternName(l.laps, SHOWN_WORDS)} (${runsOf(l.runs)})` : patternName(l.laps, SHOWN_WORDS)}</option>)}
+        </select>
+      </label>
+      {value && (
+        <div className="field">
+          <span>{t('Runs that follow it')}</span>
+          <div className="segmented" role="radiogroup" aria-label={t('{label}: runs that follow it', { label })}>
+            {([['identical', t('Identical layout')], ['similar', t('The same reps: {reps}', { reps: repsName(value.laps, SHOWN_WORDS) })]] as const).map(([m, l]) => {
+              const n = chosen?.runs ? (m === 'identical' ? chosen.runs : chosen.similar) : null;
+              const on = (value.match ?? 'identical') === m;
+              return <button key={m} type="button" role="radio" aria-checked={on} className={on ? 'on' : ''} title={m === 'identical' ? t('The same laps from the warm-up to the cool-down') : t('As many reps, as long; any warm-up, recoveries and cool-down')} onClick={() => onChange({ ...value, match: m })}>{l}{n !== null && <span className="muted"> · {runsOf(n)}</span>}</button>;
+            })}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -110,7 +148,10 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
   const chosenMetric = rule.conditions.metric ? known.view(rule.conditions.metric) : null;
   const setShape = (type: RuleShape['type']) => setRule((r) => {
     if (r.shape.type === type) return r;
-    const shape: RuleShape | null = reference && reference.type === type ? reference : type === 'fastest' ? { type, kind: 'time', target: 300 } : type === 'steady' ? { type, minDuration: 600 } : type === 'run' || type === 'lap' ? { type } : null;
+    // Workout reps: of the layout the block had, else of the layout most runs follow.
+    const layout = options.layouts[0];
+    const shape: RuleShape | null = reference && reference.type === type ? reference : type === 'fastest' ? { type, kind: 'time', target: 300 } : type === 'steady' ? { type, minDuration: 600 } : type === 'run' || type === 'lap' ? { type }
+      : type === 'pattern' && layout ? { type, laps: layout.laps, tolerance: 0.03, match: 'identical' } : null;
     if (!shape) return r;
     return { ...r, shape, pick: type === 'fastest' ? 'best' : 'all' };
   });
@@ -148,8 +189,11 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
         <div className="field">
           <span>{t('From each run')}</span>
           <div className="segmented" role="radiogroup" aria-label={t('From each run')}>
-            {reference && <button type="button" role="radio" aria-checked={shape.type === reference.type} className={shape.type === reference.type ? 'on' : ''} onClick={() => setShape(reference.type)} title={t('Taken from a run')}>{shapeName(reference)}</button>}
-            {SHAPES.map(([k, l]) => <button key={k} type="button" role="radio" aria-checked={shape.type === k} className={shape.type === k ? 'on' : ''} onClick={() => setShape(k)}>{t(l)}</button>)}
+            {reference && reference.type !== 'pattern' && <button type="button" role="radio" aria-checked={shape.type === reference.type} className={shape.type === reference.type ? 'on' : ''} onClick={() => setShape(reference.type)} title={t('Taken from a run')}>{shapeName(reference)}</button>}
+            {SHAPES.map(([k, l]) => {
+              const none = k === 'pattern' && !options.layouts.length && reference?.type !== 'pattern';
+              return <button key={k} type="button" role="radio" aria-checked={shape.type === k} className={shape.type === k ? 'on' : ''} disabled={none} title={none ? t('No layout of laps found in your runs yet') : k === 'pattern' ? t('The effort laps of the runs of a layout of laps, as 3 × 10 min') : undefined} onClick={() => setShape(k)}>{t(l)}</button>;
+            })}
           </div>
         </div>
         {shape.type === 'fastest' && (
@@ -179,6 +223,10 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
             <span>{t('Only laps set up as {length}', { length: planned ? lengthName(planned.kind, planned.target, SHOWN_WORDS) : t('a length') })} <span className="muted small">{t("(a workout's laps, not auto-laps)")}</span></span>
           </label>
         )}
+        {shape.type === 'pattern' && (
+          <LayoutField label={t('Layout of laps')} value={{ laps: shape.laps, match: shape.match ?? 'identical' }} layouts={options.layouts}
+            onChange={(v) => v && setRule((r) => ({ ...r, shape: { type: 'pattern', laps: v.laps, tolerance: shape.tolerance, match: v.match } }))} />
+        )}
         {shape.type === 'steady' && (
           <label className="field">
             <span>{t('Kept for at least')}</span>
@@ -202,6 +250,7 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
         </div>
         <Picks label={t('Workout type')} options={options.workoutTypes} chosen={rule.runs.workoutTypes} onChange={(v) => runs({ workoutTypes: v })} />
         <Picks label={t('Shoes')} options={options.shoes} chosen={rule.runs.shoes} onChange={(v) => runs({ shoes: v })} />
+        {options.layouts.length > 0 || rule.runs.layout ? <LayoutField label={t('Lap layout')} value={rule.runs.layout ?? null} layouts={options.layouts} any onChange={(v) => runs({ layout: v ?? undefined })} /> : null}
         <label className="field"><span>{t('Title contains')}</span><input aria-label={t('Title contains')} placeholder={t('e.g. COROS test')} value={rule.runs.title} onChange={(e) => runs({ title: e.target.value })} style={{ width: 200 }} /></label>
         <details className="more">
           <summary className="muted small">{t('More about the runs')}</summary>
