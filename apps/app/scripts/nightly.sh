@@ -9,7 +9,7 @@ failed=0
 for run in 1 2 3; do
   seed=$(node -e 'console.log(Math.floor(Math.random() * 1e9))')
   echo "nightly run $run, seed $seed"
-  npx vitest run --sequence.seed="$seed" --retry=1 --reporter=default --reporter=./tests/support/flakyReporter.ts || { failed=$((failed + 1)); echo "run $run failed: reproduce with --sequence.seed=$seed"; }
+  node scripts/quiet.mjs "shuffled-$run" --vitest "reports/shuffled-$run.json" -- npx vitest run --sequence.seed="$seed" --retry=1 --reporter=default --reporter=json --outputFile="reports/shuffled-$run.json" --reporter=./tests/support/flakyReporter.ts || { failed=$((failed + 1)); echo "run $run failed: reproduce with --sequence.seed=$seed"; }
 done
 node -e '
 const fs = require("fs");

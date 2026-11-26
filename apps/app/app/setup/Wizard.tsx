@@ -8,7 +8,7 @@ import { PATHS, listFitFiles, readJson } from '@/lib/fs';
 import { dateText, msg, number, t, tn } from '@/lib/i18n';
 import { dayOf, newGearId, readGear, writeGear, type Gear, type GearType } from '@/lib/gear';
 import type { RunsIndex } from '@/lib/kernel';
-import { LOAD_SUMMARY_VERSION, autoMaxHr, criticalByRun, type LoadSummary } from '@/lib/load';
+import { autoMaxHr, criticalByRun, summariesCurrent, type LoadSummary } from '@/lib/load';
 import { DEFAULT_PERFORMANCE, DEFAULT_ZONES, LOAD_MODELS, zoneMetricsOf, formatBoundaries, parseBoundaries, parsePerformance, readSettings, writeSettings, writeSetup, zonesFromMaxHr, zonesFromPace, zonesFromPower, type LoadModel, type PerformanceSettings, type ZoneMetric } from '@/lib/settings';
 import { LoadModelChoice } from '../performance/LoadModelPicker';
 import { ChartsCard, DisplayCard, LanguageCard } from '../settings/DeviceCards';
@@ -91,8 +91,8 @@ export function Wizard() {
   const read = useCallback(async () => {
     const [files, index] = await Promise.all([listFitFiles(folder), readJson<RunsIndex>(folder, PATHS.runsIndex)]);
     const runs = index?.runs ?? [];
-    let sums = await readJson<{ version?: number; runs: Record<string, LoadSummary> }>(folder, PATHS.loadSummaries);
-    if (runs.length && sums?.version !== LOAD_SUMMARY_VERSION) {
+    let sums = await readJson<{ version?: number; algorithmVersion?: number; runs: Record<string, LoadSummary> }>(folder, PATHS.loadSummaries);
+    if (runs.length && !summariesCurrent(sums)) {
       await runInWorker('context', handle);
       sums = await readJson(folder, PATHS.loadSummaries);
     }

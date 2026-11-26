@@ -113,8 +113,13 @@ export async function importRuns(folder: DataFolder, opts: ImportOptions = {}): 
 
   index.runs.sort((a, b) => a.startTime.localeCompare(b.startTime));
   index.algorithmVersion = ALGORITHM_VERSION;
-  manifest.algorithmVersion = ALGORITHM_VERSION;
+  // The manifest keeps the version it was built with: an import of new files into a folder built by an
+  // older version does not make its other runs current (it took the mark for a rebuild away), and a tab
+  // still running an older app does not mark a folder built by a newer one as old. A rebuild starts
+  // from an empty manifest, which holds this version.
   manifest.schemaVersion = SCHEMA_VERSION;
+  // The new runs wait for their context and segments (lib/pipeline finishes it, or the next import).
+  if (report.imported > 0) manifest.joined = false;
   await writeJson(folder, PATHS.runsIndex, index);
   await writeJson(folder, PATHS.metrics, { algorithmVersion: ALGORITHM_VERSION, metrics: [...catalog.values()] } satisfies MetricsFile);
   await writeManifest(folder, manifest);

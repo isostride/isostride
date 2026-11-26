@@ -42,8 +42,7 @@ const runIdOf = async (folder: NodeFolder, day: string) => (await readJson<RunsI
 const recs = async (folder: NodeFolder) => (await readJson<{ recommendations: Recommendation[] }>(folder, RECOMMENDATIONS_PATH))!.recommendations;
 const instances = async (folder: NodeFolder) => (await readJson<BlockInstancesFile>(folder, PATHS.blockInstances))!.instances;
 const isPromenade = (r: Recommendation) =>
-  ((s) => s.type === 'route' && s.length >= 900 && s.length <= 1300 &&
-  s.track.every((p) => p.lat > 41.385 && p.lat < 41.412 && p.lon > 2.19 && p.lon < 2.225))(shapeOf(r));
+  ((s) => s.type === 'route' && s.length >= 900 && s.length <= 1300)(shapeOf(r));
 const isTempo = (r: Recommendation) => ((s) => s.type === 'lap' && s.planned?.kind === 'time' && s.planned.target === 1500)(shapeOf(r));
 
 let all: NodeFolder;

@@ -106,13 +106,29 @@ export function parseFit(bytes: Uint8Array): ParsedRun {
     mergeHeartRates: true,
   });
   if (errors.length) throw new FitImportError(importReason(IMPORT_REASONS.unreadable, { error: String(errors[0]) }));
+  return runFromMessages(messages as Record<string, unknown[] | undefined>);
+}
 
-  const session = (messages.sessionMesgs?.[0] ?? null) as Mesg | null;
-  if (!session) throw new FitImportError(IMPORT_REASONS.noSession);
-  if (session.sport !== 'running') throw new FitImportError(importReason(IMPORT_REASONS.notRun, { sport: String(session.sport ?? 'unknown') }));
+/**
+ * The run of a decoded FIT file. A file of several sports (a duathlon, a triathlon, a run and a ride
+ * saved as one) gives its first running session with the records and laps of that session alone: before,
+ * the first session decided (a triathlon was "not a run", for good) and every record of the file became
+ * the run (a ride's 10 m/s among a run's bests). A file of one session is read whole, as before.
+ */
+export function runFromMessages(messages: Record<string, unknown[] | undefined>): ParsedRun {
+  const sessions = (messages.sessionMesgs ?? []) as Mesg[];
+  if (!sessions.length) throw new FitImportError(IMPORT_REASONS.noSession);
+  const session = sessions.find((x) => x.sport === 'running') ?? null;
+  if (!session) throw new FitImportError(importReason(IMPORT_REASONS.notRun, { sport: String(sessions[0].sport ?? 'unknown') }));
+  // The time the running session covers, when the file holds others: a second of slack at its end.
+  const from = (session.startTime as Date).getTime();
+  const to = from + ((num(session.totalElapsedTime) ?? num(session.totalTimerTime) ?? 0) + 1) * 1000;
+  const inSession = (at: unknown) => sessions.length === 1 || (at instanceof Date && at.getTime() >= from && at.getTime() <= to);
 
-  const records = (messages.recordMesgs ?? []) as Mesg[];
+  const records = ((messages.recordMesgs ?? []) as Mesg[]).filter((r) => inSession(r.timestamp));
   if (!records.length) throw new FitImportError(IMPORT_REASONS.noSamples);
+  // The distance of a later leg counts on from the legs before it: the run's own starts at 0.
+  const distance0 = sessions.length > 1 ? num(records[0].distance) ?? 0 : 0;
 
   const start = session.startTime as Date;
   const startMs = start.getTime();
@@ -141,7 +157,7 @@ export function parseFit(bytes: Uint8Array): ParsedRun {
     const ts = r.timestamp as Date | undefined;
     if (!ts) continue;
     s.t.push(Math.round((ts.getTime() - startMs) / 1000));
-    s.distance.push(num(r.distance));
+    s.distance.push(num(r.distance) === null ? null : num(r.distance)! - distance0);
     const lat = num(r.positionLat);
     const lon = num(r.positionLong);
     s.lat.push(lat === null ? null : round6(lat * SEMICIRCLE_TO_DEG));
@@ -167,7 +183,7 @@ export function parseFit(bytes: Uint8Array): ParsedRun {
   for (const k of ['speed', 'altitude', 'cadence', 'groundContactTime', 'respirationRate']) if (values[k]) standard[k] ??= KNOWN_METRICS[k];
   const metrics = [...Object.values(standard), ...developer.filter((d) => values[d.key]).map((d) => d.info)];
 
-  const laps: Lap[] = ((messages.lapMesgs ?? []) as Mesg[]).map((l) => {
+  const laps: Lap[] = ((messages.lapMesgs ?? []) as Mesg[]).filter((l) => inSession(l.startTime)).map((l) => {
     const lapStart = Math.round(((l.startTime as Date).getTime() - startMs) / 1000);
     return {
       start: lapStart,

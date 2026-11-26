@@ -1,6 +1,6 @@
 import { decouplingOf } from '@/lib/blocks';
 import { CURVE_DURATIONS, bestsWithin } from '@/lib/curve';
-import { metricSeries, type RunFile, type Series } from '@/lib/kernel';
+import { ALGORITHM_VERSION, metricSeries, type RunFile, type Series } from '@/lib/kernel';
 
 /**
  * What the load models need of a run, whatever the settings (ADR "Load and form models"): kept in
@@ -69,6 +69,14 @@ export const HR_LAG = 90;
 
 /** Raised when the summary changes, so every run is summarised again (3: where each best lies and the heart rate in it; 4: the bests of every length of the curve, 30 s to 2 h; 5: the curve fitted as an envelope moves the critical speed and power, so the loads of rTSS and Power TSS are counted again; 6: the bests taken whole and from the effort pace or without downhills, the heart rate's peak from a 10 s window, the efficiency from the effort pace, the steady part past the warm-up; 7: the decoupling past the warm-up). */
 export const LOAD_SUMMARY_VERSION = 7;
+
+/**
+ * Whether the summaries kept (derived/load-summaries.json) were made by this version of the summary and of
+ * the algorithms: else they are made again (lib/context), and the screens that read them wait for that.
+ */
+export function summariesCurrent(file: { version?: number; algorithmVersion?: number } | null | undefined): boolean {
+  return !!file && file.version === LOAD_SUMMARY_VERSION && file.algorithmVersion === ALGORITHM_VERSION;
+}
 
 /** A sample counts until the next one, but no longer than this, s: a pause counts as nothing. */
 const HOLD = 5;

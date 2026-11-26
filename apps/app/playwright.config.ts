@@ -18,14 +18,14 @@ export default defineConfig({
   use: { baseURL: 'http://localhost:4173', trace: 'retain-on-failure' },
   webServer: [
     {
-      command: 'npm run -s build && node scripts/static-server.mjs .next-build 4173',
+      command: 'npm run -s build && node scripts/static-server.mjs .next-build 4173 app',
       url: 'http://localhost:4173',
       reuseExistingServer: false,
       timeout: 300_000,
     },
     // The site (apps/site), for its own budget (e2e/site.spec.ts), served the same way.
     {
-      command: 'npm run -s build -w @isostride/site && node scripts/static-server.mjs ../site/.next-build 4174',
+      command: 'npm run -s build -w @isostride/site && node scripts/static-server.mjs ../site/.next-build 4174 site',
       url: 'http://localhost:4174',
       reuseExistingServer: false,
       timeout: 300_000,

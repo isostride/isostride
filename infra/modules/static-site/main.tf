@@ -25,6 +25,11 @@ variable "certificate_arn" {
   type        = string
 }
 
+variable "content_security_policy" {
+  description = "The Content-Security-Policy header of every answer"
+  type        = string
+}
+
 variable "function_code" {
   description = "The CloudFront Function (cloudfront-js-2.0) run on each viewer request"
   type        = string
@@ -124,6 +129,13 @@ resource "aws_cloudfront_response_headers_policy" "this" {
     referrer_policy {
       referrer_policy = "strict-origin-when-cross-origin"
       override        = true
+    }
+    # Where the pages may load from and connect to (infra/csp.json, the policy the end-to-end tests run
+    # under too): a script that got into a page cannot load another from elsewhere nor send what the app
+    # holds (the folder, the COROS tokens) to a host of its own.
+    content_security_policy {
+      content_security_policy = var.content_security_policy
+      override                = true
     }
   }
 }

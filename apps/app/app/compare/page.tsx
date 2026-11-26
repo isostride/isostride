@@ -389,7 +389,7 @@ function AnalysisPage() {
             <div className="metric-picker" role="group" aria-label={t('Metrics')}>
               {METRICS.map((x) => <button key={x.key} className={`pill ${metrics.includes(x.key) ? 'on' : ''}`} aria-pressed={metrics.includes(x.key)} title={x.name} onClick={() => toggleMetric(x.key)}>{x.short}</button>)}
             </div>
-            <label className="setting inline pace-even" title={t('Each value moved to the segment’s mean pace, by how the metric goes with the pace across its efforts: what is left is what the pace does not explain (technique, form). The pace itself is never moved.')}>
+            <label className="setting inline pace-even" title={t('Each value moved to the segment’s mean pace, by how the metric goes with the pace beside the passing of time (in A/B: inside each group): what is left is what the pace does not explain (technique, form). A pace itself is never moved, and nothing is when pace and time cannot be told apart.')}>
               <input type="checkbox" checked={corrected} onChange={(e) => setCorrected(e.target.checked)} /> {t('Even out to the same pace')}
             </label>
           </div>
@@ -442,7 +442,7 @@ function AnalysisPage() {
                       domain={domain} join={joinPoints} fit={trendLine} labels={k === 0} height={metrics.length > 1 ? 210 : 300} />
                   </div>
                 ))}
-                <div className="chart-note">{t("Thin line: the points in date order. Thick line: the fitted trend, its band the noise between a segment's efforts (±1 standard deviation). Click a point to open its run.")}</div>
+                <div className="chart-note">{t("Thin line: the points in date order. Thick line: the fitted trend through the runs, its band the noise about it (±1 standard deviation of the runs from the line). Click a point to open its run.")}</div>
               </div>
 
               {/* No table of changes under the charts ("ok usun mi to wogole z dolu"): the Efforts tab has the changes by run. */}

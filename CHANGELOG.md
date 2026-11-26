@@ -11,6 +11,16 @@ The versions of IsoStride (the app at app.isostride.com and the site at isostrid
 ### On a phone
 - Every screen, dialog and step of the setup wizard fits a phone: the wizard's steps, the rule of a new segment, the tables (their secondary columns left out), the map of the models read down the screen.
 
+### Comparisons, data and privacy, reviewed
+- A/B and trends count runs, not single efforts: the reps of one run are one measurement. A verdict needs 4 runs on each side (5 for a trend), and the 95 % interval is Welch's on the runs' means (the bootstrap over efforts was too narrow for so few).
+- The pace correction no longer takes away what is compared: in A/B it uses the slope inside the groups (a real +5 bpm read +0.4), in a trend the slope of pace beside time; effort pace is never corrected.
+- The noise band of a trend is the spread about its line, not of all its values; the check that two groups take turns in time no longer passes on one stray run; several metrics judged at once say so.
+- Segments: "fastest N minutes" lasts N minutes (it was 2 s short); a segment's distance runs to its end (1 km in 4:00 read 4:01 /km); a lap that fits both a time and a distance is read as the other reps of its set; runs recorded smart (a sample every few seconds) keep their segments. The segments are found again once.
+- Import: an import cut off before it finished is completed by the next one or as the app opens; a folder built by an older version stays marked for its rebuild; a file of several sports gives its running leg; two tabs on one folder take turns writing.
+- Settings › Models: values out of range or against each other are named and not saved (they were replaced by defaults in silence); saving the model no longer takes back the thresholds of the checks. Gear and tags added one after the other no longer overwrite each other.
+- A link to a run with an absurd range no longer hangs the tab; the model tiles of the Dashboard follow an import; the D′ balance and map dialogs keep Tab inside and give the focus back.
+- CSV exports guard cells a spreadsheet would run as formulas. Both sites answer with a Content-Security-Policy.
+
 ### Performance models, reviewed again
 - Péronnet–Thibault and the omni-domain model: the decline past 7 (30) minutes is the runner's own only when a best of 30 minutes or more lies within 3 % of the curve with Riegel's decline, or above it. Easy long runs bent the curve down to them (a marathon of 2:55 read as 3:14 to 4:18); they are now taken for easy runs, and the note says whose decline it is. Without such a best the omni-domain model takes Riegel's decline too, not none.
 - D′ balance of a run is read against the bests of the 90 days before the run, the run itself left out: a run that goes past them shows under 0 % (with the run in, it ended at exactly 0 %).

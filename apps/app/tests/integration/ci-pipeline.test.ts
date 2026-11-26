@@ -33,6 +33,35 @@ function script(of: string, step: string): string {
  * marks its tree, and the push to master of that tree runs no test again.
  */
 describe('CI/CD pipeline', () => {
+  it("Nothing of the runner's leaves the pipeline", () => {
+    // The tests' own output goes to the run's reports, not to the public log (scripts/quiet.mjs).
+    const check = fs.readFileSync(path.join(REPO, 'apps/app/scripts/check.sh'), 'utf8');
+    for (const line of check.split('\n').filter((l) => /npx (vitest run|playwright test)/.test(l) && !/^\s*#/.test(l) && /--(shard|coverage|project unit)/.test(l))) expect(line).toContain('node scripts/quiet.mjs');
+    expect(fs.readFileSync(path.join(REPO, 'apps/app/scripts/nightly.sh'), 'utf8')).toMatch(/node scripts\/quiet\.mjs "shuffled-\$run"/);
+    // The builds the deploy ships are handed on as artifacts of their own run: never read back from the bucket.
+    expect(yml).not.toMatch(/\$REPORTS\/build/);
+    expect(job('e2e')).toContain('name: build-app');
+    expect(job('static')).toContain('name: build-site');
+    expect(job('check')).toContain('name: build-app');
+    // No coordinate of the runner's routes in a test: none of them compares a latitude or a longitude with a number.
+    const tests = path.join(REPO, 'apps/app/tests');
+    const files = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(path.join(dir, e.name)) : e.name.endsWith('.ts') ? [path.join(dir, e.name)] : []));
+    for (const f of files(tests)) expect(fs.readFileSync(f, 'utf8'), f).not.toMatch(/\.l(at|on)(\[\w+\])?\)?\s*(\)\.toBeCloseTo\(|[<>]=?\s*)-?\d+\.\d{3,}/);
+    // The policy both sites answer with, the one the end-to-end tests run under, on a fixed day.
+    const csp = JSON.parse(fs.readFileSync(path.join(REPO, 'infra/csp.json'), 'utf8')) as Record<string, string>;
+    for (const site of ['app', 'site']) {
+      expect(csp[site]).toMatch(/default-src 'self'/);
+      expect(csp[site]).toMatch(/object-src 'none'/);
+      expect(csp[site]).toMatch(/frame-ancestors 'none'/);
+    }
+    expect(csp.app).toMatch(/connect-src 'self' https:\/\/\*\.coros\.com;/);
+    expect(fs.readFileSync(path.join(REPO, 'infra/main.tf'), 'utf8').match(/jsondecode\(file\("\$\{path\.module\}\/csp\.json"\)\)\.(app|site)/g)).toHaveLength(2);
+    const config = fs.readFileSync(path.join(REPO, 'apps/app/playwright.config.ts'), 'utf8');
+    expect(config).toContain('static-server.mjs .next-build 4173 app');
+    expect(config).toContain('static-server.mjs ../site/.next-build 4174 site');
+    expect(fs.readFileSync(path.join(REPO, 'apps/app/e2e/support.ts'), 'utf8')).toContain('await page.clock.install({ time: TEST_NOW });');
+  });
+
   it('A tree checked once is not checked again', () => {
     // The step that asks, run as the workflow runs it, with an `aws` that answers as the bucket would.
     const bin = path.join(dir, 'bin');

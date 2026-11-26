@@ -6,7 +6,7 @@ import type { RunFile } from '@/lib/kernel';
  * The fragment from sample i covering `target` m (distance) or lasting `target` s (time): its end index, or -1.
  * A time may fall `slack` s short of its length (the last sample ends a run).
  */
-function endFrom(ts: number[], ds: number[], i: number, kind: 'time' | 'distance', target: number, slack = 2): number {
+function endFrom(ts: number[], ds: number[], i: number, kind: 'time' | 'distance', target: number, slack = 0): number {
   let lo = i;
   let hi = ts.length - 1;
   const reached = (j: number) => (kind === 'distance' ? ds[j] - ds[i] >= target : ts[j] - ts[i] >= target - slack);
@@ -83,8 +83,13 @@ export function stretches(run: RunFile, kind: 'time' | 'distance', target: numbe
     if (d !== null) { ts.push(t[i]); ds.push(d); idx.push(i); }
   }
   const list: Stretch[] = [];
+  // Whole stretches (a "fastest 5 minutes" was 298 s: every start took the 2 s meant for the last sample
+  // of a run). Only a stretch that ends on the run's last sample may fall 2 s short: that sample ends the
+  // run, and the last 5 minutes of a run recorded every second lie 299 s apart.
+  const last = ts.length - 1;
   for (let i = 0; i < ts.length; i++) {
-    const j = endFrom(ts, ds, i, kind, target);
+    let j = endFrom(ts, ds, i, kind, target);
+    if (j < 0 && kind === 'time' && ts[last] - ts[i] >= target - 2) j = last;
     if (j < 0) break;
     if (ds[j] - ds[i] > 0 && ts[j] > ts[i]) list.push({ from: ts[i], to: ts[j], distance: ds[j] - ds[i], i, j });
   }

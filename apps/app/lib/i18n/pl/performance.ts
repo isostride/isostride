@@ -170,6 +170,7 @@ export const PERFORMANCE: Dictionary = {
   'Prediction (cross-validated R²)': 'Przewidywanie (R² walidacji krzyżowej)',
   'No best of 30 minutes or more lies within {reach} % of this curve, so the decline is not yours: it is Riegel’s 1.06, a population figure, and the half and the marathon follow it. Longer bests further below are taken for easy runs; if they were all-out, your endurance is lower and those times are too fast.': 'Żaden wynik z 30 minut lub dłużej nie leży w granicach {reach} % od tej krzywej, więc spadek nie jest twój: to 1,06 Riegla, wartość populacyjna, i półmaraton oraz maraton z niej wynikają. Dłuższe wyniki leżące niżej są uznane za spokojne biegi; jeśli były na maksa, twoja wytrzymałość jest niższa, a te czasy za szybkie.',
   'Fitness τ1': 'Sprawność τ1',
+  'Not saved: the values marked lie outside their range (resting heart rate {restHr} bpm, maximum {maxHr} bpm, threshold pace {pace} /km, power {power} W, fitness {fitness} days, fatigue {fatigue} days), or the maximum heart rate is not above the resting one, or fatigue is not shorter than fitness.': 'Nie zapisano: zaznaczone wartości leżą poza zakresem (tętno spoczynkowe {restHr} bpm, maksymalne {maxHr} bpm, tempo progowe {pace} /km, moc {power} W, sprawność {fitness} dni, zmęczenie {fatigue} dni) albo tętno maksymalne nie jest wyższe od spoczynkowego, albo zmęczenie nie jest krótsze od sprawności.',
   '{low}–{high} d fit as well': '{low}–{high} d pasuje równie dobrze',
   'Fatigue τ2': 'Zmęczenie τ2',
   'Peak if you rest': 'Szczyt, jeśli odpoczniesz',

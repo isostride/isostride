@@ -150,9 +150,19 @@ export function setCopyId(id: string | null): void {
   copyId = id;
 }
 
+/**
+ * One writing job at a time across the tabs and windows open on a folder too (the Web Locks API, where the
+ * browser has it): each reads the index and the manifest, changes them and writes them back, and two tabs
+ * doing so at once lost each other's runs (the review of 26 Nov 2026).
+ */
+function acrossTabs<T>(folderName: string, job: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator === 'undefined' ? undefined : navigator.locks;
+  return locks ? locks.request(`isostride-write:${folderName}`, job) : job();
+}
+
 /** Runs one job in a fresh Processing Worker, after the jobs writing the data before it; resolves when it is done. */
 export async function runInWorker(job: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures'>, handle: FileSystemDirectoryHandle, onProgress?: Progress): Promise<DoneEvent> {
-  const turn = writing.then(() => start({ type: job, handle, copy: copyId }, onProgress));
+  const turn = writing.then(() => acrossTabs(handle.name, () => start({ type: job, handle, copy: copyId }, onProgress)));
   writing = turn.catch(() => undefined);
   const m = await turn;
   if (m.type !== 'done') throw new Error(t('unexpected {type}', { type: m.type }));

@@ -998,6 +998,47 @@
     ] },
     { "element": "ca0e2c80-7413-474f-ba55-6b57bcd216d8", "name": "Tree checked once", "tests": [
       "tests/integration/ci-pipeline.test.ts › CI/CD pipeline › A tree checked once is not checked again"
+    ] },
+    { "element": "38f917b6-3773-4a06-a276-da79f543943e", "name": "Pace corrected inside the groups", "tests": [
+      "tests/unit/compare-review.test.ts › Comparisons reviewed › Pace corrected by the slope inside the groups",
+      "tests/unit/compare-review.test.ts › Comparisons reviewed › A trend kept by the pace correction"
+    ] },
+    { "element": "c0ac795c-8012-4f9c-9d0c-a253af4b1d54", "name": "Run as the unit", "tests": [
+      "tests/unit/compare-review.test.ts › Comparisons reviewed › The run is the unit of a comparison"
+    ] },
+    { "element": "f3f8f1c1-e2bc-4f53-a190-1fe58369cd46", "name": "Groups that take turns", "tests": [
+      "tests/unit/compare-review.test.ts › Comparisons reviewed › Groups that take turns in time"
+    ] },
+    { "element": "0a38bf41-9461-4f2e-9033-fd22a784a8b9", "name": "Segments whole in length and distance", "tests": [
+      "tests/unit/compare-review.test.ts › Comparisons reviewed › Segments of their whole length and distance"
+    ] },
+    { "element": "3f655a96-31b1-46cb-8499-1686e0170596", "name": "Lap read as its set", "tests": [
+      "tests/unit/compare-review.test.ts › Comparisons reviewed › A lap read as the reps of its set"
+    ] },
+    { "element": "51211aa4-e661-4f5f-ad5b-b92e0aea064c", "name": "Run recorded smart", "tests": [
+      "tests/unit/compare-review.test.ts › Comparisons reviewed › A run recorded smart keeps its segments"
+    ] },
+    { "element": "bee402da-679f-49a5-9d2a-c2387657f4f3", "name": "CSV cells not run", "tests": [
+      "tests/unit/compare-review.test.ts › Comparisons reviewed › CSV cells no spreadsheet runs"
+    ] },
+    { "element": "5a685c04-7952-4a63-b559-39d36109a02c", "name": "Import cut off finished", "tests": [
+      "tests/integration/data-review.test.ts › Data path reviewed › An import cut off is finished by the next one"
+    ] },
+    { "element": "cc69f5d6-c31f-47e1-af2e-4f458cfa4a75", "name": "Older folder stays marked", "tests": [
+      "tests/integration/data-review.test.ts › Data path reviewed › New files leave an older folder marked for its rebuild",
+      "tests/integration/data-review.test.ts › Data path reviewed › Summaries of another version are made again"
+    ] },
+    { "element": "ac4e19ef-393e-42f4-99a7-9cc6e15c0b0f", "name": "Run of several sports", "tests": [
+      "tests/integration/data-review.test.ts › Data path reviewed › The run of a file of several sports"
+    ] },
+    { "element": "3a63bb78-1c25-4287-8a31-2192f137a801", "name": "Model values that cannot be saved", "tests": [
+      "tests/unit/settings-review.test.ts › Settings and screens reviewed › Values of the model that cannot be saved"
+    ] },
+    { "element": "fe13f8a6-fa61-4433-8bc0-aecb959409a4", "name": "Run link within a run", "tests": [
+      "tests/unit/settings-review.test.ts › Settings and screens reviewed › A run's link within what a run can be"
+    ] },
+    { "element": "0d840438-e0be-42d5-ae0b-a97ea6ac43de", "name": "Pipeline keeps the runner's data", "tests": [
+      "tests/integration/ci-pipeline.test.ts › CI/CD pipeline › Nothing of the runner's leaves the pipeline"
     ] }
   ]
 }

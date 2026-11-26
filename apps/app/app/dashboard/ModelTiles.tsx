@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { useDataVersion } from '@/components';
 import { useLocale } from '@/lib/client';
 import { PATHS, readJson, type DataFolder } from '@/lib/fs';
 import { t } from '@/lib/i18n';
@@ -27,11 +28,13 @@ export function ModelTiles({ folder, models, render }: {
   render: (id: string, title: string, body: React.ReactNode) => React.ReactNode;
 }) {
   const [data, setData] = useState<{ runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; settings: SettingsFile } | null>(null);
+  const dataVersion = useDataVersion();
   useEffect(() => {
     Promise.all([readJson<RunsIndex>(folder, PATHS.runsIndex), readJson<{ runs: Record<string, LoadSummary> }>(folder, PATHS.loadSummaries), readSettings(folder)])
       .then(([index, sums, settings]) => setData({ runs: index?.runs ?? [], summaries: sums?.runs ?? {}, settings }))
       .catch(() => undefined);
-  }, [folder]);
+    // Again after an import or a recompute, as the tiles beside them (the model tiles kept what they first read).
+  }, [folder, dataVersion]);
   const locale = useLocale();
   const report = useMemo(() => {
     if (!data) return null;

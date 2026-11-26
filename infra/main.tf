@@ -56,6 +56,8 @@ module "app" {
   zone_id         = local.zone_id
   certificate_arn = aws_acm_certificate_validation.this.certificate_arn
   function_code   = file("${path.module}/functions/app.js")
+
+  content_security_policy = jsondecode(file("${path.module}/csp.json")).app
 }
 
 # The site: the domain itself, www sent to it.
@@ -66,4 +68,6 @@ module "site" {
   zone_id         = local.zone_id
   certificate_arn = aws_acm_certificate_validation.this.certificate_arn
   function_code   = file("${path.module}/functions/site.js")
+
+  content_security_policy = jsondecode(file("${path.module}/csp.json")).site
 }

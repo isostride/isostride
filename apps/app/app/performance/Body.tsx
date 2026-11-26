@@ -7,7 +7,7 @@ import { runInWorker, useLocale, useOpenFolder } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
 import { t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
-import { LOAD_SUMMARY_VERSION, formSeries, onLoad, performanceReport, type LoadSummary, type ModelKey, type ModelReport } from '@/lib/load';
+import { formSeries, onLoad, performanceReport, summariesCurrent, type LoadSummary, type ModelKey, type ModelReport } from '@/lib/load';
 import { CURVE_MODELS, LOAD_MODELS, readSettings, type SettingsFile } from '@/lib/settings';
 import { PinButton } from '../dashboard/PinButton';
 import { WhyBar } from './Assumptions';
@@ -36,7 +36,9 @@ interface Data {
  * 200 KB of script per route): the runs' summaries read once, the models' report computed from
  * them, and for each view its models' trust with a "Why?", then its data.
  */
-export function Body({ tab, view, embedded = false }: { tab: Tab; view: string; /** on the Dashboard: the view's charts alone */ embedded?: boolean }) {
+export function Body({ tab: asked, view, embedded = false }: { tab: Tab; view: string; /** on the Dashboard: the view's charts alone */ embedded?: boolean }) {
+  // A tab the app no longer has (a tile pinned by an older version, a link edited by hand) threw as it was drawn, and the whole Dashboard with it: the overview.
+  const tab: Tab = TABS.some((tb) => tb.key === asked) ? asked : 'overview';
   const { folder, handle } = useOpenFolder();
   const [data, setData] = useState<Data | null>(null);
   const [preparing, setPreparing] = useState(false);
@@ -48,11 +50,11 @@ export function Body({ tab, view, embedded = false }: { tab: Tab; view: string; 
   useEffect(() => {
     let live = true;
     (async () => {
-      const read = () => readJson<{ version?: number; runs: Record<string, LoadSummary> }>(folder, PATHS.loadSummaries);
+      const read = () => readJson<{ version?: number; algorithmVersion?: number; runs: Record<string, LoadSummary> }>(folder, PATHS.loadSummaries);
       let file = await read();
       const index = await readJson<RunsIndex>(folder, PATHS.runsIndex);
       // Summaries of an earlier version are built again once, in the Processing Worker.
-      if (index?.runs.length && file?.version !== LOAD_SUMMARY_VERSION) {
+      if (index?.runs.length && !summariesCurrent(file)) {
         if (live) setPreparing(true);
         await runInWorker('context', handle);
         file = await read();
@@ -107,7 +109,7 @@ export function Body({ tab, view, embedded = false }: { tab: Tab; view: string; 
   // to the data folder, so it stays the English one (the keys), whatever the language in use.
   return (
     <>
-      {(['capacity/efforts', 'capacity/predictions', 'whatif/curve', 'response/vdot'].includes(`${tab}/${shown.key}`)) && (
+      {(['capacity/efforts', 'capacity/predictions', 'whatif/curve'].includes(`${tab}/${shown.key}`)) && (
         <p className="load-using muted small" role="note" aria-label={t('Curve model in use')}>
           {t('The curve of your bests and the predicted times come from')} <span className="by-load">{curveName}</span>. <Link href="/settings?tab=models">{t('Change it in Settings →')}</Link>
         </p>

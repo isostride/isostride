@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Key, clock, niceTicks, timeTicks, useWidth } from '@/components';
+import { Key, clock, niceTicks, timeTicks, useDialogKeys, useWidth } from '@/components';
 import { pace as fmtPace } from '@/lib/format';
 import { number, t } from '@/lib/i18n';
 import { PATHS, readJson, type DataFolder } from '@/lib/fs';
@@ -22,15 +22,11 @@ const POINTS = 600;
  */
 export function BalanceDialog({ run, folder, onClose }: { run: RunFile; folder: DataFolder; onClose: () => void }) {
   const close = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    close.current?.focus();
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', esc);
-    return () => window.removeEventListener('keydown', esc);
-  }, [onClose]);
+  const dialog = useRef<HTMLDivElement>(null);
+  useDialogKeys(dialog, close, onClose);
   return (
     <div className="route-expanded-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="balance-dialog" role="dialog" aria-modal="true" aria-label={t('D′ balance')}>
+      <div ref={dialog} className="balance-dialog" role="dialog" aria-modal="true" aria-label={t('D′ balance')}>
         <div className="route-expanded-head">
           <h2>{t('D′ balance')}</h2>
           <button ref={close} type="button" className="btn sm" onClick={onClose}>{t('Close')}</button>

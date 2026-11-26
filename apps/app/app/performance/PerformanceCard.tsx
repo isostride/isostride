@@ -7,7 +7,7 @@ import { PATHS, readJson } from '@/lib/fs';
 import { t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import { autoMaxHr, criticalByRun, type LoadSummary } from '@/lib/load';
-import { DEFAULT_PERFORMANCE, parsePerformance, readSettings, writeSettings, type PerformanceSettings } from '@/lib/settings';
+import { DEFAULT_PERFORMANCE, PERFORMANCE_RANGES, invalidPerformance, parsePerformance, readSettings, writeSettings, type PerformanceSettings } from '@/lib/settings';
 import { CurveModelChoice, LoadModelChoice } from './LoadModelPicker';
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
@@ -16,6 +16,8 @@ const parsePace = (t: string): number | null | undefined => {
   const m = t.trim().match(/^(\d{1,2}):(\d{2})$/);
   return m ? Number(m[1]) * 60 + Number(m[2]) : undefined;
 };
+const clockOf = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+const range = (k: keyof typeof PERFORMANCE_RANGES) => `${PERFORMANCE_RANGES[k][0]}–${PERFORMANCE_RANGES[k][1]}`;
 const parseNum = (t: string): number | null | undefined => (t.trim() === '' ? null : Number.isFinite(Number(t)) ? Number(t) : undefined);
 
 /**
@@ -69,7 +71,10 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
     restHr: parseNum(texts.restHr), maxHr: parseNum(texts.maxHr), thresholdPace: parsePace(texts.thresholdPace), thresholdPower: parseNum(texts.thresholdPower),
     fitnessDays: parseNum(texts.fitnessDays), fatigueDays: parseNum(texts.fatigueDays),
   };
-  const bad = (Object.entries(values) as [keyof typeof values, number | null | undefined][]).filter(([k, v]) => v === undefined || ((k === 'restHr' || k === 'fitnessDays' || k === 'fatigueDays') && v === null)).map(([k]) => k);
+  const unread = (Object.entries(values) as [keyof typeof values, number | null | undefined][]).filter(([k, v]) => v === undefined || ((k === 'restHr' || k === 'fitnessDays' || k === 'fatigueDays') && v === null)).map(([k]) => k);
+  // Out of its range, or against another value: said and not saved (it was replaced by the default in silence, the form reading "Saved").
+  const outside = invalidPerformance(Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v ?? null])) as Parameters<typeof invalidPerformance>[0]);
+  const bad = [...new Set([...unread, ...outside])];
   // Saved by the runner: the values are theirs from now on (the assumptions' checks read this).
   const next = parsePerformance({ ...p, ...Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined)), confirmed: true });
   const edit = (k: keyof typeof texts, v: string) => { setTexts((x) => ({ ...x, [k]: v })); setStatus(null); };
@@ -87,7 +92,8 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
     if (bad.length) return;
     const s = await readSettings(folder);
     // The zones stay as they are: the defaults are not saved as the runner's own.
-    await writeSettings(folder, { schemaVersion: 1, ...(s.defaults ? {} : { zones: s.zones }), performance: next });
+    // The thresholds of the checks as they are saved now (the card below saves them): not those read when this card opened.
+    await writeSettings(folder, { schemaVersion: 1, ...(s.defaults ? {} : { zones: s.zones }), performance: { ...next, thresholds: s.performance.thresholds } });
     setSaved(now);
     setStatus(t('Recomputing the loads…'));
     await runInWorker('context', handle);
@@ -116,6 +122,7 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
         {status && <span className="muted small" role="status">{status}</span>}
         {dirty && <button className="btn" onClick={discard}>{t('Cancel')}</button>}
         {dirty && <button className="btn primary" disabled={bad.length > 0} onClick={save}>{t('Save and recompute')}</button>}
+        {dirty && bad.length > 0 && <span className="form-error small" role="alert">{t('Not saved: the values marked lie outside their range (resting heart rate {restHr} bpm, maximum {maxHr} bpm, threshold pace {pace} /km, power {power} W, fitness {fitness} days, fatigue {fatigue} days), or the maximum heart rate is not above the resting one, or fatigue is not shorter than fitness.', { restHr: range('restHr'), maxHr: range('maxHr'), pace: `${clockOf(PERFORMANCE_RANGES.thresholdPace[0])}–${clockOf(PERFORMANCE_RANGES.thresholdPace[1])}`, power: range('thresholdPower'), fitness: range('fitnessDays'), fatigue: range('fatigueDays') })}</span>}
       </div>
       <div className="form-section">
         <h3>{t('Load of a run, counted as')}</h3>

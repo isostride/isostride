@@ -66,14 +66,14 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing, cor
   const [va, vb] = pair && activeField && values[activeField].includes(pair[0]) && values[activeField].includes(pair[1]) ? pair : activeField ? [values[activeField][0], values[activeField][1]] : ['', ''];
 
   const result: AbResult | null = useMemo(
-    // Named in the language in use; the bootstrap's seed from the values themselves, so a verdict is the same in every language.
-    () => (activeField ? computeAb(all, defId, metric, byField(activeField, va, vb), [contextValue(va), contextValue(vb)], {}, corrected, hash(defId + metric + [va, vb].join('|'))) : null),
+    // Named in the language in use.
+    () => (activeField ? computeAb(all, defId, metric, byField(activeField, va, vb), [contextValue(va), contextValue(vb)], {}, corrected) : null),
     [all, defId, metric, activeField, va, vb, corrected],
   );
 
   // A verdict for each metric chosen above the tabs, on the same split.
   const verdicts = useMemo(
-    () => (activeField ? metrics.map((mt) => ({ mt, r: computeAb(all, defId, mt, byField(activeField, va, vb), [contextValue(va), contextValue(vb)], {}, corrected, hash(defId + mt + [va, vb].join('|'))) })) : []),
+    () => (activeField ? metrics.map((mt) => ({ mt, r: computeAb(all, defId, mt, byField(activeField, va, vb), [contextValue(va), contextValue(vb)], {}, corrected) })) : []),
     [all, defId, metrics, activeField, va, vb, corrected],
   );
 
@@ -142,6 +142,7 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing, cor
                   })}
                 </tbody>
               </table>
+              <p className="chart-note" data-note="several-metrics">{t('{n} metrics judged at once, each by its own 95% interval: with nothing different, about one comparison in twenty still reads a change, so a single change among several metrics is weak evidence.', { n: number(verdicts.length) })}</p>
             </div>
           )}
           {(() => {
@@ -225,7 +226,7 @@ function DifferencePlot({ r, metric }: { r: AbResult; metric: BlockMetric }) {
       </svg>
       <div className="axis-ends small muted">
         <span>← {pace ? t('{b} faster', { b: r.b.label }) : t('{b} lower', { b: r.b.label })}</span>
-        <span>{unit}, {r.b.label} − {r.a.label}{r.ci ? ` · ${t('whisker: 95% interval')}` : ''}</span>
+        <span>{unit}, {r.b.label} − {r.a.label}{r.ci ? ` · ${t('whisker: 95% interval (Welch, each run once)')}` : ''}</span>
         <span>{pace ? t('{b} slower', { b: r.b.label }) : t('{b} higher', { b: r.b.label })} →</span>
       </div>
     </div>

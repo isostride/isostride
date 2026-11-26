@@ -163,8 +163,12 @@ function MetricsCard() {
     const before = await readSettings(folder);
     // The zones of metrics this folder does not hold stay as they were.
     const kept = before.defaults ? {} : before.zones;
-    await writeSettings(folder, { schemaVersion: 1, zones: { ...kept, ...Object.fromEntries(ZONE_METRICS.map((m) => [m.key, parsed[m.key] ?? []])) }, performance: before.performance, directions: dirs });
-    setDefaults(false);
+    // The default zones, untouched, are not saved as the runner's own with a direction alone (the checks of
+    // the models then took them for set).
+    const zonesTouched = base === null || JSON.stringify(texts) !== JSON.stringify(base.texts);
+    const leaveDefaults = !!before.defaults && !zonesTouched;
+    await writeSettings(folder, { schemaVersion: 1, ...(leaveDefaults ? {} : { zones: { ...kept, ...Object.fromEntries(ZONE_METRICS.map((m) => [m.key, parsed[m.key] ?? []])) } }), performance: before.performance, directions: dirs });
+    if (!leaveDefaults) setDefaults(false);
     const directionsChanged = base !== null && dirsOf(dirs) !== dirsOf(base.dirs);
     setBase({ texts, dirs });
     if (directionsChanged) window.dispatchEvent(new Event(METRICS_CHANGED));

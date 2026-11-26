@@ -1,4 +1,6 @@
-import { metricSeries, type Samples, type Series, type Windows } from '@/lib/kernel';
+import { MAX_SAMPLE_COVER, metricSeries, type Samples, type Series, type Windows } from '@/lib/kernel';
+
+export { MAX_SAMPLE_COVER };
 
 export const WINDOW_SECONDS = 10;
 /** Windows that start before this many seconds into the run are flagged (spec F3). */
@@ -14,11 +16,6 @@ export const MISSING_SHARE = 0.5;
 
 /** Metrics whose absence flags a window (the ones blocks and comparisons rest on). */
 const SIGNAL_METRICS = ['speed', 'heartRate'];
-/**
- * A sample stands for the time to the next one, but no more than this (requirement "Stops found by
- * time"): a watch that records smart (every 1 to 7 s) covers its windows, a pause without samples does not.
- */
-export const MAX_SAMPLE_COVER = 10;
 
 
 

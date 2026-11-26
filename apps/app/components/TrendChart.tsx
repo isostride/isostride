@@ -155,7 +155,7 @@ export function TrendChart({ trend, format, tick = format, invert, markers, sele
         {hover && <circle cx={hover.x} cy={hover.y} r={8} fill="none" stroke="var(--text)" strokeWidth="1.5" />}
       </svg>
       {hover && <Tooltip h={hover} format={format} width={width} />}
-      <div className="chart-note">{t('Band: the noise between efforts (±1 standard deviation) around the fitted line. Click points to compare their profiles below.')}</div>
+      <div className="chart-note">{t('Band: the noise about the fitted line (±1 standard deviation of the runs from it). Click points to compare their profiles below.')}</div>
     </div>
   );
 }

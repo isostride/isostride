@@ -23,10 +23,10 @@ if [ "$stage" = all ] || [ "$stage" = tests ]; then
   # The speed of this machine against the reference one: the 100 ms rule scaled by it.
   run node scripts/machine-speed.mjs
   # Unit tests alone, without coverage instrumentation: their times for the 100 ms rule.
-  run npx vitest run --project unit --reporter=dot --reporter=json --outputFile=reports/vitest-unit.json
+  run node scripts/quiet.mjs unit --vitest reports/vitest-unit.json -- npx vitest run --project unit --reporter=dot --reporter=json --outputFile=reports/vitest-unit.json
   run node scripts/machine-speed.mjs again
   t0=$(date +%s)
-  run npx vitest run --coverage --reporter=default --reporter=json --outputFile=reports/vitest.json
+  run node scripts/quiet.mjs tests --vitest reports/vitest.json -- npx vitest run --coverage --reporter=default --reporter=json --outputFile=reports/vitest.json
   printf '{ "testsSeconds": %s }\n' $(($(date +%s) - t0)) > reports/timing-tests.json
 fi
 
@@ -36,7 +36,8 @@ if [ "$stage" = all ] || [ "$stage" = e2e ]; then
   if [ -n "${2:-}" ]; then
     # A shard: its report as a blob, merged with the others' by the verdict.
     rm -rf reports/blob
-    PLAYWRIGHT_BLOB_OUTPUT_DIR=reports/blob run npx playwright test --shard="$2" ${3:+--project="$3"} --reporter=list,blob
+    # In the pipeline the list of the tests (and of what a failed one saw on the page) stays out of the public log.
+    PLAYWRIGHT_BLOB_OUTPUT_DIR=reports/blob PLAYWRIGHT_JSON_OUTPUT_NAME=reports/e2e-shard.json run node scripts/quiet.mjs e2e --playwright reports/e2e-shard.json -- npx playwright test --shard="$2" ${3:+--project="$3"} --reporter="${CI:+json,}list,blob"
   else
     run npx playwright test
   fi

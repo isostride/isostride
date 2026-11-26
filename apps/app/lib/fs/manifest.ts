@@ -49,10 +49,17 @@ export interface Manifest {
   algorithmVersion: number;
   /** Every FIT file seen, by its path in the folder, with what became of it. */
   files: Record<string, ImportStatus>;
+  /**
+   * False from the moment an import adds runs until their context is joined and the segments found again:
+   * an import cut off in between (a tab closed, a phone killing it) left its runs without load, form, gear
+   * and segments for good, the next import finding nothing to do (the review of 26 Nov 2026). The next
+   * import, or the app as it opens, finishes it.
+   */
+  joined?: boolean;
 }
 
 export function emptyManifest(): Manifest {
-  return { schemaVersion: SCHEMA_VERSION, algorithmVersion: ALGORITHM_VERSION, files: {} };
+  return { schemaVersion: SCHEMA_VERSION, algorithmVersion: ALGORITHM_VERSION, files: {}, joined: true };
 }
 
 /**
@@ -101,11 +108,13 @@ export async function failedFitFiles(folder: DataFolder): Promise<string[]> {
 }
 
 /** The files no import has seen and those to try again, from one reading of the manifest and one listing of the folder. */
-export async function filesToImport(folder: DataFolder): Promise<{ unseen: string[]; failed: string[]; outdated: boolean }> {
+export async function filesToImport(folder: DataFolder): Promise<{ unseen: string[]; failed: string[]; outdated: boolean; pending: boolean }> {
   const [manifest, files] = await Promise.all([readManifest(folder), listFitFiles(folder)]);
   return {
     unseen: files.filter((f) => !manifest?.files[f]),
     failed: manifest ? files.filter((f) => { const s = manifest.files[f]; return s?.status === 'error' && !LASTING.includes(readReason(s.reason)?.key ?? ''); }) : [],
     outdated: isOutdated(manifest),
+    // Runs imported whose context and segments an import cut off never wrote.
+    pending: manifest?.joined === false,
   };
 }

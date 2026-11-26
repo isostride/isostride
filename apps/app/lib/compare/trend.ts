@@ -1,8 +1,12 @@
-import { bootstrap, linearFit } from '@/lib/stats';
+import { lineWithInterval, mean } from '@/lib/stats';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 import { correctForPace, noiseThreshold, selectInstances, sourceOf, type ContextFilter, type Rejected } from './select';
 
-/** A trend needs this many instances in a series before it gets a verdict (spec section 5). */
+/**
+ * A trend needs this many runs in a series before it gets a verdict (spec section 5: five; counted in
+ * runs since the review of 26 Nov 2026: the efforts of one run are not separate measurements of the
+ * trend, and counted one by one, four runs of five reps read "change" in half the series with none).
+ */
 export const MIN_TREND_INSTANCES = 5;
 const DAY = 86_400_000;
 
@@ -19,9 +23,11 @@ export interface TrendSeries {
   /** the device behind the metric: series never join across devices */
   source: string;
   points: TrendPoint[];
-  /** standard deviation between the instances, on the values shown */
+  /** the spread of the values shown: about the fitted line when there is one (the trend itself is no noise), else between the instances */
   noise: number;
-  /** null below MIN_TREND_INSTANCES */
+  /** the runs the instances come from */
+  runs: number;
+  /** null below MIN_TREND_INSTANCES runs */
   fit: {
     /** per day */
     slope: number;
@@ -44,10 +50,12 @@ export interface TrendResult {
 
 /**
  * Trend (spec F11): the instances of one definition over time for one metric,
- * filtered by context, one series per device, raw or corrected for pace. With
- * enough instances a series gets a line and a verdict, by the A/B rule applied to
- * the fitted change: "change" when its bootstrap interval excludes zero and it
- * exceeds the noise threshold.
+ * filtered by context, one series per device, raw or corrected for pace (by the
+ * slope of pace beside time). With enough runs a series gets a line and a verdict, by
+ * the A/B rule applied to the fitted change: "change" when its 95 % interval excludes
+ * zero and it exceeds the noise. The run is the unit: the line goes through the runs'
+ * means, its interval is that of the slope of that line (Student's t), and the noise is
+ * the spread of the runs' means about it.
  */
 export function computeTrend(all: BlockInstance[], definitionId: string, metric: BlockMetric, filter: ContextFilter = {}, corrected = true): TrendResult {
   const { included, rejected } = selectInstances(all, definitionId, metric, filter);
@@ -58,22 +66,28 @@ export function computeTrend(all: BlockInstance[], definitionId: string, metric:
   }
   const series: TrendSeries[] = [];
   for (const [source, insts] of bySource) {
-    const points = correctForPace(insts, metric).map((c) => ({ instance: c.instance, date: c.instance.runStart, raw: c.raw, corrected: c.corrected }));
+    const points = correctForPace(insts, metric, { overTime: true }).map((c) => ({ instance: c.instance, date: c.instance.runStart, raw: c.raw, corrected: c.corrected }));
     const ys = points.map((p) => (corrected ? p.corrected : p.raw));
-    const noise = noiseThreshold(ys);
+    // Each run once: its day and the mean of its efforts.
+    const byRun = new Map<string, { at: number; values: number[] }>();
+    points.forEach((p, k) => { const r = byRun.get(p.instance.runId) ?? { at: Date.parse(p.date), values: [] }; r.values.push(ys[k]); byRun.set(p.instance.runId, r); });
+    const runs = [...byRun.values()].sort((x, y) => x.at - y.at);
+    let noise = noiseThreshold(ys);
     let fit: TrendSeries['fit'] = null;
-    if (points.length >= MIN_TREND_INSTANCES) {
+    if (runs.length >= MIN_TREND_INSTANCES) {
       const t0 = Date.parse(points[0].date);
-      const xs = points.map((p) => (Date.parse(p.date) - t0) / DAY);
-      const span = xs[xs.length - 1];
-      const f = linearFit(xs, ys);
-      const pairs = xs.map((x, k) => [x, ys[k]] as const);
-      const ci = bootstrap(pairs, (s) => linearFit(s.map((p) => p[0]), s.map((p) => p[1])).slope * span, hash(definitionId + source + metric));
-      const change = f.slope * span;
-      const verdict: Verdict = (ci[0] > 0 || ci[1] < 0) && Math.abs(change) > noise ? 'change' : 'no detectable change';
-      fit = { slope: f.slope, intercept: f.intercept, change, ci, verdict };
+      const xs = runs.map((r) => (r.at - t0) / DAY);
+      const span = (Date.parse(points[points.length - 1].date) - t0) / DAY;
+      const line = lineWithInterval(xs, runs.map((r) => mean(r.values)));
+      if (line) {
+        noise = line.residual;
+        const change = line.slope * span;
+        const ci: [number, number] = [line.ci[0] * span, line.ci[1] * span];
+        const verdict: Verdict = (ci[0] > 0 || ci[1] < 0) && Math.abs(change) > noise ? 'change' : 'no detectable change';
+        fit = { slope: line.slope, intercept: line.intercept, change, ci, verdict };
+      }
     }
-    series.push({ source, points, noise, fit });
+    series.push({ source, points, noise, runs: runs.length, fit });
   }
   series.sort((a, b) => a.points[0].date.localeCompare(b.points[0].date));
   return { definitionId, metric, corrected, series, included: included.length, rejected };

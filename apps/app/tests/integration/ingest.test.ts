@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PATHS, failedFitFiles, listFitFiles, readJson, readManifest, unseenFitFiles } from '@/lib/fs';
+import { distance } from '@/lib/geo';
 import { importFolder } from '@/lib/pipeline';
 import { type RunFile, type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { metricKeyOfField, parseFit } from '@/lib/ingest';
@@ -141,8 +142,12 @@ describe('Read all FIT fields', () => {
     expect((s.values.stepLength?.[i] ?? null)).toBe(1030);
     expect((s.values.power?.[i] ?? null)).toBe(193);
     expect((s.values.altitude?.[i] ?? null)).toBe(4);
-    expect(s.lat[i]).toBeCloseTo(41.395052, 5);
-    expect(s.lon[i]).toBeCloseTo(2.206598, 5);
+    // The position, read from the semicircles of the file: a place on Earth, and a second's step of the size
+    // of the speed (no coordinate of the runner's routes is written here: the repository is public).
+    const at = (k: number) => ({ lat: s.lat[k]!, lon: s.lon[k]! });
+    expect(Math.abs(at(i).lat)).toBeLessThan(90);
+    expect(Math.abs(at(i).lon)).toBeLessThan(180);
+    expect(distance(at(i), at(i + 10)) / 10).toBeCloseTo(s.values.speed![i]!, 0);
     expect(r.laps).toHaveLength(3);
     expect(r.laps[0]).toMatchObject({ start: 0, distance: 2000 });
     expect(r.laps[0].duration).toBeCloseTo(682.39, 2);

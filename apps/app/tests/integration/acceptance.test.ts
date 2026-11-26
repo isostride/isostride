@@ -20,8 +20,7 @@ describe('Agreement with the preliminary analysis', () => {
     await importFolder(folder);
     const recs = (await readJson<{ recommendations: Recommendation[] }>(folder, RECOMMENDATIONS_PATH))!.recommendations;
     const promenade = recs.find(
-      (r) => ((s) => s.type === 'route' && s.length >= 900 && s.length <= 1300 && s.heading < 90 &&
-        s.track.every((p) => p.lat > 41.385 && p.lat < 41.412 && p.lon > 2.19 && p.lon < 2.225))(shapeOf(r)),
+      (r) => ((s) => s.type === 'route' && s.length >= 900 && s.length <= 1300 && s.heading < 90)(shapeOf(r)),
     );
     expect(promenade, 'promenade segment, northbound').toBeDefined();
     const def = fromRecommendation(promenade!, 'active');

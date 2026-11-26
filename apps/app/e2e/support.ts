@@ -12,7 +12,16 @@ export const TEST_DATA = path.resolve(HERE, '../test_data/coros_fit_2026');
  * browser's origin private file system, which supports the same handle API. The
  * permission methods the OPFS handles lack answer "granted", like a user who allows access.
  */
+/**
+ * The day the tests run on: the runs of the test folder end in November 2026, and the app reads its
+ * windows (90 days of bests, 28 days of easy runs, the form today) from today. With the machine's own
+ * date the tests would start to fail by themselves as the runs grow old (the review of 26 Nov 2026).
+ */
+export const TEST_NOW = new Date('2026-11-26T12:00:00');
+
 export async function fakeFolderPicker(page: Page, { wizard = false } = {}): Promise<void> {
+  // The page's clock starts at TEST_NOW and runs on from there (its workers keep the machine's).
+  await page.clock.install({ time: TEST_NOW });
   // The setup wizard opens by itself on a folder nothing was set in: the tests of the screens skip it,
   // as a runner would, unless they test it (a setup.json written in the folder, as Skip writes it).
   if (!wizard) {

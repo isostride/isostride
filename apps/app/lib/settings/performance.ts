@@ -59,22 +59,45 @@ export const DEFAULT_PERFORMANCE: PerformanceSettings = {
   load: 'trimpBanister', curve: 'riegel', restHr: 60, maxHr: null, sex: 'male', thresholdPace: null, thresholdPower: null, fitnessDays: 42, fatigueDays: 7, confirmed: false, thresholds: {},
 };
 
+/** The range each value of the model may lie in (model's choices), in its unit: bpm, s/km, W, days. */
+export const PERFORMANCE_RANGES = {
+  restHr: [25, 120], maxHr: [100, 240], thresholdPace: [120, 900], thresholdPower: [50, 800], fitnessDays: [7, 120], fatigueDays: [2, 30],
+} as const satisfies Record<string, readonly [number, number]>;
+
+/**
+ * Which of the values, as typed, cannot be saved: one outside its range, a maximum heart rate not above
+ * the resting one, fatigue lasting as long as fitness or longer (the form is fitness less fatigue: its
+ * sign would turn). Empty where a value may be left to the app (null).
+ */
+export function invalidPerformance(v: { restHr: number | null; maxHr: number | null; thresholdPace: number | null; thresholdPower: number | null; fitnessDays: number | null; fatigueDays: number | null }): (keyof typeof PERFORMANCE_RANGES)[] {
+  const out = (Object.keys(PERFORMANCE_RANGES) as (keyof typeof PERFORMANCE_RANGES)[]).filter((k) => { const x = v[k]; return x !== null && (x < PERFORMANCE_RANGES[k][0] || x > PERFORMANCE_RANGES[k][1]); });
+  if (v.restHr !== null && v.maxHr !== null && v.maxHr <= v.restHr && !out.includes('maxHr')) out.push('maxHr');
+  if (v.fitnessDays !== null && v.fatigueDays !== null && v.fatigueDays >= v.fitnessDays && !out.includes('fatigueDays')) out.push('fatigueDays');
+  return out;
+}
+
 const num = (v: unknown, lo: number, hi: number): number | null => (typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? v : null);
 
 /** The settings as read from a file: unknown or out-of-range values fall back to the defaults. */
 export function parsePerformance(v: unknown): PerformanceSettings {
   const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
   const d = DEFAULT_PERFORMANCE;
+  const R = PERFORMANCE_RANGES;
+  const restHr = num(o.restHr, ...R.restHr) ?? d.restHr;
+  const maxHr = num(o.maxHr, ...R.maxHr);
+  const fitnessDays = num(o.fitnessDays, ...R.fitnessDays) ?? d.fitnessDays;
+  const fatigueDays = num(o.fatigueDays, ...R.fatigueDays) ?? d.fatigueDays;
+  // A file whose values contradict each other: the maximum heart rate left to the app, the time constants the defaults.
+  const constants = fatigueDays < fitnessDays ? { fitnessDays, fatigueDays } : { fitnessDays: d.fitnessDays, fatigueDays: d.fatigueDays };
   return {
     load: LOAD_MODELS.some((m) => m.key === o.load) ? (o.load as LoadModel) : d.load,
     curve: CURVE_MODELS.some((m) => m.key === o.curve) ? (o.curve as CurveModel) : d.curve,
-    restHr: num(o.restHr, 25, 120) ?? d.restHr,
-    maxHr: num(o.maxHr, 100, 240),
+    restHr,
+    maxHr: maxHr !== null && maxHr > restHr ? maxHr : null,
     sex: o.sex === 'female' ? 'female' : 'male',
-    thresholdPace: num(o.thresholdPace, 120, 900),
-    thresholdPower: num(o.thresholdPower, 50, 800),
-    fitnessDays: num(o.fitnessDays, 7, 120) ?? d.fitnessDays,
-    fatigueDays: num(o.fatigueDays, 2, 30) ?? d.fatigueDays,
+    thresholdPace: num(o.thresholdPace, ...R.thresholdPace),
+    thresholdPower: num(o.thresholdPower, ...R.thresholdPower),
+    ...constants,
     confirmed: o.confirmed === true,
     thresholds: Object.fromEntries(Object.entries(o.thresholds && typeof o.thresholds === 'object' ? o.thresholds as Record<string, unknown> : {}).filter((e): e is [string, number] => typeof e[1] === 'number' && Number.isFinite(e[1]))),
   };

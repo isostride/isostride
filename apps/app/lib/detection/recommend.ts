@@ -1,5 +1,5 @@
 import { angleBetween, distance, type TrackPoint } from '@/lib/geo';
-import { metricSeries, type IndexedRun, type Lap, type RunFile } from '@/lib/kernel';
+import { metricSeries, sampleHold, type IndexedRun, type Lap, type RunFile } from '@/lib/kernel';
 import type { RouteSegment } from './segments';
 import { movingPart } from './instance';
 import { EFFORT_TARGETS, effortIn, effortName, patternKey, patternName, patternOf, tagName, workoutTypes } from './logical';
@@ -32,8 +32,16 @@ function meanSpeed(run: RunFile, from: number, to: number): number {
   const speed = metricSeries(run.samples, 'speed');
   const idx: number[] = [];
   for (let i = 0; i < t.length; i++) if (t[i] >= from && t[i] < to) idx.push(i);
-  const v = movingPart(t, speed, idx).moving.map((i) => speed[i]).filter((x): x is number => x !== null);
-  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0;
+  // Each sample by the time it stands for, as an instance's own mean speed.
+  let sum = 0;
+  let weight = 0;
+  for (const i of movingPart(t, speed, idx).moving) {
+    const v = speed[i];
+    if (v === null) continue;
+    sum += v * sampleHold(t, i);
+    weight += sampleHold(t, i);
+  }
+  return weight > 0 ? sum / weight : 0;
 }
 
 /**

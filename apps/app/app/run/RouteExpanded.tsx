@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { RouteMap } from '@/components';
+import { RouteMap, useDialogKeys } from '@/components';
 import { msg, number, t } from '@/lib/i18n';
 import { zoneOf, zoneRanges, zoneStep } from '@/lib/settings';
 
@@ -46,12 +46,8 @@ export function RouteExpanded({ lat, lon, t: times, start, step, metrics, initia
   /** the colours by the zones of Settings ("chce wartosci z settings") or by sixths of this run */
   const [by, setBy] = useState<'zones' | 'run'>('zones');
   const close = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    close.current?.focus();
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', esc);
-    return () => window.removeEventListener('keydown', esc);
-  }, [onClose]);
+  const dialog = useRef<HTMLDivElement>(null);
+  useDialogKeys(dialog, close, onClose);
   const metric = metrics.find((m) => m.key === key) ?? metrics[0];
   const zones = metric?.zones?.length ? metric.zones : null;
   const byZones = by === 'zones' && zones !== null;
@@ -111,7 +107,7 @@ export function RouteExpanded({ lat, lon, t: times, start, step, metrics, initia
 
   return (
     <div className="route-expanded-backdrop">
-      <div className="route-expanded" role="dialog" aria-modal="true" aria-label={t('Map of the run')}>
+      <div ref={dialog} className="route-expanded" role="dialog" aria-modal="true" aria-label={t('Map of the run')}>
         <div className="route-expanded-head">
           <h2>{t('Map')} <span className="muted">· {metric ? metric.title.toLowerCase() : t('the route')}</span></h2>
           <button ref={close} type="button" className="btn sm" onClick={onClose}>{t('Close')}</button>
