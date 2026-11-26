@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { eager } from '@/components';
+import { Expandable, eager } from '@/components';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 import { reasonSummary, selectInstances } from '@/lib/compare';
 import type { DataFolder } from '@/lib/fs';
@@ -63,7 +63,7 @@ export function EffortsPanel({ blocks, item, onItem, all, metric, metrics, refer
   const cols = [...(metrics.includes('speed') ? ['pace'] : []), 'time', 'distance', ...metrics.filter((m) => m !== 'speed')];
 
   return (
-    <div className="card" style={{ overflowX: 'auto' }}>
+    <Expandable className="card efforts-card" title={t('Efforts')} style={{ overflowX: 'auto' }}>
       <div className="toolbar" style={{ padding: '12px 18px 0' }}>
         {/* No title: the tab above names it ("usun tytul: Wysilki... bo jest juz u gory"). */}
         {/* The view first, on the left ("tabela/wykres daj na pierwszym miejscu"); the table sorted by its heads ("sortowanie na headerze kolumn"). */}
@@ -89,6 +89,6 @@ export function EffortsPanel({ blocks, item, onItem, all, metric, metrics, refer
       {mode === 'table' && (
         <EffortsByRun key={tableFor.id} efforts={all.filter((e) => e.definitionId === tableFor.defId)} columns={cols} titleOf={titleOf} isReference={isReference} totals={tableFor.defId.startsWith('~')} />
       )}
-    </div>
+    </Expandable>
   );
 }

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, useTouch, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, SCREEN_LEAVE, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget, previousPage, runStartOf, eager } from '@/components';
+import { CollapseButton, FullScreenIcon, MIN_SPAN, RouteMap, RunChart, clampDomain, clock, useTouch, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, SCREEN_LEAVE, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget, previousPage, runStartOf, eager } from '@/components';
 import { readChartSettings, runInWorker, useChartSettings, useLocale, useOpenFolder } from '@/lib/client';
 import { msg, number, signOf, t, tn } from '@/lib/i18n';
 import { readGear, readRunTags, saveRunTag, type Gear, type RunTag, type RunTagsFile } from '@/lib/gear';
@@ -57,6 +57,22 @@ function lastChoices(): RunView {
     Object.assign(v, readChartSettings());
   } catch { /* the defaults */ }
   return v;
+}
+
+/**
+ * Clear selection as an icon, beside the full screen's and drawn as it is (the runner's "clear selection (przycisk ktory sie
+ * pojawia) tez zamien na jaks inone i postaw po lewej od fullscreen"): two handles, as an editor of video marks a cut ("jakies 2
+ * pionowe kreski i w srodku cos ? tak jak w obrobce video"), and between them the arrows out to the whole run; large enough to
+ * be read at once ("za male jest").
+ */
+function ClearSelectionIcon() {
+  return (
+    // A little wider than tall ("niech bedzie troche szersza ta ikona").
+    <svg width="26" height="20" viewBox="0 0 31 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3.5 3.5v17M27.5 3.5v17" strokeWidth="2.2" />
+      <path d="M8 12h15M11.5 8.5 8 12l3.5 3.5M19.5 8.5 23 12l-3.5 3.5" strokeWidth="2" />
+    </svg>
+  );
 }
 
 /** The icon of an action of the run: a stroked glyph on a 24-unit grid, its paths parted by |. */
@@ -215,6 +231,7 @@ function RunPage() {
       document.removeEventListener('keydown', esc);
       document.documentElement.classList.remove('chart-full-open');
       try { screen.orientation?.unlock?.(); } catch { /* not locked */ }
+      if (document.fullscreenElement && document.fullscreenElement === chartCol.current) void document.exitFullscreen().catch(() => undefined);
       // Back on the button that opened it, once it is drawn again.
       requestAnimationFrame(() => chartCol.current?.querySelector<HTMLElement>('.chart-expand')?.focus());
     };
@@ -466,6 +483,13 @@ function RunPage() {
       {balanceOpen && <BalanceDialog run={run} folder={folder} onClose={() => setBalanceOpen(false)} />}
       {tagEdit && <TagEditor title={title ?? `${date(run.startTime)} ${time(run.startTime)}`} tag={tagEdit.file.tags[id] ?? {}} gear={tagEdit.gear} dictionary={tagEdit.file.dictionary} onSave={(tag) => void saveTags(tag)} onCancel={() => setTagEdit(null)} />}
       <div className="card run-board pin-host">
+        {/* Clear selection at the card's top right, on the line of the metrics, beside Pin ("i przesun do prawego gornego rogu
+            na wysokosci metryk"): there while a stretch is selected, its room kept, so nothing moves as it comes and goes. */}
+        {selection && (
+          <button type="button" className="btn sm chart-icon clear-selection clear-corner" aria-label={t('Clear selection')} title={t('Clear the selection and show the whole run')} onClick={clear}>
+            <ClearSelectionIcon />
+          </button>
+        )}
         <PinButton folder={folder} kind="run" target={run.id} name={title ?? `${date(run.startTime)} ${time(run.startTime)}`} opts={slots.filter((k) => k !== null).join(',')} />
         <div className="metrics-bar">
           <div className="metric-picker" role="group" aria-label={t('Metrics shown')}>
@@ -491,15 +515,8 @@ function RunPage() {
             {!full && (
               <div className="chart-tools">
                 <span className="chart-summary muted small">{layout === 'bands' ? t('Bands') : t('Overlaid')} · {xAxis === 'distance' ? t('by distance') : t('by time')}{showBlocks && blocks.length ? ` · ${tn(blocks.length, '{n} segment', '{n} segments')}` : ''}</span>
-                {selection && (
-                  <button type="button" className="btn sm clear-selection" title={t('Clear the selection and show the whole run')} onClick={clear}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-                    {t('Clear selection')}
-                  </button>
-                )}
-                <button type="button" className="btn sm chart-expand" onClick={openFull} aria-label={t('Expand chart')} title={t('The chart on the whole screen; on a phone, turned on its side')}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" /></svg>
-                  {t('Expand')}
+                <button type="button" data-expand className="btn sm chart-expand" onClick={openFull} aria-label={t('Expand chart')} title={t('The chart on the whole screen; on a phone, turned on its side')}>
+                  <FullScreenIcon />
                 </button>
               </div>
             )}
@@ -508,8 +525,8 @@ function RunPage() {
                 <b>{title ?? `${date(run.startTime)} ${time(run.startTime)}`}</b>
                 <span className="muted small">{zoomed ? `${clock(domain[0])}–${clock(domain[1])}` : t('Whole run')}</span>
                 <span className="spacer" />
-                {zoomed && <button type="button" className="btn sm" onClick={clear}>{t('Whole run')}</button>}
-                <button type="button" className="btn sm" autoFocus onClick={closeFull}>{t('Close')}</button>
+                {zoomed && <button type="button" className="btn sm chart-icon clear-selection" aria-label={t('Whole run')} title={t('Clear the selection and show the whole run')} onClick={clear}><ClearSelectionIcon /></button>}
+                <CollapseButton onClick={closeFull} />
               </div>
             )}
             <RunChart x={x} total={total} lines={lines} focus={focus} onFocus={setFocus} domain={domain} onDomain={setDomain} laps={laps}

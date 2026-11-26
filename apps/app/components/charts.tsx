@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { useTouch } from './chartKit';
+import { FullScreenIcon } from './Expandable';
 import { MIN_SPAN, wheelFactor } from './chartZoom';
 import { fitCamera, panCamera, project, visibleRange, zoomCamera, type Camera, type RoutePoint } from './mapCamera';
 import { useMapTiles } from '@/lib/client';
@@ -326,8 +327,7 @@ export function RouteMap({ lat, lon, t: times, cursor, selection = null, onSelec
       )}
       {onExpand && (
         <button type="button" className="btn sm map-expand" onClick={onExpand} aria-label={t('Expand map')} title={t('The map made large, its route coloured by a metric')}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" /></svg>
-          {t('Expand')}
+          <FullScreenIcon />
         </button>
       )}
       <span className="map-hint" aria-live="polite">{onSelect && first !== null ? (touch ? t('Now tap the end of the segment') : t('Now click the end of the segment')) : hint ?? (touch

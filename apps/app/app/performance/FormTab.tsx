@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
-import { Key, TipRow, WashGradient, columnPath, dayLabel, monthLabel, monthTicks, niceTicks, tickDecimals, useSvgId, useWidth } from '@/components';
+import { Key, TipRow, WashGradient, columnPath, dayLabel, monthLabel, monthTicks, niceTicks, tickDecimals, useExpandScale, useSvgId, useWidth } from '@/components';
 import { useOpenFolder } from '@/lib/client';
 import { msg, number, t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
@@ -36,6 +36,9 @@ export function FormTab({ runs, whatIf }: { runs: RunsIndex['runs']; /** a scena
   const [hover, setHover] = useState<number | null>(null);
   const [box, width] = useWidth();
   const washId = useSvgId('form-wash');
+  // Its panels taller on the whole screen (components/Expandable).
+  const k = useExpandScale(PANELS.load + PANELS.form + PANELS.acwr);
+  const P = { ...PANELS, load: PANELS.load * k, form: PANELS.form * k, acwr: PANELS.acwr * k };
   useEffect(() => { readSettings(folder).then((s) => setP(s.performance)).catch(() => undefined); }, [folder]);
 
   const period = PERIODS.find(([k]) => k === params.get('period')) ?? PERIODS[0];
@@ -69,22 +72,22 @@ export function FormTab({ runs, whatIf }: { runs: RunsIndex['runs']; /** a scena
   const t1 = timeOf(days[days.length - 1].date);
   const x = (day: string) => M.l + ((timeOf(day) - t0) / Math.max(1, t1 - t0)) * (width - M.l - M.r);
   const step = (width - M.l - M.r) / Math.max(1, days.length - 1);
-  const top = { load: PANELS.title, form: PANELS.title + PANELS.load + PANELS.gap, acwr: PANELS.title + PANELS.load + PANELS.gap + PANELS.form + PANELS.gap };
-  const H = top.acwr + PANELS.acwr + PANELS.axis;
+  const top = { load: P.title, form: P.title + P.load + P.gap, acwr: P.title + P.load + P.gap + P.form + P.gap };
+  const H = top.acwr + P.acwr + P.axis;
 
   // Load, fitness and fatigue share one scale: fitness and fatigue are averages of the daily load.
   // Each scale covers its data and its ticks, so no bar or line leaves its panel.
   const loadMax = Math.max(1, ...days.map((d) => Math.max(d.load, d.fitness, d.fatigue)));
   const loadTicks = niceTicks(0, loadMax, 4).filter((v) => v >= 0);
   const loadHi = Math.max(loadMax, loadTicks[loadTicks.length - 1] ?? loadMax);
-  const yLoad = (v: number) => top.load + PANELS.load - (v / loadHi) * PANELS.load;
+  const yLoad = (v: number) => top.load + P.load - (v / loadHi) * P.load;
   const [formMin, formMax] = [Math.min(0, ...days.map((d) => d.form)), Math.max(0, ...days.map((d) => d.form))];
   const formTicks = niceTicks(formMin, formMax, 3).filter((v) => v >= formMin - 1e-9 && v <= formMax + 1e-9);
   const [fLo, fHi] = [formMin, formMax > formMin ? formMax : formMin + 1];
-  const yForm = (v: number) => top.form + PANELS.form - ((v - fLo) / (fHi - fLo)) * PANELS.form;
+  const yForm = (v: number) => top.form + P.form - ((v - fLo) / (fHi - fLo)) * P.form;
   const acwrs = days.map((d) => d.acwr).filter((v): v is number => v !== null);
   const [aLo, aHi] = [Math.min(0.5, ...acwrs), Math.max(1.6, ...acwrs)];
-  const yAcwr = (v: number) => top.acwr + PANELS.acwr - ((v - aLo) / (aHi - aLo)) * PANELS.acwr;
+  const yAcwr = (v: number) => top.acwr + P.acwr - ((v - aLo) / (aHi - aLo)) * P.acwr;
   const line = (f: (d: FormDay) => number | null, y: (v: number) => number) => days.flatMap((d) => { const v = f(d); return v === null ? [] : [`${x(d.date).toFixed(1)},${y(v).toFixed(1)}`]; }).join(' ');
   const months = monthTicks(t0, t1, width - M.l - M.r);
   const move = (e: MouseEvent<SVGSVGElement>) => {
@@ -130,7 +133,7 @@ export function FormTab({ runs, whatIf }: { runs: RunsIndex['runs']; /** a scena
             {/* The days of the scenario: a band from tomorrow, its name at its top. */}
             {plannedFrom !== null && (
               <g className="form-whatif">
-                <rect x={plannedFrom} width={Math.max(0, width - M.r - plannedFrom)} y={top.load - 4} height={H - PANELS.axis - top.load + 4} fill="var(--band)" opacity={0.6} />
+                <rect x={plannedFrom} width={Math.max(0, width - M.r - plannedFrom)} y={top.load - 4} height={H - P.axis - top.load + 4} fill="var(--band)" opacity={0.6} />
                 <text x={width - M.r - 6} y={top.load + 10} textAnchor="end" fontSize="11" fontWeight="600" fill="var(--muted)">{t('What if')}</text>
               </g>
             )}
@@ -163,14 +166,14 @@ export function FormTab({ runs, whatIf }: { runs: RunsIndex['runs']; /** a scena
             {ACWR_BAND.map((v) => <text key={`a${v}`} x={M.l - 8} y={yAcwr(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{number(v, 1)}</text>)}
             <polyline className="form-acwr" points={line((d) => d.acwr, yAcwr)} fill="none" stroke="var(--series-4)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
             {/* The time axis. */}
-            <line x1={M.l} x2={width - M.r} y1={H - PANELS.axis} y2={H - PANELS.axis} stroke="var(--axis)" />
+            <line x1={M.l} x2={width - M.r} y1={H - P.axis} y2={H - P.axis} stroke="var(--axis)" />
             {(months.length > 1 ? months : [t0, t1]).map((t) => {
               const px = M.l + ((t - t0) / Math.max(1, t1 - t0)) * (width - M.l - M.r);
               return <text key={t} x={px} y={H - 6} fontSize="11" fill="var(--muted)" textAnchor="middle">{months.length > 1 ? monthLabel(t) : dayLabel(t)}</text>;
             })}
             {/* The end of each line, today: a dot with a surface ring. */}
             {!h && ends.map(([c, v, yy]) => v === null ? null : <circle key={c} className="form-end" cx={x(last.date)} cy={yy(v)} r={4.5} fill={c} stroke="var(--surface)" strokeWidth="2" />)}
-            {h && <line x1={x(h.date)} x2={x(h.date)} y1={top.load} y2={H - PANELS.axis} stroke="var(--axis-strong)" />}
+            {h && <line x1={x(h.date)} x2={x(h.date)} y1={top.load} y2={H - P.axis} stroke="var(--axis-strong)" />}
             {h && <circle cx={x(h.date)} cy={yLoad(h.fitness)} r={5} fill="var(--surface)" stroke="var(--series-1)" strokeWidth="2.5" />}
             {h && <circle cx={x(h.date)} cy={yLoad(h.fatigue)} r={5} fill="var(--surface)" stroke="var(--series-2)" strokeWidth="2.5" />}
             {h && <circle cx={x(h.date)} cy={yForm(h.form)} r={5} fill="var(--surface)" stroke="var(--series-3)" strokeWidth="2.5" />}

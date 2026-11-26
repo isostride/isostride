@@ -45,7 +45,9 @@ export function useWidth<T extends HTMLElement = HTMLDivElement>(initial = 800):
     ro.observe(el);
     stop.current = () => ro.disconnect();
   });
-  useEffect(() => () => stop.current?.(), []);
+  // Unmounted (React's strict mode unmounts and mounts again on the dev server): the box is looked at afresh after,
+  // or its width was no longer followed and a chart made the whole screen stayed at its old width.
+  useEffect(() => () => { stop.current?.(); stop.current = null; seen.current = null; }, []);
   return [ref, width];
 }
 

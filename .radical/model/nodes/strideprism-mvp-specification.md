@@ -1361,3 +1361,26 @@ A: (model) The site's Try the demo leads to app.isostride.com/?demo; the static 
 A: (model) An independent review of the session's changes found 23 faults it confirmed; 21 were fixed (a tab closed while the demo was made left it half made, the setup wizard could open over the demo, a demo left in one tab emptied the others, the demo bar moved the screen under it, tiles' charts kept a guessed width, tooltips ran out of their tiles, focus was lost when the expanded chart closed, out-and-back runs ended on the spot). Left: a second tab opened while the history is made waits for it; on Compare on a phone the Tab order differs from the order of the head's buttons.
 A: (użytkownik) ok
 A: (użytkownik) zwieksz budzet na bundle
+A: (użytkownik) podoba mi sie opcja wykresu full screen i obracania go na telefonie .. che aby kazdy mial taka opcje
+A: (użytkownik) w pamie daj powieksz tak samo ... po prawej stronie ... jest teraz po lewej
+A: (użytkownik) ok nie zawsze wykres sie rozszerza do pelnego ekranu
+A: (model) Two causes: the page kept the room of its scroll bar, so an expanded card stopped 11 px short of the right edge; and the Dashboard is a container of queries, which holds a fixed element inside it, so a tile expanded where the browser goes into no full screen (an iPhone) stayed the width of the page.
+A: (użytkownik) no i zostaw strzalki ... usun tekst expand
+A: (użytkownik) strzalek w ikonie ekspand prawie nie widac
+A: (użytkownik) ciagle wykresy nie rozwiajaja sie na pelny ekran... testuje na desktoppie
+A: (model) The card covered the screen, but its chart kept its width (after React's second mounting on the dev server the chart no longer followed its box) and its height (a card shorter than the screen was measured as filling it).
+A: (użytkownik) przy zamkyania ... daj ikonke odwrotna... nie che wtedy przycisku close
+A: (użytkownik) albo zamiast expand daj ikonke full screen
+A: (użytkownik) zamien ikonke close na opdowiednie - odwrotna do fullscreen
+A: (użytkownik) zmien ta ikone na odpowiadajaca reszcie ... zobacz ikone pina do dashboardu
+A: (użytkownik) ta sama ikona przy wykresie biegu i mapie!!!
+A: (użytkownik) zmniejsz odstep pomiedzy ikonami
+A: (użytkownik) wyglada dobrze ... testy i pr (no requirement)
+A: (użytkownik) clear selection (przycisk ktory sie pojawia) tez zamien na jaks inone i postaw po lewej od fullscreen
+A: (użytkownik) wysmysl cos innego ... jakies 2 pionowe kreski i w srodku cos ? tak jak w obrobce video
+A: (użytkownik) kiepsko wyglada
+A: (użytkownik) za male jest
+A: (użytkownik) lepiej ... niech bedzie troche szersza
+A: (użytkownik) niech bedzie troche szersza ta ikona
+A: (użytkownik) i przesun do prawego gornego rogu na wysokosci metryk
+A: (użytkownik) wyprzchnij pr (no requirement)

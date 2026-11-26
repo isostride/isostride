@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { EditButton, ItemKey, ReadError, useDataVersion, useMetrics, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup, eager } from '@/components';
+import { EditButton, Expandable, ItemKey, ReadError, useDataVersion, useMetrics, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup, eager } from '@/components';
 import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, asRule, definitionFromProfile, definitionFromRoute, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule, ruleOf } from '@/lib/blocks';
 import { instancesInWorker, runInWorker, similarInWorker, useChartSettings, useOpenFolder } from '@/lib/client';
 import { MAX_ITEMS, addItem, lapEfforts, computeTrend, firstUsableMetric, formatItems, instancesCsv, parseItems, runMean, type AnalysisItem } from '@/lib/compare';
@@ -439,7 +439,7 @@ function AnalysisPage() {
           {finding && <div className="card empty" role="status">{finding}</div>}
           {items.length > 0 && tab === 'trends' && (
             <>
-              <div className="card chart pin-host">
+              <Expandable className="card chart pin-host" title={t('Over time')}>
                 <PinButton folder={folder} kind="compare" target={pinQuery} name={t('Over time · {items}', { items: items.map(label).join(', ') })} />
                 <h3 className="chart-title">{t('Over time')} <span className="muted">· {t("each segment's efforts with its trend line, each run's average")}</span></h3>
                 {/* While a rule's segments are read, the charts' room is kept, so nothing below moves when they come. */}
@@ -452,7 +452,7 @@ function AnalysisPage() {
                   </div>
                 ))}
                 <div className="chart-note">{t("Thin line: the points in date order. Thick line: the fitted trend through the runs, its band the noise about it (±1 standard deviation of the runs from the line). Click a point to open its run.")}</div>
-              </div>
+              </Expandable>
 
               {/* No table of changes under the charts ("ok usun mi to wogole z dolu"): the Efforts tab has the changes by run. */}
             </>

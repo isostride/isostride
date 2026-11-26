@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CellBar, EditButton, ReadError, columnPath, useWidth } from '@/components';
+import { CellBar, EditButton, Expandable, ReadError, columnPath, useWidth, WithExpandedHeight } from '@/components';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useOpenFolder, runInWorker, watchJob } from '@/lib/client';
@@ -232,13 +232,12 @@ function WeeksAtAGlance({ weeks, runs, totalKm, since }: { weeks: LogWeek[]; run
   const bars = weeks.slice(0, 12).reverse();
   const max = Math.max(1, ...bars.map((w) => w.distance));
   const W = width;
-  const H = 96;
   const bw = W / 12;
   // Fewer than 12 weeks of runs: the bars at the right, the last under its date (they stood at the left, the date alone at the far right).
   const x0 = (12 - bars.length) * bw;
   const change = avg ? Math.round(((now.distance - avg) / avg) * 100) : null;
   return (
-    <section className="card glance" aria-label={t('Weeks at a glance')}>
+    <Expandable as="section" className="card glance" label={t('Weeks at a glance')} title={t('Weeks at a glance')}>
       <div className="glance-figures">
         <div className="glance-now">
           <span className="muted small">{now.current ? t('This week') : t('Week of {date}', { date: shortDate(now.start) })}</span>
@@ -252,27 +251,30 @@ function WeeksAtAGlance({ weeks, runs, totalKm, since }: { weeks: LogWeek[]; run
         </dl>
       </div>
       <div ref={box} className="glance-chart">
-        <svg width={W} height={H + 18} role="img" aria-label={t('Distance of the last {n} weeks: {weeks}', { n: number(bars.length), weeks: bars.map((w) => `${shortDate(w.start)} ${kmOf(w.distance)} km`).join(', ') })} onMouseLeave={() => setHover(null)}>
-          <line x1={0} x2={W} y1={H} y2={H} stroke="var(--axis)" strokeWidth="1" />
-          {bars.map((w, i) => {
-            const h = (w.distance / max) * (H - 14);
-            return (
-              <g key={w.start} className="glance-bar" onMouseEnter={() => setHover(i)}>
-                <rect x={x0 + i * bw} y={0} width={bw} height={H} fill="transparent" />
-                {w.distance > 0 && <path d={columnPath(x0 + i * bw + Math.max(4, (bw - Math.min(24, bw * 0.64)) / 2), Math.min(24, bw * 0.64), H - h, H)} fill={w.current ? 'var(--accent)' : 'var(--series-1)'} opacity={hover === null || hover === i ? 1 : 0.45} />}
-                {(W > 640 || i % 3 === 2 || w.current) && <text x={i === bars.length - 1 ? W - 2 : x0 + i * bw + bw / 2} y={H + 13} fontSize="9.5" textAnchor={i === bars.length - 1 ? 'end' : 'middle'} fill="var(--muted)">{shortDate(w.start)}</text>}
-              </g>
-            );
-          })}
-          {hover !== null && (() => {
-            const w = bars[hover];
-            const x = Math.min(W - 70, Math.max(70, x0 + hover * bw + bw / 2));
-            return <text x={x} y={11} fontSize="11" fontWeight="600" textAnchor="middle" fill="var(--text)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke">{shortDate(w.start)} · {kmOf(w.distance)} km · {tn(w.count, '{n} run', '{n} runs')}</text>;
-          })()}
-        </svg>
+        {/* Its height, taller on the whole screen, is read inside the card (components/Expandable). */}
+        <WithExpandedHeight height={96}>{(H) => (
+          <svg width={W} height={H + 18} role="img" aria-label={t('Distance of the last {n} weeks: {weeks}', { n: number(bars.length), weeks: bars.map((w) => `${shortDate(w.start)} ${kmOf(w.distance)} km`).join(', ') })} onMouseLeave={() => setHover(null)}>
+            <line x1={0} x2={W} y1={H} y2={H} stroke="var(--axis)" strokeWidth="1" />
+            {bars.map((w, i) => {
+              const h = (w.distance / max) * (H - 14);
+              return (
+                <g key={w.start} className="glance-bar" onMouseEnter={() => setHover(i)}>
+                  <rect x={x0 + i * bw} y={0} width={bw} height={H} fill="transparent" />
+                  {w.distance > 0 && <path d={columnPath(x0 + i * bw + Math.max(4, (bw - Math.min(24, bw * 0.64)) / 2), Math.min(24, bw * 0.64), H - h, H)} fill={w.current ? 'var(--accent)' : 'var(--series-1)'} opacity={hover === null || hover === i ? 1 : 0.45} />}
+                  {(W > 640 || i % 3 === 2 || w.current) && <text x={i === bars.length - 1 ? W - 2 : x0 + i * bw + bw / 2} y={H + 13} fontSize="9.5" textAnchor={i === bars.length - 1 ? 'end' : 'middle'} fill="var(--muted)">{shortDate(w.start)}</text>}
+                </g>
+              );
+            })}
+            {hover !== null && (() => {
+              const w = bars[hover];
+              const x = Math.min(W - 70, Math.max(70, x0 + hover * bw + bw / 2));
+              return <text x={x} y={11} fontSize="11" fontWeight="600" textAnchor="middle" fill="var(--text)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke">{shortDate(w.start)} · {kmOf(w.distance)} km · {tn(w.count, '{n} run', '{n} runs')}</text>;
+            })()}
+          </svg>
+        )}</WithExpandedHeight>
         <span className="muted small">{tn(bars.length, 'Distance per week, the last {n} week', 'Distance per week, the last {n} weeks')}</span>
       </div>
-    </section>
+    </Expandable>
   );
 }
 

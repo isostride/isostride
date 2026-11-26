@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
-import { ReadError, niceTicks, useDataVersion, useWidth, eager } from '@/components';
+import { Expandable, ReadError, niceTicks, useDataVersion, useExpandedHeight, useWidth, eager } from '@/components';
 import { readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile } from '@/lib/blocks';
 import { useLocale, useOpenFolder } from '@/lib/client';
 import type { SavedAnalysesFile, SavedAnalysis } from '@/lib/compare';
@@ -99,22 +99,33 @@ export function DashboardPage() {
    * a third of the row, two or the whole row, by its kind or as the runner set it; the grid fills
    * the gaps with the tiles after (the runner's "lepiej ukladaj widgety na dashboardzie").
    */
-  const frame = (id: string, title: string, body: ReactNode) => {
+  // A tile with a chart has Expand in its head (components/Expandable: the tile on the whole screen); not while the
+  // tiles are being arranged, when the head holds their tools.
+  const frame = (id: string, title: string, body: ReactNode, chart = false) => {
     const i = tiles.findIndex((x) => x.id === id);
     const size = sizeOf(tiles[i] ?? { id, kind: 'week' });
+    const head = (expand: ReactNode) => (
+      <div className="dash-tile-head">
+        <h2>{title}</h2>
+        {!editing && expand}
+        {editing && (
+          <span className="dash-tile-tools">
+            <button type="button" className="btn sm icon" aria-label={t('Move {title} up', { title })} disabled={i === 0} onClick={() => change(moveTile(tiles, id, -1))}>↑</button>
+            <button type="button" className="btn sm icon" aria-label={t('Move {title} down', { title })} disabled={i === tiles.length - 1} onClick={() => change(moveTile(tiles, id, 1))}>↓</button>
+            <button type="button" className="btn sm" aria-label={t('Width of {title}: {width}', { title, width: t(WIDTH_NAMES[size - 1]) })} title={t('Width: one third, two thirds, the whole row')} onClick={() => change(resizeTile(tiles, id))}>{t(WIDTH_MARKS[size - 1])}</button>
+            <button type="button" className="btn sm icon" aria-label={t('Remove {title}', { title })} title={t('Remove from the dashboard')} onClick={() => change(removeTile(tiles, id))}>×</button>
+          </span>
+        )}
+      </div>
+    );
+    if (chart) return (
+      <Expandable key={id} as="section" className={`card dash-tile size-${size}`} label={title} title={title} style={{ order: i }}>
+        {(expand) => <>{head(expand)}<div className="dash-body">{body}</div></>}
+      </Expandable>
+    );
     return (
       <section key={id} className={`card dash-tile size-${size}`} aria-label={title} style={{ order: i }}>
-        <div className="dash-tile-head">
-          <h2>{title}</h2>
-          {editing && (
-            <span className="dash-tile-tools">
-              <button type="button" className="btn sm icon" aria-label={t('Move {title} up', { title })} disabled={i === 0} onClick={() => change(moveTile(tiles, id, -1))}>↑</button>
-              <button type="button" className="btn sm icon" aria-label={t('Move {title} down', { title })} disabled={i === tiles.length - 1} onClick={() => change(moveTile(tiles, id, 1))}>↓</button>
-              <button type="button" className="btn sm" aria-label={t('Width of {title}: {width}', { title, width: t(WIDTH_NAMES[size - 1]) })} title={t('Width: one third, two thirds, the whole row')} onClick={() => change(resizeTile(tiles, id))}>{t(WIDTH_MARKS[size - 1])}</button>
-              <button type="button" className="btn sm icon" aria-label={t('Remove {title}', { title })} title={t('Remove from the dashboard')} onClick={() => change(removeTile(tiles, id))}>×</button>
-            </span>
-          )}
-        </div>
+        {head(null)}
         <div className="dash-body">{body}</div>
       </section>
     );
@@ -139,11 +150,11 @@ export function DashboardPage() {
       <div className="dash-grid">
         {tiles.map((tile) => {
           if (tile.kind === 'week') return frame(tile.id, t('This week'), <WeekTile runs={data.runs} today={today} />);
-          if (tile.kind === 'weekly') return frame(tile.id, t('Weekly distance'), <WeeklyTile runs={data.runs} today={today} />);
-          if (tile.kind === 'last') return frame(tile.id, t('Last run'), last ? <RunTile folder={folder} run={last} named /> : <p className="muted small">{t('No run yet.')}</p>);
+          if (tile.kind === 'weekly') return frame(tile.id, t('Weekly distance'), <WeeklyTile runs={data.runs} today={today} />, true);
+          if (tile.kind === 'last') return frame(tile.id, t('Last run'), last ? <RunTile folder={folder} run={last} named /> : <p className="muted small">{t('No run yet.')}</p>, !!last);
           if (tile.kind === 'run') {
             const r = data.runs.find((x) => x.id === tile.ref);
-            return frame(tile.id, r ? runTitle(r) : tile.name ?? t('Run'), r ? <RunWidget folder={folder} id={r.id} metrics={tile.opts} /> : <p className="muted small">{t('This run is not there any more.')}</p>);
+            return frame(tile.id, r ? runTitle(r) : tile.name ?? t('Run'), r ? <RunWidget folder={folder} id={r.id} metrics={tile.opts} /> : <p className="muted small">{t('This run is not there any more.')}</p>, !!r);
           }
           if (tile.kind === 'perf' && tile.ref) {
             const [tab, view] = tile.ref.split('/');
@@ -153,18 +164,18 @@ export function DashboardPage() {
                 <PerformanceView tab={tab as Tab} view={view} embedded />
                 <Link className="row-open" href={performanceHref(tab, view)}>{t('Performance →')}</Link>
               </div>
-            ));
+            ), true);
           }
-          if (tile.kind === 'compare' && tile.ref) return frame(tile.id, tile.name ?? t('Over time'), <CompareWidget query={tile.ref} />);
-          if (tile.kind === 'form') return frame(tile.id, t('Form today'), <FormTile runs={data.runs} fitnessDays={data.fitnessDays} fatigueDays={data.fatigueDays} />);
+          if (tile.kind === 'compare' && tile.ref) return frame(tile.id, tile.name ?? t('Over time'), <CompareWidget query={tile.ref} />, true);
+          if (tile.kind === 'form') return frame(tile.id, t('Form today'), <FormTile runs={data.runs} fitnessDays={data.fitnessDays} fatigueDays={data.fatigueDays} />, true);
           if (tile.kind === 'recent') return frame(tile.id, t('Recent runs'), <RecentTile runs={data.runs} />);
           if (tile.kind === 'segment') {
             const d = data.defs.find((x) => x.id === tile.ref);
-            return frame(tile.id, d?.name ?? t('Segment'), d ? <SegmentTile def={d} efforts={data.efforts} /> : <p className="muted small">{t('This segment is not there any more.')}</p>);
+            return frame(tile.id, d?.name ?? t('Segment'), d ? <SegmentTile def={d} efforts={data.efforts} /> : <p className="muted small">{t('This segment is not there any more.')}</p>, !!d);
           }
           if (tile.kind === 'analysis') {
             const a = data.analyses.find((x) => x.id === tile.ref);
-            return frame(tile.id, a?.name ?? t('Saved analysis'), a ? <CompareWidget query={a.query} /> : <p className="muted small">{t('This analysis is not there any more.')}</p>);
+            return frame(tile.id, a?.name ?? t('Saved analysis'), a ? <CompareWidget query={a.query} /> : <p className="muted small">{t('This analysis is not there any more.')}</p>, !!a);
           }
           return null;
         })}
@@ -285,7 +296,7 @@ function WeeklyTile({ runs, today }: { runs: IndexedRun[]; today: Date }) {
   const weeks = weeklyDistance(runs, 12, today);
   const [box, width] = useWidth(600);
   const [hover, setHover] = useState<number | null>(null);
-  const H = 300;
+  const H = useExpandedHeight(300);
   const M = { l: 34, r: 64, t: 20, b: 24 };
   const whole = weeks.slice(0, -1);
   const avg = whole.length ? whole.reduce((s, w) => s + w.km, 0) / whole.length : 0;
@@ -370,7 +381,7 @@ function RunTile({ folder, run, named = false }: { folder: DataFolder; run: Inde
   const shown = profile && profile.length > 1 ? profile : null;
   const sorted = shown ? [...shown].sort((a, b) => a - b) : [];
   const [lo, hi] = shown ? [sorted[Math.floor(sorted.length * 0.05)], sorted[Math.ceil(sorted.length * 0.95) - 1]] : [0, 1];
-  const H = 96;
+  const H = useExpandedHeight(96);
   const M = { l: 36, r: 6, t: 8, b: 8 };
   const plot = width - M.l - M.r;
   const y = (p: number) => M.t + ((Math.min(hi, Math.max(lo, p)) - lo) / (hi - lo || 1)) * (H - M.t - M.b);
@@ -428,7 +439,7 @@ function FormTile({ runs, fitnessDays, fatigueDays }: { runs: IndexedRun[]; fitn
   // Zero always on the scale, and room enough that a flat form is not drawn as a mountain.
   const lo = Math.min(-2, ...forms);
   const hi = Math.max(2, ...forms);
-  const H = 150;
+  const H = useExpandedHeight(150);
   const M = { l: 30, r: 40, t: 10, b: 22 };
   const plot = width - M.l - M.r;
   const x = (i: number) => M.l + (i / (recent.length - 1 || 1)) * plot;
@@ -517,7 +528,7 @@ function SegmentTile({ def, efforts }: { def: BlockDefinition; efforts: BlockIns
   if (!mine.length) return <p className="muted small">{t('No effort yet.')}</p>;
   const paces = mine.map((e) => 1000 / e.metrics.speed!);
   const [lo, hi] = [Math.min(...paces), Math.max(...paces)];
-  const H = 110;
+  const H = useExpandedHeight(110);
   const M = { l: 36, r: 10, t: 8, b: 20 };
   const plot = width - M.l - M.r;
   const end = paces.length - 1;

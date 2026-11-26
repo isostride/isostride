@@ -119,8 +119,8 @@ test.describe('Run chart', () => {
     const lapCount = await lapRows.count();
     await expect(lapBars).toHaveCount(lapCount);
     await expect(lapBars.first()).toHaveAccessibleName(/^Lap 1 · \d+\.\d\d km · \d+:\d\d$/);
-    // Clear selection: at the top right of the chart, beside Expand; there only while a stretch is selected.
-    const clearSelection = () => page.locator('.run-board .chart-tools').getByRole('button', { name: 'Clear selection' }).click();
+    // Clear selection: at the card's top right, on the line of the metrics; there only while a stretch is selected.
+    const clearSelection = () => page.locator('.run-board').getByRole('button', { name: 'Clear selection' }).click();
     // Its bar: the chart zooms to the lap, the bar and the row are marked.
     await lapBars.first().click();
     await expect(lapBars.first()).toHaveAttribute('aria-pressed', 'true');
@@ -167,8 +167,8 @@ test.describe('Run chart', () => {
     await page.mouse.up();
     await expect(page.locator('.range-stats h3')).toHaveText('Selection');
     await expect(page.locator('.readout')).toContainText(/ of /);
-    // The chart stays where it was as the stretch is selected: Clear selection stands in the chart's own line, beside Expand.
-    await expect(page.locator('.run-board .chart-tools').getByRole('button', { name: 'Clear selection' })).toBeVisible();
+    // The chart stays where it was as the stretch is selected: Clear selection stands at the card's top right, on the metrics' line, beside Pin.
+    await expect(page.locator('.run-board').getByRole('button', { name: 'Clear selection' })).toBeVisible();
     await expect.poll(async () => Math.round((await chart.boundingBox())!.y)).toBe(Math.round(area.y));
     const sel = (await shown(page))!;
     const span = sel[1] - sel[0];
@@ -237,7 +237,7 @@ test.describe('Run chart', () => {
     // The statistics' head holds no button, only Compare similar, which leads to Compare (Clear selection is at the top right of the chart).
     await expect(page.locator('.range-stats').getByRole('button')).toHaveCount(0);
     await expect(page.locator('.range-stats').getByRole('link', { name: 'Compare similar' })).toHaveAttribute('href', /^\/compare\?similar=/);
-    await expect(page.locator('.run-board .chart-tools').getByRole('button', { name: 'Clear selection' })).toBeVisible();
+    await expect(page.locator('.run-board').getByRole('button', { name: 'Clear selection' })).toBeVisible();
 
     // The wheel zooms around the point under the pointer (no + and − buttons): a notch out doubles the
     // range shown, a notch in halves it back; the overview's window grows and shrinks with it.
@@ -356,10 +356,13 @@ test.describe('Run chart', () => {
     // Moved by hand, the map offers Fit route, which hands it back to the chart.
     const fit = page.getByRole('button', { name: 'Fit route' });
     await expect(fit).toBeVisible();
-    // Over the map, at its top: Expand at the left, Fit route at the right, neither on the other.
+    // Over the map, at its top right: Expand in the corner, as on the chart ("w pamie daj powieksz tak samo ... po prawej
+    // stronie"), Fit route under it, neither on the other.
     const [mb, eb, fb] = [(await route.boundingBox())!, (await page.getByRole('button', { name: 'Expand map' }).boundingBox())!, (await fit.boundingBox())!];
-    for (const b of [eb, fb]) expect(b.y - mb.y).toBeLessThan(20);
-    expect(eb.x + eb.width).toBeLessThan(fb.x);
+    expect(eb.y - mb.y).toBeLessThan(20);
+    expect(mb.x + mb.width - (eb.x + eb.width)).toBeLessThan(20);
+    expect(fb.y).toBeGreaterThanOrEqual(eb.y + eb.height);
+    expect(mb.x + mb.width - (fb.x + fb.width)).toBeLessThan(20);
     await fit.click();
     await expect(fit).toHaveCount(0);
     await expect(route).toHaveAttribute('data-zoom', wholeZoom.toFixed(2));
@@ -507,15 +510,16 @@ test.describe('Back to the previous screen', () => {
     // chart's right corner, named and made as the map's ("nazwij expand", "tak samo jak w mapie", "w rogu wykresu ... a nie nad mapa").
     const chart = await openRun(page);
     const expand = page.getByRole('button', { name: 'Expand chart' });
-    await expect(expand).toHaveText('Expand');
+    // Its arrows alone, its name told to a screen reader ("zostaw strzalki ... usun tekst expand").
+    await expect(expand).toHaveText('');
     const [button, plot, map] = await Promise.all([expand.boundingBox(), page.locator('.run-plot').boundingBox(), page.locator('.map-expand').boundingBox()]);
     // Over the chart, at its right edge; not over the map beside it.
     expect(button!.x + button!.width).toBeLessThanOrEqual(plot!.x + plot!.width + 1);
     expect(button!.x + button!.width).toBeGreaterThan(plot!.x + plot!.width - 40);
     expect(button!.y + button!.height).toBeLessThanOrEqual(plot!.y + 1);
     expect(button!.x + button!.width).toBeLessThan(map!.x);
-    // As the map's: the same pill.
-    const look = (l: ReturnType<Page['locator']>) => l.evaluate((b) => { const c = getComputedStyle(b); return [c.height, c.backgroundColor, c.boxShadow !== 'none']; });
+    // As the map's and Pin's: a square of their size, its icon in their ink ("zobacz ikone pina do dashboardu").
+    const look = (l: ReturnType<Page['locator']>) => l.evaluate((b) => { const c = getComputedStyle(b); return [c.width, c.height, c.color]; });
     expect(await look(expand)).toEqual(await look(page.locator('.map-expand')));
     // Each metric in a lane of its own, top to bottom, none over another.
     const lanes = await chart.locator('.run-lane').evaluateAll((rs) => rs.map((r) => [Number(r.getAttribute('y')), Number(r.getAttribute('height'))]));
@@ -532,7 +536,7 @@ test.describe('Back to the previous screen', () => {
     // A range chosen there stays chosen when it is closed: it is the same chart.
     await dialog.locator('.lap-bar').first().click();
     await expect(dialog.getByRole('button', { name: 'Whole run' })).toBeVisible();
-    await dialog.getByRole('button', { name: 'Close' }).click();
+    await dialog.getByRole('button', { name: 'Exit full screen' }).click();
     await expect(dialog).toHaveCount(0);
     expect(await shown(page)).not.toBeNull();
     // Esc closes it too.

@@ -1129,6 +1129,12 @@
     ] },
     { "element": "18575003-6117-4f94-a8f9-efd4d778edab", "name": "This week against the weeks before", "tests": [
       "tests/unit/dashboard.test.ts › Dashboard › This week read against the weeks before"
+    ] },
+    { "element": "e77dc4ff-b3d6-49fa-8dc4-18f2656e3274", "name": "Every chart expanded", "tests": [
+      "e2e/expand.spec.ts › Charts on the whole screen › Every chart expanded to the whole screen"
+    ] },
+    { "element": "f417f06e-7aae-493f-b3c7-b22ae00cbfa3", "name": "Chart expanded on a phone on its side", "tests": [
+      "e2e/expand.spec.ts › Charts on the whole screen › Chart expanded on a phone on its side"
     ] }
   ]
 }
