@@ -4148,6 +4148,13 @@
     "targetId": "4f0f6f76-68be-40ad-aa24-033e76d0db05"
   },
   {
+    "id": "7346c0fd-630f-4fec-b21d-7582b2fc4e61",
+    "quote": "zwieksz budzet na bundle",
+    "relationType": "derives",
+    "sourceId": "36038f78-a505-4196-a7a7-9dbac6a637e8",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "736ab59f-c5ca-466f-81e5-3a76311528dc",
     "relationType": "verifies",
     "sourceId": "1a7ad257-fd5a-4d25-b529-e09dd80998a7",

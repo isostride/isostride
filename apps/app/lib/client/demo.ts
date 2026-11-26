@@ -44,9 +44,29 @@ const demoLanguage = (): 'en' | 'pl' => (document.documentElement.lang === 'pl' 
  * again once, when all of it is there; `onHistory` says how far it is, null when it is done, and 'short' when
  * the browser has no room for it: the demo then stays its last months.
  */
-export async function openDemoFolder(onProgress: (done: number, total: number) => void, onHistory: (p: { done: number; total: number } | 'short' | null) => void): Promise<FileSystemDirectoryHandle> {
+export function openDemoFolder(onProgress: (done: number, total: number) => void, onHistory: (p: { done: number; total: number } | 'short' | null) => void): Promise<FileSystemDirectoryHandle> {
+  // One opening at a time: React's strict mode (the dev server) runs the opening effect twice, and two openings ran
+  // two loops of the history and replaced the folder under the screens a moment after they opened.
+  opening ??= openNow(onProgress, onHistory).finally(() => { opening = null; });
+  return opening;
+}
+let opening: Promise<FileSystemDirectoryHandle> | null = null;
+
+/**
+ * The demo left in another tab removes its folder: a tab on it opens the app again from its start too, not left on
+ * screens whose data are gone. Listened to from the demo's first opening in this page.
+ */
+let watching = false;
+function watchLeaving(): void {
+  if (watching) return;
+  watching = true;
+  addEventListener('storage', (e: StorageEvent) => { if (e.key === DEMO_KEY && e.newValue !== '1') location.assign('/'); });
+}
+
+async function openNow(onProgress: (done: number, total: number) => void, onHistory: (p: { done: number; total: number } | 'short' | null) => void): Promise<FileSystemDirectoryHandle> {
   // A demo left a moment ago and chosen again: its folder is not made while it is still being removed.
   await removing;
+  watchLeaving();
   const handle = await (await navigator.storage.getDirectory()).getDirectoryHandle(DEMO_FOLDER, { create: true });
   const lang = demoLanguage();
   // The demo's folder is in the browser already: no copy of it is kept.

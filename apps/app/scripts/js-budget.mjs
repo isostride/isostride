@@ -1,4 +1,4 @@
-// JavaScript per route (ADR "Built with React": 220 KB per route, 200 KB before 23 Nov 2026): for each screen's page in
+// JavaScript per route (ADR "Built with React": 240 KB per route since 26 Nov 2026, 220 KB before, 200 KB before 23 Nov 2026): for each screen's page in
 // the static export, the gzip size of every script it references, which is what a host that
 // compresses sends; noModule scripts, which the listed browsers skip, are left out. Writes reports/measures-js.json; exits 1 when a route is over budget.
 import fs from 'node:fs';
@@ -6,7 +6,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
-export const BUDGET_KB = 220;
+export const BUDGET_KB = 240;
 
 export function routeScripts(exportDir) {
   const pages = fs.readdirSync(exportDir).filter((f) => f.endsWith('.html') && f !== '404.html');

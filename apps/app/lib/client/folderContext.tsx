@@ -1,8 +1,8 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { BrowserFolder, usesCopy, type DataFolder } from '@/lib/fs';
-import { DEMO_KEY, chooseDemo, demoChosen, demoLeft, demoSupported, forgetDemo } from './demoChoice';
+import { chooseDemo, demoChosen, demoLeft, demoSupported, forgetDemo } from './demoChoice';
 import { onCopyBroken, setCopyId } from './worker';
 import { getValue, setValue } from './handleStore';
 
@@ -105,7 +105,7 @@ export function FolderProvider({ children }: { children: ReactNode }) {
    * opened on them, and the earlier history made behind it. A demo that cannot be made (no room, a
    * storage the browser withholds) is said so on the Welcome screen, and the choice of it forgotten.
    */
-  const openDemoNow = useCallback(async () => {
+  const openDemo = useCallback(async () => {
     chooseDemo();
     setState({ status: 'demo-preparing', done: 0, total: 0 });
     try {
@@ -118,20 +118,6 @@ export function FolderProvider({ children }: { children: ReactNode }) {
       setState(typeof window.showDirectoryPicker === 'function' ? { status: 'not-chosen', demoFailed: true } : { status: 'unsupported', insecure: !window.isSecureContext, demoFailed: true });
     }
   }, []);
-  // One opening at a time: React's strict mode (the dev server) runs the opening effect twice, and two openings ran
-  // two loops of the history and replaced the folder under the screens a moment after they opened.
-  const opening = useRef<Promise<void> | null>(null);
-  const openDemo = useCallback(() => (opening.current ??= openDemoNow().finally(() => { opening.current = null; })), [openDemoNow]);
-
-  // The demo left in another tab removes its folder: this tab, on it, opens the app again from its start too, not
-  // left on screens whose data are gone.
-  const onDemo = state.status === 'open' && !!state.demo;
-  useEffect(() => {
-    if (!onDemo) return;
-    const left = (e: StorageEvent) => { if (e.key === DEMO_KEY && e.newValue !== '1') location.assign('/'); };
-    addEventListener('storage', left);
-    return () => removeEventListener('storage', left);
-  }, [onDemo]);
 
   const leaveDemo = useCallback(async () => {
     forgetDemo();
