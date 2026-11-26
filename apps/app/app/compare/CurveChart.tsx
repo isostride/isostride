@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, type MouseEvent } from 'react';
-import { ItemKey, Mark, coverTicks, ensureSpan, tickDecimals, useWidth, type Shape } from '@/components';
+import { ItemKey, Mark, coverTicks, ensureSpan, tickDecimals, useExpandedHeight, useWidth, type Shape } from '@/components';
 import { number, t } from '@/lib/i18n';
 
 const M = { l: 52, r: 16, b: 26 };
@@ -39,7 +39,7 @@ export function CurveChart({ label, lines, durations, format, tick, gap, higherI
   const [box, width] = useWidth();
   const router = useRouter();
   const [hover, setHover] = useState<{ mx: number; duration: number; near: { l: CurveLine; p: CurveLine['points'][number] } | null } | null>(null);
-  const H = height;
+  const H = useExpandedHeight(height);
   const T = 10;
   const pts = lines.flatMap((l) => l.points);
   const scale = useMemo(() => {

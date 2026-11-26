@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
-import { clock, ensureSpan, niceTicks, robustExtent, smoothPaths, useMetrics, useWidth } from '@/components';
+import { clock, ensureSpan, niceTicks, robustExtent, smoothPaths, useExpandScale, useMetrics, useWidth } from '@/components';
 import { figuresInWorker, type EffortFigures } from '@/lib/client';
 import { date, time } from '@/lib/format';
 import type { DataFolder } from '@/lib/fs';
@@ -78,6 +78,8 @@ export function EffortsChart({ efforts, handle, folder, metrics: given }: { effo
   const [smoothed, setSmoothed] = useState(true);
   const [cursor, setCursor] = useState<number | null>(null);
   const [box, width] = useWidth(900);
+  // Its bands taller on the whole screen (components/Expandable).
+  const band = BAND * useExpandScale(BAND * Math.max(1, metrics.length));
   const key = JSON.stringify(efforts.map((e) => ({ runId: e.runId, from: e.from, to: e.to })));
   useEffect(() => {
     const controller = new AbortController();
@@ -117,15 +119,15 @@ export function EffortsChart({ efforts, handle, folder, metrics: given }: { effo
   const px = (x: number) => PAD.l + (x / xMax) * (w - PAD.l - PAD.r);
   const has = (m: Metric) => lines.some((l) => l.f.series.values[m]?.some((v) => v !== null));
   const shown = metrics.filter(has);
-  const H = PAD.t + shown.length * (BAND + GAP) + PAD.b;
+  const H = PAD.t + shown.length * (band + GAP) + PAD.b;
   const bands = shown.map((m, k) => {
     const view = METRICS.find((x) => x.key === m)!;
     const ys = lines.map((l) => smooth(l.f.series.values[m] ?? [], smoothed));
     const all = ys.flat().filter((v): v is number => v !== null);
     const [lo, hi] = ensureSpan(...robustExtent(all, 0.03, 0.1), view.minSpan);
-    const top = PAD.t + k * (BAND + GAP);
-    const py = (v: number) => { const f = (Math.min(Math.max(v, lo), hi) - lo) / (hi - lo); return top + (view.invert ? f : 1 - f) * BAND; };
-    const paths = lines.map((l, i) => smoothPaths(xOf(l).map((x, j) => (ys[i][j] === null ? null : [px(x), py(ys[i][j]!)] as [number, number])), top + BAND).line);
+    const top = PAD.t + k * (band + GAP);
+    const py = (v: number) => { const f = (Math.min(Math.max(v, lo), hi) - lo) / (hi - lo); return top + (view.invert ? f : 1 - f) * band; };
+    const paths = lines.map((l, i) => smoothPaths(xOf(l).map((x, j) => (ys[i][j] === null ? null : [px(x), py(ys[i][j]!)] as [number, number])), top + band).line);
     const ranges = zones[m]?.length ? zoneRanges(m, zones[m]) : [];
     const stripes = ranges.flatMap((r, z) => {
       const a = Math.max(r.lo ?? -Infinity, lo);

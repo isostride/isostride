@@ -6,6 +6,7 @@ import { contextValue } from '@/lib/blocks';
 import type { TrendResult } from '@/lib/compare';
 import { dateText, t } from '@/lib/i18n';
 import { Key, ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useWidth } from './chartKit';
+import { useExpandedHeight } from './Expandable';
 
 /** Categorical series colours, in their validated order: colour follows the series (the device), never its rank. */
 export const SERIES = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)'];
@@ -41,7 +42,7 @@ export function TrendChart({ trend, format, tick = format, invert, markers, sele
   const [box, width] = useWidth();
   const [hover, setHover] = useState<Hover | null>(null);
   const corrected = trend.corrected;
-  const H = 320;
+  const H = useExpandedHeight(320);
 
   const scale = useMemo(() => {
     const pts = trend.series.flatMap((s) => s.points);

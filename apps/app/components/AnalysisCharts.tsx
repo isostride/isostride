@@ -5,6 +5,7 @@ import { useMemo, useState, type MouseEvent } from 'react';
 import type { BlockInstance } from '@/lib/blocks';
 import { dateText, t } from '@/lib/i18n';
 import { ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useWidth } from './chartKit';
+import { useExpandedHeight } from './Expandable';
 import type { Marker } from './TrendChart';
 
 /** Colour slots and marker shapes of the Analysis items: shape is the second encoding beside colour. */
@@ -71,7 +72,8 @@ export function OverTimeChart({ groups, format, tick, invert, markers, minSpan =
   const [box, width] = useWidth();
   const router = useRouter();
   const [hover, setHover] = useState<{ x: number; y: number; g: OverTimeGroup; p: OverTimeGroup['points'][number] } | null>(null);
-  const H = height;
+  // Taller on the whole screen (components/Expandable).
+  const H = useExpandedHeight(height);
   // Only drawable points: a value that is not a number has no place on the axis.
   groups = useMemo(() => groups.map((g) => ({ ...g, points: g.points.filter((p) => Number.isFinite(p.v) && Number.isFinite(p.t)), fits: g.fits.filter((f) => [f.v0, f.v1, f.noise].every(Number.isFinite)) })), [groups]);
   const scale = useMemo(() => {

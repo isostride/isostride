@@ -4,6 +4,11 @@ The versions of IsoStride (the app at app.isostride.com and the site at isostrid
 
 ## Unreleased
 
+### Every chart on the whole screen
+- Every chart can take the whole screen, as the run chart can: the full-screen icon at the top right of its card (beside Pin) on Performance, Compare (Over time, A/B, Efforts), the Runs screen's weeks and the Dashboard's tiles with a chart. Its charts grow to the width and height of the screen; on a phone the screen turns on its side where the browser can, and the card is made to fit. The reverse icon or Esc closes it.
+- One icon everywhere, drawn as Pin is: the run chart's and the map's too (the map's now at its top right).
+- Clear selection on the run chart is an icon (two handles with the arrows out to the whole run), at the card's top right beside Pin, on the line of the metrics.
+
 ### Demo
 - The app can be opened on a demo, from the site (*Try the demo*) or from its first screen: two years of training of a sample runner with a critical pace of about 3:15 /km, generated in your browser (nothing is downloaded or sent) and kept in the browser's own storage. The last months are there in a few seconds, the earlier history is added behind the open app. A bar on every screen says the data are not a real person's; *Use your own data* leaves the demo and removes it (in every tab open on it). Integrations and the choice of another folder are off in it. A tab closed while the demo is being made leaves nothing half made: the next opening finishes it. A browser with too little storage for the two years gets the last months.
 - A first import of many runs finds its segments faster: each run's file is read once for all the segments and suggestions, not once for each (a folder of 570 runs read 6000 files).

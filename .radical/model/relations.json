@@ -411,6 +411,13 @@
     "targetId": "f38be323-1d87-49bf-bcaa-54521f704865"
   },
   {
+    "id": "0c494a88-7619-4694-abc3-992af07e465b",
+    "quote": "zamien ikonke close na opdowiednie - odwrotna do fullscreen",
+    "relationType": "derives",
+    "sourceId": "a186d879-5c52-450e-8b3f-33105d2cca8e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "0c7ff50e-2e5c-4aa7-b5ec-66988eb26aeb",
     "relationType": "illustrates",
     "sourceId": "29452319-21e3-42fa-a4e2-87267d468dc4",
@@ -1375,6 +1382,12 @@
     "targetId": "2fd4011c-79a7-45bb-9151-a3712fcd769d"
   },
   {
+    "id": "2339e0c2-f80a-4daf-aa3a-2ecf90487d94",
+    "relationType": "verifies",
+    "sourceId": "e77dc4ff-b3d6-49fa-8dc4-18f2656e3274",
+    "targetId": "a186d879-5c52-450e-8b3f-33105d2cca8e"
+  },
+  {
     "id": "2345e6d9-fd40-401f-9c85-21c484a5acbb",
     "relationType": "satisfies",
     "sourceId": "2f223517-a575-43e4-bac5-c331d15faa41",
@@ -1551,6 +1564,13 @@
     "relationType": "implements",
     "sourceId": "f23e5655-c7f1-4d0b-b3ab-37e6c42af5ba",
     "targetId": "62453160-130b-4517-ae25-023829dea55e"
+  },
+  {
+    "id": "26d8bff7-06a2-4ae8-b133-fbe4249df414",
+    "quote": "podoba mi sie opcja wykresu full screen i obracania go na telefonie .. che aby kazdy mial taka opcje",
+    "relationType": "derives",
+    "sourceId": "a186d879-5c52-450e-8b3f-33105d2cca8e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "26f95148-e23e-486f-a17a-855ad887fda9",
@@ -1880,6 +1900,13 @@
     "quote": "przycisk save jest zawsze .. powinien sie pojawic gdy cos jest zmienione ale nie zapisane",
     "relationType": "derives",
     "sourceId": "8c0a0d30-4eae-411d-bd58-74d5cc17059c",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "2f782396-c231-4626-a43f-024cab73eed6",
+    "quote": "wysmysl cos innego ... jakies 2 pionowe kreski i w srodku cos ? tak jak w obrobce video",
+    "relationType": "derives",
+    "sourceId": "8cd8c786-c600-4808-95b3-d73aac37d4b1",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
@@ -2246,6 +2273,13 @@
     "targetId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3"
   },
   {
+    "id": "39a7ee47-bf7d-4cb8-91e0-adfcde03eb5f",
+    "quote": "lepiej ... niech bedzie troche szersza",
+    "relationType": "derives",
+    "sourceId": "8cd8c786-c600-4808-95b3-d73aac37d4b1",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "39dc1839-29f0-466a-9d8f-742884c42c48",
     "relationType": "illustrates",
     "sourceId": "29452319-21e3-42fa-a4e2-87267d468dc4",
@@ -2557,6 +2591,13 @@
     "technology": "postMessage"
   },
   {
+    "id": "44013a45-41a0-4b6e-836f-1bdb6072479a",
+    "quote": "zmien ta ikone na odpowiadajaca reszcie ... zobacz ikone pina do dashboardu",
+    "relationType": "derives",
+    "sourceId": "a186d879-5c52-450e-8b3f-33105d2cca8e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "441d6fee-b399-4dab-a9af-73ad70939ed9",
     "quote": "popraw pozycje przycksu full screen",
     "relationType": "derives",
@@ -2717,6 +2758,13 @@
     "targetId": "ecf2e2e1-ad11-4e0b-8b48-7a2dc4edd702"
   },
   {
+    "id": "47e63fcc-ebd5-4ae9-b464-bedeb8870f23",
+    "quote": "ok nie zawsze wykres sie rozszerza do pelnego ekranu",
+    "relationType": "derives",
+    "sourceId": "a186d879-5c52-450e-8b3f-33105d2cca8e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "47f28f9d-7cee-4e62-b629-e1f429cd7c23",
     "relationType": "satisfies",
     "sourceId": "0e952c97-92a0-4037-846e-9154619a2261",
@@ -2752,6 +2800,13 @@
     "quote": "czy pliki sa zapisyane na dysku ? czy dane generowane w locie?",
     "relationType": "derives",
     "sourceId": "c91661a7-7a66-4487-bc1e-d4df8a008f43",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "48e64ed2-814b-46c5-8667-1764f3399744",
+    "quote": "strzalek w ikonie ekspand prawie nie widac",
+    "relationType": "derives",
+    "sourceId": "a186d879-5c52-450e-8b3f-33105d2cca8e",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
@@ -2899,6 +2954,13 @@
     "relationType": "illustrates",
     "sourceId": "29452319-21e3-42fa-a4e2-87267d468dc4",
     "targetId": "a2084606-fba4-4417-b655-ea825c6a19fb"
+  },
+  {
+    "id": "4ce58e5a-dac8-40ad-ae23-d2b1a91d6d06",
+    "quote": "albo zamiast expand daj ikonke full screen",
+    "relationType": "derives",
+    "sourceId": "a186d879-5c52-450e-8b3f-33105d2cca8e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "4d1b00bf-e239-4e6b-959e-b64057db92b4",
@@ -3528,6 +3590,13 @@
     "targetId": "e02b1e20-43f6-4549-83d9-f25472c2f6b6"
   },
   {
+    "id": "626b6fca-02ff-477b-9d3a-eed6c9d81bb8",
+    "quote": "niech bedzie troche szersza ta ikona",
+    "relationType": "derives",
+    "sourceId": "8cd8c786-c600-4808-95b3-d73aac37d4b1",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "62807497-daff-4d92-a238-273295bd2f41",
     "relationType": "verifies",
     "sourceId": "e25f213f-aaa5-4195-aa24-7954bb2e4956",
@@ -3933,6 +4002,13 @@
     "targetId": "96374279-b9c9-4890-aea4-6d29c95fe602"
   },
   {
+    "id": "6f1ac92b-a940-446e-b2f5-1682596481f9",
+    "quote": "i przesun do prawego gornego rogu na wysokosci metryk",
+    "relationType": "derives",
+    "sourceId": "8cd8c786-c600-4808-95b3-d73aac37d4b1",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "6f21bc87-3fce-4967-89f4-15fc30823cea",
     "relationType": "satisfies",
     "sourceId": "989ddea4-2268-46b9-a61d-ef102ca319a6",
@@ -4165,6 +4241,13 @@
     "relationType": "verifies",
     "sourceId": "457c8016-90e8-4e54-b595-90b2639a7b21",
     "targetId": "ce948ace-bcae-4bc0-843b-68941b12e0c3"
+  },
+  {
+    "id": "74e2be07-ed18-462c-aec9-cddbdcf302e3",
+    "quote": "clear selection (przycisk ktory sie pojawia) tez zamien na jaks inone i postaw po lewej od fullscreen",
+    "relationType": "derives",
+    "sourceId": "8cd8c786-c600-4808-95b3-d73aac37d4b1",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "74e3db91-459a-4942-ba8f-6926081af95c",
@@ -4442,6 +4525,13 @@
     "relationType": "satisfies",
     "sourceId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1",
     "targetId": "ed99d490-0c6d-4566-9ae9-32b21b831c7b"
+  },
+  {
+    "id": "7ccf42ba-ddc8-4250-99ea-46dcb9efa42b",
+    "quote": "za male jest",
+    "relationType": "derives",
+    "sourceId": "8cd8c786-c600-4808-95b3-d73aac37d4b1",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "7cf91e17-6ec0-4a8e-9d79-31b5f1e5f8e2",
@@ -4883,6 +4973,12 @@
     "relationType": "illustrates",
     "sourceId": "a58faa23-2592-4664-90ca-6b1c0143af21",
     "targetId": "03e4345b-f2e8-4c9f-a605-6cf5afd24cf4"
+  },
+  {
+    "id": "88a49695-95a0-4ce4-8f61-9e84e22fd956",
+    "relationType": "verifies",
+    "sourceId": "f417f06e-7aae-493f-b3c7-b22ae00cbfa3",
+    "targetId": "a186d879-5c52-450e-8b3f-33105d2cca8e"
   },
   {
     "description": "FIT files are read from fit/; derived data is written to derived/",
@@ -6126,6 +6222,13 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "ac690f54-392c-4f6d-80f3-2ec4d19c7d4c",
+    "quote": "no i zostaw strzalki ... usun tekst expand",
+    "relationType": "derives",
+    "sourceId": "a186d879-5c52-450e-8b3f-33105d2cca8e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "ac79b1f9-8b97-41b2-808c-f16f780832d5",
     "relationType": "verifies",
     "sourceId": "afe8191c-e280-4118-b571-53e876cd904e",
@@ -6523,6 +6626,13 @@
     "quote": "chcialbym miec model ktory modeluje performance\nZakładka w Analysis\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei",
     "relationType": "derives",
     "sourceId": "f43c283f-b3a3-4199-873e-c4773079e307",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "b62accc0-b2f6-4984-996b-91aa4106fb89",
+    "quote": "kiepsko wyglada",
+    "relationType": "derives",
+    "sourceId": "8cd8c786-c600-4808-95b3-d73aac37d4b1",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
@@ -6954,6 +7064,12 @@
     "relationType": "performed-by",
     "sourceId": "81475179-8098-4898-ad72-034a87d3a989",
     "targetId": "dcc9c750-4930-43ec-b29a-96d8cc3419e7"
+  },
+  {
+    "id": "c21a838a-b9a2-4de9-818f-2b90f0e3a3d4",
+    "relationType": "satisfies",
+    "sourceId": "cbb5fc4a-220e-4316-97b6-63afe40c8cc8",
+    "targetId": "a186d879-5c52-450e-8b3f-33105d2cca8e"
   },
   {
     "id": "c2672bc5-17a8-4a59-8465-c5e850d6c1b2",
@@ -7705,6 +7821,13 @@
     "targetId": "ad22c80f-c82c-4d21-ad60-2e568333f3a4"
   },
   {
+    "id": "d8876b1b-7a25-4767-8095-1291cb223fd5",
+    "quote": "zmniejsz odstep pomiedzy ikonami",
+    "relationType": "derives",
+    "sourceId": "a186d879-5c52-450e-8b3f-33105d2cca8e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "actions": "match again under the definition's new tolerances",
     "event": "afa13a9f-1af7-447d-a52e-a189a0191cc3",
     "id": "d88bc6df-8398-491e-8f7f-fe391f7b5322",
@@ -8220,6 +8343,13 @@
     "targetId": "638f705e-6839-4b32-ad06-bd7bc526aef3"
   },
   {
+    "id": "e774d9ed-5b80-4c14-9037-bd0e113430b7",
+    "quote": "w pamie daj powieksz tak samo ... po prawej stronie ... jest teraz po lewej",
+    "relationType": "derives",
+    "sourceId": "a186d879-5c52-450e-8b3f-33105d2cca8e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "actions": "scan all historical runs",
     "id": "e78ff8f8-0422-4328-94af-5252b88b98e3",
     "relationType": "transition",
@@ -8295,6 +8425,13 @@
     "relationType": "verifies",
     "sourceId": "b4dabb76-4038-490d-b824-c77328ba52ac",
     "targetId": "e994cb73-b961-4a9d-8334-de1cd8a785e4"
+  },
+  {
+    "id": "e91c5d23-f5a8-4d18-aae1-8f409a1019cc",
+    "quote": "przy zamkyania ... daj ikonke odwrotna... nie che wtedy przycisku close",
+    "relationType": "derives",
+    "sourceId": "a186d879-5c52-450e-8b3f-33105d2cca8e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "e945b8bf-d53e-4be6-b6f3-b3fd998afa26",
@@ -8396,6 +8533,13 @@
     "relationType": "verifies",
     "sourceId": "26649d2f-ac65-4841-bce8-8b156e16b6fe",
     "targetId": "e6909b1e-ea15-4395-b4e5-0ecdb64eef5b"
+  },
+  {
+    "id": "ec4c81b2-21d2-4dc6-b076-0200a76e2784",
+    "quote": "ta sama ikona przy wykresie biegu i mapie!!!",
+    "relationType": "derives",
+    "sourceId": "a186d879-5c52-450e-8b3f-33105d2cca8e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "ec51d5b0-f8bc-4616-b701-ff7e69cc7fa6",
@@ -8581,6 +8725,12 @@
     "relationType": "satisfies",
     "sourceId": "340e82f0-6223-4f6f-85eb-5418fff8ddec",
     "targetId": "2cc97e54-4899-4f94-9b8c-24845459f7c0"
+  },
+  {
+    "id": "f10849ac-e3ea-4bfc-ba11-dad443e68af8",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "a186d879-5c52-450e-8b3f-33105d2cca8e"
   },
   {
     "id": "f1484501-16e8-450d-8792-5063353e9050",
@@ -8901,6 +9051,13 @@
     "relationType": "verifies",
     "sourceId": "54355ac3-9e2f-425f-86a0-237f3ffca525",
     "targetId": "8690d92b-9be0-4782-8993-56acf708796a"
+  },
+  {
+    "id": "f9dc446a-6693-44b5-bdb2-decd97277f46",
+    "quote": "ciagle wykresy nie rozwiajaja sie na pelny ekran... testuje na desktoppie",
+    "relationType": "derives",
+    "sourceId": "a186d879-5c52-450e-8b3f-33105d2cca8e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "fa366f8d-ab10-4cfd-baae-b28fa7ae48ac",

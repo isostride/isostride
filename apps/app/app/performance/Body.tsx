@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { ReadError, useDataVersion } from '@/components';
+import { Expandable, ReadError, useDataVersion } from '@/components';
 import { runInWorker, useLocale, useOpenFolder } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
 import { t } from '@/lib/i18n';
@@ -124,11 +124,11 @@ export function Body({ tab: asked, view, embedded = false }: { tab: Tab; view: s
         </p>
       )}
       <WhyBar key={`${tab}/${shown.key}`} models={shown.models} by={by} byLoad={byLoad} />
-      <div className="pin-host perf-widget">
+      <Expandable className="pin-host perf-widget" title={`${t(TABS.find((tb) => tb.key === tab)!.name)} · ${t(shown.name)}`}>
         {/* A scenario lives in the link, so it is no widget of the Dashboard. */}
         {tab !== 'whatif' && <PinButton folder={folder} kind="perf" target={`${tab}/${shown.key}`} name={`${TABS.find((tb) => tb.key === tab)!.name} · ${shown.name}`} />}
         {content}
-      </div>
+      </Expandable>
     </>
   );
 }

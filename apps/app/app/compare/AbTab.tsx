@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { InstancePanel, Key, ProfileChart, useMetrics, ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useWidth } from '@/components';
+import { Expandable, InstancePanel, Key, ProfileChart, useMetrics, ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useExpandedHeight, useWidth } from '@/components';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 import { unitOf, wordsOf, MIN_AB_INSTANCES, abCsv, byField, computeAb, contextValue, describeAb, firstUsableMetric, hash, meanProfile, type AbResult, instancesCsv, CONTEXT_FIELDS, valueOf, type ContextField } from '@/lib/compare';
 import { dateText, number, t } from '@/lib/i18n';
@@ -157,10 +157,10 @@ export function AbTab({ items, all, chosen: chosenItem, onChoose, computing, cor
             );
           })()}
 
-          <div className="card chart" style={{ marginTop: 12 }}>
+          <Expandable className="card chart ab-chart" title={t('Timeline')}>
             <h3 className="chart-title">{t('Timeline')} <span className="muted">· {t('do the groups take turns? A difference is fair only when they do.')}</span></h3>
             <Timeline r={result} format={m.fmt} tick={m.tick} minSpan={m.minSpan} invert={m.invert} onPick={(i) => { setFocus(i); setPanel(true); }} />
-          </div>
+          </Expandable>
 
           <div className="card chart" style={{ marginTop: 12 }}>
             <h3 className="chart-title">{t('Inside the segment, minute by minute')} <span className="muted">· {t('the mean of each group')}</span></h3>
@@ -235,6 +235,7 @@ function DifferencePlot({ r, metric }: { r: AbResult; metric: BlockMetric }) {
 
 function Timeline({ r, format, tick, minSpan, invert, onPick }: { r: AbResult; format: (v: number) => string; tick: (v: number, d?: number) => string; minSpan: number; invert?: boolean; onPick: (i: BlockInstance) => void }) {
   const [box, width] = useWidth();
+  const tall = useExpandedHeight(180);
   const pts = [...r.a.points.map((p) => ({ p, g: 0 })), ...r.b.points.map((p) => ({ p, g: 1 }))];
   if (!pts.length) return null;
   const val = (p: (typeof pts)[number]['p']) => (r.corrected ? p.corrected : p.raw);
@@ -245,7 +246,7 @@ function Timeline({ r, format, tick, minSpan, invert, onPick }: { r: AbResult; f
   const [lo0, hi0] = ensureSpan(Math.min(...vs) - span * 0.1, Math.max(...vs) + span * 0.1, minSpan);
   const ticks = niceTicks(lo0, hi0, 3).filter((t) => t >= lo0 && t <= hi0);
   const lo = Math.min(lo0, ...vs), hi = Math.max(hi0, ...vs);
-  const H = 180, L = 52, R = 16, B = 26, T = 8;
+  const H = tall, L = 52, R = 16, B = 26, T = 8;
   const x = (t: number) => L + ((t - t0) / (t1 - t0)) * (width - L - R);
   const y = (v: number) => { const f = (v - lo) / (hi - lo); return T + (invert ? f : 1 - f) * (H - T - B); };
   const labels = [r.a.label, r.b.label];

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { RouteMap } from '@/components';
+import { FullScreenIcon, RouteMap } from '@/components';
 import { useDialogKeys } from './dialogKeys';
 import { msg, number, t } from '@/lib/i18n';
 import { zoneOf, zoneRanges, zoneStep } from '@/lib/settings';
@@ -111,7 +111,8 @@ export function RouteExpanded({ lat, lon, t: times, start, step, metrics, initia
       <div ref={dialog} className="route-expanded" role="dialog" aria-modal="true" aria-label={t('Map of the run')}>
         <div className="route-expanded-head">
           <h2>{t('Map')} <span className="muted">· {metric ? metric.title.toLowerCase() : t('the route')}</span></h2>
-          <button ref={close} type="button" className="btn sm" onClick={onClose}>{t('Close')}</button>
+          {/* Closed by the icon reverse to the one that opened it ("zamien ikonke close na opdowiednie - odwrotna do fullscreen"). */}
+          <button ref={close} type="button" className="btn sm chart-expand" onClick={onClose} aria-label={t('Exit full screen')} title={t('Exit full screen (Esc)')}><FullScreenIcon exit /></button>
         </div>
         <div className="route-expanded-map">
           <RouteMap lat={lat} lon={lon} t={times} cursor={null} size={640} colorAt={colorAt} valueAt={valueAt} follow={false} controls hint={t('Point at the route for its value · scroll or + − to zoom · drag to move')} />

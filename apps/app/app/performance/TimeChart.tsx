@@ -2,7 +2,7 @@
 
 import { useState, type MouseEvent } from 'react';
 import { t } from '@/lib/i18n';
-import { Key, TipRow, WashGradient, columnPath, coverTicks, dayLabel, monthLabel, monthTicks, tickDecimals, useSvgId, useWidth } from '@/components';
+import { Key, TipRow, WashGradient, columnPath, coverTicks, dayLabel, monthLabel, monthTicks, tickDecimals, useExpandedHeight, useSvgId, useWidth } from '@/components';
 
 /** One series of a time chart: bars (stacked by `stack`), a line, or dots, its values by point. */
 export interface TimeSeries {
@@ -54,6 +54,8 @@ export function TimeChart({ label, times, series, format, tick = format, height 
   const [box, width] = useWidth();
   const [hover, setHover] = useState<number | null>(null);
   const washId = useSvgId('tc-wash');
+  // Taller on the whole screen (components/Expandable).
+  const drawnHeight = useExpandedHeight(height);
   if (!times.length) return <div ref={box} className="muted small" style={{ padding: 12 }}>{t('No data yet.')}</div>;
   const t0 = Math.min(...times);
   const t1 = Math.max(...times);
@@ -79,7 +81,7 @@ export function TimeChart({ label, times, series, format, tick = format, height 
   const ticks = coverTicks(withZero && lo0 >= 0 ? 0 : lo0 - span * 0.04, hi0 + span * 0.04, 4);
   const lo = ticks[0] ?? lo0;
   const hi = ticks[ticks.length - 1] ?? hi0;
-  const H = height;
+  const H = drawnHeight;
   const y = (v: number) => { const f = (v - lo) / (hi - lo || 1); return M.t + (invert ? f : 1 - f) * (H - M.t - M.b); };
   const plotTop = M.t;
   const plotBottom = H - M.b;
