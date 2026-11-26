@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { RouteMap, useDialogKeys } from '@/components';
+import { RouteMap } from '@/components';
+import { useDialogKeys } from './dialogKeys';
 import { msg, number, t } from '@/lib/i18n';
 import { zoneOf, zoneRanges, zoneStep } from '@/lib/settings';
 

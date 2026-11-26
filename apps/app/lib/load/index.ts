@@ -2,6 +2,7 @@
 export * from './form';
 export * from './models';
 export * from './summary';
+export * from './version';
 export * from './insights';
 export * from './banister';
 export * from './vo2';

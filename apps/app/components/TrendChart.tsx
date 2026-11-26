@@ -2,7 +2,8 @@
 
 import { useMemo, useState, type MouseEvent } from 'react';
 import type { BlockInstance } from '@/lib/blocks';
-import { contextValue, type TrendResult } from '@/lib/compare';
+import { contextValue } from '@/lib/blocks';
+import type { TrendResult } from '@/lib/compare';
 import { dateText, t } from '@/lib/i18n';
 import { Key, ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useWidth } from './chartKit';
 

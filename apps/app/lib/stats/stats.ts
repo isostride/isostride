@@ -1,4 +1,4 @@
-/** Own statistics (ADR "Own statistics module"): means, linear regression, bootstrap. */
+/** Own statistics (ADR "Own statistics module"): means, linear regression, intervals by Student's t, the jackknife. */
 
 export function mean(xs: number[]): number {
   return xs.reduce((a, b) => a + b, 0) / xs.length;
@@ -30,7 +30,7 @@ export function linearFit(x: number[], y: number[]): Fit {
   return { slope, intercept: my - slope * mx };
 }
 
-/** A small seeded generator (mulberry32), so every bootstrap gives the same interval for the same data. */
+/** A small seeded generator (mulberry32): the same numbers for the same seed, for the tests' random splits. */
 export function rng(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -40,47 +40,6 @@ export function rng(seed: number): () => number {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-}
-
-export function quantile(sorted: number[], q: number): number {
-  if (!sorted.length) return NaN;
-  const pos = (sorted.length - 1) * q;
-  const lo = Math.floor(pos);
-  const hi = Math.ceil(pos);
-  return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
-}
-
-export const BOOTSTRAP_ITERATIONS = 1000;
-export const CONFIDENCE = 0.95;
-
-/** Percentile bootstrap interval of a statistic of one sample (resampled with replacement). */
-export function bootstrap<T>(sample: T[], statistic: (s: T[]) => number, seed = 1, iterations = BOOTSTRAP_ITERATIONS): [number, number] {
-  const next = rng(seed);
-  const stats: number[] = [];
-  for (let k = 0; k < iterations; k++) {
-    const s = sample.map(() => sample[Math.floor(next() * sample.length)]);
-    const v = statistic(s);
-    if (Number.isFinite(v)) stats.push(v);
-  }
-  stats.sort((a, b) => a - b);
-  const alpha = (1 - CONFIDENCE) / 2;
-  return [quantile(stats, alpha), quantile(stats, 1 - alpha)];
-}
-
-/** Percentile bootstrap interval of mean(b) − mean(a), resampling each group on its own. */
-export function bootstrapDiff(a: number[], b: number[], seed = 1, iterations = BOOTSTRAP_ITERATIONS): [number, number] {
-  const next = rng(seed);
-  const diffs: number[] = [];
-  for (let k = 0; k < iterations; k++) {
-    let sa = 0;
-    let sb = 0;
-    for (let i = 0; i < a.length; i++) sa += a[Math.floor(next() * a.length)];
-    for (let i = 0; i < b.length; i++) sb += b[Math.floor(next() * b.length)];
-    diffs.push(sb / b.length - sa / a.length);
-  }
-  diffs.sort((x, y) => x - y);
-  const alpha = (1 - CONFIDENCE) / 2;
-  return [quantile(diffs, alpha), quantile(diffs, 1 - alpha)];
 }
 
 /**

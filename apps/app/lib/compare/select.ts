@@ -17,11 +17,7 @@ export const CONTEXT_FIELDS = {
 } as const;
 export type ContextField = keyof typeof CONTEXT_FIELDS;
 
-/** A context value as shown: the watch's own heart rate sensor, "wrist (COROS PACE 4)", in the language in use; any other (a name) as it is. */
-export function contextValue(v: string): string {
-  const wrist = /^wrist \((.*)\)$/.exec(v);
-  return wrist ? t('wrist ({device})', { device: wrist[1] }) : v;
-}
+export { contextValue } from '@/lib/blocks';
 export type ContextFilter = Partial<Record<ContextField, string | null>>;
 
 /** The value an instance has for a metric: pace in s/km for speed, else the mean. */

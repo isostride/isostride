@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Key, clock, niceTicks, timeTicks, useDialogKeys, useWidth } from '@/components';
+import { Key, clock, niceTicks, timeTicks, useWidth } from '@/components';
+import { useDialogKeys } from './dialogKeys';
 import { pace as fmtPace } from '@/lib/format';
 import { number, t } from '@/lib/i18n';
 import { PATHS, readJson, type DataFolder } from '@/lib/fs';
