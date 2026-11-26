@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { REASONS, SHOWN_WORDS, basisOf, reasonText, ruleName, ruleOf, shownName, type RuleShape } from '@/lib/blocks';
 import { IMPORT_REASONS, importReason, readReason } from '@/lib/fs';
-import { loadLocale, setLocale, t } from '@/lib/i18n';
+import { dateText, loadLocale, number, setLocale, t, tn } from '@/lib/i18n';
 import { formSeries, performanceReport, type BestOfLength, type LoadSummary } from '@/lib/load';
 import { DEFAULT_PERFORMANCE } from '@/lib/settings';
 
@@ -10,7 +10,18 @@ import { DEFAULT_PERFORMANCE } from '@/lib/settings';
  * the names of segments, the reasons of an effort left out or a file not imported, the models' texts.
  * What is saved in the data folder stays English; it is shown in the language in use.
  */
-beforeAll(() => loadLocale('pl'));
+// The language loaded and the browser's own formats of it used once before any test: on a slow machine their
+// first use took longer than a unit test may (the pipeline's limit of 100 ms, scaled to the machine).
+beforeAll(async () => {
+  await loadLocale('pl');
+  setLocale('pl');
+  number(1234.5, 1);
+  dateText(new Date('2026-11-24T12:00:00'), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  tn(2, '{n} run', '{n} runs');
+  setLocale('en');
+});
+// The reasons' patterns are built once, on their first reading.
+beforeAll(() => { reasonText(Object.values(REASONS)[0]); });
 afterEach(() => setLocale('en'));
 
 /** A text left with a placeholder unfilled, or a number with a decimal point in Polish. */

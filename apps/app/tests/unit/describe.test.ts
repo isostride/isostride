@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeAb, describeDelta, describeTrend, wordsOf, type TrendSeries } from '@/lib/compare';
+import { describeAb, describeDelta, describeTrend, formatAmount, percentChange, wordsOf, type TrendSeries } from '@/lib/compare';
 import { days, inst } from '../support/instances';
 
 const bpm = (v: number) => `${Math.round(v)} bpm`;
@@ -34,8 +34,7 @@ describe('Result transparency', () => {
 });
 
 describe('Running efficiency metric', () => {
-  it('Efficiency changes read to the thousandth', async () => {
-    const { formatAmount, percentChange } = await import('@/lib/compare');
+  it('Efficiency changes read to the thousandth', () => {
     // Efficiency moves in thousandths of a metre per beat: no rounding to 0.1.
     expect(describeDelta('efficiency', 0.062)).toBe('0.062 m/beat higher, better');
     expect(formatAmount('efficiency', 0.0214)).toBe('0.021 m/beat');
