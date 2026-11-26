@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CONTENT } from '../../../site/app/content';
+import { APP_URL, DEMO_URL } from '../../../site/app/links';
 
 const SITE = path.resolve(__dirname, '../../../site');
 const home = fs.readFileSync(path.join(SITE, 'app/Home.tsx'), 'utf8');
@@ -32,11 +33,18 @@ describe('Site in plain statements', () => {
     expect(text).toMatch(/Code or ideas, both help\./);
     // Screenshots of the whole app on demo data only, said so without a word of the runner behind them.
     expect(text).toMatch(/The screens on this page show demo data;/);
-    expect(text).not.toMatch(/made-up|critical speed of about/);
-    expect(JSON.stringify(CONTENT.pl)).not.toMatch(/fikcyjn/);
+    expect(en.heroShot.caption).not.toMatch(/made-up|critical speed of about/);
+    expect(CONTENT.pl.heroShot.caption).not.toMatch(/fikcyjn|zmyślon/);
+    expect(text).not.toMatch(/critical speed of about/);
     const shots = ['dashboard', ...en.metrics.shots.map(([name]) => name), ...en.models.shots.map(([name]) => name)];
     expect(shots.length).toBeGreaterThanOrEqual(5);
     for (const s of shots) expect(fs.existsSync(path.join(SITE, 'public/shots', `${s}.webp`)), s).toBe(true);
+    // The demo (the runner's request of 26 Nov 2026: "chce na stronie umiesicc opcje demo"): one button under the
+    // hero, to the app opened on the demo, said to be a sample runner's ("nie pisz zmyslony biegacz ... daj przykladowy biegacz"; "nie chozdi o to aby ukrywac ze nie jest
+    // to realny zawodnik"); the caption of the first screenshot leads there too.
+    expect(DEMO_URL).toBe(`${APP_URL}/?demo`);
+    expect([...home.matchAll(/<a className="btn[^"]*" href=\{DEMO_URL\}/g)]).toHaveLength(1);
+    for (const c of [en, CONTENT.pl]) { expect(c.demo.cta).toBeTruthy(); expect(c.demo.note).toMatch(/sample runner|przykładowego biegacza/); }
     // A single button to the app, in the top bar: not 3.
     const toApp = [...home.matchAll(/<a className="btn[^"]*" href=\{APP_URL\}/g)];
     expect(toApp).toHaveLength(1);

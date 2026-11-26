@@ -39,7 +39,7 @@ describe('Violations fail the build', () => {
 });
 describe('JavaScript within budget', () => {
   it('Bundle over budget refused', async () => {
-    // A change adds a large library to a route: the route's scripts pass 220 KB gzipped.
+    // A change adds a large library to a route: the route's scripts pass 240 KB gzipped.
     const { routeScripts, BUDGET_KB } = await import('../../scripts/js-budget.mjs' as string);
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'export-'));
     fs.mkdirSync(path.join(dir, '_next'));

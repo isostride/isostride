@@ -79,6 +79,26 @@ describe('Detection reviewed', () => {
     expect(segments.every((s) => s.length <= 3000 && s.length >= 800)).toBe(true);
   });
 
+  it('Two segments from one start, each with an id of its own', () => {
+    // A way out and back from one start, turned just under 3 km by most runs and just under 2 km by a few (each run
+    // a metre or two beside the others): the two segments of one start and one heading had one id, and a suggestion
+    // kept or dismissed by it was either of them.
+    const outAndBack = (m: number, k: number) => {
+      const n = m / 10 + 1;
+      return track([...Array.from({ length: n }, (_, i) => at(i * 10, (k % 5) - 2, 0)), ...Array.from({ length: n }, (_, i) => at((n - 1 - i) * 10, (k % 5) - 2, 180))]);
+    };
+    const segments = detectRouteSegments([
+      ...Array.from({ length: 30 }, (_, k) => ({ runId: `a${k}`, pts: outAndBack(2980, k) })),
+      ...Array.from({ length: 6 }, (_, k) => ({ runId: `b${k}`, pts: outAndBack(1980, k) })),
+    ]);
+    expect(new Set(segments.map((s) => s.id)).size).toBe(segments.length);
+    // The two that would share one carry their length; a segment alone at its start keeps the id it had.
+    const suffixed = segments.filter((s) => s.id.endsWith(`-${s.length}`));
+    expect(suffixed.map((s) => s.length).sort()).toEqual([1980, 2980]);
+    expect(new Set(suffixed.map((s) => s.id.slice(0, -5))).size).toBe(1);
+    expect(segments.length).toBeGreaterThan(suffixed.length);
+  });
+
   it('An effort starting on a sample without a distance', () => {
     // A file whose heart rate comes in records of its own: samples without a distance. A minute at 4 m/s from
     // minute 12 is 240 m, not the 3.1 km run up to its end.

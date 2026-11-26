@@ -6,7 +6,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { runInWorker, useLocale, useOpenFolder } from '@/lib/client';
 import { msg, number, t } from '@/lib/i18n';
 import { AboutCard, ChartsCard, DisplayCard, LanguageCard } from './DeviceCards';
-import { METRICS_CHANGED, useMetrics, eager } from '@/components';
+import { METRICS_CHANGED, useMetrics, eager, useTabInView } from '@/components';
 import { metricInfo, minSec } from '@/lib/kernel';
 
 /** The folder, its import and the integrations: the first tab, loaded with it. */
@@ -71,6 +71,7 @@ function SettingsPage() {
   const tabParam = params.get('tab');
   const asked = tabParam ? MOVED[tabParam] ?? tabParam : null;
   const tab: Tab = TABS.some(([key]) => key === asked) ? (asked as Tab) : FIRST;
+  const tabsRow = useTabInView(tab);
   const [performanceDrawn, setPerformanceDrawn] = useState(false);
   const onPerformanceDrawn = useCallback(() => setPerformanceDrawn(true), []);
   const setTab = (next: Tab) => {
@@ -88,7 +89,7 @@ function SettingsPage() {
         <span className="spacer" />
         <Link className="btn" href="/setup" title={t('The runs, your heart rate, the zones and the load model, step by step')}>{t('Setup wizard')}</Link>
       </div>
-      <div className="tabs page-tabs" role="tablist" aria-label={t('Settings sections')}>
+      <div ref={tabsRow} className="tabs page-tabs" role="tablist" aria-label={t('Settings sections')}>
         {TABS.map(([key]) => (
           <button key={key} type="button" role="tab" id={`tab-${key}`} aria-controls={tab === key ? `panel-${key}` : undefined} aria-selected={tab === key} className={tab === key ? 'on' : ''} onClick={() => setTab(key)}>{tabName(key)}</button>
         ))}

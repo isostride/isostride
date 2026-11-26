@@ -2,7 +2,7 @@ import { CONTENT, HREF, SHOTS, type Lang } from './content';
 import { LocalDiagram } from './LocalDiagram';
 import { Logo } from './Logo';
 import { Shot } from './Shot';
-import { APP_URL, REPO_URL } from './links';
+import { APP_URL, DEMO_URL, REPO_URL } from './links';
 
 /** The version of the app deployed with the site (its build reads it from package.json), a patch of 0 left out. */
 const VERSION = (process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0').replace(/^(\d+\.\d+)\.0$/, '$1');
@@ -37,10 +37,15 @@ export function Home({ lang }: { lang: Lang }) {
           <h1>{c.hero.h1.startsWith('IsoStride') ? <><span className="wordmark">IsoStride</span>{c.hero.h1.slice('IsoStride'.length)}</> : c.hero.h1}</h1>
           <p className="lead">{c.hero.lead}</p>
           <p className="facts">{c.hero.facts}</p>
+          {/* The demo: the app on a sample runner's data, for a look before any file is at hand. */}
+          <div className="hero-cta">
+            <a className="btn primary" href={DEMO_URL}>{c.demo.cta}</a>
+            <p>{c.demo.note}</p>
+          </div>
         </section>
 
         <div className="shots hero-shot">
-          <Shot name="dashboard" dir={SHOTS[lang]} wide eager alt={c.heroShot.alt} open={c.openFull}>{c.heroShot.caption}</Shot>
+          <Shot name="dashboard" dir={SHOTS[lang]} wide eager alt={c.heroShot.alt} open={c.openFull}>{c.heroShot.caption} <a href={DEMO_URL}>{c.demo.inCaption}</a>.</Shot>
         </div>
 
         <section id="why" className="section">

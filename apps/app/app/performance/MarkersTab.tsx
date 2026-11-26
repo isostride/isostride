@@ -48,18 +48,23 @@ export function CriticalTab({ runs, summaries, today }: Props) {
         {hasPower && <div><dt>W′</dt><dd className="tnum">{now.wPrime !== null ? `${number(now.wPrime / 1000, 1)} kJ` : '–'}</dd><RangeNote text={rangeText(ranges.wPrime, (lo, hi) => `${number(lo / 1000, 1)}–${number(hi / 1000, 1)} kJ`)} /></div>}
       </dl>
       {ranges.cs && <p className="chart-note">{t(RANGE_NOTE)}</p>}
-      <h3 className="chart-title">{t('Critical speed')}</h3>
-      <TimeChart label={t('Critical speed over time')} times={times} invert
-        series={[{ key: 'cs', label: t('critical speed'), color: 'var(--series-1)', kind: 'line', values: weeks.map((w) => (w.cs ? 1000 / w.cs : null)) }]}
-        format={(v) => `${fmtPace(1000 / v)} /km`} tick={(v) => fmtPace(1000 / v)} />
-      {hasPower && (
-        <>
-          <h3 className="chart-title" style={{ marginTop: 16 }}>{t('Critical power')}</h3>
-          <TimeChart label={t('Critical power over time')} times={times}
-            series={[{ key: 'cp', label: t('critical power'), color: 'var(--series-2)', kind: 'line', values: weeks.map((w) => w.cp) }]}
-            format={(v) => `${number(Math.round(v))} W`} tick={(v, _s, d) => number(v, d)} />
-        </>
-      )}
+      {/* One under the other on the screen; side by side on a wide tile of the Dashboard (its stylesheet). */}
+      <div className="chart-split">
+        <div>
+          <h3 className="chart-title">{t('Critical speed')}</h3>
+          <TimeChart label={t('Critical speed over time')} times={times} invert
+            series={[{ key: 'cs', label: t('critical speed'), color: 'var(--series-1)', kind: 'line', values: weeks.map((w) => (w.cs ? 1000 / w.cs : null)) }]}
+            format={(v) => `${fmtPace(1000 / v)} /km`} tick={(v) => fmtPace(1000 / v)} />
+        </div>
+        {hasPower && (
+          <div>
+            <h3 className="chart-title">{t('Critical power')}</h3>
+            <TimeChart label={t('Critical power over time')} times={times}
+              series={[{ key: 'cp', label: t('critical power'), color: 'var(--series-2)', kind: 'line', values: weeks.map((w) => w.cp) }]}
+              format={(v) => `${number(Math.round(v))} W`} tick={(v, _s, d) => number(v, d)} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_TILES, addTile, hasTile, moveTile, paceProfile, removeTile, resizeTile, sizeOf, weekFigures, weeklyDistance } from '@/lib/dashboard';
+import { DEFAULT_TILES, addTile, hasTile, moveTile, paceProfile, removeTile, resizeTile, sizeOf, weekContext, weekFigures, weeklyDistance } from '@/lib/dashboard';
 
 const run = (startTime: string, km: number, min = 30) => ({ startTime, distance: km * 1000, duration: min * 60 });
 // Sunday 22 Nov 2026: the week runs from Monday 16 Nov.
@@ -29,6 +29,19 @@ describe('Dashboard', () => {
     expect(weeks.map((x) => x.monday)).toEqual(['2026-10-26', '2026-11-02', '2026-11-09', '2026-11-16']);
     expect(weeks.map((x) => x.km)).toEqual([0, 0, 12, 23.5]);
     expect(weeks[3].runs).toBe(3);
+  });
+
+  it('This week read against the weeks before', () => {
+    // On Wednesday 18 Nov: last week up to its Wednesday (not its weekend), and the mean of the four weeks before.
+    const wednesday = new Date(2026, 10, 18, 20);
+    const runs = [run('2026-11-16T07:00:00', 10), run('2026-11-09T07:00:00', 8), run('2026-11-11T07:00:00', 6), run('2026-11-14T07:00:00', 20), run('2026-11-03T07:00:00', 30), run('2026-10-28T07:00:00', 10), run('2026-10-20T07:00:00', 16), run('2026-09-01T07:00:00', 99)];
+    const c = weekContext(runs, wednesday);
+    expect(c.lastWeekToDateKm).toBe(14);
+    expect(c.averageKm).toBe((34 + 30 + 10 + 16) / 4);
+    // A runner one week in: that week alone; with no week before, nothing to read against.
+    expect(weekContext([run('2026-11-16T07:00:00', 10), run('2026-11-12T07:00:00', 7)], wednesday)).toEqual({ lastWeekToDateKm: 0, averageKm: 7, weeks: 1 });
+    expect(weekContext([run('2026-11-16T07:00:00', 10)], wednesday).averageKm).toBeNull();
+    expect(weekContext([], wednesday)).toEqual({ lastWeekToDateKm: 0, averageKm: null, weeks: 0 });
   });
 
   it('A run pinned, its pace in a few points', () => {

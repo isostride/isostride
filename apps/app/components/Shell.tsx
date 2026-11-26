@@ -18,6 +18,8 @@ const AutoImport = eager(() => import('./AutoImport').then((m) => m.AutoImport))
 const SidebarFacts = eager(() => import('./SidebarFacts').then((m) => m.SidebarFacts));
 /** Whether the setup wizard opens by itself: looked at after the screen shows, so no screen's script grows. */
 const SetupGate = eager(() => import('./SetupGate').then((m) => m.SetupGate));
+/** The bar that says the data are the demo's: loaded when the app is on the demo, its place held meanwhile. */
+const DemoBar = eager(() => import('./DemoBar').then((m) => m.DemoBar), () => <aside className="demo-bar" aria-hidden="true" />);
 /** The splash the logo opens: loaded when it is opened, so no screen's script grows. */
 const AboutSplash = eager(() => import('./AboutSplash').then((m) => m.AboutSplash));
 
@@ -161,8 +163,11 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
         <SidebarFacts folder={state.folder} path={path} onFacts={setFacts} />
       </aside>
-      <div className="main">{children}</div>
-      <SetupGate folder={state.folder} />
+      <div className="main">
+        {state.demo && <DemoBar />}
+        {children}
+      </div>
+      <SetupGate folder={state.folder} demo={!!state.demo} />
       <AutoImport />
       <CommandPalette onTheme={cycleTheme} />
       {splash && <AboutSplash onClose={closeSplash} />}

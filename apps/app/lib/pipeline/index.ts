@@ -2,3 +2,4 @@
 export * from './importFolder';
 export * from './recompute';
 export * from './cache';
+export * from './demo';

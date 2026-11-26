@@ -41,7 +41,13 @@ test.describe('Run chart', () => {
   });
   test('Run tagged from its screen', async ({ page }) => {
     await openRun(page);
-    // Its tags and note set on the Run screen as on the Runs list, shown in its head, kept in the folder.
+    // What can be done with the run, one group apart from the chips that say what it is ("te grupy przyciskow zlewaja
+    // sie z iiny mi: i to nie tylko w wersji mobile").
+    const actions = page.locator('.run-head').getByRole('group', { name: 'Actions' });
+    await expect(actions.getByRole('button', { name: 'Tags and note' })).toBeVisible();
+    await expect(actions.getByRole('link', { name: 'Compare this run' })).toBeVisible();
+    await expect(actions.getByRole('button', { name: 'D′ balance' })).toBeVisible();
+    await expect(actions.locator('.chip')).toHaveCount(0);
     await page.getByRole('button', { name: 'Tags and note' }).click();
     const editor = page.getByRole('dialog', { name: /^Edit / });
     await editor.getByLabel('Type').selectOption('tempo');
@@ -113,8 +119,8 @@ test.describe('Run chart', () => {
     const lapCount = await lapRows.count();
     await expect(lapBars).toHaveCount(lapCount);
     await expect(lapBars.first()).toHaveAccessibleName(/^Lap 1 · \d+\.\d\d km · \d+:\d\d$/);
-    // Clear selection: at the top right of the chart, beside its menu; there only while a stretch is selected.
-    const clearSelection = () => page.locator('.run-board .metrics-bar').getByRole('button', { name: 'Clear selection' }).click();
+    // Clear selection: at the top right of the chart, beside Expand; there only while a stretch is selected.
+    const clearSelection = () => page.locator('.run-board .chart-tools').getByRole('button', { name: 'Clear selection' }).click();
     // Its bar: the chart zooms to the lap, the bar and the row are marked.
     await lapBars.first().click();
     await expect(lapBars.first()).toHaveAttribute('aria-pressed', 'true');
@@ -161,6 +167,9 @@ test.describe('Run chart', () => {
     await page.mouse.up();
     await expect(page.locator('.range-stats h3')).toHaveText('Selection');
     await expect(page.locator('.readout')).toContainText(/ of /);
+    // The chart stays where it was as the stretch is selected: Clear selection stands in the chart's own line, beside Expand.
+    await expect(page.locator('.run-board .chart-tools').getByRole('button', { name: 'Clear selection' })).toBeVisible();
+    await expect.poll(async () => Math.round((await chart.boundingBox())!.y)).toBe(Math.round(area.y));
     const sel = (await shown(page))!;
     const span = sel[1] - sel[0];
     // The map zooms in with the chart, to the stretch shown (scenario "Map zoomed with the chart").
@@ -228,7 +237,7 @@ test.describe('Run chart', () => {
     // The statistics' head holds no button, only Compare similar, which leads to Compare (Clear selection is at the top right of the chart).
     await expect(page.locator('.range-stats').getByRole('button')).toHaveCount(0);
     await expect(page.locator('.range-stats').getByRole('link', { name: 'Compare similar' })).toHaveAttribute('href', /^\/compare\?similar=/);
-    await expect(page.locator('.run-board .metrics-bar').getByRole('button', { name: 'Clear selection' })).toBeVisible();
+    await expect(page.locator('.run-board .chart-tools').getByRole('button', { name: 'Clear selection' })).toBeVisible();
 
     // The wheel zooms around the point under the pointer (no + and − buttons): a notch out doubles the
     // range shown, a notch in halves it back; the overview's window grows and shrinks with it.
@@ -493,6 +502,50 @@ test.describe('Run chart', () => {
 });
 
 test.describe('Back to the previous screen', () => {
+  test('Run chart expanded to the whole screen', async ({ page }) => {
+    // The runner's "na telfonie kiepsko to wylada.. moze pokazuj wykresy w aspekcie rozyntoalnym? fullscreen?": Expand at the
+    // chart's right corner, named and made as the map's ("nazwij expand", "tak samo jak w mapie", "w rogu wykresu ... a nie nad mapa").
+    const chart = await openRun(page);
+    const expand = page.getByRole('button', { name: 'Expand chart' });
+    await expect(expand).toHaveText('Expand');
+    const [button, plot, map] = await Promise.all([expand.boundingBox(), page.locator('.run-plot').boundingBox(), page.locator('.map-expand').boundingBox()]);
+    // Over the chart, at its right edge; not over the map beside it.
+    expect(button!.x + button!.width).toBeLessThanOrEqual(plot!.x + plot!.width + 1);
+    expect(button!.x + button!.width).toBeGreaterThan(plot!.x + plot!.width - 40);
+    expect(button!.y + button!.height).toBeLessThanOrEqual(plot!.y + 1);
+    expect(button!.x + button!.width).toBeLessThan(map!.x);
+    // As the map's: the same pill.
+    const look = (l: ReturnType<Page['locator']>) => l.evaluate((b) => { const c = getComputedStyle(b); return [c.height, c.backgroundColor, c.boxShadow !== 'none']; });
+    expect(await look(expand)).toEqual(await look(page.locator('.map-expand')));
+    // Each metric in a lane of its own, top to bottom, none over another.
+    const lanes = await chart.locator('.run-lane').evaluateAll((rs) => rs.map((r) => [Number(r.getAttribute('y')), Number(r.getAttribute('height'))]));
+    expect(lanes).toHaveLength(4);
+    for (let i = 1; i < lanes.length; i++) expect(lanes[i][0]).toBeGreaterThanOrEqual(lanes[i - 1][0] + lanes[i - 1][1]);
+    // Expanded: the chart alone on the whole screen, with the run's name and the way back; the plot as wide as the screen allows.
+    const before = (await chart.boundingBox())!.width;
+    await expand.click();
+    const dialog = page.getByRole('dialog', { name: 'Run chart, expanded' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('img', { name: /^Run metrics · / })).toBeVisible();
+    await expect.poll(async () => (await chart.boundingBox())!.width).toBeGreaterThan(before + 200);
+    expect((await dialog.boundingBox())!.width).toBeGreaterThan(1400);
+    // A range chosen there stays chosen when it is closed: it is the same chart.
+    await dialog.locator('.lap-bar').first().click();
+    await expect(dialog.getByRole('button', { name: 'Whole run' })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Close' }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(await shown(page)).not.toBeNull();
+    // Esc closes it too.
+    await expand.click();
+    await expect(dialog).toBeVisible();
+    // Tab stays inside it; closed, the focus is back on Expand.
+    for (let i = 0; i < 12; i++) await page.keyboard.press('Tab');
+    expect(await dialog.evaluate((d) => d.contains(document.activeElement))).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(expand).toBeFocused();
+  });
+
   test('Back to what was shown before the run', async ({ page }) => {
     await openWithFolder(page, await fitFiles(3, '2026-11-09'));
     await importAll(page);

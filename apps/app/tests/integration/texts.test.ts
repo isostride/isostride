@@ -16,7 +16,9 @@ import { recordMeasure } from '../support/fixtures';
  */
 const ROOT = path.resolve(__dirname, '../..');
 const DIRS = ['app', 'components', 'lib'];
-const SKIP = [/^lib\/i18n\//, /^lib\/kernel\//, /\.d\.ts$/];
+// lib/demo: no text of a screen, but what the sample runner of the demo typed (titles, notes, the names of tags
+// and gear), written into the demo's folder in English or in Polish from its own list (lib/demo/words.ts).
+const SKIP = [/^lib\/i18n\//, /^lib\/kernel\//, /^lib\/demo\//, /\.d\.ts$/];
 
 /** Attributes of JSX elements that are read or shown. */
 const TEXT_ATTRS = new Set(['aria-label', 'aria-description', 'aria-roledescription', 'aria-valuetext', 'title', 'placeholder', 'alt', 'label', 'hint', 'name', 'detail', 'empty', 'caption', 'summary', 'heading', 'text', 'description', 'emptyText']);

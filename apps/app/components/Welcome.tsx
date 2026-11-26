@@ -1,9 +1,13 @@
 'use client';
 
-import { useFolder } from '@/lib/client';
+import { demoSupported, useFolder } from '@/lib/client';
 import { number, t } from '@/lib/i18n';
+import { eager } from './eager';
 import { Logo } from './Logo';
 import { SETUP_CONTINUE, SETUP_STEPS, SetupSteps } from './SetupSteps';
+
+/** The demo's parts of the screen (its offer, its making), loaded after it: the screens' scripts stay in their budget. */
+const WelcomeDemo = eager(() => import('./WelcomeDemo').then((m) => m.WelcomeDemo));
 
 /**
  * Welcome: the setup's first step (the runner's "przy starcie pierwszym powinien uruchamiac wizarda",
@@ -13,6 +17,7 @@ import { SETUP_CONTINUE, SETUP_STEPS, SetupSteps } from './SetupSteps';
 export function Welcome() {
   const { state, pick, confirmAccess } = useFolder();
   if (state.status === 'checking') return <div className="welcome" />;
+  const demo = demoSupported() && <WelcomeDemo />;
   return (
     <div className="welcome">
       <div className="card welcome-card">
@@ -42,12 +47,15 @@ export function Welcome() {
               )}
             </div>
           )}
+          {state.status === 'unsupported' && (state.demoFailed ? <div className="banner err"><span>⚠</span><span>{t('The demo could not be prepared in this browser: its storage is full or not available.')}</span></div> : demo)}
+          {state.status === 'demo-preparing' && <WelcomeDemo done={state.done} total={state.total} />}
           {state.status === 'not-chosen' && (
             <>
               <div className="welcome-progress">
                 <span>{t('Setup · step {step} of {steps}', { step: number(1), steps: number(SETUP_STEPS.length) })}</span>
                 <SetupSteps at={0} compact />
               </div>
+              {state.demoFailed && <div className="banner err"><span>⚠</span><span>{t('The demo could not be prepared in this browser: its storage is full or not available.')}</span></div>}
               {state.lost && <div className="banner err"><span>⚠</span><span>{t('The folder {name} could not be opened: it was moved, renamed or removed, or its disk is not connected. Choose it again, or another.', { name: state.lost })}</span></div>}
               <h2>{t('Choose your data folder')}</h2>
               <p>{t("The folder with your watch's FIT files, or an empty one to put them in. IsoStride reads it here, in your browser, and keeps its own files beside them.")}</p>
@@ -56,6 +64,7 @@ export function Welcome() {
                 {t('Choose data folder')}
               </button>
               <p className="muted small welcome-next">{t('Next: your runs, you, your zones, gear, the load model and the display. A few minutes; each step can be skipped.')}</p>
+              {demo}
             </>
           )}
           {state.status === 'access-pending' && (

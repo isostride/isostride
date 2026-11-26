@@ -1,0 +1,8 @@
+---
+id: "2a806f79-6dc3-47f8-a33b-88c625f9e044"
+type: "requirement"
+label: "Demo runner coherent"
+action: "make the demo's runner two years of training ending the week the demo is opened, coherent on every screen: a critical pace of about 3:15 /km to which the app's own fit of the bests of the last 90 days comes, easy runs, sessions, tempo runs, long runs, hills, races from 800 m to the half marathon run to the critical speed model, tests of the critical speed, a cold, an injury and holidays, heart rate and power following the speed against the critical speed, the critical speed following the training done, and the gear, tags, segments, saved analyses and Dashboard tiles the runner would have entered"
+ears_type: "ubiquitous"
+rationale: "The runner asked: \"demo powinno byc skonstyrowane tak ze pokazuje biegacza .... z tempem krytycznym ok 3:15 .... wszystkie dane powinny byc sensowne\", \"wydaje mi sie fajnie by bylo miec ok 2 lata danych\", and seeing the models Rough: \"w peformance overview ... prawie wszystko jest rought ... chyba dane nie sa dobrze wygenerowane\". The model's choices: the fit the 3:15 is checked against is the app's own, over the bests of the last 90 days; races from 800 m to the half marathon; 104 weeks; D′ from 185 to 205 m; a decline of 0.065 past 20 minutes; heart rate reserve 0.9 at the critical speed (rest 44, maximum 190); power 63 W per m/s; the critical speed driven by an impulse–response of the planned loads (45 and 8 days); every run deterministic from its day (a seeded generator), so the demo is the same whenever it is made; routes drawn as shapes near a park, not surveyed paths; the app then fits 3:16 /km and D′ 206 m, and the models read Reliable but those Rough by their own rule."
+---

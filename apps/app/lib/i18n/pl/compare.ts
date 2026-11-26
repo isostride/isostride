@@ -64,7 +64,6 @@ export const COMPARE: Dictionary = {
   Segment: 'Segment',
   'no detectable change': 'brak wykrywalnej zmiany',
   'noise ±{value}': 'szum ±{value}',
-  '{n} efforts': { one: '{n} wysiłek', few: '{n} wysiłki', many: '{n} wysiłków', other: '{n} wysiłku' },
   Trend: 'Trend',
   'No accepted instances for this metric and filter.': 'Brak przyjętych wysiłków dla tej metryki i filtra.',
   "Left out most often for: {reasons}. Open Efforts for each one's reason, or try another metric.": 'Najczęstsze powody pominięcia: {reasons}. Otwórz Wysiłki, by zobaczyć powód każdego, albo spróbuj innej metryki.',

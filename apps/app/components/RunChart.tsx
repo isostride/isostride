@@ -73,6 +73,8 @@ interface RunChartProps {
   axis?: 'time' | 'distance';
   /** the run's time and distance mapped both ways: the distance axis, and the second axis under the time */
   dmap?: DistanceMap;
+  /** the least height of a band, px (MIN_LANE): less on the whole screen of a phone on its side, where the chart must fit what there is */
+  minLane?: number;
 }
 
 const same = (v: number) => v;
@@ -92,8 +94,22 @@ function geometry(width: number) {
 /** The least distance between two labels of the gutter, px. */
 const LABEL_GAP = 11;
 
-/** How much neighbouring bands overlap, as a share of a band. */
-const OVERLAP = 0.25;
+/**
+ * The room between two bands, px: each metric in a lane of its own (the runner's "tez troche odsstaje pod
+ * wzgledem iwzualnym", 26 Nov 2026: the bands overlapped by a quarter, so the lines ran through each other
+ * and the zones of four metrics made one patchwork of tints).
+ */
+const BAND_GAP = 8;
+/** The width of the rail of zone colours at the right edge of a band, px, and the corners of a lane. */
+const ZONE_RAIL = 4;
+/** The least height of a band, px. */
+const MIN_LANE = 62;
+/**
+ * The least height of a zone's stripe that takes the zone's name, px: the name is 7 px high. In a lane a quarter of
+ * a laptop's chart high the stripes of five zones are some 10 px each, and every other one is then named (LABEL_GAP).
+ */
+const ZONE_NAME_ROOM = 9;
+const LANE_RADIUS = 8;
 /** Room kept at the top and bottom of a band, px. */
 const BAND_PAD = 5;
 
@@ -117,12 +133,16 @@ function valueAt(x: number[], y: (number | null)[], at: number): number | null {
  * pointer, move by a sideways scroll, the keyboard or the overview strip of the whole run under it;
  * by finger, a drag sideways selects, two fingers zoom and move, a tap shows the values.
  */
-export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, laps = [], blocks = [], cursor, onCursor, selection, onSelect, head, height = 260, layout = 'bands', axis = 'time', dmap, onMoveSelection, marks = {}, hot = null }: RunChartProps) {
+export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, laps = [], blocks = [], cursor, onCursor, selection, onSelect, head, height: asked = 260, layout = 'bands', axis = 'time', dmap, onMoveSelection, marks = {}, hot = null, minLane = MIN_LANE }: RunChartProps) {
   const [box, width] = useWidth();
   const { narrow, laneL, laneR, plotL: PLOT_L } = geometry(width);
+  // In bands on a phone every metric keeps a lane tall enough to read its line: the chart grows past the height asked (the
+  // page scrolls there anyway). On a wide screen the height asked stands: the Run screen fits its window without scrolling.
+  const height = layout === 'bands' && lines.length > 1 && narrow ? Math.max(asked, lines.length * minLane + (lines.length - 1) * BAND_GAP) : asked;
   const svg = useRef<SVGSVGElement>(null);
   const wrap = useRef<HTMLDivElement>(null);
   const clip = useId();
+  const lanes = useId();
   const wash = useId();
   const [drag, setDrag] = useState<number | null>(null);
   // Room over the plot for the names of the blocks drawn.
@@ -155,10 +175,10 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
     for (let i = i0; i < i1; i++) { const v = l.y[i]; if (v !== null && x[i] >= d0 && x[i] <= d1) vals.push(v); }
     // The scale spans the 5th to the 95th percentile, padded: walking breaks and stops run to the edge.
     const [lo, hi] = ensureSpan(...robustExtent(vals, 0.05, 0.12), l.minSpan);
-    // The band of the line: its own part of the height (overlapping its neighbours a little), or the whole.
+    // The band of the line: a lane of its own, a gap from its neighbours, or the whole height.
     const n = lines.length;
-    const bandH = layout === 'bands' && n > 1 ? height / (n - (n - 1) * OVERLAP) : height;
-    const b0 = layout === 'bands' && n > 1 ? top + k * bandH * (1 - OVERLAP) : top;
+    const bandH = layout === 'bands' && n > 1 ? (height - (n - 1) * BAND_GAP) / n : height;
+    const b0 = layout === 'bands' && n > 1 ? top + k * (bandH + BAND_GAP) : top;
     const inner = bandH - 2 * BAND_PAD;
     const py = (v: number) => {
       const f = (Math.min(Math.max(v, lo), hi) - lo) / (hi - lo);
@@ -173,11 +193,9 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
     const bounds = (l.zones ?? []).filter(inRange);
     const raw = l.steps ? stepTicks(lo, hi, l.steps, layout === 'bands' && n > 1 ? 2 : 4) : niceTicks(lo, hi, layout === 'bands' && n > 1 ? 2 : 4);
     const ticks = bounds.length ? bounds : raw.filter(inRange);
-    // The stripes of the zones, clipped to the scale: Z1 the easiest.
-    // A band's own part of the height: up to the middle of its overlaps, so stripes of neighbours do not overlap.
-    const banded = layout === 'bands' && n > 1;
-    const ownTop = banded && k > 0 ? b0 + (bandH * OVERLAP) / 2 : b0;
-    const ownBottom = banded && k < n - 1 ? b0 + bandH - (bandH * OVERLAP) / 2 : b0 + bandH;
+    // The stripes of the zones, clipped to the scale and kept inside the band's lane: Z1 the easiest.
+    const ownTop = b0;
+    const ownBottom = b0 + bandH;
     const ranges = l.zones?.length ? zoneRanges(l.key, l.zones) : [];
     const stripes = ranges.flatMap((r, z) => {
       const a = Math.max(r.lo ?? -Infinity, lo);
@@ -213,7 +231,7 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
   }, [drawn, labelled, banded, scale, narrow]);
   // The zone names at the right edge, in the middle of their stripes; one too near another is left out.
   const zoneLabels = useMemo(() => {
-    const want = (banded ? drawn : scale ? [scale] : []).flatMap((d) => d.stripes.filter((st) => st.h >= 12).map((st) => ({ id: `zn${d.line.key}${st.z}`, y: st.y + st.h / 2 + 3.5, text: `Z${st.z + 1}`, rank: d === scale ? 0 : 1 })));
+    const want = (banded ? drawn : scale ? [scale] : []).flatMap((d) => d.stripes.filter((st) => st.h >= ZONE_NAME_ROOM).map((st) => ({ id: `zn${d.line.key}${st.z}`, y: st.y + st.h / 2 + 3.5, text: `Z${st.z + 1}`, rank: d === scale ? 0 : 1 })));
     const kept: typeof want = [];
     for (const w of [...want].sort((a, b) => a.rank - b.rank)) if (kept.every((k) => Math.abs(k.y - w.y) >= LABEL_GAP)) kept.push(w);
     return kept;
@@ -281,12 +299,20 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
   /** a finger still down after two were: no selection from it */
   const pinched = useRef(false);
   const tapped = useRef<{ at: number; x: number } | null>(null);
+  /**
+   * When a finger was last on the chart: the browser follows a touch with mouse events of its own making
+   * (over, out, leave), and a "mouse" left elsewhere on the page then "leaves" the chart and took away the
+   * values a tap had just shown (seen where a pointer stood beside the chart, 26 Nov 2026).
+   */
+  const fingered = useRef(-Infinity);
+  const byFinger = (e: { timeStamp: number }) => e.timeStamp - fingered.current < 1000;
   const timeAt = (clientX: number) => {
     const r = svg.current!.getBoundingClientRect();
     return Math.min(d1, Math.max(d0, inv(f0 + ((clientX - r.left - PLOT_L) / (r.width - PLOT_L - laneR)) * fspan)));
   };
   const fingerDown = (e: PointerEvent<SVGSVGElement>) => {
     if (e.pointerType === 'mouse') return;
+    fingered.current = e.timeStamp;
     // No mouse events made up after the touch: they would start a selection of their own.
     e.preventDefault();
     fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -320,6 +346,7 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
   };
   const fingerUp = (e: PointerEvent<SVGSVGElement>) => {
     if (e.pointerType === 'mouse' || !fingers.current.delete(e.pointerId)) return;
+    fingered.current = e.timeStamp;
     if (fingers.current.size < 2) pinch.current = null;
     const began = drag;
     if (fingers.current.size === 0) setDrag(null);
@@ -374,12 +401,16 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
           </div>
         )}
         <svg ref={svg} width={width} height={H} role="img" aria-label={t('Run metrics · {metrics}', { metrics: lines.map((l) => l.title).join(', ') || t('none shown') })}
-          onMouseMove={(e) => onCursor(at(e))} onMouseLeave={() => { onCursor(null); setDrag(null); }}
+          onMouseMove={(e) => { if (!byFinger(e)) onCursor(at(e)); }} onMouseLeave={(e) => { if (byFinger(e)) return; onCursor(null); setDrag(null); }}
           onMouseDown={(e) => setDrag(at(e))} onMouseUp={up} onDoubleClick={(e) => { const t = at(e); const lap = laps.find((l) => t >= l.from && t < l.to); if (lap) onSelect({ from: lap.from, to: lap.to }); }}
           onPointerDown={fingerDown} onPointerMove={fingerMove} onPointerUp={fingerUp} onPointerCancel={fingerUp}
           style={{ cursor: 'crosshair', userSelect: 'none', display: 'block', touchAction: 'pan-y' }}>
           <defs>
             <clipPath id={clip}><rect x={PLOT_L} y={0} width={Math.max(0, plotW)} height={top + height} /></clipPath>
+            {/* The lanes of the bands: what lies behind the lines (laps, segments, zones, the selection) is drawn inside them. */}
+            <clipPath id={lanes}>
+              {banded ? drawn.map((d) => <rect key={d.line.key} x={PLOT_L} y={d.b0} width={Math.max(0, plotW)} height={d.bandH} rx={LANE_RADIUS} />) : <rect x={PLOT_L} y={top} width={Math.max(0, plotW)} height={height} />}
+            </clipPath>
             {scale && (
               <linearGradient id={wash} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={scale.line.color} stopOpacity="0.18" />
@@ -387,19 +418,24 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
               </linearGradient>
             )}
           </defs>
-          {laps.map((l, i) => i % 2 === 1 && inView(l) && <rect key={i} {...band(l)} y={top} height={height} fill="var(--surface-2)" />)}
-          {blocks.filter(inView).map((b, i) => (
-            <g key={`b${i}`} className="block-band">
-              <rect {...band(b)} y={top} height={height} fill="var(--band)" />
-              {b.ok && <rect {...band(b)} y={top} height={2} fill="var(--series-1)" />}
-            </g>
-          ))}
-          {(banded ? drawn : scale ? [scale] : []).map((d) => d.stripes.map((st) => (
-            <g key={`z${d.line.key}${st.z}`} className="zone-stripe" data-metric={d.line.key} data-zone={st.z + 1}>
-              <rect x={PLOT_L} y={st.y} width={Math.max(0, plotW)} height={st.h} fill={zoneColor(st.z, st.n)} fillOpacity={0.14} />
-            </g>
-          )))}
-          {zoneLabels.map((z) => <text key={z.id} x={width - laneR - 4} y={z.y} fontSize="9.5" textAnchor="end" fill="var(--text-2)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke" className="zone-name">{z.text}</text>)}
+          <g clipPath={`url(#${lanes})`}>
+            {/* Each lane a quiet panel; its zones a faint tint across it and a rail of their colours at its right edge. */}
+            {banded && drawn.map((d) => <rect key={`l${d.line.key}`} className="run-lane" x={PLOT_L} y={d.b0} width={Math.max(0, plotW)} height={d.bandH} fill="var(--surface-2)" fillOpacity={0.6} />)}
+            {laps.map((l, i) => i % 2 === 1 && inView(l) && <rect key={i} {...band(l)} y={top} height={height} fill="var(--text)" fillOpacity={0.035} />)}
+            {blocks.filter(inView).map((b, i) => (
+              <g key={`b${i}`} className="block-band">
+                <rect {...band(b)} y={top} height={height} fill="var(--band)" />
+                {b.ok && <rect {...band(b)} y={top} height={2} fill="var(--series-1)" />}
+              </g>
+            ))}
+            {(banded ? drawn : scale ? [scale] : []).map((d) => d.stripes.map((st) => (
+              <g key={`z${d.line.key}${st.z}`} className="zone-stripe" data-metric={d.line.key} data-zone={st.z + 1}>
+                <rect x={PLOT_L} y={st.y} width={Math.max(0, plotW)} height={st.h} fill={zoneColor(st.z, st.n)} fillOpacity={0.07} />
+                <rect x={width - laneR - ZONE_RAIL} y={st.y + 1} width={ZONE_RAIL} height={Math.max(0, st.h - 2)} fill={zoneColor(st.z, st.n)} fillOpacity={0.9} />
+              </g>
+            )))}
+          </g>
+          {zoneLabels.map((z) => <text key={z.id} x={width - laneR - ZONE_RAIL - 5} y={z.y} fontSize="9.5" textAnchor="end" fill="var(--text-2)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke" className="zone-name">{z.text}</text>)}
           {scale?.ticks.map((t) => <line key={`g${t}`} x1={PLOT_L} x2={width - laneR} y1={scale.py(t)} y2={scale.py(t)} stroke="var(--grid)" strokeWidth="1" />)}
           {gutter.map((g) => g.name ? (
             <g key={g.id} className="band-name">
@@ -410,7 +446,7 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
             <text key={g.id} x={PLOT_L - 6} y={g.y} fontSize="10" textAnchor="end" fill="var(--muted)" className="tnum run-scale">{g.text}</text>
           ))}
           {blocks.filter((b) => b.name && inView(b)).map((b, i) => <text key={`n${i}`} x={Math.min(px(b.to), width - laneR) - 4} y={13} fontSize="10" textAnchor="end" fill="var(--text)">{b.name}</text>)}
-          {sel && inView(sel) && <rect {...band(sel)} y={top} height={height} fill="var(--accent)" opacity="0.16" className="run-selection" />}
+          {sel && inView(sel) && <rect {...band(sel)} y={top} height={height} fill="var(--accent)" opacity="0.16" className="run-selection" clipPath={`url(#${lanes})`} />}
           <g clipPath={`url(#${clip})`}>
             {scale && <path d={scale.area} fill={`url(#${wash})`} />}
             {order.map((d) => (

@@ -3,6 +3,7 @@
   "uses": [
     "lib/blocks",
     "lib/context",
+    "lib/demo",
     "lib/detection",
     "lib/fs",
     "lib/i18n",

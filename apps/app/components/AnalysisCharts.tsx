@@ -92,9 +92,18 @@ export function OverTimeChart({ groups, format, tick, invert, markers, minSpan =
   const lane = shown.length && labels ? 36 : 10;
   const x = (t: number) => M.l + ((t - t0) / (t1 - t0)) * (width - M.l - M.r);
   const y = (v: number) => { const f = (v - lo) / (hi - lo); return lane + (invert ? f : 1 - f) * (H - lane - M.b); };
-  let row = 0;
-  let lastX = -Infinity;
-  const placed = shown.map((m) => { const mx = x(Date.parse(m.date)); row = mx - lastX < 160 ? 1 - row : 0; lastX = mx; return { ...m, mx, row }; });
+  // A label goes on the first of the two rows that is free at its place; with neither free (many changes on a
+  // narrow chart: the names ran through each other on a phone) the change keeps its line and gives up its name.
+  const free = [-Infinity, -Infinity];
+  const placed = shown.map((m) => {
+    const mx = x(Date.parse(m.date));
+    // About 6.4 px a character at this size, and a gap. A name that would run past the right edge is not given, and
+    // takes no row from a later one that fits.
+    const end = mx + 4 + m.label.length * 6.4;
+    const row = end > width ? -1 : mx >= free[0] ? 0 : mx >= free[1] ? 1 : -1;
+    if (row >= 0) free[row] = end + 10;
+    return { ...m, mx, row: Math.max(0, row), named: row >= 0 };
+  });
   const move = (e: MouseEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const mx = e.clientX - r.left;
@@ -114,11 +123,11 @@ export function OverTimeChart({ groups, format, tick, invert, markers, minSpan =
           </g>
         ))}
         <line x1={M.l} x2={width - M.r} y1={H - M.b} y2={H - M.b} stroke="var(--axis)" />
-        {monthTicks(t0, t1).map((m) => <text key={m} x={x(m)} y={H - 8} fontSize="11" fill="var(--muted)" textAnchor="middle">{monthLabel(m)}</text>)}
+        {monthTicks(t0, t1, width - M.l - M.r).map((m) => <text key={m} x={x(m)} y={H - 8} fontSize="11" fill="var(--muted)" textAnchor="middle">{monthLabel(m)}</text>)}
         {placed.map((m) => (
           <g key={m.date + m.label} className="gear-change">
             <line x1={m.mx} x2={m.mx} y1={6 + m.row * 14} y2={H - M.b} stroke="var(--axis)" />
-            {labels && <text x={m.mx + 4} y={15 + m.row * 14} fontSize="11" fill="var(--text)">{m.label}</text>}
+            {labels && m.named && <text x={m.mx + 4} y={15 + m.row * 14} fontSize="11" fill="var(--text)">{m.label}</text>}
           </g>
         ))}
         {join && groups.map((g) => {

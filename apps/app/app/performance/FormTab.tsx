@@ -42,7 +42,9 @@ export function FormTab({ runs, whatIf }: { runs: RunsIndex['runs']; /** a scena
   const setPeriod = (k: string) => {
     const q = new URLSearchParams(params.toString());
     if (k === PERIODS[0][0]) q.delete('period'); else q.set('period', k);
-    router.replace(`${path}?${q.toString()}`);
+    // The page stays where it is: the router scrolls to the top with a new address, and on the Dashboard, where
+    // this view may be far down the page, a press of 1 year threw the runner back to its top (26 Nov 2026).
+    router.replace(`${path}?${q.toString()}`, { scroll: false });
   };
   const model = LOAD_MODELS.find((m) => m.key === p.load)!;
   const withLoad = runs.filter((r) => typeof r.load === 'number');
@@ -84,7 +86,7 @@ export function FormTab({ runs, whatIf }: { runs: RunsIndex['runs']; /** a scena
   const [aLo, aHi] = [Math.min(0.5, ...acwrs), Math.max(1.6, ...acwrs)];
   const yAcwr = (v: number) => top.acwr + PANELS.acwr - ((v - aLo) / (aHi - aLo)) * PANELS.acwr;
   const line = (f: (d: FormDay) => number | null, y: (v: number) => number) => days.flatMap((d) => { const v = f(d); return v === null ? [] : [`${x(d.date).toFixed(1)},${y(v).toFixed(1)}`]; }).join(' ');
-  const months = monthTicks(t0, t1);
+  const months = monthTicks(t0, t1, width - M.l - M.r);
   const move = (e: MouseEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const k = Math.round((e.clientX - r.left - M.l) / Math.max(step, 1e-9));

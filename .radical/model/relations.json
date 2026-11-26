@@ -162,6 +162,12 @@
     "targetId": "063a771e-2d84-49e2-8c92-d15fc52a2bce"
   },
   {
+    "id": "062fe7fd-88d9-43c9-80e6-26ccf81472e5",
+    "relationType": "verifies",
+    "sourceId": "bd820799-735e-4043-95fa-355ce88fbbe4",
+    "targetId": "c91661a7-7a66-4487-bc1e-d4df8a008f43"
+  },
+  {
     "id": "0646f654-bd2e-4ac4-9667-33c9c5daf968",
     "relationType": "verifies",
     "sourceId": "28e1c480-ead8-4ac0-9447-83a93ce2fccc",
@@ -611,6 +617,13 @@
     "targetId": "d00107b1-a4df-4790-b933-7c13969f8952"
   },
   {
+    "id": "10821af7-9912-44e4-88b0-c4574e08e093",
+    "quote": "czy w demo w settings .. jakies opcje nie powinny byc wyszarzone",
+    "relationType": "derives",
+    "sourceId": "feb88f6f-7f4a-4c10-8b16-3df1103b3e5a",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "10fe8ed2-b8b7-43c6-8fc7-ba4bbe657146",
     "relationType": "lifecycle-of",
     "sourceId": "dfa7465c-ebda-482a-a4d9-ef5a4e2dca48",
@@ -1049,6 +1062,12 @@
     "relationType": "verifies",
     "sourceId": "87a8392b-d82c-4f02-8389-06ac2cb0bff3",
     "targetId": "2b61dfcd-5b1d-4162-be5d-353933843c37"
+  },
+  {
+    "id": "1a86dc39-2b7f-4b17-8f11-7e8bb40a5849",
+    "relationType": "verifies",
+    "sourceId": "47c8550d-853b-4d53-a1a5-1a91570805b4",
+    "targetId": "24eaa0d4-dbf7-4b7c-8229-ad197ea5829e"
   },
   {
     "id": "1aaa9356-e880-4b1d-b348-072d2a5335c3",
@@ -1555,6 +1574,13 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "27d48227-2010-414b-8e7f-0d42b9fc3583",
+    "quote": "dodaktowo te grupy przyciskow zlewaja sie z iiny mi: i to nie tylko w wersji mobile",
+    "relationType": "derives",
+    "sourceId": "7e83c633-b73d-4767-851c-0433b02ef9d0",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "28297808-afb3-4ac6-84af-b9a5d1f6b013",
     "quote": "aplikacja bedzie wystawiona jako app.strideprism.com a strona na strideprism.com\nchce aby ci/cd dzialal stabilnie ... jesli check przechodzi na branchu to pwinien przechodzic na merge do main\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
@@ -1883,6 +1909,13 @@
     "targetId": "5fec73e1-f20a-41e5-bf2b-b5a58bf77bac"
   },
   {
+    "id": "30b808a0-9b54-414e-859d-24f243423a28",
+    "quote": "wydaje mi sie fajnie by bylo miec ok 2 lata danych",
+    "relationType": "derives",
+    "sourceId": "2a806f79-6dc3-47f8-a33b-88c625f9e044",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "316237c7-2ff7-46bc-9c6f-9e7fdbeee8f0",
     "relationType": "verifies",
     "sourceId": "ca9f71d9-a02c-4454-a417-41c4d4f6f610",
@@ -1963,6 +1996,12 @@
     "relationType": "satisfies",
     "sourceId": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9",
     "targetId": "cdc3cba3-c6e0-4935-ae73-d3ddd6fdd564"
+  },
+  {
+    "id": "33f7fe95-c517-4607-9341-265d07d9689a",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "85e732dd-d65f-453b-9f7d-4194c453c166"
   },
   {
     "id": "340b17e3-1d27-4f02-bd02-df3da0829805",
@@ -2062,6 +2101,13 @@
     "quote": "w seria po serii chce statystyki ... jak zmieniaja sie metryki\nŚrednia biegu + zmiana, Zmiana w biegu (1. → ostatnia), Trend w czasie",
     "relationType": "derives",
     "sourceId": "8c9cd904-c4fc-4d24-96ae-bb6a93c37d69",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "36ea114c-8971-42cd-afe8-05f28a0d8d0d",
+    "quote": "dodaktowo ... nazwij expand",
+    "relationType": "derives",
+    "sourceId": "24eaa0d4-dbf7-4b7c-8229-ad197ea5829e",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
@@ -2511,10 +2557,24 @@
     "technology": "postMessage"
   },
   {
+    "id": "441d6fee-b399-4dab-a9af-73ad70939ed9",
+    "quote": "popraw pozycje przycksu full screen",
+    "relationType": "derives",
+    "sourceId": "24eaa0d4-dbf7-4b7c-8229-ad197ea5829e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "44455dc4-3444-4d75-86e5-a844a3c9c514",
     "quote": "dodatkwo ... wydziel model performance do osobnego tabu czyli: runs, analytics,performance,settings\nczyli form na zewnatrz analytics",
     "relationType": "derives",
     "sourceId": "eb1f0fcc-9d2d-4c0b-9bba-b2e5974ed29c",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "446a8e95-6830-49e9-afe9-aecd256160e0",
+    "quote": "oczywiscie nie chozdi o to aby ukrywac ze nie jest to realny zawodnik",
+    "relationType": "derives",
+    "sourceId": "9e88f507-f91c-45b5-a28e-3c0022213bef",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
@@ -2688,6 +2748,13 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "48dd68ff-bee4-469b-8c7c-4691c227ffa3",
+    "quote": "czy pliki sa zapisyane na dysku ? czy dane generowane w locie?",
+    "relationType": "derives",
+    "sourceId": "c91661a7-7a66-4487-bc1e-d4df8a008f43",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "4986534f-20ec-4e2a-8b2e-a734dfe3a6b3",
     "quote": "People use this front end on their own devices, browsers and networks, some with disabilities and assistive technology. It has to load and respond quickly on an ordinary phone, work in the browsers its users have, be usable by everyone, look and behave consistently, and be built on a framework the team knows and that keeps receiving fixes. The choices and the numbers it is held to must be written down and checked, not rediscovered after users complain. The checks assume one front end per repository with its package.json at the root, a versions.txt listing the endoflife.date products and cycles in use, server templates (htmx) under templates/ or src/, and a RUM table rum_events(name, value, page_group, received_at) fed by the page.",
     "relationType": "derives",
@@ -2713,10 +2780,23 @@
     "targetId": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9"
   },
   {
+    "id": "49d2e74d-ad25-4400-ace8-d4bbdfcfa982",
+    "relationType": "verifies",
+    "sourceId": "08269d76-49c8-4db3-baf3-5931b2cc7557",
+    "targetId": "2a806f79-6dc3-47f8-a33b-88c625f9e044"
+  },
+  {
     "id": "4a1d2ee4-b5a4-47d6-ab27-51604e980089",
     "relationType": "emits",
     "sourceId": "f58f1376-76ae-401e-9a0b-97fb2c636e4f",
     "targetId": "afa13a9f-1af7-447d-a52e-a189a0191cc3"
+  },
+  {
+    "id": "4a282103-948f-4ea9-be86-2f74a492094d",
+    "quote": "przegladnij wogole wersje pobile ... zobacz na pozycje przecyskow",
+    "relationType": "derives",
+    "sourceId": "b4b221e2-9bf4-4166-b055-d255f8e0b444",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "4a47b1c5-3027-4cea-a2ba-a6181578210d",
@@ -3106,6 +3186,12 @@
     "targetId": "39491f93-4fcc-4f9c-960b-e12750deef8f"
   },
   {
+    "id": "57cdb484-ed18-4893-a7f0-136a40e2b6db",
+    "relationType": "verifies",
+    "sourceId": "18575003-6117-4f94-a8f9-efd4d778edab",
+    "targetId": "85e732dd-d65f-453b-9f7d-4194c453c166"
+  },
+  {
     "id": "58187a37-632a-492b-8e24-db7675a90e28",
     "relationType": "illustrates",
     "sourceId": "29452319-21e3-42fa-a4e2-87267d468dc4",
@@ -3303,6 +3389,12 @@
     "relationType": "illustrates",
     "sourceId": "45412314-e70a-445a-bb9e-27340722d02c",
     "targetId": "4a143764-ef38-442e-85e9-0b74101efa85"
+  },
+  {
+    "id": "5d19da93-a8ea-4373-8365-9432ea84fa0c",
+    "relationType": "verifies",
+    "sourceId": "7aca2a4b-01ac-4019-9b24-bf94ec3df2e8",
+    "targetId": "9e789550-5a27-427b-8418-a7a19cc56a1f"
   },
   {
     "id": "5d4d74fa-f59a-4686-bcc7-e37b0504dbd6",
@@ -3602,6 +3694,13 @@
     "targetId": "60e86846-3529-4650-bb51-62d720d3242f"
   },
   {
+    "id": "67d5c9e2-550a-4e1b-92d5-e56fa6d67af5",
+    "quote": "w peformance overview ... prawie wszystko jest rought ... chyba dane nie sa dobrze wygenerowane",
+    "relationType": "derives",
+    "sourceId": "2a806f79-6dc3-47f8-a33b-88c625f9e044",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "67fc893e-76b6-4234-b980-16634d267eea",
     "label": "Windows, segments",
     "relationType": "interacts",
@@ -3631,6 +3730,12 @@
     "relationType": "verifies",
     "sourceId": "385669e9-e7d8-422e-876a-a2b367a5aafa",
     "targetId": "70862baf-3a94-4a8b-a51a-590bb1cfa605"
+  },
+  {
+    "id": "6867dff4-98bb-473a-93f3-adbeb6dddfa3",
+    "relationType": "satisfies",
+    "sourceId": "1ed2f843-cc40-4a84-ba19-256544fbc4a6",
+    "targetId": "2a806f79-6dc3-47f8-a33b-88c625f9e044"
   },
   {
     "id": "68963725-9c9a-44f9-a97a-ed00d144202f",
@@ -3731,6 +3836,13 @@
     "relationType": "emits",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
     "targetId": "0965031c-0b71-4b28-b698-63d5fc5d9f2a"
+  },
+  {
+    "id": "6c8449d8-8ddc-4b61-8325-fdc8550b502a",
+    "quote": "jak to bedzie dzialalo na produckji app.isostridel.com/?demo?",
+    "relationType": "derives",
+    "sourceId": "c91661a7-7a66-4487-bc1e-d4df8a008f43",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "6c983378-a327-42dc-ab62-32493647d5bf",
@@ -3959,6 +4071,12 @@
     "targetId": "44d77356-e7fd-4ab0-82f4-8e0e015d2cc0"
   },
   {
+    "id": "7219b959-818f-4388-897f-2d8244b8713f",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "24eaa0d4-dbf7-4b7c-8229-ad197ea5829e"
+  },
+  {
     "guard": "origin = manual (created by DefinitionCreated)",
     "id": "723512a8-5a72-4e96-9a81-5821a1577f9e",
     "relationType": "transition",
@@ -4028,6 +4146,13 @@
     "relationType": "verifies",
     "sourceId": "79c59153-cd4d-4b15-81fe-de41f4378eed",
     "targetId": "4f0f6f76-68be-40ad-aa24-033e76d0db05"
+  },
+  {
+    "id": "7346c0fd-630f-4fec-b21d-7582b2fc4e61",
+    "quote": "zwieksz budzet na bundle",
+    "relationType": "derives",
+    "sourceId": "36038f78-a505-4196-a7a7-9dbac6a637e8",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "736ab59f-c5ca-466f-81e5-3a76311528dc",
@@ -4212,6 +4337,12 @@
     "relationType": "verifies",
     "sourceId": "6e00e259-2327-4229-8aeb-2681b4eb3848",
     "targetId": "e34e41c2-1850-4479-8a3f-380d7834213d"
+  },
+  {
+    "id": "7a54003c-15d2-46c1-bd59-cb93d4f401d7",
+    "relationType": "verifies",
+    "sourceId": "87d111b0-7678-4fba-a5be-42b8c9d98ac9",
+    "targetId": "7e83c633-b73d-4767-851c-0433b02ef9d0"
   },
   {
     "id": "7a88f08d-88eb-4515-995e-adc24652323d",
@@ -4816,6 +4947,13 @@
     "targetId": "2fd4011c-79a7-45bb-9151-a3712fcd769d"
   },
   {
+    "id": "8a2e973b-5f4c-4ccd-be3c-b2f80a451788",
+    "quote": "popracuj nad dashboardem ...chodzi mi o rozmieszcenie kafelkow .. oraz widoku krzywej predkosci",
+    "relationType": "derives",
+    "sourceId": "85e732dd-d65f-453b-9f7d-4194c453c166",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "8a4999b6-f095-4ffa-bc99-1e530f04a15d",
     "relationType": "constrains",
     "sourceId": "9ab44fc6-cc41-4349-925f-e27ed3d61d4e",
@@ -5026,6 +5164,12 @@
     "relationType": "derives",
     "sourceId": "8cd8c786-c600-4808-95b3-d73aac37d4b1",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "8f6f6b37-169b-4963-b334-e2155f0480a4",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "7e83c633-b73d-4767-851c-0433b02ef9d0"
   },
   {
     "id": "8f77f1f9-9ebe-4815-b3a8-a5d916f71df0",
@@ -5274,6 +5418,12 @@
     "targetId": "a694fdc9-58ad-462b-a996-c49812b6da79"
   },
   {
+    "id": "97b5e7be-9742-4c98-8b2c-66be1145e578",
+    "relationType": "satisfies",
+    "sourceId": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1",
+    "targetId": "9e88f507-f91c-45b5-a28e-3c0022213bef"
+  },
+  {
     "id": "97bfa275-845f-421f-8e6e-aa8ad74b6ddc",
     "relationType": "verifies",
     "sourceId": "84930b78-0d43-4aea-b74b-808687a91b45",
@@ -5327,6 +5477,13 @@
     "relationType": "performed-by",
     "sourceId": "d355ae31-dde7-4956-9cbf-15c977f8d255",
     "targetId": "af580e00-9fde-4182-89d8-479d71707a14"
+  },
+  {
+    "id": "999c81db-d045-411a-8174-5712554e32a6",
+    "quote": "demo powinno byc skonstyrowane tak ze pokazuje biegacza .... z tempem krytycznym ok 3:15 .... wszystkie dane powinny byc sensowne",
+    "relationType": "derives",
+    "sourceId": "2a806f79-6dc3-47f8-a33b-88c625f9e044",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "99b016ec-dd8c-49e2-9905-5d6ff656dc54",
@@ -5508,6 +5665,12 @@
     "targetId": "b1000ab5-2a4b-4f8a-98d5-7eba138c0bfa"
   },
   {
+    "id": "9e2a85c4-41da-493a-884b-9f5b5ec532f5",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "9e789550-5a27-427b-8418-a7a19cc56a1f"
+  },
+  {
     "id": "9e8b5d30-2e14-487e-8679-92faeda6bf4c",
     "quote": "A: Online tiles (OpenStreetMap): Background from the OSM tile server, switched on by you in settings.",
     "relationType": "derives",
@@ -5628,6 +5791,13 @@
     "targetId": "2dd6ffe3-1b0d-4558-a192-4f8997234db5"
   },
   {
+    "id": "a31d6fa1-fcf1-4545-a82a-891c69c7ec4e",
+    "quote": "tak samo jak w mapie",
+    "relationType": "derives",
+    "sourceId": "24eaa0d4-dbf7-4b7c-8229-ad197ea5829e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "a3d12096-bcff-4b22-89f6-3dd49ed068c7",
     "relationType": "satisfies",
     "sourceId": "3614e7f4-9407-407b-a23b-56e0b424d992",
@@ -5704,6 +5874,13 @@
     "targetId": "e2655705-21da-4c0c-a826-88ae821ed3dd"
   },
   {
+    "id": "a5198402-d047-48ec-95f0-7cb63133df9a",
+    "quote": "chce na stronie umiesicc opcje demo ... czyli mozliwosc otwara isostride z przykladowymi danymi aby pokazac mozliwosci rozwiazania",
+    "relationType": "derives",
+    "sourceId": "c91661a7-7a66-4487-bc1e-d4df8a008f43",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "a59f1b82-6a74-4a42-b525-8dfb74e5bf2d",
     "quote": "Ile czasu mogą zajmować ekrany analizy\n≤3 s",
     "relationType": "derives",
@@ -5773,6 +5950,12 @@
     "targetId": "e6909b1e-ea15-4395-b4e5-0ecdb64eef5b"
   },
   {
+    "id": "a6f5fbff-05bb-48b3-9973-6f194f3acc5f",
+    "relationType": "satisfies",
+    "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
+    "targetId": "feb88f6f-7f4a-4c10-8b16-3df1103b3e5a"
+  },
+  {
     "id": "a73a5423-826b-4abb-9069-c4d9af0f8c5a",
     "relationType": "verifies",
     "sourceId": "b9907905-f70c-445d-a7f0-9e0d2355b3e4",
@@ -5832,6 +6015,13 @@
     "quote": "every view sends the area of your route to the server: the 'no network' requirement and its fitness function change.",
     "relationType": "derives",
     "sourceId": "505e6fba-5b0d-4595-8792-d8e0cf2751c0",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "a9cde90f-4319-48c6-bc80-b47e50a56062",
+    "quote": "czemu w demo ciagle integracja z corosem dziala?",
+    "relationType": "derives",
+    "sourceId": "feb88f6f-7f4a-4c10-8b16-3df1103b3e5a",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
@@ -5921,6 +6111,12 @@
     "relationType": "depends-on",
     "sourceId": "1a767a75-6088-48ab-bed9-a2498217b013",
     "targetId": "28133512-0955-4030-aed2-ebbae2df888f"
+  },
+  {
+    "id": "abfaafc0-358a-474a-a149-4d9ba80bc80b",
+    "relationType": "verifies",
+    "sourceId": "ffb7e01d-1250-491d-bb9e-3fa363ffe3e0",
+    "targetId": "c91661a7-7a66-4487-bc1e-d4df8a008f43"
   },
   {
     "id": "ac3574ff-d03c-4509-bd8f-43c95da927ab",
@@ -6149,6 +6345,12 @@
     "relationType": "derives",
     "sourceId": "2a2679a0-5b08-45cf-acef-65dbf402777a",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "b21aa5c3-df70-4ebc-8f93-0f474221d14f",
+    "relationType": "constrains",
+    "sourceId": "2b434b0b-b77d-467c-88d3-3a358e2a6dda",
+    "targetId": "1ed2f843-cc40-4a84-ba19-256544fbc4a6"
   },
   {
     "id": "b22a5d80-d905-412b-816d-4b6100f9501b",
@@ -6636,6 +6838,12 @@
     "targetId": "de34688d-e396-4d2a-9461-bfc5d27540a6"
   },
   {
+    "id": "bf00a388-deb5-4782-875b-ec99737653bd",
+    "relationType": "satisfies",
+    "sourceId": "c72b5772-c80f-4e76-95de-c7ed8a022f88",
+    "targetId": "c91661a7-7a66-4487-bc1e-d4df8a008f43"
+  },
+  {
     "id": "bf374d5c-ee2f-4a1c-8177-2291bca34114",
     "relationType": "constrains",
     "sourceId": "d3fb5710-54c5-4fe4-9969-e73257747c7c",
@@ -6701,6 +6909,13 @@
     "relationType": "verifies",
     "sourceId": "c3fc17c7-6d32-4f4f-af0a-99941dace532",
     "targetId": "505e6fba-5b0d-4595-8792-d8e0cf2751c0"
+  },
+  {
+    "id": "c114847b-f584-4a48-ace9-aa04794887f8",
+    "quote": "ok ... poporacuj nad widgetami na dashboardzie ... teraz widze ze wygladaja biednie a jest to przeciec wizytkowa",
+    "relationType": "derives",
+    "sourceId": "85e732dd-d65f-453b-9f7d-4194c453c166",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "c14db304-c351-4fc4-89a3-ca50db863c6a",
@@ -6974,10 +7189,23 @@
     "targetId": "a1eb87ee-eaa2-4c04-8c19-56379ad448ec"
   },
   {
+    "id": "c9d18006-d0c7-4341-9d31-29f0cd268943",
+    "relationType": "verifies",
+    "sourceId": "7aca2a4b-01ac-4019-9b24-bf94ec3df2e8",
+    "targetId": "feb88f6f-7f4a-4c10-8b16-3df1103b3e5a"
+  },
+  {
     "id": "ca75d215-8c55-4b19-b300-c6ac5fe728c8",
     "relationType": "satisfies",
     "sourceId": "26cc095b-c47f-45bc-a2d5-e9927468dfb8",
     "targetId": "41a57acc-3f2c-43ce-be90-4b19dc889fa6"
+  },
+  {
+    "id": "ca789ee3-f760-4ef8-9adf-b4e72e6a0bee",
+    "quote": "klikniecie na 90 days ... powodu przeskok do samej gory dashboard",
+    "relationType": "derives",
+    "sourceId": "9e789550-5a27-427b-8418-a7a19cc56a1f",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "ca919e40-0420-4177-8539-c4bc4bdd806c",
@@ -7073,6 +7301,13 @@
     "relationType": "implements",
     "sourceId": "1c403970-896a-4fa7-b787-3f5c1b09976d",
     "targetId": "f2b45101-eae1-486b-9c37-7905de9fad0a"
+  },
+  {
+    "id": "ccf800df-b128-4a32-96b0-4fb45b46568d",
+    "quote": "powiniejn byc po prawej stronie ... ale w rogu wykresu ... a nie nad mapa",
+    "relationType": "derives",
+    "sourceId": "24eaa0d4-dbf7-4b7c-8229-ad197ea5829e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "ccfa5c4f-d5f2-44e0-9850-81c74f2e6f57",
@@ -7413,6 +7648,13 @@
     "targetId": "8de8aec9-2d36-4186-a029-a11a7a751c77"
   },
   {
+    "id": "d6c06aa6-a5ec-421d-8480-88defd36f99b",
+    "quote": "nie pisz zmyslony biegacz ... w demo ... daj przykladowy biegacz..",
+    "relationType": "derives",
+    "sourceId": "9e88f507-f91c-45b5-a28e-3c0022213bef",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "d713126d-7a98-4548-a553-5430d55b6762",
     "relationType": "performed-by",
     "sourceId": "cd2739ac-aeb4-4002-b54b-5a8577a38f92",
@@ -7469,6 +7711,13 @@
     "relationType": "transition",
     "sourceId": "6e422e0e-da3a-456e-b154-d6b56cc90855",
     "targetId": "4265e3ce-648a-4471-8c97-0100fede2b68"
+  },
+  {
+    "id": "d8b93f08-3acd-4f37-a6eb-690d66d2dc2d",
+    "quote": "na telfonie kiepsko to wylada.. .moze pokazuj wykresy w aspekcie rozyntoalnym? fullscreen?",
+    "relationType": "derives",
+    "sourceId": "24eaa0d4-dbf7-4b7c-8229-ad197ea5829e",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "d8f7fd27-c217-4bfa-a299-23f818748e7d",
@@ -7572,6 +7821,12 @@
     "relationType": "implements",
     "sourceId": "81327506-c58c-4955-be4b-844f7499091b",
     "targetId": "67c05609-df7a-4838-bc6b-0180d42142d6"
+  },
+  {
+    "id": "dc23d239-00b4-4bf3-9e1c-892fcdf251a9",
+    "relationType": "satisfies",
+    "sourceId": "1ed2f843-cc40-4a84-ba19-256544fbc4a6",
+    "targetId": "c91661a7-7a66-4487-bc1e-d4df8a008f43"
   },
   {
     "id": "dc32dffe-93b8-4c6f-bcec-066c411f7610",
@@ -8092,6 +8347,13 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "eab8eb70-ed50-41da-a4e6-01cbbfc4661b",
+    "quote": "w kolekjnie rundzie zobacz na wykres biegu: tez troche odsstaje pod wzgledem iwzualnym",
+    "relationType": "derives",
+    "sourceId": "697a7cbb-6919-4961-a069-35f06b45d08d",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "eaf54da4-1836-4552-9b6e-b83ba373b754",
     "relationType": "illustrates",
     "sourceId": "c8a74635-e779-4b75-81e7-8fcec5b8f1b7",
@@ -8567,6 +8829,12 @@
     "relationType": "satisfies",
     "sourceId": "e6d75f58-bc3e-4c9c-b845-c6282fc4848d",
     "targetId": "83816ea6-8c1f-42fc-bc74-944304c249f5"
+  },
+  {
+    "id": "f8d19278-b8ad-47d0-8911-3006a135f7c2",
+    "relationType": "verifies",
+    "sourceId": "bd820799-735e-4043-95fa-355ce88fbbe4",
+    "targetId": "9e88f507-f91c-45b5-a28e-3c0022213bef"
   },
   {
     "actions": "status = accepted",

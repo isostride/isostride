@@ -33,6 +33,8 @@ const KEYS = { has: (k: string) => /^[A-Za-z][\w.]*$/.test(k) };
 /** The least and the most height of the chart's plot, px. */
 const MIN_CHART = 180;
 const MAX_CHART = 560;
+/** A screen lower than this, px, is a phone on its side: the full-screen chart keeps the plot and its laps only. */
+const FULL_LOW = 520;
 
 /** The key of a run's remembered view in the browser. */
 const viewKey = (id: string) => `strideprism.runView.${id}`; // i18n-ignore
@@ -55,6 +57,11 @@ function lastChoices(): RunView {
     Object.assign(v, readChartSettings());
   } catch { /* the defaults */ }
   return v;
+}
+
+/** The icon of an action of the run: a stroked glyph on a 24-unit grid, its paths parted by |. */
+function ActionIcon({ d }: { d: string }) {
+  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d.split('|').map((q, k) => <path key={k} d={q} />)}</svg>;
 }
 
 export default function RunPageWrapper() {
@@ -164,6 +171,54 @@ function RunPage() {
   // the room left under the page (or missing) is given to (or taken from) the chart.
   const [chartHeight, setChartHeight] = useState(240);
   const pageRef = useRef<HTMLDivElement>(null);
+  // The chart on the whole screen (the runner's "na telfonie kiepsko to wylada.. moze pokazuj wykresy w aspekcie
+  // rozyntoalnym? fullscreen?", 26 Nov 2026): the chart's own column made the screen, and on a phone the screen
+  // turned on its side where the browser can (Chrome on Android, once full screen). Where it cannot go full
+  // screen (an iPhone), the column covers the page and the runner turns the phone. `fullHeight`: the plot's height there.
+  const chartCol = useRef<HTMLDivElement>(null);
+  const [full, setFull] = useState(false);
+  const [fullHeight, setFullHeight] = useState(240);
+  const openFull = () => {
+    setFull(true);
+    const lock = () => (screen.orientation as unknown as { lock?: (o: string) => Promise<void> } | undefined)?.lock?.('landscape').catch(() => undefined);
+    chartCol.current?.requestFullscreen?.().then(lock).catch(() => undefined);
+  };
+  const closeFull = () => {
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+    setFull(false);
+  };
+  useEffect(() => {
+    if (!full) return;
+    // The plot takes what the screen leaves under the bar; a low screen (a phone on its side) drops the legend and the strip of the whole run (the stylesheet).
+    const fit = () => setFullHeight(Math.max(140, innerHeight - (innerHeight < FULL_LOW ? 128 : 236)));
+    const left = () => { if (!document.fullscreenElement) setFull(false); };
+    // Escape closes it; Tab stays inside it (the page behind is covered, or not shown at all in full screen).
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setFull(false);
+      const col = chartCol.current;
+      if (e.key !== 'Tab' || !col) return;
+      const stops = [...col.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])')].filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
+      if (!stops.length) return;
+      const [first, last] = [stops[0], stops[stops.length - 1]];
+      const inside = col.contains(document.activeElement);
+      if (e.shiftKey && (!inside || document.activeElement === first)) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (!inside || document.activeElement === last)) { e.preventDefault(); first.focus(); }
+    };
+    fit();
+    addEventListener('resize', fit);
+    document.addEventListener('fullscreenchange', left);
+    document.addEventListener('keydown', esc);
+    document.documentElement.classList.add('chart-full-open');
+    return () => {
+      removeEventListener('resize', fit);
+      document.removeEventListener('fullscreenchange', left);
+      document.removeEventListener('keydown', esc);
+      document.documentElement.classList.remove('chart-full-open');
+      try { screen.orientation?.unlock?.(); } catch { /* not locked */ }
+      // Back on the button that opened it, once it is drawn again.
+      requestAnimationFrame(() => chartCol.current?.querySelector<HTMLElement>('.chart-expand')?.focus());
+    };
+  }, [full]);
   useEffect(() => {
     const el = pageRef.current;
     if (!el) return;
@@ -393,10 +448,20 @@ function RunPage() {
         {run.temperature !== null && <span className="chip">{number(run.temperature)} °C</span>}
         {[tagged.workoutType, tagged.techniqueCue].filter(Boolean).map((tag) => <span key={tag} className="chip run-tag">{tag}</span>)}
         {tagged.note && <span className="muted small run-note" title={tagged.note}>✉ {tagged.note}</span>}
-        <button type="button" className="btn" onClick={() => void editTags()} title={t("The run's title, workout type, technique cue, shoes and a note")}>{t('Tags and note')}</button>
-        <Link className="btn" href={`/compare?items=r:${run.id}:0`} title={t('Open this run in Compare, beside your segments and other runs')}>{t('Compare this run')}</Link>
-        <button type="button" className="btn" onClick={() => setBalanceOpen(true)} title={t('How much of the reserve above your critical speed (D′) is left through the run')}>{t('D′ balance')}</button>
-        <WorkoutLink run={run} />
+        {/* What can be done with the run, a row of its own under what the run is (the runner's "te grupy przyciskow zlewaja
+            sie z iiny mi ... i to nie tylko w wersji mobile": they stood in one row with the watch, the laps and the tags, pills among pills). */}
+        <div className="run-actions" role="group" aria-label={t('Actions')}>
+          <button type="button" className="btn" onClick={() => void editTags()} title={t("The run's title, workout type, technique cue, shoes and a note")}>
+            <ActionIcon d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z|M7.5 7.5h.01" />{t('Tags and note')}
+          </button>
+          <Link className="btn" href={`/compare?items=r:${run.id}:0`} title={t('Open this run in Compare, beside your segments and other runs')}>
+            <ActionIcon d="M3 17l6-6 4 4 8-8|M14 7h7v7" />{t('Compare this run')}
+          </Link>
+          <button type="button" className="btn" onClick={() => setBalanceOpen(true)} title={t('How much of the reserve above your critical speed (D′) is left through the run')}>
+            <ActionIcon d="M3.5 18a9 9 0 1 1 17 0|M12 14l4-4|M12 14h.01" />{t('D′ balance')}
+          </button>
+          <WorkoutLink run={run} />
+        </div>
       </div>
       {balanceOpen && <BalanceDialog run={run} folder={folder} onClose={() => setBalanceOpen(false)} />}
       {tagEdit && <TagEditor title={title ?? `${date(run.startTime)} ${time(run.startTime)}`} tag={tagEdit.file.tags[id] ?? {}} gear={tagEdit.gear} dictionary={tagEdit.file.dictionary} onSave={(tag) => void saveTags(tag)} onCancel={() => setTagEdit(null)} />}
@@ -413,23 +478,43 @@ function RunPage() {
               );
             })}
           </div>
-          <span className="chart-summary muted small">{layout === 'bands' ? t('Bands') : t('Overlaid')} · {xAxis === 'distance' ? t('by distance') : t('by time')}{showBlocks && blocks.length ? ` · ${tn(blocks.length, '{n} segment', '{n} segments')}` : ''}</span>
           <span className="readout sr-only" aria-live="polite">
             {zoomed ? t('{range} of {total}', { range: `${clock(domain[0])}–${clock(domain[1])}`, total: clock(total) }) : `${t('Whole run')} · ${clock(total)}`}
           </span>
-          {/* Clear selection, top right of the chart (the runner's request: "chce miec clear selection w prawym gornym rogu"): there while a stretch is selected. */}
-          {selection && (
-            <button className="btn sm clear-selection" title={t('Clear the selection and show the whole run')} onClick={clear}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-              {t('Clear selection')}
-            </button>
-          )}
         </div>
         <div className="run-top">
-          <div className="run-chart-col">
+          <div ref={chartCol} className={`run-chart-col ${full ? 'full' : ''}`} role={full ? 'dialog' : undefined} aria-modal={full || undefined} aria-label={full ? t('Run chart, expanded') : undefined}>
+            {/* The chart's own line: how it is set, and at its right corner Expand, as on the map ("powiniejn byc po prawej
+                stronie ... ale w rogu wykresu ... a nie nad mapa", "nazwij expand", "tak samo jak w mapie"). Clear selection
+                beside it while a stretch is selected (the runner's "chce miec clear selection w prawym gornym rogu"): in this
+                line it takes no line of its own, so the chart stays where it is as a stretch is selected. */}
+            {!full && (
+              <div className="chart-tools">
+                <span className="chart-summary muted small">{layout === 'bands' ? t('Bands') : t('Overlaid')} · {xAxis === 'distance' ? t('by distance') : t('by time')}{showBlocks && blocks.length ? ` · ${tn(blocks.length, '{n} segment', '{n} segments')}` : ''}</span>
+                {selection && (
+                  <button type="button" className="btn sm clear-selection" title={t('Clear the selection and show the whole run')} onClick={clear}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                    {t('Clear selection')}
+                  </button>
+                )}
+                <button type="button" className="btn sm chart-expand" onClick={openFull} aria-label={t('Expand chart')} title={t('The chart on the whole screen; on a phone, turned on its side')}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" /></svg>
+                  {t('Expand')}
+                </button>
+              </div>
+            )}
+            {full && (
+              <div className="chart-full-head">
+                <b>{title ?? `${date(run.startTime)} ${time(run.startTime)}`}</b>
+                <span className="muted small">{zoomed ? `${clock(domain[0])}–${clock(domain[1])}` : t('Whole run')}</span>
+                <span className="spacer" />
+                {zoomed && <button type="button" className="btn sm" onClick={clear}>{t('Whole run')}</button>}
+                <button type="button" className="btn sm" autoFocus onClick={closeFull}>{t('Close')}</button>
+              </div>
+            )}
             <RunChart x={x} total={total} lines={lines} focus={focus} onFocus={setFocus} domain={domain} onDomain={setDomain} laps={laps}
               blocks={blocks.filter((b) => showBlocks || b.id === pointed).map((b) => ({ from: b.start, to: b.end, ok: b.status === 'accepted', name: b.name }))}
-              cursor={cursor} onCursor={setCursor} selection={null} onSelect={select} head={head} height={chartHeight} layout={layout} axis={xAxis} dmap={dmap}
+              cursor={cursor} onCursor={setCursor} selection={null} onSelect={select} head={head} height={full ? fullHeight : chartHeight} minLane={full ? 36 : undefined} layout={layout} axis={xAxis} dmap={dmap}
               marks={Object.fromEntries(shownStats.map(({ line, v }) => [line.key, v]))} hot={hot} />
             {/* The efforts of the runner's segments in this run, under the chart: pointed at, lit on it; clicked, selected. */}
             {blocks.length > 0 && (

@@ -65,6 +65,8 @@ export const PATHS = {
   coros: '.isostride/user/coros.json',
   /** the runs an import added that the runner has not opened yet (requirement "New runs marked new") */
   newRuns: '.isostride/user/new-runs.json',
+  /** what marks the folder as the demo's, with the day its story is anchored on (lib/demo) */
+  demo: '.isostride/user/demo.json',
   /** whether the setup wizard was gone through or skipped in this folder */
   setup: '.isostride/user/setup.json',
   derived: '.isostride/derived',

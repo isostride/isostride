@@ -1345,7 +1345,7 @@ a.crumbs:hover b { color: var(--text); }
   .display-wide { display: none; }
 }
 
-/* Clear selection, at the top right of the run's chart beside its menu: the accent, so it is seen while a stretch is selected. */
+/* Clear selection, at the top right of the run's chart beside Expand: the accent, so it is seen while a stretch is selected. */
 .clear-selection { gap: 6px; background: color-mix(in srgb, var(--accent) 10%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 35%, transparent); color: var(--text); }
 .clear-selection:hover { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); }
 
@@ -1484,7 +1484,7 @@ a.crumbs:hover b { color: var(--text); }
   .run-figures dt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* The run's chart takes the whole width of the phone: its card runs from edge to edge, the chart's own margins slim. */
   .run-board { margin-left: -14px; margin-right: -14px; padding: 10px 4px 12px; border-radius: 0; border-left: 0; border-right: 0; }
-  .run-board .metrics-bar, .run-board .chart-foot, .run-board .run-side { padding-left: 10px; padding-right: 10px; }
+  .run-board .metrics-bar, .run-board .chart-foot, .run-board .run-side, .run-board .chart-tools { padding-left: 10px; padding-right: 10px; }
   .sel-figures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   /* the chart's summary on its own line under the metrics, not squeezed beside their row */
   .run-board .chart-summary { flex: 1 1 auto; }
@@ -1783,20 +1783,9 @@ table.data tr.reference > td { background: color-mix(in srgb, var(--accent) 9%, 
 .dash-mid { font-size: 18px; font-weight: 680; color: var(--text); }
 .dash-tile p { margin: 0; }
 .dash-week, .dash-form, .dash-segment, .dash-model, .dash-analysis, .dash-last { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
-.dash-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 70px; align-items: end; align-self: stretch; margin-top: auto; }
-.dash-days span { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
-.dash-days i { width: 100%; border-radius: 5px 5px 2px 2px; background: color-mix(in srgb, var(--accent) 55%, transparent); }
-.dash-days span.today i { background: var(--accent); }
-.dash-days small { font-size: 10px; color: var(--muted); }
-.dash-days span.today small { color: var(--text); font-weight: 650; }
 .dash-weekly { position: relative; }
 .dash-weekly svg { display: block; }
-.dash-tip { top: 26px; }
-.dash-last { gap: 4px; }
 .dash-last-title { font-weight: 700; font-size: 15px; color: var(--text); }
-.dash-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 8px 0 0; align-self: stretch; }
-.dash-facts dt { font-size: 11px; color: var(--muted); }
-.dash-facts dd { margin: 2px 0 0; font-weight: 680; font-size: 15px; }
 .dash-spark { width: 100%; height: 60px; display: block; }
 .dash-run-pace { height: 48px; }
 /* Pin to the Dashboard, in the corner of a card ("tylko pin na poziomie widgetu"). */
@@ -1812,6 +1801,13 @@ table.data tr.reference > td { background: color-mix(in srgb, var(--accent) 9%, 
 /* A view of Performance on the Dashboard: its cards inside the tile, without their own frame. */
 .dash-perf { display: flex; flex-direction: column; gap: 10px; }
 .dash-perf .card { box-shadow: none; border: 0; background: transparent; padding: 0; margin: 0; }
+/* Two charts of one view: one under the other on its screen, side by side on a tile the whole row wide. */
+.chart-split { display: grid; gap: 16px; min-width: 0; }
+.chart-split > div { min-width: 0; }
+/* Two charts side by side when there are two (no power: the critical speed alone, the whole width). */
+.dash-tile.size-3 .chart-split:has(> :nth-child(2)) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+/* A view's explanations stay on its screen: the tile is its figures and its chart, and leads there. */
+.dash-perf .chart-note { display: none; }
 .dash-run, .dash-compare { display: flex; flex-direction: column; gap: 8px; }
 .dash-tile .row-open:last-child, .dash-tile .dash-more { margin-top: auto; }
 /* A tile's way on (Performance →, Open the run →, All runs →): a quiet pill at its foot, in the accent when
@@ -1819,17 +1815,63 @@ table.data tr.reference > td { background: color-mix(in srgb, var(--accent) 9%, 
 .dash-tile a.row-open { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; height: 30px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--text-2); font-size: 12.5px; font-weight: 600; text-decoration: none; white-space: nowrap; transition: color 0.12s, border-color 0.12s, background 0.12s; }
 .dash-tile a.row-open:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
 .dash-tile a.row-open:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-soft); border-color: var(--accent); }
-.dash-recent { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.dash-recent li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
-.dash-recent li:last-child { border-bottom: 0; padding-bottom: 0; }
-.dash-recent .dash-recent-what { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
-.dash-recent .dash-recent-what .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dash-recent .dash-more { display: block; padding-top: 10px; }
+/* The tiles as the app's front page (26 Nov 2026: "widgety ... wygladaja biednie a jest to przeciec wizytkowa"): a
+   figure to lead each, read against something of the runner's own, and its chart on a scale. */
+.dash-hero { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 20px; align-self: stretch; }
+.dash-hero-value { display: flex; align-items: baseline; gap: 6px; margin: 0; color: var(--text-2); font-size: 14px; font-weight: 550; line-height: 1; }
+.dash-hero-value b { font-size: 40px; font-weight: 740; letter-spacing: -0.04em; color: var(--text); }
+.dash-stats { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 0; }
+.dash-stats > div { display: flex; flex-direction: column-reverse; gap: 1px; }
+.dash-stats dt { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.dash-stats dd { margin: 0; font-size: 15px; font-weight: 680; color: var(--text); white-space: nowrap; }
+.dash-change { margin-left: 3px; font-size: 11px; font-weight: 600; color: var(--text-2); }
+/* How far the week is against the runner's usual one: the fill on a lighter step of itself. */
+.dash-meter { display: grid; gap: 6px; align-self: stretch; }
+.dash-meter-track { height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, var(--surface)); overflow: hidden; }
+.dash-meter-track i { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+/* The week's days: a column a day with its kilometres on it, the days ahead a faint mark. */
+.dash-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-self: stretch; margin-top: auto; padding-top: 6px; }
+.dash-day { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; }
+.dash-day-bar { position: relative; width: 100%; height: 76px; margin-top: 18px; border-bottom: 1px solid var(--axis); }
+.dash-day-bar i { position: absolute; left: 50%; bottom: 0; width: min(24px, 70%); transform: translateX(-50%); border-radius: 4px 4px 0 0; background: color-mix(in srgb, var(--accent) 45%, var(--surface)); }
+.dash-day-bar em { position: absolute; left: 0; right: 0; text-align: center; font-style: normal; font-size: 11px; font-weight: 600; color: var(--text-2); }
+.dash-day.today .dash-day-bar i { background: var(--accent); }
+.dash-day.today .dash-day-bar em { color: var(--text); }
+.dash-day small { font-size: 10.5px; color: var(--muted); }
+.dash-day.today small { color: var(--text); font-weight: 680; }
+/* A tile's chart: its room held from the first paint, its tooltip over it. */
+.dash-chart { position: relative; align-self: stretch; min-width: 0; }
+.dash-chart svg { display: block; }
+.dash-tip { top: -6px; }
+.dash-weekly .dash-tip { top: 26px; }
+.dash-last { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.dash-last-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.dash-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 10px 12px; margin: 6px 0 2px; align-self: stretch; }
+.dash-facts > div { display: flex; flex-direction: column-reverse; gap: 1px; }
+.dash-facts dt { font-size: 11px; color: var(--muted); }
+.dash-facts dd { margin: 0; font-weight: 680; font-size: 15px; white-space: nowrap; }
+/* The last runs: each row the way to its run. */
+.dash-recent { list-style: none; margin: 0 -8px; padding: 0; display: flex; flex-direction: column; flex: 1; }
+.dash-recent li + li .dash-recent-row { border-top: 1px solid var(--line); }
+.dash-recent-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto 62px; gap: 12px; align-items: center; min-height: 52px; padding: 7px 8px; border-radius: 10px; color: inherit; text-decoration: none; font-size: 13px; }
+.dash-recent-row:hover { background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.dash-recent-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.dash-recent-day { display: flex; flex-direction: column; line-height: 1.25; }
+.dash-recent-day b { font-weight: 680; }
+.dash-recent-day small { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.dash-recent-what { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.dash-recent-what small { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-recent-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-recent-km { display: grid; gap: 4px; justify-items: end; font-weight: 600; white-space: nowrap; }
+.dash-recent-km > i { display: block; width: 64px; height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, var(--surface)); overflow: hidden; }
+.dash-recent-km > i > i { display: block; height: 100%; margin-left: auto; border-radius: 999px; background: color-mix(in srgb, var(--accent) 60%, var(--surface)); }
+.dash-recent-pace { text-align: right; color: var(--text-2); white-space: nowrap; }
+.dash-recent .dash-more { margin: auto 8px 0; padding-top: 12px; }
 .dash-add { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; padding: 12px 16px; margin-bottom: 14px; }
 .dash-add .field { display: grid; gap: 4px; }
 .dash-add .spacer { flex: 1; }
 /* Narrower: two tiles a row, a wide one the whole row; on a phone, one. */
-@container (max-width: 940px) { .dash-tile { grid-column: span 6; } .dash-tile.size-2, .dash-tile.size-3 { grid-column: span 12; } }
+@container (max-width: 940px) { .dash-tile { grid-column: span 6; } .dash-tile.size-2, .dash-tile.size-3 { grid-column: span 12; } .dash-tile.size-3 .chart-split { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
 @container (max-width: 560px) { .dash-tile, .dash-tile.size-2, .dash-tile.size-3 { grid-column: span 12; } }
 
 
@@ -2126,3 +2168,69 @@ table.data.reps-table th.sortable .sort-head { display: inline; text-align: inhe
 .whatif-actions .btn[aria-pressed='true'] { border-color: var(--accent); background: var(--accent-soft); }
 .whatif-table input.whatif-percent { width: 64px; padding: 3px 6px; text-align: right; }
 .whatif-table td { vertical-align: middle; }
+
+/* ---------- the demo (26 Nov 2026: "chce na stronie umiesicc opcje demo"): said on every screen, offered on the Welcome screen ---------- */
+/* One line of one height, whatever it holds (layout shift 0: its placeholder, its text, the history's progress coming and going). */
+.demo-bar { display: flex; align-items: center; flex-wrap: nowrap; gap: 12px; box-sizing: border-box; height: 43px; padding: 10px 36px 0; font-size: 12.5px; color: var(--text-2); }
+.demo-bar > * { flex: none; }
+.demo-chip { padding: 1px 9px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 680; letter-spacing: 0.04em; text-transform: uppercase; line-height: 18px; }
+.demo-bar > .demo-text { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.demo-history { color: var(--muted); white-space: nowrap; }
+@media (pointer: coarse) { .demo-bar { height: 52px; } }
+.welcome-demo { display: grid; gap: 4px; margin-top: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.welcome-making { display: grid; gap: 4px; }
+/* An integration that cannot be used here (the demo): its card greyed, the reason said in full strength. */
+.coros-card.off > .folder-top, .coros-card.off > .folder-actions, .coros-card.off > .folder-notes { opacity: 0.5; }
+.integration-off { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); color: var(--text-2); }
+.demo-text b { font-weight: 620; color: var(--text); }
+@media (max-width: 820px) {
+  .demo-bar { height: 50px; padding: 8px 14px; gap: 8px; }
+  .demo-more, .demo-history-what { display: none; }
+}
+
+/* ---------- the run chart on the whole screen (26 Nov 2026: "na telfonie kiepsko to wylada.. fullscreen?") ---------- */
+/* The chart's own line over it: how it is set at the left, Expand at its right corner, a pill as the map's. */
+.chart-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 26px; margin-bottom: 2px; }
+.chart-tools { flex-wrap: wrap; }
+.chart-tools .chart-summary { flex: 1 1 120px; }
+.chart-tools .clear-selection { flex: none; }
+.chart-expand { flex: none; margin-left: auto; gap: 6px; background: var(--surface); box-shadow: var(--shadow); }
+.run-chart-col.full { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; gap: 4px; overflow: auto; background: var(--surface); padding: max(8px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px)); }
+.run-chart-col.full > :not(.run-chart):not(.chart-full-head) { display: none; }
+.chart-full-head { display: flex; align-items: center; gap: 10px; min-height: 36px; }
+.chart-full-head b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.chart-full-head .spacer { flex: 1; }
+/* The page behind does not scroll under it. */
+html.chart-full-open { overflow: hidden; }
+@media (max-height: 519px) {
+  /* !important: the strip sets its own display. */
+  .run-chart-col.full .chart-legend, .run-chart-col.full .overview { display: none !important; }
+}
+
+/* ---------- the run's actions apart from what the run is (26 Nov 2026: "te grupy przyciskow zlewaja sie z iiny mi") ---------- */
+/* What the run is (the watch, the laps, the weather, its tags): flat labels with squarer corners, not pills among the buttons. */
+.run-head .chip { border-radius: 7px; }
+/* What can be done with it: a row of its own under a rule, each button led by its icon. */
+/* On a wide screen in the line of the labels, set apart by a rule at their left (a row of their own made the Run screen scroll
+   on a laptop); on a phone a row of their own under a rule. */
+.run-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: 4px; padding-left: 14px; border-left: 1px solid var(--line); }
+.run-actions .btn { height: 32px; padding: 0 13px 0 11px; gap: 7px; font-size: 13px; }
+.run-actions .btn svg { flex: none; color: var(--accent); }
+
+/* ---------- a phone: where the buttons stand (26 Nov 2026: "przegladnij wogole wersje pobile ... zobacz na pozycje przecyskow") ---------- */
+@media (max-width: 820px) {
+  /* A screen's head: its name and its one main button on the first line, the other buttons on a line of their own under it
+     (Compare: Save analysis stood beside the name, Export CSV and Add under it, in no order). */
+  .page-head:not(.run-head) > .btn.primary { order: 1; }
+  .page-head:not(.run-head) > :not(h1):not(.spacer):not(.btn.primary):not(div:has(> h1)):not(.segmented) { order: 2; }
+  .page-head:not(.run-head):has(> .btn.primary) > .spacer { flex: 1 1 0; }
+  /* What is compared: the metrics across the card's width, in lines (they stood one under another in a column
+     a third of it wide, beside the switch), the switch on its own line under them. */
+  .analysis-filters .metric-picker { flex: 1 1 100%; flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; }
+  .analysis-filters .items-bar { flex: 1 1 100%; flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; }
+  .analysis-filters .pace-even { flex: 1 1 100%; padding-top: 2px; white-space: normal; }
+  /* A run's labels from the left, under its figures, as everything else on the screen. */
+  .run-head > .spacer { display: none; }
+  .run-actions { flex: 1 1 100%; margin-left: 0; padding: 12px 0 0; border-left: 0; border-top: 1px solid var(--line); }
+  .run-head .run-note { flex: 1 1 100%; max-width: none; }
+}

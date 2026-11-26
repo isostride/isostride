@@ -13,7 +13,7 @@ import { SETUP_CONTINUE } from './SetupSteps';
  * (its steps filled with what is saved); and always when the folder was just picked on the Welcome
  * screen, the wizard's first step. Looked at once per folder.
  */
-export function SetupGate({ folder }: { folder: DataFolder }) {
+export function SetupGate({ folder, demo = false }: { folder: DataFolder; demo?: boolean }) {
   const router = useRouter();
   const path = usePathname();
   const looked = useRef<DataFolder | null>(null);
@@ -22,10 +22,11 @@ export function SetupGate({ folder }: { folder: DataFolder }) {
     looked.current = folder;
     // A folder picked on the Welcome screen, the setup's first step: the wizard goes on, whatever the folder holds.
     let picked = false;
-    try { picked = sessionStorage.getItem(SETUP_CONTINUE) === '1'; sessionStorage.removeItem(SETUP_CONTINUE); } catch { /* no session storage */ }
+    // Not the demo: a folder chosen and the picker cancelled, then the demo tried, opened the wizard over its runner (the review of 26 Nov 2026).
+    try { picked = !demo && sessionStorage.getItem(SETUP_CONTINUE) === '1'; sessionStorage.removeItem(SETUP_CONTINUE); } catch { /* no session storage */ }
     readSetup(folder).then((setup) => {
       if ((picked || setupWanted(setup)) && !path.startsWith('/setup')) router.replace('/setup');
     }).catch(() => undefined);
-  }, [folder, path, router]);
+  }, [folder, path, router, demo]);
   return null;
 }

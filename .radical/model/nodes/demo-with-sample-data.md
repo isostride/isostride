@@ -1,0 +1,9 @@
+---
+id: "c91661a7-7a66-4487-bc1e-d4df8a008f43"
+type: "requirement"
+label: "Demo with sample data"
+action: "open the app, with no folder picked and no setup wizard, on the data of a sample runner generated in the visitor's browser and kept in the browser's private storage, nothing downloaded or sent: the last months within seconds, saying what it is making meanwhile, and the earlier history added behind the open app with its progress shown; keep the demo in every tab of the browser until it is left; open it again at once on a later visit with the days since added, make it again when it is older than 8 weeks, finish at the next opening a demo whose making was cut off, and keep the last months alone where the browser has too little storage for the two years"
+ears_type: "event-driven"
+rationale: "The runner asked: \"chce na stronie umiesicc opcje demo ... czyli mozliwosc otwara isostride z przykladowymi danymi aby pokazac mozliwosci rozwiazania\", asked \"czy pliki sa zapisyane na dysku ? czy dane generowane w locie?\" and \"jak to bedzie dzialalo na produckji app.isostridel.com/?demo?\". The model's choices: generated in a Web Worker into a folder of the origin private file system (an archive of two years would be over 100 MB to download and would go stale), imported as a watch's FIT files so every screen reads it unchanged; first the runs from the last test of the critical speed at least 18 weeks back, then 120 runs a call, newest first, the segments found once at the end; kept 8 weeks (56 days), made again by a new version of the demo; about 650 kB of storage a run with 40 MB spare; the site's link app.isostride.com/?demo, the ?demo taken out of the address once read; no change of the host or its Content-Security-Policy."
+trigger: "a visitor opens the app from the site's Try the demo (the app's address with ?demo) or chooses Try the demo on the Welcome screen"
+---

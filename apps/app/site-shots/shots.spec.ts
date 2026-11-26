@@ -1,33 +1,23 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
-import { TEST_DATA, addFromPicker, chooseFolder, clearAnalysis, fakeFolderPicker, nav, openData, showList } from '../e2e/support';
+import { TEST_DATA, addFromPicker, clearAnalysis, nav, showList } from '../e2e/support';
 
 /**
- * The site's screenshots (apps/site/public/shots): the whole window of the app on the demo data of a
- * made-up runner, never on anybody's own runs. Not part of the test suite:
- *   node scripts/make-demo.mjs /tmp/demo && DEMO=/tmp/demo npx playwright test -c playwright.shots.config.ts
+ * The site's screenshots (apps/site/public/shots): the whole window of the app on its demo (lib/demo, the
+ * sample runner the app makes when it is opened with ?demo), never on anybody's own runs. Not part of the
+ * test suite:
+ *   npx playwright test -c playwright.shots.config.ts
  * then, in apps/site/public/shots: for f in *.png; do cwebp -q 82 -m 6 $f -o ${f%.png}.webp; done; rm *.png
  * With SHOTS_LANG=pl the same screens in Polish, into apps/site/public/shots/pl ("pamietaj o screensjota
- * polskich w wersji polskiej strony"): the app is driven in English and put in Polish for each shot.
+ * polskich w wersji polskiej strony"): the demo is made in Polish (its titles and tags), the app is driven
+ * in English and put in Polish for each shot.
  */
-const DEMO = process.env.DEMO!;
 const LANG = process.env.SHOTS_LANG === 'pl' ? 'pl' : 'en';
 const OUT = path.resolve(TEST_DATA, '../../../site/public/shots', LANG === 'en' ? '' : LANG);
+/** The demo's segment of 1 km repetitions, as the demo names it in its language (lib/demo/words.ts). */
+const KM_REPS = LANG === 'pl' ? /^Powtórzenia 1 km/ : /^1 km reps/;
 test.use({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, colorScheme: 'light', locale: 'en-GB' });
-
-async function put(page: Page, dir: string[], files: { name: string; b64: string }[]) {
-  await page.evaluate(async ({ dir, files }) => {
-    let d = await (await navigator.storage.getDirectory()).getDirectoryHandle('data', { create: true });
-    for (const part of dir) d = await d.getDirectoryHandle(part, { create: true });
-    for (const { name, b64 } of files) {
-      const w = await (await d.getFileHandle(name, { create: true })).createWritable();
-      await w.write(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)));
-      await w.close();
-    }
-  }, { dir, files });
-}
-const read = async (dir: string, names: string[]) => Promise.all(names.map(async (name) => ({ name, b64: (await fs.readFile(path.join(dir, name))).toString('base64') })));
 
 /** Puts the app in a language (as Settings › Display does) and reloads the screen shown. */
 async function language(page: Page, lang: string) {
@@ -51,22 +41,15 @@ async function shot(page: Page, name: string) {
 
 test('site shots', async ({ page }) => {
   test.setTimeout(900_000);
-  const fit = (await fs.readdir(path.join(DEMO, 'fit'))).sort();
-  // The app's today: the evening of the demo's last day (a Sunday), so the week and the form are full.
-  await page.clock.setFixedTime(new Date(`${fit[fit.length - 1].slice(0, 10)}T17:30:00Z`));
-  await fakeFolderPicker(page);
+  // The demo made in the language of the shots, then the app driven in English.
   await page.goto('/');
-  for (let i = 0; i < fit.length; i += 12) await put(page, ['fit'], await read(path.join(DEMO, 'fit'), fit.slice(i, i + 12)));
-  await put(page, ['.isostride', 'user'], await read(path.join(DEMO, '.isostride/user'), ['gear.json', 'run-tags.json', 'settings.json', 'block-definitions.json', 'dashboard.json']));
-  await chooseFolder(page);
-  await page.getByRole('heading', { name: 'Runs' }).waitFor();
-  // The app imports the folder by itself: wait on the Data tab of Settings until every file is read.
-  await openData(page);
-  await expect(async () => {
-    await expect(page.locator('.folder-page .folder-progress')).toHaveCount(0);
-    await expect(page.locator('.folder-new')).toHaveCount(0);
-    await expect(page.getByLabel('What the folder holds')).not.toContainText('FIT files read0');
-  }).toPass({ timeout: 600_000 });
+  await page.evaluate((l) => localStorage.setItem('isostride.language', l), LANG);
+  await page.goto('/dashboard?demo');
+  const bar = page.locator('.demo-bar');
+  await bar.waitFor({ timeout: 180_000 });
+  // Until the earlier history is in too: the two years whole.
+  await expect(bar.getByRole('status')).toHaveCount(0, { timeout: 600_000 });
+  if (LANG !== 'en') await language(page, 'en');
   await page.waitForTimeout(4000);
 
   await page.goto('/dashboard');
@@ -77,14 +60,15 @@ test('site shots', async ({ page }) => {
   await page.locator('.sidebar').getByRole('link', { name: /Runs$/ }).click();
   await page.getByRole('heading', { name: 'Runs' }).waitFor();
   await showList(page);
-  await page.locator('tr.row', { hasText: '6 × 1 km' }).first().click();
+  // A session of 1 km repetitions (not the short one of a race week).
+  await page.locator('tr.row', { hasText: /[4-9] × 1 km/ }).first().click();
   await page.getByRole('img', { name: /^Run metrics · / }).waitFor();
   await page.waitForTimeout(2500);
   await shot(page, 'run');
 
   await nav(page, 'Compare');
   await clearAnalysis(page);
-  await addFromPicker(page, /^1 km reps/);
+  await addFromPicker(page, KM_REPS);
   await page.locator('.item-chip').first().waitFor({ timeout: 60_000 });
   const metrics = page.getByRole('group', { name: 'Metrics' });
   for (const m of ['Pace', 'Ground contact']) {

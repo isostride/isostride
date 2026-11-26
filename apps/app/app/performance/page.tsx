@@ -1,6 +1,6 @@
 'use client';
 
-import { eager } from '@/components';
+import { eager, useTabInView } from '@/components';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useLocale } from '@/lib/client';
@@ -28,6 +28,7 @@ function PerformancePage() {
   // The Model tab of before: its choice is at the top of Load now.
   const tabParam = params.get('tab') === 'model' ? 'load' : params.get('tab');
   const tab: Tab = TABS.some((tb) => tb.key === tabParam) ? (tabParam as Tab) : 'overview';
+  const tabsRow = useTabInView(tab);
   const def = TABS.find((tb) => tb.key === tab)!;
   const view = def.views.find((v) => v.key === params.get('view'))?.key ?? def.views[0]?.key ?? '';
   return (
@@ -38,7 +39,7 @@ function PerformancePage() {
           <h1>{t('Performance')}</h1>
         </div>
       </div>
-      <div className="tabs page-tabs" role="tablist" aria-label={t('Performance sections')}>
+      <div ref={tabsRow} className="tabs page-tabs" role="tablist" aria-label={t('Performance sections')}>
         {TABS.map((tb) => (
           <button key={tb.key} type="button" role="tab" id={`tab-${tb.key}`} aria-controls={tab === tb.key ? `panel-${tb.key}` : undefined} aria-selected={tab === tb.key} className={tab === tb.key ? 'on' : ''} onClick={() => router.replace(performanceHref(tb.key))}>{t(tb.name)}</button>
         ))}

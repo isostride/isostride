@@ -119,7 +119,7 @@ export function TrendChart({ trend, format, tick = format, invert, markers, sele
           </g>
         ))}
         <line x1={M.l} x2={width - M.r} y1={H - M.b} y2={H - M.b} stroke="var(--axis)" />
-        {monthTicks(t0, t1).map((m) => (
+        {monthTicks(t0, t1, width - M.l - M.r).map((m) => (
           <text key={m} x={x(m)} y={H - 8} fontSize="11" fill="var(--muted)" textAnchor="middle">{monthLabel(m)}</text>
         ))}
         {placed.map((m) => (

@@ -4,6 +4,18 @@ The versions of IsoStride (the app at app.isostride.com and the site at isostrid
 
 ## Unreleased
 
+### Demo
+- The app can be opened on a demo, from the site (*Try the demo*) or from its first screen: two years of training of a sample runner with a critical pace of about 3:15 /km, generated in your browser (nothing is downloaded or sent) and kept in the browser's own storage. The last months are there in a few seconds, the earlier history is added behind the open app. A bar on every screen says the data are not a real person's; *Use your own data* leaves the demo and removes it (in every tab open on it). Integrations and the choice of another folder are off in it. A tab closed while the demo is being made leaves nothing half made: the next opening finishes it. A browser with too little storage for the two years gets the last months.
+- A first import of many runs finds its segments faster: each run's file is read once for all the segments and suggestions, not once for each (a folder of 570 runs read 6000 files).
+- Two suggested route segments that start at one point in one direction no longer share an id; a list kept from before is found again once.
+
+### Dashboard and the run screen, redrawn
+- The Dashboard's tiles: this week with its days and against the 4-week average, the weekly kilometres as thin columns with their average, the last run with its pace profile, form with its 7-day change and 6 weeks of it, the recent runs as rows with their distance, segments with their efforts; the axes of months no longer crowd. Choosing 90 days in a chart no longer scrolls the page to the top.
+- The run chart: each metric in a lane of its own with a gap between them (the bands overlapped), its zones a faint tint and a rail of their colours at the right; their names shown in lanes a quarter of a laptop's chart high.
+- *Expand* at the chart's right corner, as on the map, shows the chart on the whole screen; on a phone, turned on its side where the browser can. *Clear selection* stands beside it, so the chart no longer moves down as a part is selected.
+- The run's actions (Tags and note, Compare this run, D′ balance, the workout) are a group of their own with icons, apart from the chips that say what the run is.
+- On a phone: the buttons of each screen's head in one order (the main one first), the filters of Compare wrapped instead of cut off, a tap on the chart keeps its values when the pointer was left elsewhere.
+
 ### Languages
 - The app in English and Polish: every screen, message and explanation of the models. At first in your browser's language; change it in Settings › Display or in the setup wizard. Numbers and dates follow the language (5,24 km, 24 lis 2026).
 - The site in Polish too, at isostride.com/pl, with EN and PL in its header; a first visit from a browser in Polish opens it.
