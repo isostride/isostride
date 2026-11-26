@@ -31,6 +31,9 @@ export function pauseGap(t: number[]): number {
   return gap;
 }
 
+/** Whether the run was recorded smart (pauseGap): its samples then stand for unequal times. */
+export const recordedSmart = (t: number[]): boolean => pauseGap(t) !== SECOND_BY_SECOND_GAP;
+
 /**
  * The time a sample stands for, s: a second in a run recorded every second (as its samples were
  * counted before); in one recorded smart, the time to the next sample, MAX_SAMPLE_COVER at most.

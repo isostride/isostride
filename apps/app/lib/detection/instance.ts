@@ -1,4 +1,4 @@
-import { MAX_SAMPLE_COVER, metricSeries, pauseGap, sampleHold, type IndexedRun, type RunFile, type Series } from '@/lib/kernel';
+import { MAX_SAMPLE_COVER, metricSeries, pauseGap, recordedSmart, sampleHold, type IndexedRun, type RunFile, type Series } from '@/lib/kernel';
 
 import { MIN_SECONDS, REASONS, SAVED_WORDS, blockMetricsOf, efficiencyOf, STANDING_WINDOW, type BlockDefinition, type BlockInstance, type BlockMetric, type Tolerances } from '@/lib/blocks';
 
@@ -15,9 +15,10 @@ const STOP_MARGIN = 10;
 /** The times a run is stopped: samples below walking speed, and the first sample after an auto-pause gap. */
 export function stopTimes(t: number[], speed: Series): number[] {
   const out: number[] = [];
+  const pause = pauseGap(t);
   for (let i = 0; i < t.length; i++) {
     const v = speed[i];
-    if ((v !== null && v < STOPPED_SPEED) || (i > 0 && t[i] - t[i - 1] > pauseGap(t))) out.push(t[i]);
+    if ((v !== null && v < STOPPED_SPEED) || (i > 0 && t[i] - t[i - 1] > pause)) out.push(t[i]);
   }
   return out;
 }
@@ -39,6 +40,7 @@ export function startKind(t: number[], speed: Series, start: number, stops = sto
 export function movingPart(t: number[], speed: Series, idx: number[]): { moving: number[]; stopped: number; lastStop: number | null } {
   const stops: [number, number][] = [];
   let stopped = 0;
+  const pause = pauseGap(t);
   for (let k = 0; k < idx.length; k++) {
     const i = idx[k];
     const v = speed[i];
@@ -46,7 +48,7 @@ export function movingPart(t: number[], speed: Series, idx: number[]): { moving:
     if (k > 0) {
       const gap = t[i] - t[idx[k - 1]];
       // A pause: longer than the watch leaves between two samples while it records (pauseGap).
-      if (gap > pauseGap(t)) { stopped += gap - 1; stops.push([t[idx[k - 1]] + 1, t[i]]); }
+      if (gap > pause) { stopped += gap - 1; stops.push([t[idx[k - 1]] + 1, t[i]]); }
     }
   }
   const near = (time: number) => stops.some(([a, b]) => time >= a - STOP_MARGIN && time < b + STOP_MARGIN);
@@ -70,12 +72,16 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
   const metrics = {} as Record<BlockMetric, number | null>;
   const profile = {} as Record<BlockMetric, (number | null)[]>;
   const minutes = Math.max(1, Math.ceil((end - start) / 60));
+  // The moving samples of each minute, sorted out once: every metric's profile reads them (each metric
+  // looked through every sample for every minute, an hour's run 2 million looks a time).
+  const byMinute: number[][] = Array.from({ length: minutes }, () => []);
+  for (const i of moving) { const k = Math.floor((s.t[i] - start) / 60); if (k >= 0 && k < minutes) byMinute[k].push(i); }
   for (const m of blockMetricsOf(run.metrics.map((x) => x.key))) {
     if (m === 'efficiency') continue;
     const series = metricSeries(s, m);
     metrics[m] = held(s.t, moving, series);
-    profile[m] = Array.from({ length: minutes }, (_, k) => {
-      const v = held(s.t, moving.filter((i) => s.t[i] >= start + k * 60 && s.t[i] < start + (k + 1) * 60), series);
+    profile[m] = byMinute.map((inMinute) => {
+      const v = held(s.t, inMinute, series);
       return v === null ? null : round(v, 2);
     });
     if (metrics[m] !== null) metrics[m] = round(metrics[m]!, 3);
@@ -164,10 +170,12 @@ function valueAt(series: Series, i: number | undefined): number | null {
 function held(t: number[], indices: number[], series: Series): number | null {
   let sum = 0;
   let weight = 0;
+  // A run recorded every second: every sample a second, the plain mean (and no more work than it was).
+  const smart = recordedSmart(t);
   for (const i of indices) {
     const v = series[i];
     if (v === null || v === undefined) continue;
-    const w = sampleHold(t, i);
+    const w = smart ? sampleHold(t, i) : 1;
     sum += v * w;
     weight += w;
   }
