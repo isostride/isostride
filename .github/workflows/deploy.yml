@@ -7,6 +7,15 @@
 # repository, its logs and its artifacts are public. On master, once everything passes, the very build
 # the end-to-end tests ran against goes to app.isostride.com and the site to isostride.com. AWS is
 # reached with OIDC (infra/github.tf, infra/ci.tf): no keys in GitHub.
+#
+# A tree is checked once (the runner's request of 26 Nov 2026: "chce aby ci/cd dzialal stabilnie ...
+# jesli check przechodzi na branchu to pwinien przechodzic na merge do main"): master takes a pull
+# request only when its branch is up to date and its check green, so the commit a merge leaves on
+# master holds the very tree that check ran on. A check that passes leaves the tree's hash in the
+# bucket (ci/checked/<tree>, gone after 3 days like the reports); a push to master whose tree is there
+# runs no test again (a test that fails one time in many had stopped a deploy on 26 Nov 2026 after a
+# green pull request), builds the app and the site with master's commit and deploys them. A tree not
+# there (a push straight to master, a mark gone) is checked whole, as before.
 name: CI/CD
 
 on:
@@ -31,8 +40,37 @@ env:
   REPORTS: s3://${{ vars.TEST_DATA_BUCKET }}/ci/${{ github.run_id }}-${{ github.run_attempt }}
 
 jobs:
+  # Whether this tree passed the check before: asked on master and on a run started by hand, never on a
+  # pull request, whose check is the one that counts.
+  known:
+    name: tree checked before
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tree: ${{ steps.tree.outputs.tree }}
+      checked: ${{ steps.tree.outputs.checked }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Sign in to AWS (the marks of the trees checked)
+        if: github.event_name != 'pull_request'
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_CI_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: The tree and its mark
+        id: tree
+        run: |
+          tree=$(git rev-parse 'HEAD^{tree}')
+          echo "tree=$tree" >> "$GITHUB_OUTPUT"
+          checked=false
+          if [ "$GITHUB_EVENT_NAME" != pull_request ] && aws s3api head-object --bucket "$TEST_DATA_BUCKET" --key "ci/checked/$tree" >/dev/null 2>&1; then checked=true; fi
+          echo "checked=$checked" >> "$GITHUB_OUTPUT"
+          echo "tree $tree, checked before: $checked"
+
   tests:
     name: unit and integration tests
+    needs: known
+    if: needs.known.outputs.checked != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -48,6 +86,8 @@ jobs:
 
   shuffled:
     name: tests in random order
+    needs: known
+    if: needs.known.outputs.checked != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -65,6 +105,8 @@ jobs:
 
   e2e:
     name: end-to-end tests ${{ matrix.shard }}/3
+    needs: known
+    if: needs.known.outputs.checked != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -98,6 +140,8 @@ jobs:
   # its report goes as an ordinary artifact.
   e2e-webkit:
     name: end-to-end tests in WebKit
+    needs: known
+    if: needs.known.outputs.checked != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     container: mcr.microsoft.com/playwright:v1.65.1-noble
@@ -126,6 +170,8 @@ jobs:
 
   static:
     name: boundaries, frameworks, lint, site
+    needs: known
+    if: needs.known.outputs.checked != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -152,8 +198,10 @@ jobs:
   # against the model (radical check); it runs when a job before it failed too, so its report is whole.
   check:
     name: check
-    needs: [tests, shuffled, e2e, e2e-webkit, static]
-    if: ${{ !cancelled() }}
+    needs: [known, tests, shuffled, e2e, e2e-webkit, static]
+    # Left out only for a tree checked before; should the job that asks fail, it runs and fails with the
+    # reports missing, so a pull request never passes on a check that did not run.
+    if: ${{ !cancelled() && needs.known.outputs.checked != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -193,6 +241,11 @@ jobs:
       - name: Verdict
         working-directory: apps/app
         run: sh scripts/check.sh verdict
+      # The tree passed: its mark, so a push to master of the same tree runs no test again. Only when
+      # every job before the verdict passed too.
+      - name: Mark the tree as checked
+        if: ${{ success() && needs.tests.result == 'success' && needs.shuffled.result == 'success' && needs.e2e.result == 'success' && needs.e2e-webkit.result == 'success' && needs.static.result == 'success' }}
+        run: echo "${{ github.run_id }}-${{ github.run_attempt }} ${{ github.sha }}" | aws s3 cp - "s3://${TEST_DATA_BUCKET}/ci/checked/${{ needs.known.outputs.tree }}" --only-show-errors
       - name: The builds for the deploy
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
         run: |
@@ -207,9 +260,36 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+  # A tree checked before (on its pull request): no test again, the app and the site built with this
+  # commit, as the deploy takes them.
+  build:
+    name: build of a tree checked before
+    needs: known
+    if: needs.known.outputs.checked == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+        with:
+          fit-files: 'false'
+      - name: Build the app and the site
+        run: |
+          npm run -s build
+          tar -czf builds.tgz apps/app/.next-build apps/site/.next-build
+      - name: Keep the builds for the deploy
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@v7
+        with:
+          name: builds
+          path: builds.tgz
+          retention-days: 1
+          if-no-files-found: error
+
+  # After the whole check of this run, or after the build of a tree whose check passed before.
   deploy:
-    needs: [tests, shuffled, e2e, e2e-webkit, static, check]
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    needs: [known, tests, shuffled, e2e, e2e-webkit, static, check, build]
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && github.ref == 'refs/heads/master' && ((needs.known.outputs.checked == 'true' && needs.build.result == 'success') || (needs.known.outputs.checked != 'true' && needs.tests.result == 'success' && needs.shuffled.result == 'success' && needs.e2e.result == 'success' && needs.e2e-webkit.result == 'success' && needs.static.result == 'success' && needs.check.result == 'success')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     concurrency:

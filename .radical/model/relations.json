@@ -1508,7 +1508,7 @@
   },
   {
     "id": "28297808-afb3-4ac6-84af-b9a5d1f6b013",
-    "quote": "aplikacja bedzie wystawiona jako app.strideprism.com a strona na strideprism.com",
+    "quote": "aplikacja bedzie wystawiona jako app.strideprism.com a strona na strideprism.com\nchce aby ci/cd dzialal stabilnie ... jesli check przechodzi na branchu to pwinien przechodzic na merge do main",
     "relationType": "derives",
     "sourceId": "4f0f6f76-68be-40ad-aa24-033e76d0db05",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -8002,6 +8002,12 @@
     "relationType": "derives",
     "sourceId": "b1707f8d-4ee5-434c-a5c1-8545b9b1c76a",
     "targetId": "aec32856-5ea5-4f0e-8316-178aff6a9838"
+  },
+  {
+    "id": "ee8a0acd-1be2-4fe7-9481-c1ec19acdbc6",
+    "relationType": "verifies",
+    "sourceId": "ca0e2c80-7413-474f-ba55-6b57bcd216d8",
+    "targetId": "4f0f6f76-68be-40ad-aa24-033e76d0db05"
   },
   {
     "id": "ee94b03b-8363-4488-a5c4-65314d100f56",
