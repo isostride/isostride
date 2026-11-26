@@ -6,9 +6,9 @@ import { PATHS, joinPath, type DataFolder } from '@/lib/fs';
 export const LEGACY_ROOT = 'strideprism';
 
 /**
- * Moves the app's data from strideprism/ to .isostride/: every file copied over, then strideprism/
- * removed, so a move broken off is made again from the start on the next opening and nothing is
- * lost. True when there was something to move.
+ * Moves the app's data from strideprism/ to .isostride/: every file .isostride/ lacks copied over, then
+ * strideprism/ removed, so a move broken off goes on at the next opening and nothing is lost. True when
+ * there was something to move.
  */
 export async function moveLegacyData(folder: DataFolder): Promise<boolean> {
   const top = await folder.list('');
@@ -24,6 +24,9 @@ async function copyTree(folder: DataFolder, from: string, to: string): Promise<v
     const target = joinPath(to, e.name);
     if (e.kind === 'directory') await copyTree(folder, source, target);
     else {
+      // Only what .isostride/ lacks: a file already there is this version's, and newer (a device still on the
+      // older version writing strideprism/ again in a synced folder replaced the newer tags, gear and settings).
+      if ((await folder.readText(target)) !== null) continue;
       const text = await folder.readText(source);
       if (text !== null) await folder.writeText(target, text);
     }

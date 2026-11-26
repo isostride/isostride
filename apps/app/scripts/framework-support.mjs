@@ -24,10 +24,27 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const versions = fs.readFileSync('versions.txt', 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'))
     .map((l) => { const [product, cycle] = l.split(/\s+/); return { product, cycle }; });
   const data = {};
-  for (const { product } of versions) {
-    const res = await fetch(`https://endoflife.date/api/${product}.json`);
-    if (!res.ok) { console.error(`endoflife.date: ${product}: HTTP ${res.status}`); process.exit(2); }
-    data[product] = await res.json();
+  // Asked three times, ten seconds each. A service that does not answer is no fault of this tree: said, and
+  // measured as nothing near its end (the dates move by a day a day; the next check asks again). It failed
+  // the check, and with it every merge, for as long as the service was away.
+  const ask = async (product) => {
+    let last = '';
+    for (let k = 0; k < 3; k++) {
+      try {
+        const res = await fetch(`https://endoflife.date/api/${product}.json`, { signal: AbortSignal.timeout(10_000) });
+        if (res.ok) return await res.json();
+        last = `HTTP ${res.status}`;
+      } catch (e) { last = e instanceof Error ? e.message : String(e); }
+    }
+    throw new Error(`endoflife.date: ${product}: ${last}`);
+  };
+  try {
+    for (const { product } of versions) data[product] = await ask(product);
+  } catch (e) {
+    console.warn(`⚠ ${e.message}: the end-of-support dates were not checked this time`);
+    fs.mkdirSync('reports', { recursive: true });
+    fs.writeFileSync('reports/measures-eol.json', JSON.stringify({ frameworksNearEol: 0, minDaysToEol: 9999, unchecked: true }, null, 2));
+    process.exit(0);
   }
   const results = evaluate(versions, data);
   const close = results.filter((r) => r.error || r.days < LIMIT_DAYS);

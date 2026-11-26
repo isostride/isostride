@@ -1,4 +1,5 @@
 import { dayOf } from '@/lib/gear';
+import { median } from '@/lib/stats';
 import { effortOf } from './efforts';
 import type { MarkerWeek } from './insights';
 import type { LoadRow } from './models';
@@ -74,8 +75,10 @@ export const HR_VO2_MEDIAN_DAYS = 28;
 export function hrVo2Now(perRun: { startTime: string; vo2max: number }[], today?: string): { value: number | null; runs: number } {
   if (!perRun.length) return { value: null, runs: 0 };
   const last = today ? new Date(`${today}T23:59:59`).getTime() : Date.parse(perRun[perRun.length - 1].startTime);
-  const recent = perRun.filter((p) => { const at = Date.parse(p.startTime); return at > last - HR_VO2_MEDIAN_DAYS * 86_400_000 && at <= last; }).map((p) => p.vo2max).sort((a, b) => a - b);
-  return { value: recent.length ? recent[Math.floor(recent.length / 2)] : null, runs: recent.length };
+  const recent = perRun.filter((p) => { const at = Date.parse(p.startTime); return at > last - HR_VO2_MEDIAN_DAYS * 86_400_000 && at <= last; }).map((p) => p.vo2max);
+  // Of two runs the value between them, to a tenth as each run's.
+  const mid = median(recent);
+  return { value: mid === null ? null : Math.round(mid * 10) / 10, runs: recent.length };
 }
 
 /** The shortest best a VDOT is read from, s (model's choice: 5 minutes; Daniels' tables start at 1500 m). */

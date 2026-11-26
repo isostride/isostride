@@ -1,4 +1,4 @@
-import { PATHS, readJson, writeJson, type DataFolder, readRunFile } from '@/lib/fs';
+import { KeptRuns, PATHS, readJson, writeJson, type DataFolder, readRunFile } from '@/lib/fs';
 import { resample, type TrackPoint } from '@/lib/geo';
 import { type IndexedRun, type RunFile, type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { detectRouteSegments, type RouteSegment } from './segments';
@@ -97,6 +97,9 @@ function withContext(i: BlockInstance, row: IndexedRun | undefined): BlockInstan
   };
 }
 
+/** The run files a detection keeps in memory at once, in values of samples and windows (about 100 MB, as the worker that stays). */
+const KEPT_VALUES = 12_000_000;
+
 /**
  * Data flow steps 2 (route segments) and 4 (detection): finds the shared route segments, detects the
  * instances of every active definition in every run, and proposes new definitions. Runs after each
@@ -119,11 +122,15 @@ export async function runBlocks(folder: DataFolder): Promise<BlocksReport> {
   const keptCache = await readJson<BlocksCache>(folder, PATHS.blocksCache);
   const cache: BlocksCache = keptCache?.algorithmVersion === ALGORITHM_VERSION ? keptCache : { algorithmVersion: ALGORITHM_VERSION, facts: {}, paces: {}, accepted: {} };
 
-  // A run's file, read once while this detection lasts, and only when needed.
-  const files = new Map<string, RunFile | null>();
+  // A run's file, read only when needed and kept while there is room (KEPT_VALUES): every file read was kept
+  // until the end, and a first detection or a rebuild of a thousand runs held them all, over a gigabyte
+  // (the review of 26 Nov 2026).
+  const files = new KeptRuns(KEPT_VALUES);
+  const runsRead = new Set<string>();
   const fileOf = async (id: string): Promise<RunFile | null> => {
-    if (!files.has(id)) files.set(id, await readRunFile(folder, id));
-    return files.get(id)!;
+    const file = await files.read(folder, id);
+    if (file) runsRead.add(id);
+    return file;
   };
 
   // Each run's track: kept, or made from its file (the first time, or a run just added).
@@ -239,7 +246,7 @@ export async function runBlocks(folder: DataFolder): Promise<BlocksReport> {
     keys,
   } satisfies BlocksCache);
 
-  return { segments: segments.length, instances: instances.length, recommendations: recommendations.length, runsRead: [...files.values()].filter(Boolean).length };
+  return { segments: segments.length, instances: instances.length, recommendations: recommendations.length, runsRead: runsRead.size };
 }
 
 /**

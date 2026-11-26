@@ -117,39 +117,77 @@ const SCHEMA_1_METRICS = ['speed', 'heartRate', 'cadence', 'groundContactTime', 
  * recomputes. Null when there is none.
  */
 export async function readRunFile(folder: DataFolder, id: string): Promise<RunFile | null> {
-  if (!keepMax) return readRunFileNow(folder, id);
-  const hit = kept.get(id);
-  if (hit) {
-    // The most recent last: the oldest are let go first.
-    kept.delete(id);
-    kept.set(id, hit);
-    return hit;
+  return shared.max ? shared.read(folder, id) : readRunFileNow(folder, id);
+}
+
+/**
+ * The size of a run file in memory, in values: its samples and its windows, each series a value a point.
+ * A count of files said nothing of it: a 5 hour run holds 20 times the values of a 15 minute one.
+ */
+function valuesOf(run: RunFile): number {
+  const series = (o: object | undefined) => Object.keys(o ?? {}).length;
+  return (run.samples.t?.length ?? 0) * (4 + series(run.samples.values)) + (run.windows.start?.length ?? 0) * (2 + series(run.windows.values) + series(run.windows.flags));
+}
+
+/**
+ * Run files read last, kept in memory up to `max` values in all (the one read last whatever its size),
+ * the least recently used let go first. What is kept is read only, never changed by its readers.
+ */
+export class KeptRuns {
+  private readonly kept = new Map<string, RunFile>();
+  private values = 0;
+  constructor(public max: number) {}
+
+  async read(folder: DataFolder, id: string): Promise<RunFile | null> {
+    const hit = this.kept.get(id);
+    if (hit) {
+      // The most recent last: the oldest are let go first.
+      this.kept.delete(id);
+      this.kept.set(id, hit);
+      return hit;
+    }
+    const run = await readRunFileNow(folder, id);
+    if (run) {
+      // Two jobs that missed the same run at once each come here: the one kept before is counted out.
+      const already = this.kept.get(id);
+      if (already) { this.kept.delete(id); this.values -= valuesOf(already); }
+      this.kept.set(id, run);
+      this.values += valuesOf(run);
+      // The oldest let go until the rest fit; the one just read is kept whatever its size.
+      while (this.values > this.max && this.kept.size > 1) {
+        const [oldest, file] = this.kept.entries().next().value!;
+        this.kept.delete(oldest);
+        this.values -= valuesOf(file);
+      }
+    }
+    return run;
   }
-  const run = await readRunFileNow(folder, id);
-  if (run) {
-    kept.set(id, run);
-    if (kept.size > keepMax) kept.delete(kept.keys().next().value!);
+
+  clear(): void {
+    this.kept.clear();
+    this.values = 0;
   }
-  return run;
 }
 
 /**
  * The run files read last, kept in memory by the Processing Worker that stays (the review of 24 Nov
  * 2026: Compare's jobs one after another each read every run file again). Off unless keepRunFiles is
- * called; what is kept is read only, never changed by its readers.
+ * called.
  */
-const kept = new Map<string, RunFile>();
-let keepMax = 0;
+const shared = new KeptRuns(0);
 
-/** Keeps the last `max` run files read (0: none); a change of the data calls forgetRunFiles. */
+/**
+ * Keeps the run files read last, up to `max` values in all (0: none); a change of the data calls
+ * forgetRunFiles.
+ */
 export function keepRunFiles(max: number): void {
-  keepMax = max;
-  if (!max) kept.clear();
+  shared.max = max;
+  if (!max) shared.clear();
 }
 
 /** Lets go of the run files kept: the runs changed (a recompute, another folder). */
 export function forgetRunFiles(): void {
-  kept.clear();
+  shared.clear();
 }
 
 async function readRunFileNow(folder: DataFolder, id: string): Promise<RunFile | null> {

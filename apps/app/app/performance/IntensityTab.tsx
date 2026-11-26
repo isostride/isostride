@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { msg, number, t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
-import { LOW_REFERENCE, SEILER_SHARES, intensityShares, seilerByWeek, zonesByWeek, type LoadSummary } from '@/lib/load';
+import { LOW_REFERENCE, SEILER_SHARES, intensityShares, seilerByWeek, weeksUpTo, zonesByWeek, type LoadSummary } from '@/lib/load';
 import { zoneColor, zoneRanges } from '@/lib/settings';
 import { TimeChart } from './TimeChart';
 
@@ -18,14 +18,15 @@ const width = (v: number) => `${(v * 100).toFixed(2)}%`;
  * rate zones of Settings, and the shares of low, moderate and high intensity over the period shown, by
  * Seiler's three zones of the maximum heart rate.
  */
-export function IntensityTab({ runs, summaries, hrZones, maxHr }: { runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; hrZones: number[]; maxHr: number | null }) {
+export function IntensityTab({ runs, summaries, hrZones, maxHr, today }: { runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; hrZones: number[]; maxHr: number | null; today: string }) {
   const [period, setPeriod] = useState(PERIODS[0]);
   const all = useMemo(() => zonesByWeek(runs, summaries, hrZones), [runs, summaries, hrZones]);
   const seiler = useMemo(() => seilerByWeek(runs, summaries, maxHr), [runs, summaries, maxHr]);
   if (!hrZones.length) return <div className="card empty">{t('Set the heart rate zones in Settings to see the time in each.')}</div>;
   if (!all.length) return <div className="card empty">{t('No run with a heart rate yet.')}</div>;
-  const weeks = period[1] === null ? all : all.slice(-period[1]);
-  const shares = intensityShares(seiler.filter((w) => w.start >= weeks[0].start));
+  // The weeks of the calendar up to today, not the last of those with a run: after a break those reach back before it.
+  const weeks = period[1] === null ? all : weeksUpTo(all, today, period[1]);
+  const shares = intensityShares(period[1] === null ? seiler : weeksUpTo(seiler, today, period[1]));
   const [lt1, lt2] = SEILER_SHARES.map((f) => pct(f));
   const ranges = zoneRanges('heartRate', hrZones);
   const n = ranges.length;
@@ -37,7 +38,8 @@ export function IntensityTab({ runs, summaries, hrZones, maxHr }: { runs: RunsIn
           {PERIODS.map((p) => <button key={p[0]} type="button" role="radio" aria-checked={period[0] === p[0]} className={period[0] === p[0] ? 'on' : ''} onClick={() => setPeriod(p)}>{t(p[0])}</button>)}
         </div>
       </div>
-      <div className="card chart">
+      {!weeks.length && <div className="card empty">{t('No run with a heart rate in these weeks.')}</div>}
+      {weeks.length > 0 && <div className="card chart">
         <dl className="form-figures" aria-label={t('Intensity shares')}>
           <div><dt>{t('Low (under {lt1} of max HR)', { lt1 })}</dt><dd className="tnum">{pct(shares.low)}</dd></div>
           <div><dt>{t('Moderate ({lt1}–{lt2})', { lt1, lt2 })}</dt><dd className="tnum">{pct(shares.moderate)}</dd></div>
@@ -54,7 +56,7 @@ export function IntensityTab({ runs, summaries, hrZones, maxHr }: { runs: RunsIn
         <TimeChart label={t('Time in the heart rate zones')} times={weeks.map((w) => time(w.start))} height={240}
           series={Array.from({ length: n }, (_, k) => ({ key: `z${k + 1}`, label: zoneName(k), stack: 'zones', kind: 'bar' as const, color: zoneColor(k, n), values: weeks.map((w) => (w.seconds[k] ?? 0) / 3600) }))}
           format={(v) => `${number(v, 1)} h`} tick={(v) => `${number(v)} h`} />
-      </div>
+      </div>}
     </>
   );
 }

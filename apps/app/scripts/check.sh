@@ -24,6 +24,10 @@ if [ "$stage" = all ] || [ "$stage" = tests ]; then
   run node scripts/machine-speed.mjs
   # Unit tests alone, without coverage instrumentation: their times for the 100 ms rule.
   run node scripts/quiet.mjs unit --vitest reports/vitest-unit.json -- npx vitest run --project unit --reporter=dot --reporter=json --outputFile=reports/vitest-unit.json
+  # And once more, in another order: a test's time is the lower of its two (scripts/test-metrics.mjs). One
+  # timing took whichever test came first for slow (it bears the first imports and the warm-up), and on a
+  # shared machine two checks of one tree in three failed on that alone, every test green.
+  run node scripts/quiet.mjs unit-again --vitest reports/vitest-unit-2.json -- npx vitest run --project unit --reporter=dot --reporter=json --outputFile=reports/vitest-unit-2.json
   run node scripts/machine-speed.mjs again
   t0=$(date +%s)
   run node scripts/quiet.mjs tests --vitest reports/vitest.json -- npx vitest run --coverage --reporter=default --reporter=json --outputFile=reports/vitest.json

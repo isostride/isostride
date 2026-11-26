@@ -28,7 +28,9 @@ export function otherFrameworks(packageJsons, allowed = new Set()) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const files = execSync("git ls-files -- '*package.json'", { encoding: 'utf8' }).split('\n').filter(Boolean);
+  // From the top of the repository (':/'), whatever folder this runs in: from the app's own, only the app's
+  // package.json was looked at, and the site or the root could declare another framework unseen.
+  const files = execSync("git ls-files -- ':/*package.json'", { encoding: 'utf8' }).split('\n').filter(Boolean);
   const found = otherFrameworks(files.map((file) => ({ file, json: JSON.parse(fs.readFileSync(file, 'utf8')) })), allowedByAdrs('../../.radical/model'));
   for (const f of found) console.error(`✖ ${f}`);
   process.exit(found.length ? 1 : 0);

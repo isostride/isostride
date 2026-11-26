@@ -53,9 +53,10 @@ function useAutoImport(): { notice: Notice | null; folder: DataFolder; dismiss: 
         let rebuilt = false;
         if (opening && files.outdated) {
           if (jobRunning()) return;
-          const done = await runInWorker('recompute', handle);
+          const done = await runInWorker('recompute', handle, undefined, { ifOutdated: true });
           rebuilt = true;
-          if (alive) setNotice({ text: tn(done.imported, 'Rebuilt {n} run for this version of the app.', 'Rebuilt {n} runs for this version of the app.'), ids: [] });
+          // Another tab had rebuilt it meanwhile: nothing to say.
+          if (alive && done.rebuilt !== false) setNotice({ text: tn(done.imported, 'Rebuilt {n} run for this version of the app.', 'Rebuilt {n} runs for this version of the app.'), ids: [] });
         }
         // After a recompute the folder is looked at again: it read every file there was.
         const now = rebuilt ? await filesToImport(folder) : files;

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CellBar, EditButton, columnPath, useWidth } from '@/components';
+import { CellBar, EditButton, ReadError, columnPath, useWidth } from '@/components';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useOpenFolder, runInWorker, watchJob } from '@/lib/client';
@@ -9,7 +9,7 @@ import { locale, localeTag, msg, number, t, tn } from '@/lib/i18n';
 import { PATHS, readJson, isOutdated, markRunsSeen, readManifest, readNewRuns, type Manifest } from '@/lib/fs';
 import { type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { date, duration, km, pace, time } from '@/lib/format';
-import { readGear, type Gear, readRunTags, writeRunTags, type RunTag, type RunTagsFile } from '@/lib/gear';
+import { readGear, type Gear, readRunTags, saveRunTag, type RunTag, type RunTagsFile } from '@/lib/gear';
 import { TagEditor } from './run/TagEditor';
 import { NO_SEARCH, isSearching, isoWeek, matchesSearch, monthsOf, searchFromParams, searchToParams, weeksOf, type LogWeek, type RunSearch } from '@/lib/log';
 import type { IndexedRun } from '@/lib/kernel';
@@ -56,6 +56,8 @@ function RunsPage() {
   const [fresh, setFresh] = useState<Set<string>>(new Set());
   /** the folder read: until then nothing is drawn, so nothing comes in above what was drawn */
   const [loaded, setLoaded] = useState(false);
+  /** the folder could not be read: said, with a way to try again */
+  const [failed, setFailed] = useState(false);
   /** the calendar of weeks (the default) or the table of runs */
   const [view, setView] = useState<'calendar' | 'list'>('calendar');
   useEffect(() => { try { if (localStorage.getItem(VIEW_KEY) === 'list') setView('list'); } catch { /* the default */ } }, []);
@@ -87,15 +89,14 @@ function RunsPage() {
 
   const saveTag = async (runId: string, tag: RunTag) => {
     if (!tags) return;
-    await writeRunTags(folder, { ...tags, tags: { ...tags.tags, [runId]: tag } });
+    await saveRunTag(folder, runId, tag);
     await runInWorker('context', handle);
     setEditing(null);
     await load();
   };
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const reload = useCallback(() => { setFailed(false); load().catch(() => setFailed(true)); }, [load]);
+  useEffect(() => { reload(); }, [reload]);
 
   // A job started before this screen opened (or from another screen) keeps showing its progress,
   // and the list reloads when it ends.
@@ -166,6 +167,7 @@ function RunsPage() {
           <button type="button" className="link-button small" onClick={async () => { await markRunsSeen(folder, 'all'); setFresh(new Set()); }}>{t('Mark as seen')}</button>
         </div>
       )}
+      {failed && !loaded && <ReadError onRetry={reload} />}
       {!loaded ? null : runs.length > 0 && view === 'calendar' ? <Calendar weeks={weeks} match={match} searching={isSearching(search)} loadUnit={loadUnit} fresh={fresh} /> : (
       <div className="card">
         {runs.length === 0 ? (
@@ -181,7 +183,8 @@ function RunsPage() {
               {runs.filter(match).map((r) => (
                 <Fragment key={r.id}>
                   <tr className="row" onClick={() => router.push(`/run?id=${r.id}`)}>
-                    <td className="strong">{date(r.startTime)}{fresh.has(r.id) && <span className="new-chip">{t('New')}</span>}</td>
+                    {/* The date is the link for the keyboard: the row opened by a click alone, and Tab reached only its pencil. */}
+                    <td className="strong"><Link className="row-link" href={`/run?id=${r.id}`} aria-label={t('Open the run of {date}', { date: `${date(r.startTime)} ${time(r.startTime)}` })} onClick={(e) => e.stopPropagation()}>{date(r.startTime)}</Link>{fresh.has(r.id) && <span className="new-chip">{t('New')}</span>}</td>
                     <td className="muted wide-col">{time(r.startTime)}</td>
                     <td className="wide-col">{r.title ? <span className="title-cell">{r.title}</span> : <span className="muted">–</span>}</td>
                     <td className="num"><CellBar share={r.distance / longest} />{km(r.distance)}</td>
@@ -231,6 +234,8 @@ function WeeksAtAGlance({ weeks, runs, totalKm, since }: { weeks: LogWeek[]; run
   const W = width;
   const H = 96;
   const bw = W / 12;
+  // Fewer than 12 weeks of runs: the bars at the right, the last under its date (they stood at the left, the date alone at the far right).
+  const x0 = (12 - bars.length) * bw;
   const change = avg ? Math.round(((now.distance - avg) / avg) * 100) : null;
   return (
     <section className="card glance" aria-label={t('Weeks at a glance')}>
@@ -253,15 +258,15 @@ function WeeksAtAGlance({ weeks, runs, totalKm, since }: { weeks: LogWeek[]; run
             const h = (w.distance / max) * (H - 14);
             return (
               <g key={w.start} className="glance-bar" onMouseEnter={() => setHover(i)}>
-                <rect x={i * bw} y={0} width={bw} height={H} fill="transparent" />
-                {w.distance > 0 && <path d={columnPath(i * bw + Math.max(4, (bw - Math.min(24, bw * 0.64)) / 2), Math.min(24, bw * 0.64), H - h, H)} fill={w.current ? 'var(--accent)' : 'var(--series-1)'} opacity={hover === null || hover === i ? 1 : 0.45} />}
-                {(W > 640 || i % 3 === 2 || w.current) && <text x={i === bars.length - 1 ? W - 2 : i * bw + bw / 2} y={H + 13} fontSize="9.5" textAnchor={i === bars.length - 1 ? 'end' : 'middle'} fill="var(--muted)">{shortDate(w.start)}</text>}
+                <rect x={x0 + i * bw} y={0} width={bw} height={H} fill="transparent" />
+                {w.distance > 0 && <path d={columnPath(x0 + i * bw + Math.max(4, (bw - Math.min(24, bw * 0.64)) / 2), Math.min(24, bw * 0.64), H - h, H)} fill={w.current ? 'var(--accent)' : 'var(--series-1)'} opacity={hover === null || hover === i ? 1 : 0.45} />}
+                {(W > 640 || i % 3 === 2 || w.current) && <text x={i === bars.length - 1 ? W - 2 : x0 + i * bw + bw / 2} y={H + 13} fontSize="9.5" textAnchor={i === bars.length - 1 ? 'end' : 'middle'} fill="var(--muted)">{shortDate(w.start)}</text>}
               </g>
             );
           })}
           {hover !== null && (() => {
             const w = bars[hover];
-            const x = Math.min(W - 70, Math.max(70, hover * bw + bw / 2));
+            const x = Math.min(W - 70, Math.max(70, x0 + hover * bw + bw / 2));
             return <text x={x} y={11} fontSize="11" fontWeight="600" textAnchor="middle" fill="var(--text)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke">{shortDate(w.start)} · {kmOf(w.distance)} km · {tn(w.count, '{n} run', '{n} runs')}</text>;
           })()}
         </svg>

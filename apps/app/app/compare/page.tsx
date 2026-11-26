@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { EditButton, ItemKey, useDataVersion, useMetrics, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup, eager } from '@/components';
+import { EditButton, ItemKey, ReadError, useDataVersion, useMetrics, OverTimeChart, SLOT_COLORS, SLOT_SHAPES, type Marker, type OverTimeGroup, eager } from '@/components';
 import { RECOMMENDATIONS_PATH, RULE_TOLERANCES, asRule, definitionFromProfile, definitionFromRoute, decodeRule, definitionFromRule, encodeRule, fromRecommendation, readDefinitions, ruleName, writeDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile, type BlockMetric, type Recommendation, type Rule, ruleOf } from '@/lib/blocks';
 import { instancesInWorker, runInWorker, similarInWorker, useChartSettings, useOpenFolder } from '@/lib/client';
 import { MAX_ITEMS, addItem, lapEfforts, computeTrend, firstUsableMetric, formatItems, instancesCsv, parseItems, runMean, type AnalysisItem } from '@/lib/compare';
@@ -74,6 +74,7 @@ function AnalysisPage() {
   const view = known.view;
   const METRICS = useMemo(() => known.blockKeys.map(known.view), [known]);
   const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [outdated, setOutdated] = useState(false);
   const [defs, setDefs] = useState<BlockDefinition[]>([]);
   const [kept, setKept] = useState<BlockInstance[]>([]);
@@ -119,7 +120,8 @@ function AnalysisPage() {
   }, [folder]);
   // Read again when an import or a recompute ends (one started by itself included).
   const dataVersion = useDataVersion();
-  useEffect(() => { load(); }, [load, dataVersion]);
+  const reload = useCallback(() => { setFailed(false); load().catch(() => setFailed(true)); }, [load]);
+  useEffect(() => { reload(); }, [reload, dataVersion]);
 
   // The items live in the URL; with none given, none ("powinno byc puste .. ale chce miec mozliwosc
   // zapisania analiz": a saved analysis opens what it kept), or the segment a link names (def=…).
@@ -204,6 +206,13 @@ function AnalysisPage() {
   const similar = useMemo(() => partOf(params.get('similar')), [params]);
   const reference = useMemo(() => partOf(params.get('ref')), [params]);
   const [finding, setFinding] = useState<string | null>(null);
+  // What a search found none of is no longer said once something else is added or taken away.
+  const counted = useRef(items.length);
+  useEffect(() => {
+    if (counted.current === items.length) return;
+    counted.current = items.length;
+    if (!similar) setFinding(null);
+  }, [similar, items.length]);
   useEffect(() => {
     if (!similar) return;
     const controller = new AbortController();
@@ -341,7 +350,7 @@ function AnalysisPage() {
     await keep(t('Deleting {name}', { name: segmentName(d) }), (ds) => ds.filter((x) => x.id !== d.id));
   };
 
-  if (!loaded) return <div className="page wide-page"><div className="page-head"><h1>{t('Compare')}</h1></div></div>;
+  if (!loaded) return <div className="page wide-page"><div className="page-head"><h1>{t('Compare')}</h1></div>{failed && <ReadError onRetry={reload} />}</div>;
 
   const titleOf = (runId: string) => runs.find((r) => r.id === runId)?.title ?? null;
   const computing = items.some((i) => i.kind === 'rule' && !adhoc.has(i.id));

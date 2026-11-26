@@ -11,12 +11,22 @@ export interface LapKey {
 /** Laps shorter than this are strides or recoveries, not blocks worth comparing. */
 const MIN_LAP_SECONDS = 2 * 60;
 
-/** True when the run's laps are the watch's auto-laps: all but the last of the same round distance. */
+/** In a run of auto-laps, at most this share of the laps but the last are cut short by a press of the lap button (model's choice: one in five). */
+const PRESSED_SHARE = 0.2;
+
+/**
+ * True when the run's laps are the watch's auto-laps: all but the last of the same round distance, but
+ * for a few cut short by a press of the lap button (the watch then counts the next from there). A lap
+ * longer than the round distance is no auto-lap's (a warm-up before reps). One press made an easy 10 km
+ * a workout of 1 km reps (the review of 26 Nov 2026).
+ */
 export function isAutoLapRun(laps: Lap[]): boolean {
   if (laps.length < 3) return false;
   const body = laps.slice(0, -1);
-  const d = body[0].distance;
-  return d > 0 && Math.abs(d / 500 - Math.round(d / 500)) < 0.01 && body.every((l) => Math.abs(l.distance - d) < 5);
+  const d = Math.max(...body.map((l) => l.distance));
+  if (!(d > 0 && Math.abs(d / 500 - Math.round(d / 500)) < 0.01)) return false;
+  const pressed = body.filter((l) => Math.abs(l.distance - d) >= 5).length;
+  return body.length - pressed >= 2 && pressed <= PRESSED_SHARE * body.length;
 }
 
 /** Two laps are reps of one set when their times and their distances differ by this share at most (model's choice). */

@@ -33,6 +33,34 @@ function script(of: string, step: string): string {
  * marks its tree, and the push to master of that tree runs no test again.
  */
 describe('CI/CD pipeline', () => {
+  it('A run started again passes, an older one deploys nothing, the actions are the ones reviewed', () => {
+    // The reports by the run, whatever the attempt: "Re-run failed jobs" leaves the reports of the jobs that passed.
+    expect(yml).toMatch(/REPORTS: s3:\/\/\$\{\{ vars\.TEST_DATA_BUCKET \}\}\/ci\/\$\{\{ github\.run_id \}\}\n/);
+    // The deploy asks whether its commit is still the tip of master, and every step after it waits on the answer.
+    const deploy = job('deploy');
+    const tip = script(deploy, 'Is this still the tip of master?');
+    const env = path.join(dir, 'env');
+    const ask = (head: string) => {
+      fs.writeFileSync(env, '');
+      const bin = path.join(dir, 'tip-bin');
+      fs.mkdirSync(bin, { recursive: true });
+      fs.writeFileSync(path.join(bin, 'git'), `#!/bin/sh\nprintf '${head}\\trefs/heads/master\\n'\n`, { mode: 0o755 });
+      execFileSync('sh', ['-c', tip], { env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, GITHUB_ENV: env, GITHUB_SHA: 'aaa', GITHUB_SERVER_URL: 'https://example.test', GITHUB_REPOSITORY: 'o/r' } });
+      return fs.readFileSync(env, 'utf8').trim();
+    };
+    expect(ask('aaa')).toBe('DEPLOY=true');
+    expect(ask('bbb')).toBe('');
+    const steps = deploy.split(/\n {6}- /).slice(1);
+    const after = steps.slice(steps.findIndex((x) => x.startsWith('name: Is this still the tip of master?')) + 1);
+    expect(after.length).toBeGreaterThanOrEqual(5);
+    for (const step of after) expect(step, step.split('\n')[0]).toContain("if: env.DEPLOY == 'true'");
+    // Every action of another repository by its commit, the version beside it: a tag can be moved.
+    const action = fs.readFileSync(path.join(REPO, '.github/actions/setup/action.yml'), 'utf8');
+    const used = [...`${yml}\n${action}`.matchAll(/uses: (\S+)(.*)/g)].filter((m) => !m[1].startsWith('./'));
+    expect(used.length).toBeGreaterThan(10);
+    for (const m of used) expect(`${m[1]}${m[2]}`).toMatch(/^[\w-]+\/[\w-]+@[0-9a-f]{40} # v\d+\.\d+\.\d+$/);
+  });
+
   it("Nothing of the runner's leaves the pipeline", () => {
     // The tests' own output goes to the run's reports, not to the public log (scripts/quiet.mjs).
     const check = fs.readFileSync(path.join(REPO, 'apps/app/scripts/check.sh'), 'utf8');

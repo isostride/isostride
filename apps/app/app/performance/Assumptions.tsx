@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useFocusTrap } from '@/components';
 import { msg, t, tn } from '@/lib/i18n';
 import type { CheckStatus, ModelKey, ModelReport, Trust } from '@/lib/load';
 import { READING } from './reading';
@@ -103,6 +104,8 @@ export function WhyPanel({ m, by }: { m: ModelReport; by: Models }) {
  */
 export function WhyDialog({ m, by, onClose }: { m: ModelReport; by: Models; onClose: () => void }) {
   const close = useRef<HTMLButtonElement>(null);
+  const box = useRef<HTMLDivElement>(null);
+  useFocusTrap(box);
   const done = useRef(onClose);
   useEffect(() => { done.current = onClose; }, [onClose]);
   useEffect(() => {
@@ -115,7 +118,7 @@ export function WhyDialog({ m, by, onClose }: { m: ModelReport; by: Models; onCl
   // Over the whole page, not inside the map or the bar it opens from (their styles stay theirs).
   return createPortal(
     <div className="why-backdrop" onClick={onClose}>
-      <div className="why-dialog" role="dialog" aria-modal="true" aria-label={t('Why: {model}', { model: m.name })} onClick={(e) => e.stopPropagation()}>
+      <div ref={box} className="why-dialog" role="dialog" aria-modal="true" aria-label={t('Why: {model}', { model: m.name })} onClick={(e) => e.stopPropagation()}>
         <div className="why-dialog-head">
           <h2>{m.name}</h2>
           <TrustChip trust={m.trust} />

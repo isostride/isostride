@@ -1,4 +1,4 @@
-import { isPace, metricInfo, secondsPerKm, type IndexedRun, type RunFile } from '@/lib/kernel';
+import { isPace, metricInfo, runningGap, secondsPerKm, type IndexedRun, type RunFile, minSec } from '@/lib/kernel';
 import { SAVED_WORDS, SHOWN_WORDS, lengthName, routeName, type Words } from './words';
 import { patternName, repsName } from './logical';
 import { STAT_LABEL, efficiencyOf, type BlockMetric, type BlockParams, type Conditions, type Rule, type RuleShape, type RunFilter, type Stat, type Tolerances } from './types';
@@ -84,6 +84,7 @@ export function stretchSubject(run: RunFile, from: number, to: number, metric?: 
   let n = 0;
   let moving = 0;
   let prev: number | null = null;
+  const gap = runningGap(s.t);
   for (let k = 0; k < s.t.length; k++) {
     if (s.t[k] < from || s.t[k] >= to) continue;
     const d = s.distance[k];
@@ -92,9 +93,9 @@ export function stretchSubject(run: RunFile, from: number, to: number, metric?: 
     if (h !== null) { hr += h; n++; }
     const mv = series?.[k] ?? null;
     if (mv !== null && (s.values.speed?.[k] ?? 1) >= 0.5) { msum += mv; mn++; }
-    // Moving: a gap of up to 5 s at 0.8 m/s or more (the moving time of a profile).
+    // Moving: a gap the watch leaves while it records (runningGap) at 0.8 m/s or more (the moving time of a profile).
     const sp = (s.values.speed?.[k] ?? null);
-    if (prev !== null) { const dt = s.t[k] - prev; if (dt > 0 && dt <= 5 && (sp === null || sp >= 0.8)) moving += dt; }
+    if (prev !== null) { const dt = s.t[k] - prev; if (dt > 0 && dt <= gap && (sp === null || sp >= 0.8)) moving += dt; }
     prev = s.t[k];
   }
   const distance = first === null ? 0 : last - first;
@@ -121,7 +122,7 @@ export function hasAlways(c: Conditions): boolean {
   return c.alwaysHrMin !== null || c.alwaysHrMax !== null || c.alwaysPaceMin !== null || c.alwaysPaceMax !== null;
 }
 
-const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
+const mmss = (sec: number) => minSec(sec);
 const range = (w: Words, min: number | null, max: number | null, f: (v: number) => string, unit: string) =>
   min !== null && max !== null ? `${f(min)}–${f(max)}${unit}` : min !== null ? w.t('from {value}', { value: `${f(min)}${unit}` }) : max !== null ? w.t('to {value}', { value: `${f(max)}${unit}` }) : null;
 

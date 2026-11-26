@@ -5,8 +5,8 @@ import { isFitFile, readFitLinks, readSportRecords, recordsCounted } from './tex
 
 /**
  * The runs of the runner's COROS account fetched into the data folder (requirements "Runs fetched from
- * COROS" and "COROS fetch stopped kept"): the runs of the days since the last full fetch (30 days at
- * the first) listed with querySportRecords, which counts against no limit; for each run no fetch has
+ * COROS" and "COROS fetch stopped kept"): the runs of the 30 days before the last full fetch and since
+ * (of the last 30 days at the first) listed with querySportRecords, which counts against no limit; for each run no fetch has
  * brought, its FIT link asked of queryActivityFitFileDownloadUrls (a file of COROS's 50 a day), the
  * file downloaded and written beside the folder's FIT files. What was fetched is kept in
  * user/coros.json after each file, so a fetch stopped or interrupted loses nothing and asks nothing twice.
@@ -71,7 +71,11 @@ export async function fetchCorosRuns(folder: DataFolder, call: CallTool, opts: F
   const download = opts.download ?? downloadBytes;
   const today = dayOf(opts.today ?? new Date());
   const record = await readCorosRecord(folder);
-  const from = record.since ? daysBefore(record.since, 1) : daysBefore(today, FIRST_FETCH_DAYS);
+  // From FIRST_FETCH_DAYS before the last full fetch, not from its day: a run the watch gave COROS days
+  // after it was run (the phone left at home, no network) is dated before fetches that found nothing and
+  // moved the day past it, and was never listed again (the review of 26 Nov 2026). The list costs none of
+  // the day's files, and what the folder holds is not downloaded again.
+  const from = daysBefore(record.since && record.since < today ? record.since : today, FIRST_FETCH_DAYS);
   const report: FetchReport = { missing: 0, files: [], stopped: null };
 
   const list = await call('querySportRecords', { startDate: compact(from), endDate: compact(today), sportTypeCodes: RUN_SPORT_TYPES, limit: LIST_LIMIT });

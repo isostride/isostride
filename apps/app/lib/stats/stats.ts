@@ -86,22 +86,41 @@ export function t975(df: number): number {
   return df < 1 ? Number.NaN : df <= 30 ? table[Math.floor(df) - 1] : 1.96 + 2.4 / df;
 }
 
-/** Ordinary least squares of y on [1, a, b]: the three coefficients, or null when the two predictors cannot be told apart. */
-export function linearFit2(y: number[], a: number[], b: number[]): [number, number, number] | null {
+/**
+ * The effect of x on y beside a covariate z, all three fitted together (y = a + effect · x + covariate · z,
+ * least squares): the effect, its standard error and the degrees of freedom left (n − 3), the covariate's
+ * slope, and the standard deviation of the points about the fit. With x a group (0 or 1) it is the
+ * analysis of covariance, the groups' difference at one value of z; with x a time, a trend at one z.
+ * The standard error is the whole of it: Var(effect) = s² · Szz / (Sxx · Szz − Sxz²), which holds what
+ * estimating the covariate's slope from the same points costs. Correcting the values by that slope and
+ * then reading them as plain measurements left it out (the review of 26 Nov 2026: with no change at all,
+ * a trend over runs whose pace drifted read "change" in 3 series of 10, a comparison of groups two
+ * spreads apart in pace in 2 of 10, for the 1 in 20 the interval names). Null under 4 points, or when x
+ * and z cannot be told apart.
+ */
+export function fitWithCovariate(y: number[], x: number[], z: number[]): { effect: number; covariate: number; se: number; df: number; residual: number } | null {
   const n = y.length;
-  if (n < 3) return null;
-  // Centred, so the determinant says how far the predictors are from one line.
-  const [ma, mb, my] = [mean(a), mean(b), mean(y)];
-  let saa = 0, sbb = 0, sab = 0, say = 0, sby = 0;
+  if (n < 4) return null;
+  const [mx, mz, my] = [mean(x), mean(z), mean(y)];
+  let sxx = 0, szz = 0, sxz = 0, sxy = 0, szy = 0, syy = 0;
   for (let i = 0; i < n; i++) {
-    const [da, db, dy] = [a[i] - ma, b[i] - mb, y[i] - my];
-    saa += da * da; sbb += db * db; sab += da * db; say += da * dy; sby += db * dy;
+    const [dx, dz, dy] = [x[i] - mx, z[i] - mz, y[i] - my];
+    sxx += dx * dx; szz += dz * dz; sxz += dx * dz; sxy += dx * dy; szy += dz * dy; syy += dy * dy;
   }
-  const det = saa * sbb - sab * sab;
-  if (!(saa > 0 && sbb > 0) || det <= 1e-9 * saa * sbb) return null;
-  const ca = (say * sbb - sby * sab) / det;
-  const cb = (sby * saa - say * sab) / det;
-  return [my - ca * ma - cb * mb, ca, cb];
+  const det = sxx * szz - sxz * sxz;
+  if (!(sxx > 0 && szz > 0) || det <= 1e-9 * sxx * szz) return null;
+  const effect = (sxy * szz - szy * sxz) / det;
+  const covariate = (szy * sxx - sxy * sxz) / det;
+  const residual = Math.sqrt(Math.max(0, syy - effect * sxy - covariate * szy) / (n - 3));
+  return { effect, covariate, se: residual * Math.sqrt(szz / det), df: n - 3, residual };
+}
+
+/** The median: the middle value, or the mean of the two middle ones of an even count; null of none. */
+export function median(xs: number[]): number | null {
+  if (!xs.length) return null;
+  const sorted = [...xs].sort((a, b) => a - b);
+  const mid = sorted.length >> 1;
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
 /**
@@ -152,9 +171,10 @@ export function jackknife<T>(sample: T[], statistic: (s: T[]) => number | null):
 /**
  * The jackknife of several statistics of one fit at once (as jackknife): the fit is made once for the
  * whole sample and once for each point left out, and every statistic read from it. Each is null where it
- * has no value for the whole or for a sample left one short.
+ * has no value for the whole or for a sample left one short. `positive`: the statistics cannot be
+ * negative, and each that is above zero for every sample is ranged by its logarithm.
  */
-export function jackknifeMany<T>(sample: T[], statistics: (s: T[]) => (number | null)[]): ({ value: number; se: number; low: number; high: number } | null)[] {
+export function jackknifeMany<T>(sample: T[], statistics: (s: T[]) => (number | null)[], positive = false): ({ value: number; se: number; low: number; high: number } | null)[] {
   const n = sample.length;
   const whole = statistics(sample);
   if (n < 3) return whole.map(() => null);
@@ -163,9 +183,13 @@ export function jackknifeMany<T>(sample: T[], statistics: (s: T[]) => (number | 
     if (value === null || !Number.isFinite(value)) return null;
     const vs = left.map((l) => l[j] ?? null);
     if (vs.some((v) => v === null || !Number.isFinite(v))) return null;
-    const m = (vs as number[]).reduce((s, v) => s + v, 0) / n;
-    const se = Math.sqrt(((n - 1) / n) * (vs as number[]).reduce((s, v) => s + (v - m) ** 2, 0));
-    const half = t975(n - 1) * se;
-    return { value, se, low: value - half, high: value + half };
+    // A quantity that cannot be negative (a speed, a reserve, a time), by its logarithm: the range is then a
+    // share each way and stays above zero (a D′ of 150 m read "−39 to 339 m").
+    const log = positive && value > 0 && (vs as number[]).every((v) => v > 0);
+    const xs = log ? (vs as number[]).map(Math.log) : (vs as number[]);
+    const m = xs.reduce((s, v) => s + v, 0) / n;
+    const spread = Math.sqrt(((n - 1) / n) * xs.reduce((s, v) => s + (v - m) ** 2, 0));
+    const half = t975(n - 1) * spread;
+    return log ? { value, se: value * spread, low: value * Math.exp(-half), high: value * Math.exp(half) } : { value, se: spread, low: value - half, high: value + half };
   });
 }

@@ -1,4 +1,4 @@
-import type { RunFile } from '@/lib/kernel';
+import { runningGap, type RunFile } from '@/lib/kernel';
 
 /**
  * The profile of a stretch of a run, by distance (the runner's request of 22 Nov 2026: "czasami to
@@ -27,8 +27,7 @@ const WEIGHTS = { terrain: 0.4, shape: 0.4, level: 0.2 } as const;
 export const SIMILAR_PACE_WITHIN = 0.1;
 /** A stretch counts as of the same profile from this score. */
 export const PROFILE_MIN_SCORE = 0.6;
-/** A sample counts as moving below this gap, s, and above this speed, m/s. */
-const MOVING_GAP = 5;
+/** A sample counts as moving below the gap the watch leaves while it records (runningGap), and above this speed, m/s. */
 const MOVING_SPEED = 0.8;
 
 /** What a profile is compared by: kept in a profile block, so it needs no run to be read. */
@@ -65,16 +64,17 @@ export function trackOf(run: RunFile): Track {
   const out: Track = { d: [], t: [], moving: [], altitude: [], heartRate: [] };
   let moving = 0;
   let lastAlt: number | null = null;
+  const gap = runningGap(s.t);
   for (let i = 0; i < s.t.length; i++) {
     const d = s.distance[i];
     if (d === null) continue;
     const n = out.t.length;
     if (n) {
+      // The distance never goes back: such a sample is left out, its time with it (counted again from the next).
+      if (d < out.d[n - 1]) continue;
       const dt = s.t[i] - out.t[n - 1];
       const sp = (s.values.speed?.[i] ?? null);
-      if (dt > 0 && dt <= MOVING_GAP && (sp === null || sp >= MOVING_SPEED)) moving += dt;
-      // The distance never goes back.
-      if (d < out.d[n - 1]) continue;
+      if (dt > 0 && dt <= gap && (sp === null || sp >= MOVING_SPEED)) moving += dt;
     }
     const alt: number | null = s.values.altitude?.[i] ?? lastAlt;
     lastAlt = alt;

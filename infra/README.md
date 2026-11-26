@@ -33,8 +33,9 @@ One certificate (ACM, us-east-1) covers `<domain>` and `*.<domain>`. A CloudFron
 5. **Test data.** The check runs on the runner's FIT files, which stay out of the public repository: copy them to the private bucket (again whenever they change):
    ```sh
    aws s3 sync apps/app/test_data "s3://$(terraform -chdir=infra output -raw test_data_bucket)" --delete --profile isostride \
-     --exclude "*.DS_Store" --exclude "*/.isostride/*" --exclude "*/strideprism/*"
+     --exclude "*.DS_Store" --exclude "*/.isostride/*" --exclude "*/strideprism/*" --exclude "ci/*"
    ```
+   `ci/` is the pipeline's own (the reports of the runs in flight, the marks of the trees checked): without its `--exclude`, `--delete` removes it, a run in flight fails its verdict and the next merge is checked whole again.
 6. **GitHub.** In the repository → Settings → Secrets and variables → Actions → Variables, add the values of `terraform output`:
    `AWS_DEPLOY_ROLE_ARN`, `AWS_CI_ROLE_ARN`, `TEST_DATA_BUCKET`, `APP_BUCKET`, `APP_DISTRIBUTION_ID`, `SITE_BUCKET`, `SITE_DISTRIBUTION_ID` (and `AWS_REGION` if not `eu-central-1`).
 

@@ -48,6 +48,12 @@ describe('Performance model', () => {
     // A run's peak more than 5 bpm above every other run's is a sensor's spike: the next run's peak is taken.
     expect(autoMaxHr([steady(30, 120, { hrPeak: 214 }), steady(30, 120, { hrPeak: 182 }), steady(30, 120, { hrPeak: 179 })])).toBe(182);
     expect(autoMaxHr([steady(30, 120, { hrPeak: 186 })])).toBe(186);
+    // The one race of the season: 192 against 184 in training, with two minutes at 188 and more. Held, so the runner's.
+    const race = steady(40, 175, { hrFrom: 175, hr: [2000, ...Array(12).fill(0), 60, 30, 20, 10], hrPeak: 191 });
+    expect(autoMaxHr([race, steady(30, 120, { hrPeak: 184 }), steady(30, 120, { hrPeak: 183 })])).toBe(191);
+    // The same peak with ten seconds near it: the sensor's.
+    const spike = { ...race, hr: [2000, ...Array(12).fill(0), 0, 0, 0, 10] };
+    expect(autoMaxHr([spike, steady(30, 120, { hrPeak: 184 })])).toBe(184);
     const banister = runLoads(rows, sums, perf({ load: 'trimpBanister', restHr: 60 }), HR_ZONES);
     expect(banister.a.load).toBeCloseTo(30 * 0.5 * 0.64 * Math.exp(0.96), 1);
     expect(banister.a.estimated).toBe(false);

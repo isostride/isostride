@@ -1,6 +1,6 @@
 import type { BlockInstance } from '@/lib/blocks';
 import type { RunFile } from '@/lib/kernel';
-import { linearFit } from '@/lib/stats';
+import { lineWithInterval, t975 } from '@/lib/stats';
 import { runMean } from './analysis';
 
 /**
@@ -52,13 +52,40 @@ export function meanOf(values: (number | null)[]): number | null {
 
 /**
  * The change of a figure per week over the runs: the least-squares slope of the runs' means against
- * their days, times 7; null with fewer than 3 runs that have a mean.
+ * their days, times 7, and whether it is told from none (the 95 % interval of the slope leaves zero
+ * out); null with fewer than 3 runs that have a mean, or all of one day.
  */
-export function trendPerWeek(points: { at: string; value: number | null }[]): number | null {
+export function trendPerWeek(points: { at: string; value: number | null }[]): { perWeek: number; clear: boolean } | null {
   const xs = points.filter((p): p is { at: string; value: number } => p.value !== null);
-  if (xs.length < 3) return null;
   const day = (iso: string) => new Date(iso).getTime() / 86_400_000;
-  return linearFit(xs.map((p) => day(p.at)), xs.map((p) => p.value)).slope * 7;
+  const line = lineWithInterval(xs.map((p) => day(p.at)), xs.map((p) => p.value));
+  return line && { perWeek: line.slope * 7, clear: line.ci[0] > 0 || line.ci[1] < 0 };
+}
+
+/** A change under this part of the least range a figure's axis shows (a metric's minSpan) is no change to the eye: 5 s/km of pace, 2.5 bpm. */
+export const LEAST_CHANGE = 0.25;
+
+/**
+ * How far two points of a series can lie apart by chance: Student's t (95 %, n − 2 degrees) × √2 × the
+ * spread of the points about their line. The runs' means against their days, or a run's efforts in their
+ * order. Null under 4 points: of 3, one degree of freedom says nothing.
+ */
+export function differenceNoise(xs: number[], ys: number[]): number | null {
+  if (xs.length < 4) return null;
+  const line = lineWithInterval(xs, ys);
+  return line && t975(xs.length - 2) * Math.SQRT2 * line.residual;
+}
+
+/**
+ * Whether a difference of a figure is worth a colour, better or worse (the review of 26 Nov 2026: the
+ * table coloured every change, a second of pace as much as a minute): it is at least `least` (the least
+ * the eye takes for a change, in the figure's unit) and past every `noise` that could be measured (nulls
+ * left out). What two runs differ by is a fact of those two runs, not a claim that the runner changed:
+ * that is the trend's, coloured by its interval, and the A/B and Trend tabs'.
+ */
+export function clearDifference(difference: number, least: number, noises: (number | null)[]): boolean {
+  const size = Math.abs(difference);
+  return size > 0 && size >= least && !noises.some((n) => n !== null && size <= n);
 }
 
 /**

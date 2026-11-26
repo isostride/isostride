@@ -62,13 +62,16 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
     });
   };
 
-  const saveTags = (next: RunTagsFile) => {
-    setTags(next);
+  // The change is made to the file as it is when its turn comes, not to the copy read when this screen
+  // opened: written back whole, a note or a tag set on a run in another window meanwhile was gone.
+  const saveTags = (change: (file: RunTagsFile) => RunTagsFile) => {
+    if (tags) setTags(change(tags));
     return inTurn(async () => {
-      await writeRunTags(folder, next);
+      await writeRunTags(folder, change(await readRunTags(folder)));
       await runInWorker('context', handle);
     });
   };
+  const addTag = (kind: TagKind, v: string) => saveTags((f) => ({ ...f, dictionary: { ...f.dictionary, [kind]: [...new Set([...f.dictionary[kind], v])] } }));
 
   const counts = useMemo(() => {
     const c = new Map<string, number>();
@@ -108,10 +111,9 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
   };
   const renameTagTo = async (kind: TagKind, from: string, to: string) => {
     if (!tags) return;
-    const next = renameTag(tags, kind, from, to);
-    if (next === tags) return;
+    if (renameTag(tags, kind, from, to) === tags) return;
     await renameInRules(kind, from, to.trim());
-    await saveTags(next);
+    await saveTags((f) => renameTag(f, kind, from, to));
     setSaved(t('Renamed {from} to {to}', { from, to: to.trim() }));
   };
   const remove = async (g: Gear) => {
@@ -126,7 +128,7 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
     const goes = kind === 'workoutTypes' ? t('“{name}” goes from the workout types to choose from.', { name: v }) : t('“{name}” goes from the technique cues to choose from.', { name: v });
     const kept = n ? tn(n, 'The {n} run tagged with it keep it until you change them.', 'The {n} runs tagged with it keep it until you change them.') : t('No run is tagged with it.');
     if (!(await confirm({ title: t('Delete this tag?'), message: `${goes} ${kept}`, confirm: t('Delete'), danger: true }))) return;
-    await saveTags({ ...tags, dictionary: { ...tags.dictionary, [kind]: tags.dictionary[kind].filter((x) => x !== v) } });
+    await saveTags((f) => ({ ...f, dictionary: { ...f.dictionary, [kind]: f.dictionary[kind].filter((x) => x !== v) } }));
     setSaved(t('Deleted {name}', { name: v }));
   };
 
@@ -191,9 +193,9 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
         <div className="card gear-card" role="region" aria-label={t('Tags')}>
           <h3 className="gear-title">{t('Tags')}</h3>
           <TagList label={t('Workout type')} newLabel={t('New workout type')} values={tags.dictionary.workoutTypes} counts={counts}
-            onAdd={(v) => saveTags({ ...tags, dictionary: { ...tags.dictionary, workoutTypes: [...tags.dictionary.workoutTypes, v] } })} onRename={(from, to) => renameTagTo('workoutTypes', from, to)} onDelete={(v) => void removeTag('workoutTypes', v)} />
+            onAdd={(v) => addTag('workoutTypes', v)} onRename={(from, to) => renameTagTo('workoutTypes', from, to)} onDelete={(v) => void removeTag('workoutTypes', v)} />
           <TagList label={t('Technique cue')} newLabel={t('New technique cue')} values={tags.dictionary.techniqueCues} counts={counts}
-            onAdd={(v) => saveTags({ ...tags, dictionary: { ...tags.dictionary, techniqueCues: [...tags.dictionary.techniqueCues, v] } })} onRename={(from, to) => renameTagTo('techniqueCues', from, to)} onDelete={(v) => void removeTag('techniqueCues', v)} />
+            onAdd={(v) => addTag('techniqueCues', v)} onRename={(from, to) => renameTagTo('techniqueCues', from, to)} onDelete={(v) => void removeTag('techniqueCues', v)} />
         </div>
       )}
     </>

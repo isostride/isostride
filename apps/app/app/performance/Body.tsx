@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { useDataVersion } from '@/components';
+import { ReadError, useDataVersion } from '@/components';
 import { runInWorker, useLocale, useOpenFolder } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
 import { t } from '@/lib/i18n';
@@ -42,6 +42,9 @@ export function Body({ tab: asked, view, embedded = false }: { tab: Tab; view: s
   const { folder, handle } = useOpenFolder();
   const [data, setData] = useState<Data | null>(null);
   const [preparing, setPreparing] = useState(false);
+  /** the folder could not be read; `again` counts the tries */
+  const [failed, setFailed] = useState(false);
+  const [again, setAgain] = useState(0);
   /** raised when an import or a recompute ends, wherever it was started */
   const dataVersion = useDataVersion();
   // Its charts and texts follow a change of the language (on the Dashboard too): the report's texts are built in it.
@@ -61,9 +64,9 @@ export function Body({ tab: asked, view, embedded = false }: { tab: Tab; view: s
       }
       const [settings, fresh] = await Promise.all([readSettings(folder), readJson<RunsIndex>(folder, PATHS.runsIndex)]);
       if (live) { setData({ runs: fresh?.runs ?? [], summaries: file?.runs ?? {}, settings }); setPreparing(false); }
-    })().catch(() => live && setPreparing(false));
+    })().catch(() => { if (live) { setPreparing(false); setFailed(true); } });
     return () => { live = false; };
-  }, [folder, handle, dataVersion]);
+  }, [folder, handle, dataVersion, again]);
 
   const today = localDay(new Date());
   const days = useMemo(() => (data ? formSeries(data.runs.filter((r) => typeof r.load === 'number').map((r) => ({ startTime: r.startTime, load: r.load as number })), data.settings.performance, today) : []), [data, today]);
@@ -73,6 +76,7 @@ export function Body({ tab: asked, view, embedded = false }: { tab: Tab; view: s
   }) : null), [data, days, today, locale]);
   const by = useMemo(() => (report ? Object.fromEntries(report.models.map((m) => [m.key, m])) as Record<ModelKey, ModelReport> : null), [report]);
 
+  if (failed && !data) return <ReadError onRetry={() => { setFailed(false); setAgain((n) => n + 1); }} />;
   if (!data || !report || !by) {
     return <div className="card chart muted small" style={{ padding: 18 }} role="status">{preparing ? t('Preparing the summaries of your runs, once…') : t('Reading the runs…')}</div>;
   }
@@ -91,7 +95,7 @@ export function Body({ tab: asked, view, embedded = false }: { tab: Tab; view: s
     switch (`${tab}/${shown.key}`) {
       case 'load/form': return <FormTab runs={runs} />;
       case 'load/weekly': return <LoadTab days={days} unit={unit} />;
-      case 'load/intensity': return <IntensityTab runs={runs} summaries={summaries} hrZones={hrZones} maxHr={report.now.maxHr} />;
+      case 'load/intensity': return <IntensityTab runs={runs} summaries={summaries} hrZones={hrZones} maxHr={report.now.maxHr} today={today} />;
       case 'capacity/efforts': return <EffortsTab now={report.now} runs={runs} model={settings.performance.curve} />;
       case 'capacity/critical': return <CriticalTab runs={runs} summaries={summaries} today={today} />;
       case 'capacity/predictions': return <PredictionsTab runs={runs} summaries={summaries} today={today} model={settings.performance.curve} />;

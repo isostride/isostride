@@ -76,6 +76,12 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
   const input = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
 
+  // Closed, the focus goes back to where it was when the palette opened (it fell to the page's start).
+  useEffect(() => {
+    if (!open) return;
+    const before = document.activeElement as HTMLElement | null;
+    return () => { before?.focus?.(); };
+  }, [open]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {

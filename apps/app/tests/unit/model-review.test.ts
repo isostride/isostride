@@ -37,11 +37,12 @@ describe('Performance models reviewed', () => {
 
   it('Péronnet–Thibault: the decline from long bests only', () => {
     const truth = { mas: 5, s: 250, a: 0.3 };
-    const bests = (longest: number, bump = 1) => CURVE_DURATIONS.filter((d) => d <= longest).map((duration) => ({ duration, value: 1000 / (ptRate(truth, duration) * (duration === longest ? bump : 1)) }));
-    const truthTimes = wholePredictions({ model: 'pt', metric: 'speed', params: truth, range: [30, 7200], n: 13, error: 0, far: [], decline: true } satisfies WholeCurve);
-    // The longest best 10 minutes, 2 % faster than the truth: the decline is Riegel's, the marathon within 3 %
-    // (fitted from that one best, it came out 2:22 against 2:54, 18 % off).
-    const short = fitWholeCurve(bests(600, 1.02), 'speed')!;
+    const bests = (longest: number, bump = 1, of = truth) => CURVE_DURATIONS.filter((d) => d <= longest).map((duration) => ({ duration, value: 1000 / (ptRate(of, duration) * (duration === longest ? bump : 1)) }));
+    // A runner whose decline is Riegel's, the longest best 10 minutes, 2 % faster than the truth: the decline is
+    // Riegel's, the marathon within 3 % (fitted from that one best, it came out 2:22 against 2:54, 18 % off).
+    const riegel = { ...truth, a: PT_RIEGEL_DECLINE * truth.mas };
+    const truthTimes = wholePredictions({ model: 'pt', metric: 'speed', params: riegel, range: [30, 7200], n: 13, error: 0, far: [], decline: true } satisfies WholeCurve);
+    const short = fitWholeCurve(bests(600, 1.02, riegel), 'speed')!;
     expect(short.decline).toBe(false);
     expect(short.params.a).toBeCloseTo(PT_RIEGEL_DECLINE * short.params.mas, 9);
     const marathon = wholePredictions(short).find((p) => p.distance === 42195)!.seconds;
@@ -67,15 +68,18 @@ describe('Performance models reviewed', () => {
   });
 
   it('The monotony of a week not over yet over the last 7 days', () => {
-    // A history of three days: Monday 100, Tuesday 50, Wednesday (today) 100: the monotony of the days there
-    // are, not of a week with four days of rest to come.
+    // A history of three days: Monday 100, Tuesday 50, Wednesday (today) 100: no monotony yet, which is of 7
+    // days (over the days there are, a Monday of 100 and a Tuesday of 90 alone read 19).
     const p = { fitnessDays: 42, fatigueDays: 7 };
     const days = formSeries([{ startTime: '2026-11-23T08:00:00', load: 100 }, { startTime: '2026-11-24T08:00:00', load: 50 }, { startTime: '2026-11-25T08:00:00', load: 100 }], p);
     const [week] = weeklyLoad(days);
-    const mean = 250 / 3;
-    const sd = Math.sqrt(((100 - mean) ** 2 * 2 + (50 - mean) ** 2) / 3);
     expect(week.load).toBe(250);
-    expect(week.monotony).toBeCloseTo(Math.round((mean / sd) * 100) / 100, 6);
+    expect([week.monotony, week.strain]).toEqual([null, null]);
+    // A first week begun on a Thursday (four days of 50, then 60): no monotony from three days of rest before
+    // the first run; the week after has its own seven days.
+    const thursday = weeklyLoad(formSeries([19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29].map((d, k) => ({ startTime: `2026-11-${d}T08:00:00`, load: k < 3 ? 50 : 60 + k })), p));
+    expect(thursday[0].monotony).toBeNull();
+    expect(thursday[1].monotony).not.toBeNull();
     // With the week before run (Monday to Sunday 60, 0, 80, 0, 100, 0, 120), Monday 100 and Tuesday 90 are read
     // with the five days before them, Foster's week ending today: over the two days alone the monotony was 19.
     const before = [60, 0, 80, 0, 100, 0, 120].map((load, k) => ({ startTime: `2026-11-${16 + k}T08:00:00`, load }));

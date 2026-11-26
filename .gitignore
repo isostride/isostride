@@ -16,3 +16,6 @@ playwright-report/
 .vitest/
 .certs/
 .next-phone/
+# Written by `next dev` for coding agents, and by the Finder: neither belongs in the repository
+AGENTS.md
+.DS_Store

@@ -5,7 +5,7 @@ import { LOAD_MODELS, type PerformanceSettings } from '@/lib/settings';
 import { BANISTER_MIN_POINTS, BANISTER_MIN_SPAN, TAU1_RANGE, TAU2_RANGE, fitBanister, type BanisterFit } from './banister';
 import { ALLOUT_MEAN, bestEfforts, effortEvidence, type BestEffort, type EffortEvidence } from './efforts';
 import type { FormDay } from './form';
-import { DECOUPLING_MIN, EF_TREND_DAYS, MARKER_DAYS, SEILER_SHARES, efficiencyNow, efficiencyRuns, intensityShares, markersOverTime, seilerByWeek, weeklyLoad, type LoadWeek, type MarkerWeek } from './insights';
+import { DECOUPLING_MIN, EF_TREND_DAYS, MARKER_DAYS, SEILER_SHARES, efficiencyNow, efficiencyRuns, intensityShares, markersOverTime, seilerByWeek, weeklyLoad, weeksUpTo, type LoadWeek, type MarkerWeek } from './insights';
 import { MIN_RESERVE_SECONDS, autoMaxHr, criticalSeries, type CriticalAt, type LoadRow } from './models';
 import { WARMUP, type LoadSummary } from './summary';
 import { RATE_PRECISION, RESERVE_PRECISION, markerRanges, relativeSe, type MarkerRanges, type Range } from './uncertainty';
@@ -222,7 +222,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
   const perRun = maxHr ? hrVo2Runs(have, summaries, p.restHr, maxHr) : [];
   const vo2 = hrVo2Now(perRun, today);
   const uth = maxHr ? uthVo2max(p.restHr, maxHr) : null;
-  const shares = intensityShares(seilerByWeek(have, summaries, maxHr).slice(-12));
+  const shares = intensityShares(weeksUpTo(seilerByWeek(have, summaries, maxHr), today, 12));
   const loadWeeks = weeklyLoad(days);
   const loads = days.map((d) => ({ date: d.date, load: d.load }));
   const fitted = {
@@ -248,7 +248,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
   const maxCheck = (why: string) => (p.maxHr !== null
     ? check('maxhr', maxLabel, 'met', t('{bpm} bpm, set in Model', { bpm: p.maxHr }))
     : maxHr
-      ? check('maxhr', maxLabel, 'doubt', t('{bpm} bpm is the highest in your runs: too low if you have never gone all out, and then {why}', { bpm: maxHr, why }))
+      ? check('maxhr', maxLabel, 'doubt', t('{bpm} bpm is the highest held in your runs (a single peak far above every other run and not held for a minute is taken for the sensor’s): too low if you have never gone all out, and then {why}', { bpm: maxHr, why }))
       : check('maxhr', maxLabel, 'unmet', t('no heart rate in the runs')));
   const zonesCheck = (why: string, lacking: CheckStatus = 'unmet') => (zonesOwn && hrZones.length
     ? check('zones', t('The heart rate zones are yours'), 'met', tn(hrZones.length + 1, '{n} zones, saved in Settings', '{n} zones, saved in Settings'))
@@ -303,7 +303,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
     const a = relativeSe(rate);
     const b = relativeSe(reserve);
     if (a === null || b === null || !rate || !reserve) return check('precise', label, 'unknown', t('it takes 3 runs or more in the last {days} days, and a fit that stands without any one of them, to leave each out in turn and see how far it moves', { days: MARKER_DAYS }));
-    return check('precise', label, a <= RATE_PRECISION && b <= RESERVE_PRECISION ? 'met' : 'doubt', t('{rate} and {reserve} (95 %) with each run left out in turn: standard errors of {rateShare} and {reserveShare}, {rateGood} and {reserveGood} or less expected; more means one run or two decide the value', {
+    return check('precise', label, a <= RATE_PRECISION && b <= RESERVE_PRECISION ? 'met' : 'doubt', t('{rate} and {reserve} with each run left out in turn: standard errors of {rateShare} and {reserveShare}, {rateGood} and {reserveGood} or less expected; more means one run or two decide the value', {
       rate: show(rate), reserve: showReserve(reserve), rateShare: `${number(a * 100, 1)} %`, reserveShare: `${number(b * 100, 1)} %`, rateGood: pct(RATE_PRECISION), reserveGood: pct(RESERVE_PRECISION),
     }));
   };
@@ -336,7 +336,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
           inputs: [t('effort pace of every run'), t('threshold pace')], parents: p.thresholdPace === null ? ['cs'] : [],
           checks: [coverage, p.thresholdPace !== null
             ? check('threshold', t('The threshold pace is yours'), 'met', t('{pace} /km, set in Model', { pace: fmtPace(1000 / p.thresholdPace) }))
-            : autoThreshold(t('The threshold pace is yours'), lastCritical('speed'), (v) => `${fmtPace(1000 / v)} /km`), ...(p.thresholdPace === null ? [scale(t('Critical speed'))] : [])],
+            : autoThreshold(t('The threshold pace is yours'), lastCritical('speed'), (v) => `${fmtPace(v)} /km`), ...(p.thresholdPace === null ? [scale(t('Critical speed'))] : [])],
         }
         : {
           inputs: [t('power of every run'), t('critical power')], parents: p.thresholdPower === null ? ['cp'] : [],

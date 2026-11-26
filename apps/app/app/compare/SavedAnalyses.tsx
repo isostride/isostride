@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { EditButton, EditDialog, useConfirm } from '@/components';
+import { EditButton, EditDialog, useConfirm, useFocusTrap } from '@/components';
 import { SAVED_PARAM, analysisChanged, parseItems, defaultAnalysisName, removeAnalysis, upsertAnalysis, type SavedAnalysesFile, type SavedAnalysis } from '@/lib/compare';
 import { date } from '@/lib/format';
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
@@ -17,6 +17,17 @@ const linkOf = (a: SavedAnalysis) => `${a.query}${a.query ? '&' : ''}${SAVED_PAR
  * screen shows (its segments and runs, metrics, tab) in the data folder; an open analysis is saved
  * again in place or as a new one, or deleted.
  */
+/**
+ * Changes the saved analyses as the file holds them now, and writes them: the bar above the tabs and the
+ * list on the empty screen each kept the list they read when they opened, and each wrote its own back
+ * whole, so an analysis deleted or renamed in the list came back with the next save (the review of 26 Nov 2026).
+ */
+async function changeAnalyses(folder: DataFolder, change: (now: SavedAnalysis[]) => SavedAnalysis[]): Promise<SavedAnalysis[]> {
+  const next = change((await readJson<SavedAnalysesFile>(folder, PATHS.analyses))?.analyses ?? []);
+  await writeJson(folder, PATHS.analyses, { analyses: next } satisfies SavedAnalysesFile);
+  return next;
+}
+
 export function SavedAnalyses({ folder, query, labels, hasItems, onOpen }: {
   folder: DataFolder;
   /** the screen's link now */
@@ -37,19 +48,15 @@ export function SavedAnalyses({ folder, query, labels, hasItems, onOpen }: {
   const current = list.find((a) => a.id === openId) ?? null;
   const changed = analysisChanged(current, query);
 
-  const write = async (next: SavedAnalysis[]) => {
-    await writeJson(folder, PATHS.analyses, { analyses: next } satisfies SavedAnalysesFile);
-    setList(next);
-  };
   const save = async (name: string, asNew: boolean) => {
-    const { list: next, saved } = upsertAnalysis(list, { id: asNew ? undefined : current?.id, name, query });
-    await write(next);
+    let saved: SavedAnalysis | null = null;
+    setList(await changeAnalyses(folder, (now) => { const r = upsertAnalysis(now, { id: asNew ? undefined : current?.id, name, query }); saved = r.saved; return r.list; }));
     setDialog(false);
-    onOpen(linkOf(saved));
+    if (saved) onOpen(linkOf(saved));
   };
   const remove = async () => {
     if (!current || !(await confirm({ title: t('Delete this analysis?'), message: t('“{name}” goes from your saved analyses. The segments and runs in it stay.', { name: current.name }), confirm: t('Delete'), danger: true }))) return;
-    await write(removeAnalysis(list, current.id));
+    setList(await changeAnalyses(folder, (now) => removeAnalysis(now, current.id)));
     setDialog(false);
     const q = new URLSearchParams(query);
     q.delete(SAVED_PARAM);
@@ -76,6 +83,8 @@ function SaveDialog({ current, changed, offered, onSave, onDelete, onClose }: {
 }) {
   const [name, setName] = useState(offered);
   const input = useRef<HTMLInputElement>(null);
+  const box = useRef<HTMLFormElement>(null);
+  useFocusTrap(box);
   const close = useRef(onClose);
   useEffect(() => { close.current = onClose; }, [onClose]);
   useEffect(() => {
@@ -86,7 +95,7 @@ function SaveDialog({ current, changed, offered, onSave, onDelete, onClose }: {
   }, []);
   return (
     <div className="confirm-backdrop" onClick={onClose}>
-      <form className="confirm-dialog" role="dialog" aria-modal="true" aria-label={t('Save analysis')} onClick={(e) => e.stopPropagation()}
+      <form ref={box} className="confirm-dialog" role="dialog" aria-modal="true" aria-label={t('Save analysis')} onClick={(e) => e.stopPropagation()}
         onSubmit={(e) => { e.preventDefault(); onSave(name, !current); }}>
         <h2>{current ? t('Save this analysis') : t('Save analysis')}</h2>
         <p>{t('What is shown (its segments and runs, metrics and tab) is kept in your data folder under this name, to open again from the list.')}</p>
@@ -118,22 +127,18 @@ export function SavedList({ folder, onOpen, empty }: { folder: DataFolder; onOpe
   useEffect(() => {
     readJson<SavedAnalysesFile>(folder, PATHS.analyses).then((f) => setList(f?.analyses ?? [])).catch(() => setList([]));
   }, [folder]);
-  const write = async (next: SavedAnalysis[]) => {
-    await writeJson(folder, PATHS.analyses, { analyses: next } satisfies SavedAnalysesFile);
-    setList(next);
-  };
   /** Renamed: the name typed, what it holds as it was. */
   const rename = async () => {
     const name = editing?.name.trim();
     if (!list || !editing || !name) return;
     setEditing(null);
-    await write(list.map((x) => (x.id === editing.id ? { ...x, name } : x)));
+    setList(await changeAnalyses(folder, (now) => now.map((x) => (x.id === editing.id ? { ...x, name } : x))));
   };
   /** Deleted from its editor ("a co z usuwaniem analiz?"), once confirmed in the app. */
   const remove = async (a: SavedAnalysis) => {
     if (!list || !(await confirm({ title: t('Delete this analysis?'), message: t('“{name}” goes from your saved analyses. The segments and runs in it stay.', { name: a.name }), confirm: t('Delete'), danger: true }))) return;
     setEditing(null);
-    await write(removeAnalysis(list, a.id));
+    setList(await changeAnalyses(folder, (now) => removeAnalysis(now, a.id)));
   };
   if (!list?.length) return <>{list && empty}{confirmDialog}</>;
   return (

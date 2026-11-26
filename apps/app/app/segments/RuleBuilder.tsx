@@ -7,6 +7,7 @@ import { instancesInWorker, useLocale } from '@/lib/client';
 import { date, pace as fmtPace } from '@/lib/format';
 import { msg, number, t, tn } from '@/lib/i18n';
 import type { FoundLayout } from './options';
+import { minSec } from '@/lib/kernel';
 
 export interface BuilderOptions {
   workoutTypes: string[];
@@ -18,7 +19,7 @@ export interface BuilderOptions {
   layouts: FoundLayout[];
 }
 
-const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
+const mmss = (sec: number) => minSec(sec);
 const parsePace = (text: string): number | null => {
   if (!text.trim()) return null;
   const [m, s] = text.split(':').map(Number);

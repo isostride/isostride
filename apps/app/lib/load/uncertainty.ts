@@ -69,9 +69,9 @@ export function markerRanges(rows: LoadRow[], summaries: Record<string, LoadSumm
     const e = estimateCurve(s, metric);
     return [e?.critical?.rate ?? null, e?.critical?.reserve ?? null, ...distances.map((d) => e?.predictions.find((p) => p.distance === d)?.seconds ?? null)];
   };
-  const [cs, dPrime, ...riegel] = jackknifeMany(runs, fromFit('speed', model === 'riegel'));
-  const [cp, wPrime] = jackknifeMany(runs, fromFit('power', false));
-  const whole = model === 'whole' ? jackknifeMany(runs, (sample) => { const w = wholePredictions(fitWholeCurve(bestsOf(sample, 'speed'), 'speed')); return distances.map((d) => w.find((p) => p.distance === d)?.seconds ?? null); }) : riegel;
+  const [cs, dPrime, ...riegel] = jackknifeMany(runs, fromFit('speed', model === 'riegel'), true);
+  const [cp, wPrime] = jackknifeMany(runs, fromFit('power', false), true);
+  const whole = model === 'whole' ? jackknifeMany(runs, (sample) => { const w = wholePredictions(fitWholeCurve(bestsOf(sample, 'speed'), 'speed')); return distances.map((d) => w.find((p) => p.distance === d)?.seconds ?? null); }, true) : riegel;
   return { cs, dPrime, cp, wPrime, predictions: distances.map((distance, k) => ({ distance, range: whole[k] ?? null })) };
 }
 

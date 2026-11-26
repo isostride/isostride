@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CURVE_DURATIONS, OMPD_TCPMAX, PT_TMAP, curveOfWhole, fitWholeCurve, ompdRate, ptRate, wholeValue } from '@/lib/curve';
+import { CURVE_DURATIONS, OMPD_TCPMAX, PT_TMAP, RIEGEL_DECLINE, curveOfWhole, fitWholeCurve, ompdRate, ptRate, wholeValue } from '@/lib/curve';
 import { nelderMead } from '@/lib/stats';
 
 describe('Whole curve', () => {
@@ -43,7 +43,7 @@ describe('Whole curve', () => {
     // Without a best past TCPmax the decline is Riegel's: 6 % of the critical power per unit of ln t.
     const short = fitWholeCurve(pts.filter((p) => p.duration <= OMPD_TCPMAX), 'power')!;
     expect(short.decline).toBe(false);
-    expect(short.params.a).toBeCloseTo(0.06 * short.params.cp, 9);
+    expect(short.params.a).toBeCloseTo(RIEGEL_DECLINE * short.params.cp, 9);
     expect(short.params.cp).toBeCloseTo(300, 0);
   });
 

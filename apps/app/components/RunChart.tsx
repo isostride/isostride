@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react';
 import { clock, ensureSpan, niceTicks, robustExtent, tickDecimals, useWidth } from './chartKit';
 import { t } from '@/lib/i18n';
 import { zoneColor, zoneOf, zoneRanges } from '@/lib/settings';
@@ -114,7 +114,8 @@ function valueAt(x: number[], y: (number | null)[], at: number): number | null {
  * line scaled to its own range within the time shown, the focused line's ticks at the left and its
  * wash under it, laps as alternating bands, kept blocks as washed bands, the selection as an
  * accent wash, a crosshair with every line's value; zoom by pinch or Ctrl/⌘ + scroll around the
- * pointer, move by a sideways scroll, the keyboard or the overview strip of the whole run under it.
+ * pointer, move by a sideways scroll, the keyboard or the overview strip of the whole run under it;
+ * by finger, a drag sideways selects, two fingers zoom and move, a tap shows the values.
  */
 export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, laps = [], blocks = [], cursor, onCursor, selection, onSelect, head, height = 260, layout = 'bands', axis = 'time', dmap, onMoveSelection, marks = {}, hot = null }: RunChartProps) {
   const [box, width] = useWidth();
@@ -193,7 +194,7 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
     });
     return { line: l, lo, hi, py, b0, bandH, range, ticks, stripes, path: p.line, area: p.area };
     // px follows the width and the range, which are among the dependencies.
-  }), [lines, i0, i1, x, d0, d1, plotW, height, layout, axis, dmap]);
+  }), [lines, i0, i1, x, d0, d1, plotW, height, top, layout, axis, dmap]);
 
   const scale = drawn.find((d) => d.line.key === focused?.key);
   const banded = layout === 'bands' && drawn.length > 1;
@@ -240,10 +241,14 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
       if (!sideways && e.deltaY) {
         // The wheel (or a pinch, a wheel with Ctrl held) zooms around the point under the pointer:
         // one notch of a mouse wheel (100) twice or half the range.
-        e.preventDefault();
         // Over the overview the point is on the whole run; over the plot, on the range shown.
         const around = overview ? back(frac * to(T)) : back(a + frac * z);
-        set(zoomDomain(d, wheelFactor(e.deltaY, e.deltaMode), around, T));
+        const next = zoomDomain(d, wheelFactor(e.deltaY, e.deltaMode), around, T);
+        // Nothing left to zoom (the whole run shown, the wheel turned out): the page under the chart scrolls
+        // on, where the chart held the wheel and neither moved (a pinned run on the Dashboard).
+        if (next[0] === d[0] && next[1] === d[1]) return;
+        e.preventDefault();
+        set(next);
       } else if (sideways) {
         if (d[1] - d[0] >= T) return;
         e.preventDefault();
@@ -265,7 +270,73 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
     setDrag(null);
     if (Math.abs(t - drag) >= Math.min(20, span / 10)) onSelect({ from: Math.min(t, drag), to: Math.max(t, drag) });
   };
+  /**
+   * By finger (a phone, a tablet; the runner's "to zrob: Zaznaczanie i zoom fragmentu biegu dotykiem na
+   * telefonie"): a drag sideways selects a part, as the mouse does; two fingers zoom around the point between
+   * them and move the range with it; a tap shows the values there, two taps on a lap select it. A drag up or
+   * down stays the page's scroll (touch-action: pan-y), and ends what was begun here.
+   */
+  const fingers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ dist: number; mid: number; domain: Domain; around: number } | null>(null);
+  /** a finger still down after two were: no selection from it */
+  const pinched = useRef(false);
+  const tapped = useRef<{ at: number; x: number } | null>(null);
+  const timeAt = (clientX: number) => {
+    const r = svg.current!.getBoundingClientRect();
+    return Math.min(d1, Math.max(d0, inv(f0 + ((clientX - r.left - PLOT_L) / (r.width - PLOT_L - laneR)) * fspan)));
+  };
+  const fingerDown = (e: PointerEvent<SVGSVGElement>) => {
+    if (e.pointerType === 'mouse') return;
+    // No mouse events made up after the touch: they would start a selection of their own.
+    e.preventDefault();
+    fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (fingers.current.size === 1) {
+      pinched.current = false;
+      const t = timeAt(e.clientX);
+      setDrag(t);
+      onCursor(t);
+      return;
+    }
+    if (fingers.current.size === 2) {
+      const [p, q] = [...fingers.current.values()];
+      setDrag(null);
+      onCursor(null);
+      pinched.current = true;
+      pinch.current = { dist: Math.max(1, Math.hypot(p.x - q.x, p.y - q.y)), mid: (p.x + q.x) / 2, domain, around: timeAt((p.x + q.x) / 2) };
+    }
+  };
+  const fingerMove = (e: PointerEvent<SVGSVGElement>) => {
+    if (e.pointerType === 'mouse' || !fingers.current.has(e.pointerId)) return;
+    fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const start = pinch.current;
+    if (fingers.current.size >= 2 && start) {
+      const [p, q] = [...fingers.current.values()];
+      // The fingers apart: a shorter range around the point they began at; that point follows their middle.
+      const zoomed = zoomDomain(start.domain, start.dist / Math.max(1, Math.hypot(p.x - q.x, p.y - q.y)), start.around, total);
+      const [a, z] = [fwd(zoomed[0]), fwd(zoomed[1]) - fwd(zoomed[0])];
+      const by = -(((p.x + q.x) / 2 - start.mid) / Math.max(1, plotW)) * z;
+      onDomain(panDomain(zoomed, inv(a + by) - zoomed[0], total));
+    } else if (drag !== null && !pinched.current) onCursor(timeAt(e.clientX));
+  };
+  const fingerUp = (e: PointerEvent<SVGSVGElement>) => {
+    if (e.pointerType === 'mouse' || !fingers.current.delete(e.pointerId)) return;
+    if (fingers.current.size < 2) pinch.current = null;
+    const began = drag;
+    if (fingers.current.size === 0) setDrag(null);
+    // Taken over by the page (a scroll), or the end of two fingers: nothing selected.
+    if (e.type !== 'pointerup' || pinched.current || began === null) { if (e.type !== 'pointerup') onCursor(null); return; }
+    const t = timeAt(e.clientX);
+    if (Math.abs(t - began) >= Math.min(20, span / 10)) { tapped.current = null; onSelect({ from: Math.min(t, began), to: Math.max(t, began) }); return; }
+    // A tap: the values there stay shown; a second one close by, within 350 ms, selects the lap under it.
+    const now = e.timeStamp;
+    const twice = tapped.current && now - tapped.current.at < 350 && Math.abs(e.clientX - tapped.current.x) < 30;
+    tapped.current = twice ? null : { at: now, x: e.clientX };
+    onCursor(t);
+    if (twice) { const lap = laps.find((l) => t >= l.from && t < l.to); if (lap) onSelect({ from: lap.from, to: lap.to }); }
+  };
   const key = (e: KeyboardEvent<HTMLDivElement>) => {
+    // The browser's own (Ctrl or ⌘ with + − 0 for its zoom, with an arrow for Back) stay the browser's.
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     const centre = cursor ?? (d0 + d1) / 2;
     const step: Record<string, () => Domain> = {
       '+': () => zoomDomain(domain, 0.5, centre, total), '=': () => zoomDomain(domain, 0.5, centre, total),
@@ -304,7 +375,9 @@ export function RunChart({ x, total, lines, focus, onFocus, domain, onDomain, la
         )}
         <svg ref={svg} width={width} height={H} role="img" aria-label={t('Run metrics · {metrics}', { metrics: lines.map((l) => l.title).join(', ') || t('none shown') })}
           onMouseMove={(e) => onCursor(at(e))} onMouseLeave={() => { onCursor(null); setDrag(null); }}
-          onMouseDown={(e) => setDrag(at(e))} onMouseUp={up} onDoubleClick={(e) => { const t = at(e); const lap = laps.find((l) => t >= l.from && t < l.to); if (lap) onSelect({ from: lap.from, to: lap.to }); }} style={{ cursor: 'crosshair', userSelect: 'none', display: 'block' }}>
+          onMouseDown={(e) => setDrag(at(e))} onMouseUp={up} onDoubleClick={(e) => { const t = at(e); const lap = laps.find((l) => t >= l.from && t < l.to); if (lap) onSelect({ from: lap.from, to: lap.to }); }}
+          onPointerDown={fingerDown} onPointerMove={fingerMove} onPointerUp={fingerUp} onPointerCancel={fingerUp}
+          style={{ cursor: 'crosshair', userSelect: 'none', display: 'block', touchAction: 'pan-y' }}>
           <defs>
             <clipPath id={clip}><rect x={PLOT_L} y={0} width={Math.max(0, plotW)} height={top + height} /></clipPath>
             {scale && (
@@ -454,7 +527,10 @@ function Overview({ x, total, line, laps, domain, onDomain, selection, onSelect,
   // ("zoom powinien automatycznie zwiekszac i zmniejszac okno na dole podgladu"); the selection is marked on its own.
   const current = zoomed ? { from: domain[0], to: domain[1] } : null;
 
-  const down = (e: MouseEvent<SVGSVGElement>) => {
+  // By mouse or by finger (pointer events): a finger's drag up or down stays the page's scroll, and ends it.
+  const down = (e: PointerEvent<SVGSVGElement>) => {
+    if (e.pointerType !== 'mouse') e.preventDefault();
+    const id = e.pointerId;
     const r = ref.current!.getBoundingClientRect();
     const tAt = (cx: number) => Math.min(total, Math.max(0, inv(((cx - r.left - PLOT_L) / (r.width - PLOT_L - laneR)) * end)));
     const start = tAt(e.clientX);
@@ -469,29 +545,33 @@ function Overview({ x, total, line, laps, domain, onDomain, selection, onSelect,
       const real = d[0] - a;
       if (sel && onMoveSelection) { const len = sel.to - sel.from; const f = Math.min(Math.max(0, sel.from + real), total - len); onMoveSelection({ from: f, to: f + len }); }
     };
-    const move = (m: globalThis.MouseEvent) => {
+    const move = (m: globalThis.PointerEvent) => {
+      if (m.pointerId !== id) return;
       const t = tAt(m.clientX);
       if (Math.abs(t - start) > total / 200) moved = true;
       if (inside) { if (moved) shift(t - start); }
       else setBrush({ from: Math.min(start, t), to: Math.max(start, t) });
     };
-    const up = (m: globalThis.MouseEvent) => {
-      removeEventListener('mousemove', move);
-      removeEventListener('mouseup', up);
+    const up = (m: globalThis.PointerEvent) => {
+      if (m.pointerId !== id) return;
+      removeEventListener('pointermove', move);
+      removeEventListener('pointerup', up);
+      removeEventListener('pointercancel', up);
       setBrush(null);
-      if (inside) return;
+      if (inside || m.type !== 'pointerup') return;
       const t = tAt(m.clientX);
       // Dragged elsewhere: a new selection, zoomed to; a click: the window centred there.
       if (moved && Math.abs(t - start) >= 20) onSelect({ from: Math.min(start, t), to: Math.max(start, t) });
       else if (current) shift(start - (a + b) / 2);
     };
-    addEventListener('mousemove', move);
-    addEventListener('mouseup', up);
+    addEventListener('pointermove', move);
+    addEventListener('pointerup', up);
+    addEventListener('pointercancel', up);
   };
 
   const win = brush ?? current;
   return (
-    <svg ref={ref} className="overview" width={width} height={h} role="img" aria-label={t('Overview of the whole run: the window is the range shown; drag it to move, drag elsewhere to select')} onMouseDown={down} style={{ display: 'block', userSelect: 'none', cursor: current ? 'grab' : 'crosshair' }}>
+    <svg ref={ref} className="overview" width={width} height={h} role="img" aria-label={t('Overview of the whole run: the window is the range shown; drag it to move, drag elsewhere to select')} onPointerDown={down} style={{ display: 'block', userSelect: 'none', cursor: current ? 'grab' : 'crosshair', touchAction: 'pan-y' }}>
       <rect x={PLOT_L} y={0} width={Math.max(0, plotW)} height={h} rx="6" fill="var(--surface-2)" />
       {laps.map((l, i) => i % 2 === 1 && <rect key={i} x={px(l.from)} width={Math.max(1, px(l.to) - px(l.from))} y={0} height={h} fill="var(--surface-3)" opacity="0.6" />)}
       <path d={path} fill="none" stroke="var(--muted)" strokeWidth="1.25" />

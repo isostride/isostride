@@ -1,5 +1,6 @@
 import { CS_RANGE, estimateCurve, type CurveMetric } from '@/lib/curve';
 import { LOAD_MODELS, zoneOf, type PerformanceSettings } from '@/lib/settings';
+import { median as medianOf } from '@/lib/stats';
 import type { LoadSummary } from './summary';
 
 /**
@@ -26,17 +27,25 @@ export interface RunLoad {
   threshold: number | null;
 }
 
-/** A run's peak more than this above every other run's is a sensor's spike, not the runner's maximum, bpm (model's choice). */
+/** A run's peak more than this above every other run's may be a sensor's spike, not the runner's maximum, bpm (model's choice). */
 export const MAX_HR_SPIKE = 5;
+/** A heart rate held this long within MAX_HR_SPIKE of a run's peak is the runner's, s (model's choice: a minute; a spike lasts seconds). */
+export const MAX_HR_HELD = 60;
 
 /**
- * The highest heart rate held for 10 s in the runs, bpm: the highest run's peak, unless it lies more than
- * MAX_HR_SPIKE above every other run's (a strap's or a wrist sensor's spike), then the next run's.
+ * The highest heart rate held for 10 s in the runs, bpm: the highest run's peak, unless it is a sensor's
+ * spike (a strap's, a wrist sensor's), then the next run's. A spike lies more than MAX_HR_SPIKE above
+ * every other run's peak and its run spent under MAX_HR_HELD within MAX_HR_SPIKE of it. By its height
+ * alone the one race of the season was set aside too: the one run in which a maximum is reached, and
+ * every share of the maximum then came out some 4 % high (the review of 26 Nov 2026).
  */
 export function autoMaxHr(summaries: LoadSummary[]): number | null {
-  const peaks = summaries.map((s) => s.hrPeak).filter((v): v is number => v !== null).sort((a, b) => b - a);
-  if (!peaks.length) return null;
-  return peaks.length > 1 && peaks[0] - peaks[1] > MAX_HR_SPIKE ? peaks[1] : peaks[0];
+  const runs = summaries.filter((s) => s.hrPeak !== null).sort((a, b) => b.hrPeak! - a.hrPeak!);
+  if (!runs.length) return null;
+  const [top, next] = runs;
+  if (!next || top.hrPeak! - next.hrPeak! <= MAX_HR_SPIKE) return top.hrPeak;
+  const near = top.hr.reduce((s, seconds, k) => (top.hrFrom + k >= top.hrPeak! - MAX_HR_SPIKE ? s + seconds : s), 0);
+  return near >= MAX_HR_HELD ? top.hrPeak : next.hrPeak;
 }
 
 /** Banister's TRIMP: minutes × HRr × 0.64·e^(1.92·HRr) (women 0.86·e^(1.67·HRr)), HRr the heart rate reserve used. */
@@ -151,8 +160,8 @@ export function runLoads(rows: LoadRow[], summaries: Record<string, LoadSummary>
     }
   }
   // A run without what its model needs: its duration at the runner's median load per minute (minutes when no run has it).
-  const perMinute = [...raw].filter(([, v]) => v.load !== null && v.load > 0).map(([id, v]) => v.load! / (summaries[id].duration / 60)).sort((a, b) => a - b);
-  const median = perMinute.length ? perMinute[Math.floor(perMinute.length / 2)] : 1;
+  const perMinute = [...raw].filter(([, v]) => v.load !== null && v.load > 0).map(([id, v]) => v.load! / (summaries[id].duration / 60));
+  const median = medianOf(perMinute) ?? 1;
   const out: Record<string, RunLoad> = {};
   for (const r of have) {
     const v = raw.get(r.id)!;

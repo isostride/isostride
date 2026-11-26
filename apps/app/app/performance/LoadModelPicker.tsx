@@ -4,8 +4,9 @@ import { t, tn } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import type { LoadSummary } from '@/lib/load';
 import { CURVE_MODELS, LOAD_MODELS, type CurveModel, type LoadModel, type PerformanceSettings } from '@/lib/settings';
+import { minSec } from '@/lib/kernel';
 
-const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+const mmss = (s: number) => minSec(s);
 
 /**
  * How the load of a run is counted, chosen in Settings › Models (the runner's "tak" to each choice

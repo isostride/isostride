@@ -876,7 +876,9 @@
       "tests/unit/keptRuns.test.ts › Run files kept by the reading worker › Read once, the oldest let go, forgotten when the data change",
       "tests/unit/browserFolder.test.ts › Folder keeps what it learned › A file read again, a missing file and the folders found once ask the system nothing",
       "tests/unit/browserFolder.test.ts › Folder keeps what it learned › What one folder of the app writes or removes the others forget",
-      "tests/unit/browserFolder.test.ts › Folder keeps what it learned › A handle kept that went stale is let go and the call made again"
+      "tests/unit/browserFolder.test.ts › Folder keeps what it learned › A handle kept that went stale is let go and the call made again",
+      "tests/unit/keptRuns.test.ts › Run files kept by the reading worker › Kept by their size, not their number",
+      "tests/unit/keptRuns.test.ts › Run files kept by the reading worker › Two jobs reading the same run at once count it once"
     ] },
     { "element": "cc160c7c-2632-4d74-902c-56af70f51643", "name": "Device diagnosed", "tests": [
       "tests/integration/diagnose.test.ts › Diagnostics of this device › Each read of the folder timed, as lines to copy",
@@ -1039,6 +1041,68 @@
     ] },
     { "element": "0d840438-e0be-42d5-ae0b-a97ea6ac43de", "name": "Pipeline keeps the runner's data", "tests": [
       "tests/integration/ci-pipeline.test.ts › CI/CD pipeline › Nothing of the runner's leaves the pipeline"
+    ] },
+    { "element": "957fcd60-9f3c-4840-a0ea-f743b18dd13b", "name": "Efforts coloured past the noise", "tests": [
+      "tests/unit/reps.test.ts › Workouts compared rep by rep › A change coloured only when it is told from the noise"
+    ] },
+    { "element": "f070a8e6-70e3-4ca2-953f-62a1754abe1b", "name": "Corrected interval holds its cost", "tests": [
+      "tests/unit/compare-review.test.ts › Comparisons reviewed › The interval of a corrected comparison holds what the correction costs"
+    ] },
+    { "element": "3a5881df-58a3-4503-889a-7db18a19a8da", "name": "Twelve weeks of the calendar", "tests": [
+      "tests/unit/insights.test.ts › Performance markers › The weeks up to today, not the last weeks that have a run"
+    ] },
+    { "element": "eb5460f8-8dc3-4c49-bec1-5760e5bd2213", "name": "Range of a marker above zero", "tests": [
+      "tests/unit/insights.test.ts › Performance markers › The range of a value that cannot be negative stays above zero",
+      "tests/unit/compare-review.test.ts › Comparisons reviewed › The median of an even count lies between its two middle values"
+    ] },
+    { "element": "f3d5f0fc-1e2b-47b4-8189-3013fca76fc0", "name": "Pass at a turnaround and on a loop", "tests": [
+      "tests/unit/detection-review.test.ts › Detection reviewed › A pass up to a turnaround, and each lap of a short loop"
+    ] },
+    { "element": "11af5b34-3c44-4eec-b29d-627760ddbb7e", "name": "Smart recording by its gaps' share", "tests": [
+      "tests/unit/detection-review.test.ts › Detection reviewed › A run recorded smart by the share of its gaps"
+    ] },
+    { "element": "b2ec81b8-7ca7-44d0-98cf-461da2c2a1b3", "name": "Conditions asked of every stretch", "tests": [
+      "tests/unit/detection-review.test.ts › Detection reviewed › The conditions of a rule asked of every kind of stretch"
+    ] },
+    { "element": "90f9c131-7c8c-4cf0-b58b-15a4585f04c5", "name": "Fastest by speed, its own distance", "tests": [
+      "tests/unit/detection-review.test.ts › Detection reviewed › The fastest stretch of a time by its speed",
+      "tests/unit/detection-review.test.ts › Detection reviewed › An effort starting on a sample without a distance"
+    ] },
+    { "element": "28e1c480-ead8-4ac0-9447-83a93ce2fccc", "name": "Long path in parts", "tests": [
+      "tests/unit/detection-review.test.ts › Detection reviewed › A path of 4 km run every time gives route segments"
+    ] },
+    { "element": "bc8febcd-fb2b-4106-83d8-fdb4a6b79d1c", "name": "Auto-laps with a pressed lap", "tests": [
+      "tests/unit/detection-review.test.ts › Detection reviewed › An auto-lap run with a press of the lap button"
+    ] },
+    { "element": "c9c07b89-a0ed-489c-8f7d-db66e6317a60", "name": "Import resumed where it was cut", "tests": [
+      "tests/integration/data-review.test.ts › Data path reviewed › An import cut off keeps the files it had handled",
+      "tests/integration/data-review.test.ts › Data path reviewed › An import cut off between the index and the manifest",
+      "tests/integration/data-review.test.ts › Data path reviewed › Records far outside the session are not of the run"
+    ] },
+    { "element": "27c12241-657f-474e-84b8-fdebce5c7eb7", "name": "Developer field scaled", "tests": [
+      "tests/integration/data-review.test.ts › Data path reviewed › A developer field’s scale and offset applied"
+    ] },
+    { "element": "b826479a-dc99-4bb2-b1d5-bf4fb6ea36f4", "name": "Write cut off before the copy", "tests": [
+      "tests/unit/copy.test.ts › Copy in the browser › A write cut off between the folder and the copy is read from the folder"
+    ] },
+    { "element": "0931a169-208c-49d3-8331-23f0eb457450", "name": "Zone boundary with a decimal comma", "tests": [
+      "tests/unit/screens-review.test.ts › Screens reviewed › A comma as the decimal sign of a zone boundary"
+    ] },
+    { "element": "c56f1efa-576e-4e86-96e9-2c4635299ebd", "name": "Tags saved into the file as it is", "tests": [
+      "tests/unit/screens-review.test.ts › Screens reviewed › A run’s tags saved into the file as it is now"
+    ] },
+    { "element": "98af6853-1598-412c-8a85-002e02727e55", "name": "Times and zeros as written", "tests": [
+      "tests/unit/screens-review.test.ts › Screens reviewed › A time rounded before it is split",
+      "tests/unit/screens-review.test.ts › Screens reviewed › A number that writes as zero has no minus"
+    ] },
+    { "element": "2025174a-484c-4c66-b467-f4fba2cac8a1", "name": "Run again, older run, pinned actions", "tests": [
+      "tests/integration/ci-pipeline.test.ts › CI/CD pipeline › A run started again passes, an older one deploys nothing, the actions are the ones reviewed"
+    ] },
+    { "element": "2d63ee20-cde9-4b09-b2ba-4aba65369254", "name": "Each job its own state", "tests": [
+      "tests/unit/jobState.test.ts › The job shown to the screens › Each job its own: one ending hides no other"
+    ] },
+    { "element": "92b3542d-791d-417d-af3b-e744488f2edc", "name": "Part of a run selected by finger", "tests": [
+      "e2e/touch.spec.ts › Run chart by finger › A part of a run selected and zoomed by finger"
     ] }
   ]
 }

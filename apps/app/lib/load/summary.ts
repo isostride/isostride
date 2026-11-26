@@ -1,6 +1,6 @@
 import { decouplingOf } from '@/lib/blocks';
 import { CURVE_DURATIONS, bestsWithin } from '@/lib/curve';
-import { metricSeries, type RunFile, type Series } from '@/lib/kernel';
+import { metricSeries, runningGap, type RunFile, type Series } from '@/lib/kernel';
 
 /**
  * What the load models need of a run, whatever the settings (ADR "Load and form models"): kept in
@@ -68,12 +68,11 @@ export interface BestOfLength {
 export const HR_LAG = 90;
 
 
-/** A sample counts until the next one, but no longer than this, s: a pause counts as nothing. */
-const HOLD = 5;
 /** The rolling mean of the normalisation, s (Coggan's normalised power). */
 const ROLL = 30;
 
-const holdOf = (t: number[], i: number) => (i + 1 < t.length ? Math.min(t[i + 1] - t[i], HOLD) : 1);
+/** A sample counts until the next one, but no longer than the gap the watch leaves while it records (runningGap): a pause counts as nothing. */
+const holdOf = (t: number[], i: number) => (i + 1 < t.length ? Math.min(t[i + 1] - t[i], runningGap(t)) : 1);
 
 /** The 4th-power mean of the 30 s rolling mean of a series, each sample weighted by the time it holds; null without values. */
 export function normalised(t: number[], values: Series): number | null {

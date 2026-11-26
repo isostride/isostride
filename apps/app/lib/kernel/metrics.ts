@@ -83,6 +83,12 @@ export function isPace(key: string, catalog?: readonly MetricInfo[] | null): boo
   return metricInfo(key, catalog).display === 'pace';
 }
 
+/** Seconds as m:ss, to the whole second: rounded before it is split (299.6 s is 5:00; split first, it read 4:60). */
+export function minSec(seconds: number): string {
+  const whole = Math.round(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+}
+
 /** A speed in m/s as s/km; null for a standstill. */
 export function secondsPerKm(speed: number | null): number | null {
   return speed !== null && speed > 0 ? 1000 / speed : null;

@@ -9,11 +9,12 @@ import type { RunsIndex } from '@/lib/kernel';
 import { autoMaxHr, criticalByRun, type LoadSummary } from '@/lib/load';
 import { DEFAULT_PERFORMANCE, PERFORMANCE_RANGES, invalidPerformance, parsePerformance, readSettings, writeSettings, type PerformanceSettings } from '@/lib/settings';
 import { CurveModelChoice, LoadModelChoice } from './LoadModelPicker';
+import { minSec } from '@/lib/kernel';
 
-const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+const mmss = (s: number) => minSec(s);
 const parsePace = (t: string): number | null | undefined => {
   if (!t.trim()) return null;
-  const m = t.trim().match(/^(\d{1,2}):(\d{2})$/);
+  const m = t.trim().match(/^(\d{1,2}):([0-5]\d)$/);
   return m ? Number(m[1]) * 60 + Number(m[2]) : undefined;
 };
 const clockOf = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;

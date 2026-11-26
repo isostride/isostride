@@ -3,7 +3,7 @@ import { definitionFromRule, lapKey, ruleOf } from '@/lib/blocks';
 import { MIN_AB_INSTANCES, MIN_TREND_INSTANCES, byField, cell, computeAb, computeTrend, interleaved } from '@/lib/compare';
 import { detectInstances } from '@/lib/detection';
 import { pauseGap, type RunFile } from '@/lib/kernel';
-import { t975, welch } from '@/lib/stats';
+import { fitWithCovariate, median, rng, t975, welch } from '@/lib/stats';
 import { days, inst } from '../support/instances';
 import { rowFor, syntheticRun } from '../support/synthetic';
 
@@ -155,5 +155,47 @@ describe('Comparisons reviewed', () => {
     expect(cell('+1 shoe')).toBe("'+1 shoe");
     // Numbers stay numbers, negative ones too; a text with a comma or a line end is quoted.
     expect([cell(-5.25), cell('-5.250'), cell('+3'), cell('Promenade, NE'), cell('two\rlines')]).toEqual(['-5.25', '-5.250', '+3', '"Promenade, NE"', '"two\rlines"']);
+  });
+
+  it('The interval of a corrected comparison holds what the correction costs', () => {
+    // Normal numbers from the seeded generator (Box–Muller).
+    const next = rng(20261126);
+    const normal = () => Math.sqrt(-2 * Math.log(1 - next())) * Math.cos(2 * Math.PI * next());
+    const d = days('2026-03-02', 70);
+    // (250 rounds of each: about 5 in 100 are expected to read "change".)
+    // No trend at all: the heart rate follows the pace (0.4 bpm a s/km) with 2 bpm of chance, and the pace improves
+    // over 8 weekly runs (its correlation with time about 0.8). Read as plain measurements after the correction,
+    // 3 such series of 10 said "change"; the interval is for 1 in 20.
+    let trends = 0;
+    let groups = 0;
+    const rounds = 250;
+    for (let k = 0; k < rounds; k++) {
+      const series = Array.from({ length: 8 }, (_, w) => {
+        const pace = 300 - 1.6 * w + 3 * normal();
+        return inst(d[7 * w], { runId: `t${k}-${w}`, pace, metrics: { heartRate: 150 - 0.4 * (pace - 300) + 2 * normal() } });
+      });
+      if (computeTrend(series, 'def', 'heartRate').series[0].fit!.verdict === 'change') trends++;
+      // No effect of the shoes: B's runs two spreads of pace faster, 5 runs a side. It read "change" in 2 of 10.
+      const ab = Array.from({ length: 10 }, (_, w) => {
+        const pace = (w % 2 ? 290 : 300) + 5 * normal();
+        return inst(d[3 * w], { runId: `g${k}-${w}`, pace, metrics: { heartRate: 150 - 0.4 * (pace - 300) + 2 * normal() }, run: shoe(w % 2 ? 'B' : 'A') });
+      });
+      if (computeAb(ab, 'def', 'heartRate', split).verdict === 'change') groups++;
+    }
+    expect(trends / rounds).toBeLessThan(0.08);
+    expect(groups / rounds).toBeLessThan(0.08);
+    // The fit itself, by hand: y = 1 + 2x + 3z exactly gives the effect 2, the covariate 3 and no spread.
+    const x = [0, 1, 2, 3, 4];
+    const z = [1, 0, 2, 1, 3];
+    const exact = fitWithCovariate(x.map((v, i) => 1 + 2 * v + 3 * z[i]), x, z)!;
+    expect([exact.effect, exact.covariate, exact.df]).toEqual([expect.closeTo(2, 9), expect.closeTo(3, 9), 2]);
+    expect(exact.se).toBeCloseTo(0, 6);
+    // Under 4 points, or the two told apart by nothing: no fit.
+    expect(fitWithCovariate([1, 2, 3], [0, 1, 2], [1, 0, 2])).toBeNull();
+    expect(fitWithCovariate([1, 2, 3, 4], [0, 1, 2, 3], [0, 2, 4, 6])).toBeNull();
+  });
+
+  it('The median of an even count lies between its two middle values', () => {
+    expect([median([48, 54]), median([3, 1, 2]), median([4, 1, 3, 2]), median([])]).toEqual([51, 2, 2.5, null]);
   });
 });

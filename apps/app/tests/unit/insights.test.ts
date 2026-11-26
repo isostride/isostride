@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { efficiencyRuns, formSeries, intensityShares, markersOverTime, seilerByWeek, summarizeLoad, trailingMean, weekOf, weeklyLoad, zonesByWeek, type LoadSummary } from '@/lib/load';
+import { efficiencyRuns, formSeries, hrVo2Now, intensityShares, markersOverTime, seilerByWeek, summarizeLoad, trailingMean, weekOf, weeklyLoad, weeksUpTo, zonesByWeek, type LoadSummary } from '@/lib/load';
+import { jackknifeMany } from '@/lib/stats';
 import { syntheticRun } from '../support/synthetic';
 
 const HR_ZONES = [114, 133, 152, 171];
@@ -82,5 +83,28 @@ describe('Performance markers', () => {
     // The trailing mean over 28 days.
     const pts = [{ startTime: '2026-10-01T07:00:00Z', v: 1 }, { startTime: '2026-10-15T07:00:00Z', v: 3 }, { startTime: '2026-11-20T07:00:00Z', v: 5 }];
     expect(trailingMean(pts, (p) => p.v, 28)).toEqual([1, 2, 5]);
+  });
+
+  it('The weeks up to today, not the last weeks that have a run', () => {
+    // Twelve weeks of running in spring, a break, one run this week: "12 weeks" is this week alone.
+    const spring = Array.from({ length: 12 }, (_, k) => ({ start: `2026-0${k < 4 ? 3 : k < 8 ? 4 : 5}-${String([2, 9, 16, 23, 6, 13, 20, 27, 4, 11, 18, 25][k]).padStart(2, '0')}` }));
+    const weeks = [...spring, { start: '2026-11-23' }];
+    expect(weeksUpTo(weeks, '2026-11-26', 12)).toEqual([{ start: '2026-11-23' }]);
+    // The first of the twelve is the Monday 11 weeks before this week's; a year reaches back to spring.
+    expect(weeksUpTo([{ start: '2026-09-07' }, { start: '2026-08-31' }], '2026-11-26', 12)).toEqual([{ start: '2026-09-07' }]);
+    expect(weeksUpTo(weeks, '2026-11-26', 52)).toHaveLength(13);
+  });
+
+  it('The range of a value that cannot be negative stays above zero', () => {
+    // A reserve that rests on one run of four: without it the fit gives 40, with it 150.
+    const runs = [150, 40, 40, 40];
+    const top = (s: number[]) => [Math.max(...s)];
+    const [plain] = jackknifeMany(runs, top);
+    const [positive] = jackknifeMany(runs, top, true);
+    expect(plain!.low).toBeLessThan(0);
+    expect(positive!.low).toBeGreaterThan(0);
+    expect(positive!.low * positive!.high).toBeCloseTo(150 * 150, 6);
+    // Two qualifying runs: the estimate lies between them (it read the higher).
+    expect(hrVo2Now([{ startTime: '2026-11-20T08:00:00', vo2max: 48 }, { startTime: '2026-11-24T08:00:00', vo2max: 54 }], '2026-11-26')).toEqual({ value: 51, runs: 2 });
   });
 });

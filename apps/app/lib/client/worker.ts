@@ -25,10 +25,40 @@ export interface JobState {
 const running = new Set<Worker>();
 let current: JobState | null = null;
 const listeners = new Set<(s: JobState | null) => void>();
+/**
+ * The jobs running now, each under its own number, in the order they started. One slot for them all, cleared
+ * by whichever ended with the same name, showed nothing while a job still ran (two of Compare's reads at
+ * once; an import behind a read) and a job's progress under another's name (the review of 26 Nov 2026).
+ */
+const jobs = new Map<number, JobState>();
+let nextJob = 1;
 
-function publish(s: JobState | null) {
-  current = s;
-  for (const l of listeners) l(s);
+/** The jobs that only read: the worker that stays answers them. */
+const READS: readonly WorkerJob[] = ['instances', 'curve', 'similar', 'figures'];
+
+/**
+ * The job shown: of those running, the one writing the data (an import, a recompute: the screens show its
+ * progress and read again when it ends), else the read started last.
+ */
+function publish() {
+  const all = [...jobs.values()];
+  current = all.filter((s) => !READS.includes(s.job)).pop() ?? all.pop() ?? null;
+  for (const l of listeners) l(current);
+}
+function begin(job: WorkerJob): number {
+  const k = nextJob++;
+  jobs.set(k, { job, done: 0, total: 0 });
+  publish();
+  return k;
+}
+function advance(k: number, done: number, total: number) {
+  const s = jobs.get(k);
+  if (!s) return;
+  jobs.set(k, { job: s.job, done, total });
+  publish();
+}
+function finish(k: number) {
+  if (jobs.delete(k)) publish();
 }
 
 /** The job running now, if any, and its progress; returns an unsubscribe function. */
@@ -39,25 +69,43 @@ export function watchJob(listener: (s: JobState | null) => void): () => void {
 }
 
 type Progress = (p: { done: number; total: number; file: string }) => void;
+type Final = Exclude<WorkerEvent, { type: 'progress' | 'error' | 'copy-broken' }>;
+
+/**
+ * Told when a worker's copy of the folder failed (no room on the phone, a file removed under it): the worker
+ * went on writing the folder alone, so the page must read the folder alone too. It kept reading the copy,
+ * showed the runs of before the import and imported the same files at every look (the review of 26 Nov 2026).
+ */
+let copyBroken: (() => void) | null = null;
+export function onCopyBroken(f: () => void): void {
+  copyBroken = f;
+}
+function copyFailed() {
+  // The workers started from here on read and write the folder alone; the one that stays is let go when idle.
+  copyId = null;
+  if (reader && !asked.size) { reader.terminate(); reader = null; }
+  copyBroken?.();
+}
 
 /** Starts a request in a fresh Processing Worker; resolves with its final event. */
-function start(request: WorkerRequest, onProgress?: Progress, signal?: AbortSignal): Promise<Exclude<WorkerEvent, { type: 'progress' | 'error' }>> {
+function start(request: WorkerRequest, onProgress?: Progress, signal?: AbortSignal): Promise<Final> {
   const job = request.type;
   const w = new Worker(new URL('../../workers/pipeline.worker.ts', import.meta.url));
   running.add(w);
+  const k = begin(job);
   const end = () => {
     w.terminate();
     running.delete(w);
-    if (current?.job === job) publish(null);
+    finish(k);
   };
-  publish({ job, done: 0, total: 0 });
   return new Promise((resolve, reject) => {
     // Abandoned (the screen moved on): the worker stops reading and the promise rejects.
     signal?.addEventListener('abort', () => { end(); reject(new DOMException('abandoned', 'AbortError')); }, { once: true });
     w.onmessage = (e: MessageEvent<WorkerEvent>) => {
       const m = e.data;
+      if (m.type === 'copy-broken') return copyFailed();
       if (m.type === 'progress') {
-        publish({ job, done: m.done, total: m.total });
+        advance(k, m.done, m.total);
         onProgress?.(m);
       } else {
         end();
@@ -74,7 +122,6 @@ function start(request: WorkerRequest, onProgress?: Progress, signal?: AbortSign
 }
 
 type ReadRequest = Extract<WorkerRequest, { type: 'instances' | 'curve' | 'similar' | 'figures' }>;
-type Final = Exclude<WorkerEvent, { type: 'progress' | 'error' }>;
 
 /**
  * The Processing Worker that stays, for the jobs that only read (blocks not kept, curves, similar
@@ -86,7 +133,7 @@ let reader: Worker | null = null;
 /** The folder the worker that stays reads: another folder, another worker. */
 let readerHandle: FileSystemDirectoryHandle | null = null;
 let nextId = 1;
-const asked = new Map<number, { job: WorkerJob; resolve: (m: Final) => void; reject: (e: Error) => void; onProgress?: Progress }>();
+const asked = new Map<number, { job: number; resolve: (m: Final) => void; reject: (e: Error) => void; onProgress?: Progress }>();
 
 function readerWorker(handle: FileSystemDirectoryHandle): Worker {
   if (reader && readerHandle !== handle) {
@@ -98,15 +145,16 @@ function readerWorker(handle: FileSystemDirectoryHandle): Worker {
   const w = new Worker(new URL('../../workers/pipeline.worker.ts', import.meta.url));
   w.onmessage = (e: MessageEvent<WorkerEvent>) => {
     const m = e.data;
+    if (m.type === 'copy-broken') return copyFailed();
     const a = m.id === undefined ? undefined : asked.get(m.id);
     if (!a) return;
     if (m.type === 'progress') {
-      publish({ job: a.job, done: m.done, total: m.total });
+      advance(a.job, m.done, m.total);
       a.onProgress?.(m);
       return;
     }
     asked.delete(m.id!);
-    if (current?.job === a.job) publish(null);
+    finish(a.job);
     if (m.type === 'error') a.reject(new Error(m.message));
     else a.resolve(m);
   };
@@ -114,8 +162,7 @@ function readerWorker(handle: FileSystemDirectoryHandle): Worker {
   w.onerror = (e) => {
     reader = null;
     w.terminate();
-    for (const [id, a] of asked) { asked.delete(id); a.reject(new Error(e.message)); }
-    publish(null);
+    for (const [id, a] of asked) { asked.delete(id); finish(a.job); a.reject(new Error(e.message)); }
   };
   return (reader = w);
 }
@@ -124,13 +171,13 @@ function readerWorker(handle: FileSystemDirectoryHandle): Worker {
 function ask(request: ReadRequest, onProgress?: Progress, signal?: AbortSignal): Promise<Final> {
   const id = nextId++;
   const w = readerWorker(request.handle);
-  publish({ job: request.type, done: 0, total: 0 });
+  const job = begin(request.type);
   return new Promise((resolve, reject) => {
-    asked.set(id, { job: request.type, resolve, reject, onProgress });
+    asked.set(id, { job, resolve, reject, onProgress });
     signal?.addEventListener('abort', () => {
       if (!asked.delete(id)) return;
       w.postMessage({ type: 'cancel', id } satisfies CancelRequest);
-      if (current?.job === request.type) publish(null);
+      finish(job);
       reject(new DOMException('abandoned', 'AbortError'));
     }, { once: true });
     w.postMessage({ ...request, id, copy: copyId });
@@ -161,8 +208,8 @@ function acrossTabs<T>(folderName: string, job: () => Promise<T>): Promise<T> {
 }
 
 /** Runs one job in a fresh Processing Worker, after the jobs writing the data before it; resolves when it is done. */
-export async function runInWorker(job: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures'>, handle: FileSystemDirectoryHandle, onProgress?: Progress): Promise<DoneEvent> {
-  const turn = writing.then(() => acrossTabs(handle.name, () => start({ type: job, handle, copy: copyId }, onProgress)));
+export async function runInWorker(job: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures'>, handle: FileSystemDirectoryHandle, onProgress?: Progress, opts: { ifOutdated?: boolean } = {}): Promise<DoneEvent> {
+  const turn = writing.then(() => acrossTabs(handle.name, () => start({ type: job, handle, copy: copyId, ...opts }, onProgress)));
   writing = turn.catch(() => undefined);
   const m = await turn;
   if (m.type !== 'done') throw new Error(t('unexpected {type}', { type: m.type }));

@@ -10,6 +10,20 @@ import { dateText } from '@/lib/i18n';
  */
 
 /** The width of a container in CSS pixels, following resizes. */
+/** Whether the device is worked by finger (its main pointer is coarse: a phone, a tablet): the hints then name the finger's gestures. */
+export function useTouch(): boolean {
+  const [touch, setTouch] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia?.('(pointer: coarse)');
+    if (!m) return;
+    const set = () => setTouch(m.matches);
+    set();
+    m.addEventListener('change', set);
+    return () => m.removeEventListener('change', set);
+  }, []);
+  return touch;
+}
+
 export function useWidth<T extends HTMLElement = HTMLDivElement>(initial = 800): [RefObject<T | null>, number] {
   const ref = useRef<T>(null);
   const [width, setWidth] = useState(initial);
@@ -35,7 +49,8 @@ export function niceTicks(lo: number, hi: number, count = 4): number[] {
   const mag = 10 ** Math.floor(Math.log10(raw));
   const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? 10 * mag;
   const out: number[] = [];
-  for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(Math.round(v / step) * step);
+  // `|| 0`: a first tick of −0 (a low just under zero) is 0.
+  for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(Math.round(v / step) * step || 0);
   return out;
 }
 

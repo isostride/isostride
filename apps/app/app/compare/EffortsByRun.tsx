@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useMetrics } from '@/components';
 import type { BlockInstance } from '@/lib/blocks';
-import { effortsByRun, meanOf, trendPerWeek, valueOf, type RunEfforts } from '@/lib/compare';
+import { LEAST_CHANGE, clearDifference, differenceNoise, effortsByRun, meanOf, trendPerWeek, valueOf, type RunEfforts } from '@/lib/compare';
 import { date, duration, km } from '@/lib/format';
 import { number, t } from '@/lib/i18n';
 
@@ -20,6 +20,8 @@ interface Figure {
   fmt: (v: number) => string;
   diff: (d: number) => string;
   direction: 'higher' | 'lower' | 'neutral';
+  /** the least difference coloured as better or worse, in the figure's unit (lib/compare, LEAST_CHANGE of the axis' least range) */
+  least: number;
   /** its last effort against its first means something (not the time and the distance of efforts of other lengths) */
   drift?: boolean;
 }
@@ -52,24 +54,32 @@ export function EffortsByRun({ efforts, columns, titleOf, isReference, totals = 
   const held = metrics.filter((m) => runs.some((x) => x.metrics[m]?.some((v) => v !== null)));
   const seconds = (d: number) => `${signed(d, (v) => number(Math.round(v)))} s`;
   const figures: Figure[] = [
-    { key: 'pace', label: t('Pace (min/km)'), of: (x) => x.pace, mean: (x) => x.meanPace, fmt: pace.tick, diff: seconds, direction: 'lower', drift: true },
-    { key: 'time', label: t('Time'), of: (x) => x.durations, ...(totals ? { mean: (x: RunEfforts) => x.durations.reduce((a, b) => a + b, 0) } : {}), fmt: duration, diff: seconds, direction: 'neutral' },
-    { key: 'distance', label: t('Distance (km)'), of: (x) => x.distances, ...(totals ? { mean: (x: RunEfforts) => x.distances.reduce((a, b) => a + b, 0) } : {}), fmt: km, diff: (d) => `${signed(d, (v) => number(Math.round(v)))} m`, direction: 'neutral' },
+    { key: 'pace', label: t('Pace (min/km)'), of: (x) => x.pace, mean: (x) => x.meanPace, fmt: pace.tick, diff: seconds, direction: 'lower', least: LEAST_CHANGE * pace.minSpan, drift: true },
+    { key: 'time', label: t('Time'), of: (x) => x.durations, ...(totals ? { mean: (x: RunEfforts) => x.durations.reduce((a, b) => a + b, 0) } : {}), fmt: duration, diff: seconds, direction: 'neutral', least: 0 },
+    { key: 'distance', label: t('Distance (km)'), of: (x) => x.distances, ...(totals ? { mean: (x: RunEfforts) => x.distances.reduce((a, b) => a + b, 0) } : {}), fmt: km, diff: (d) => `${signed(d, (v) => number(Math.round(v)))} m`, direction: 'neutral', least: 0 },
     ...held.map((m): Figure => {
       const v = view(m);
       // The unit in the head, not again in each change ("nachodzi na siebie").
-      return { key: m, label: v.name, of: (x) => x.metrics[m], fmt: v.tick, diff: v.invert ? seconds : (d) => signed(d, v.tick), direction: v.direction, drift: true };
+      return { key: m, label: v.name, of: (x) => x.metrics[m], fmt: v.tick, diff: v.invert ? seconds : (d) => signed(d, v.tick), direction: v.direction, least: LEAST_CHANGE * v.minSpan, drift: true };
     }),
   ];
   const cell = (v: number | null | undefined, f: (x: number) => string) => (v === null || v === undefined ? '–' : f(v));
+  // Better or worse only for a change told from the noise (lib/compare, clearDifference); else its size alone, uncoloured.
   // i18n-ignore: class names
-  const verdict = (d: number, dir: Figure['direction']) => (dir === 'neutral' || d === 0 ? '' : (d < 0) === (dir === 'lower') ? ' better' : ' worse');
+  const verdict = (d: number, dir: Figure['direction'], clear: boolean) => (dir === 'neutral' || !clear ? '' : (d < 0) === (dir === 'lower') ? ' better' : ' worse');
   const meanOfRun = (f: Figure, x: RunEfforts) => (f.mean ? f.mean(x) : meanOf(f.of(x)));
+  const dayOfRun = (x: RunEfforts) => new Date(x.runStart).getTime() / 86_400_000;
+  /** How far two runs' means of a figure lie apart by chance, from all the runs' means about their trend. */
+  const betweenRuns = (f: Figure) => {
+    const points = runs.flatMap((x) => { const v = meanOfRun(f, x); return v === null ? [] : [{ day: dayOfRun(x), v }]; });
+    return differenceNoise(points.map((p) => p.day), points.map((p) => p.v));
+  };
   const change = (f: Figure, from: RunEfforts, to: RunEfforts) => {
     const a = meanOfRun(f, from);
     const b = meanOfRun(f, to);
     if (a === null || b === null) return <td key={f.key} className="num tnum">–</td>;
-    return <td key={f.key} className={`num tnum${verdict(b - a, f.direction)}`}>{f.diff(b - a)}{a !== 0 && <div className="reps-sub">{signed((b / a - 1) * 100, (v) => number(v, 1))}%</div>}</td>;
+    const clear = f.direction !== 'neutral' && clearDifference(b - a, f.least, [betweenRuns(f)]);
+    return <td key={f.key} className={`num tnum${verdict(b - a, f.direction, clear)}`}>{f.diff(b - a)}{a !== 0 && <div className="reps-sub">{signed((b / a - 1) * 100, (v) => number(v, 1))}%</div>}</td>;
   };
   const shown = figures.filter((f) => columns.includes(f.key));
   const first = runs[0];
@@ -134,7 +144,7 @@ export function EffortsByRun({ efforts, columns, titleOf, isReference, totals = 
             <tr className="reps-summary">
               <td className="reps-label">{t('Trend per week')}</td>
               <td />
-              {shown.map((f, k) => { const w = trends[k]; return <td key={f.key} className={`num tnum${w !== null ? verdict(w, f.direction) : ''}`}>{w !== null ? f.diff(w) : '–'}</td>; })}
+              {shown.map((f, k) => { const w = trends[k]; return <td key={f.key} className={`num tnum${w ? verdict(w.perWeek, f.direction, w.clear) : ''}`}>{w ? f.diff(w.perWeek) : '–'}</td>; })}
             </tr>
           )}
           {sorted.flatMap((x) => {
@@ -154,10 +164,13 @@ export function EffortsByRun({ efforts, columns, titleOf, isReference, totals = 
                   const b = vs[n - 1] ?? null;
                   // Not for runs added whole: their laps are of every length (a warm-up, reps, a cool-down).
                   const drift = !totals && f.drift && n > 1 && a !== null && b !== null ? b - a : null;
+                  // The last against the first, past what the efforts lie apart by chance about their line (of 4 and more).
+                  const ordered = vs.flatMap((v, r) => (v === null ? [] : [{ r, v }]));
+                  const clearDrift = drift !== null && clearDifference(drift, f.least, [differenceNoise(ordered.map((p) => p.r), ordered.map((p) => p.v))]);
                   return (
                     <td key={f.key} className="num tnum">
                       <span className="strong">{cell(meanOfRun(f, x), f.fmt)}</span>
-                      {drift !== null && <div className={`reps-drift${verdict(drift, f.direction)}`} title={t('The last effort against the first')}>{`1→${n}`} {f.diff(drift)}</div>}
+                      {drift !== null && <div className={`reps-drift${verdict(drift, f.direction, clearDrift)}`} title={t('The last effort against the first')}>{`1→${n}`} {f.diff(drift)}</div>}
                     </td>
                   );
                 })}

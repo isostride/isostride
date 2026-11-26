@@ -30,6 +30,8 @@ export const SETUP: Dictionary = {
   'Choose data folder': 'Wybierz folder danych',
   'Next: your runs, you, your zones, gear, the load model and the display. A few minutes; each step can be skipped.': 'Dalej: twoje biegi, ty, twoje strefy, sprzęt, model obciążenia i wygląd. Kilka minut; każdy krok można pominąć.',
   'Welcome back': 'Witaj ponownie',
+  'A value on this step is missing, outside its range or not a number (decimals take a dot, a pace is m:ss); the maximum heart rate must be above the resting one, and fatigue shorter than fitness.': 'Na tym kroku brakuje wartości, któraś leży poza zakresem albo nie jest liczbą (ułamki z kropką, tempo jako m:ss); tętno maksymalne musi być wyższe od spoczynkowego, a zmęczenie krótsze niż forma.',
+  'The folder {name} could not be opened: it was moved, renamed or removed, or its disk is not connected. Choose it again, or another.': 'Folderu {name} nie udało się otworzyć: został przeniesiony, przemianowany lub usunięty albo jego dysk nie jest podłączony. Wybierz go ponownie lub wskaż inny.',
   'Your browser asks again for the folder you chose last time.': 'Przeglądarka znów pyta o folder wybrany ostatnio.',
   'Continue with {name}': 'Kontynuuj z {name}',
   'Choose another folder': 'Wybierz inny folder',

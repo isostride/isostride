@@ -23,7 +23,7 @@ import type { CurveMetric } from './curve';
  * curve is fitted first with Riegel's 1.06 for the decline (A = RIEGEL_DECLINE · MAS, or · CP: running
  * power follows the speed); a best of DECLINE_LONGEST or more (past TCPmax for power) within the
  * envelope's reach under that curve, or above it, is an all-out long effort, and only then is A fitted
- * too. A long best further below is taken for an easy run: it cannot be told from an all-out one of a
+ * too, to the bests that passed (the long ones further below left out of that fit). A long best further below is taken for an easy run: it cannot be told from an all-out one of a
  * runner with less endurance than Riegel's, so the note of the curve says whose decline it is.
  */
 
@@ -35,10 +35,13 @@ export const PT_TMAP = 420;
 export const PT_ANAEROBIC = -0.233;
 /**
  * The decline of the aerobic speed past TMAP (of the critical power past TCPmax), as a share of MAS (CP)
- * per unit of ln t, when the bests do not settle it: speed ∝ t^(−0.06) far from the sprint, Riegel's
- * exponent 1.06 (Riegel 1981).
+ * per unit of ln t, when the bests do not settle it: Riegel's law (Riegel 1981), T ∝ D^1.06, which is
+ * speed ∝ t^(−0.0566). The model's decline is a straight line in ln t, the law a power: a line of 0.052
+ * a unit lies within 0.3 % of the law from 7 minutes to 4 hours. The exponent's own 0.06, used before,
+ * is the law's slope at its start only, and read the marathon 3.5 % slower than the law (the review of
+ * 26 Nov 2026).
  */
-export const RIEGEL_DECLINE = 0.06;
+export const RIEGEL_DECLINE = 0.052;
 export const PT_RIEGEL_DECLINE = RIEGEL_DECLINE;
 /**
  * The decline of Péronnet–Thibault is fitted with this many bests past TMAP, one of them this long at
@@ -115,10 +118,15 @@ export function fitWholeCurve(points: { duration: number; value: number }[], met
     const riegel = (x: number[]) => ({ mas: Math.exp(x[0]), s: Math.exp(x[1]), a: RIEGEL_DECLINE * Math.exp(x[0]) });
     let p = riegel(fitEnvelope('pt-riegel', pts, (x, t) => ptRate(riegel(x), t), x0, [0.1, 0.5]));
     // The runner's own decline only when a long best is all-out by that curve: within the reach under it, or above it.
-    const decline = pts.filter((q) => q.t > PT_TMAP).length >= DECLINE_POINTS && pts.some((q) => q.t >= DECLINE_LONGEST && ptRate(p, q.t) / q.r - 1 <= ENVELOPE_REACH);
+    const allOut = (q: { t: number; r: number }) => q.t < DECLINE_LONGEST || ptRate(p, q.t) / q.r - 1 <= ENVELOPE_REACH;
+    const decline = pts.filter((q) => q.t > PT_TMAP).length >= DECLINE_POINTS && pts.some((q) => q.t >= DECLINE_LONGEST && allOut(q));
     if (decline) {
+      // Fitted to the bests that passed, the long ones of easy runs left out: with them a curve resting on the
+      // easy long bests under a higher MAS cost no more than the true one, and one all-out half hour opened the
+      // way to it (the review of 26 Nov 2026: a marathon of 3:21 read as 4:09, the MAS 6 % too high).
+      const passed = pts.filter(allOut);
       const own = (x: number[]) => ({ mas: Math.exp(x[0]), s: Math.exp(x[1]), a: Math.exp(x[2]) });
-      p = own(fitEnvelope('pt', pts, (x, t) => ptRate(own(x), t), [Math.log(p.mas), Math.log(p.s), Math.log(p.a)], [0.1, 0.5, 1]));
+      p = own(fitEnvelope('pt', passed, (x, t) => ptRate(own(x), t), [Math.log(p.mas), Math.log(p.s), Math.log(p.a)], [0.1, 0.5, 1]));
     }
     const { error, far } = envelopeGaps(pts, (t) => ptRate(p, t));
     return { model: 'pt', metric, params: p, range, n: pts.length, error, far, decline };
@@ -130,10 +138,13 @@ export function fitWholeCurve(points: { duration: number; value: number }[], met
   const riegel = (x: number[]) => ({ cp: Math.exp(x[0]), wp: Math.exp(x[1]), pmax: Math.exp(x[0]) + Math.exp(x[2]), a: RIEGEL_DECLINE * Math.exp(x[0]) });
   let p = riegel(fitEnvelope('ompd-riegel', pts, (x, t) => ompdRate(riegel(x), t), [Math.log(cp0), Math.log(wp0), Math.log(Math.max(1, pmax0 - cp0))], [0.1, 0.5, 0.3]));
   // The runner's own decline only when a best past TCPmax is all-out by that curve: within the reach under it, or above it.
-  const decline = pts.some((q) => q.t > OMPD_TCPMAX && ompdRate(p, q.t) / q.r - 1 <= ENVELOPE_REACH);
+  const allOut = (q: { t: number; r: number }) => q.t <= OMPD_TCPMAX || ompdRate(p, q.t) / q.r - 1 <= ENVELOPE_REACH;
+  const decline = pts.some((q) => q.t > OMPD_TCPMAX && allOut(q));
   if (decline) {
+    // As for pace: fitted to the bests that passed.
+    const passed = pts.filter(allOut);
     const own = (x: number[]) => ({ cp: Math.exp(x[0]), wp: Math.exp(x[1]), pmax: Math.exp(x[0]) + Math.exp(x[2]), a: Math.exp(x[3]) });
-    p = own(fitEnvelope('ompd', pts, (x, t) => ompdRate(own(x), t), [Math.log(p.cp), Math.log(p.wp), Math.log(Math.max(1, p.pmax - p.cp)), Math.log(p.a)], [0.1, 0.5, 0.3, 1]));
+    p = own(fitEnvelope('ompd', passed, (x, t) => ompdRate(own(x), t), [Math.log(p.cp), Math.log(p.wp), Math.log(Math.max(1, p.pmax - p.cp)), Math.log(p.a)], [0.1, 0.5, 0.3, 1]));
   }
   const { error, far } = envelopeGaps(pts, (t) => ompdRate(p, t));
   return { model: 'ompd', metric, params: p, range, n: pts.length, error, far, decline };
