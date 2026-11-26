@@ -1308,3 +1308,6 @@ A: (użytkownik) ok popraw wszystko pokolei
 A: (użytkownik) czy wszystko znalezione poprawiles?
 A: (model) Not all: the seven faults and most of the smaller ones are fixed; left are the three gaps (new features: the uncertainty of CS, D′ and the predictions, D′ balance within a run, What if on the fitted response) and three small points: VO2max from heart rate still counts the warm-up; Edwards' TRIMP weighs the time under 50 % of the maximum heart rate as 1, where Edwards counts it as 0; with less than 28 days of history the load What if lets its planned days into the averages' start.
 A: (użytkownik) zrob je
+A: (użytkownik) a tez rzeczy poza pr?
+A: (model) Yes, on a branch of its own after that pull request: the uncertainty of critical speed, D′, critical power, W′ and the predicted times; D′ balance within a run; the load What if drawing the fitted response too.
+A: (użytkownik) mam na mysli: Poza PR zostały trzy nowe funkcje: niepewność CS, D′ i prognoz, D′ balance w trakcie biegu oraz What if na dopasowanym modelu odpowiedzi.

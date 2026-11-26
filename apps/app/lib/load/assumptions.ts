@@ -8,6 +8,7 @@ import type { FormDay } from './form';
 import { DECOUPLING_MIN, EF_TREND_DAYS, MARKER_DAYS, efficiencyNow, efficiencyRuns, intensityShares, markersOverTime, seilerByWeek, weeklyLoad, type LoadWeek, type MarkerWeek } from './insights';
 import { MIN_RESERVE_SECONDS, autoMaxHr, criticalSeries, type CriticalAt, type LoadRow } from './models';
 import { WARMUP, type LoadSummary } from './summary';
+import { RATE_PRECISION, RESERVE_PRECISION, markerRanges, relativeSe, type MarkerRanges, type Range } from './uncertainty';
 import { HR_VO2_MEDIAN_DAYS, HR_VO2_MIN_RESERVE, HR_VO2_MIN_SECONDS, hrVo2Now, hrVo2Runs, performancesFor, uthVo2max, vdotOverTime } from './vo2';
 
 /**
@@ -91,6 +92,8 @@ export interface PerformanceNow {
   vo2hr: number | null;
   uth: number | null;
   fitted: { hr: BanisterFit | null; vdot: BanisterFit | null };
+  /** how far today's markers may lie, by the jackknife of their bests */
+  ranges: MarkerRanges;
 }
 
 export type ReportRow = LoadRow & { device?: string; heartRateSource?: string | null; load?: number | null; loadEstimated?: boolean };
@@ -226,11 +229,12 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
     hr: fitBanister(loads, performancesFor('hr', have, summaries, p.restHr, maxHr, today, p.curve)),
     vdot: fitBanister(loads, performancesFor('vdot', have, summaries, p.restHr, maxHr, today, p.curve)),
   };
+  const ranges = markerRanges(have, summaries, today, p.curve);
   const now: PerformanceNow = {
     loadModel: t(model.name), loadUnit: model.unit, restHr: p.restHr, maxHr,
     day: days[days.length - 1] ?? null, week: loadWeeks[loadWeeks.length - 1] ?? null, shares,
     marker, vdot, efforts, evidence, powerEfforts, powerEvidence, curve, powerCurve,
-    ef: eff.ef, decoupling: eff.decoupling, vo2hr: vo2.value, uth, fitted,
+    ef: eff.ef, decoupling: eff.decoupling, vo2hr: vo2.value, uth, fitted, ranges,
   };
 
   // Checks shared by several models.
@@ -288,6 +292,20 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
       ? check('recent', recentLabel, 'doubt', t('none'))
       : check('recent', recentLabel, e.newestAllOut <= T.recentDays ? 'met' : 'doubt', tn(e.newestAllOut, 'the newest was {n} days ago', 'the newest was {n} days ago')));
     return out;
+  };
+
+  /**
+   * Whether the bests settle a critical rate and its reserve: the standard errors of the jackknife against
+   * RATE_PRECISION and RESERVE_PRECISION, in doubt past them; unknown under 4 bests, where a best cannot be
+   * left out.
+   */
+  const preciseCheck = (label: string, rate: Range | null, reserve: Range | null, show: (r: Range) => string, showReserve: (r: Range) => string): Check => {
+    const a = relativeSe(rate);
+    const b = relativeSe(reserve);
+    if (a === null || b === null || !rate || !reserve) return check('precise', label, 'unknown', t('it takes 4 bests or more of 2–20 min to leave each out in turn and see how far the fit moves'));
+    return check('precise', label, a <= RATE_PRECISION && b <= RESERVE_PRECISION ? 'met' : 'doubt', t('{rate} and {reserve} (95 %) with each best left out in turn: standard errors of {rateShare} and {reserveShare}, {rateGood} and {reserveGood} or less expected; more means one best or two decide the value', {
+      rate: show(rate), reserve: showReserve(reserve), rateShare: `${number(a * 100, 1)} %`, reserveShare: `${number(b * 100, 1)} %`, rateGood: pct(RATE_PRECISION), reserveGood: pct(RESERVE_PRECISION),
+    }));
   };
 
   // Each model: what it rests on, whether it has a value, and its checks.
@@ -401,6 +419,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
       key: 'cs', group: 'capacity', depth: 1, name: t('Critical speed and D′'), method: t('distance = CS·time + D′ fitted to the bests as their envelope: none lies above it (Monod & Scherrer 1965; Jones & Vanhatalo 2017)'), tells: t('the fastest pace you can hold in a steady state, and the reserve above it'),
       inputs: [], parents: ['efforts'], where: { tab: 'capacity', view: 'critical' }, has: (marker?.cs ?? null) !== null,
       checks: marker?.dPrime === null || marker?.dPrime === undefined ? [] : [
+        preciseCheck(t('Your bests settle the critical speed and D′'), ranges.cs, ranges.dPrime, (r) => `${fmtPace(r.high)}–${fmtPace(r.low)} /km`, (r) => `${number(Math.round(r.low))}–${number(Math.round(r.high))} m`),
         check('dprime', t("D′ comes out as a runner's ({from}–{to} m)", { from: T.dPrime[0], to: T.dPrime[1] }), marker.dPrime >= T.dPrime[0] && marker.dPrime <= T.dPrime[1] ? 'met' : 'doubt',
           marker.dPrime < T.dPrime[0]
             ? t('{d} m: so small a reserve means the short bests were held back, and the critical speed is then too high', { d: number(Math.round(marker.dPrime)) })
@@ -439,6 +458,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
       key: 'cp', group: 'capacity', depth: 1, name: t('Critical power and W′'), method: t('work = CP·time + W′ fitted to the bests as their envelope: none lies above it (Monod & Scherrer 1965)'), tells: t('the highest power you can hold in a steady state, and the work above it'),
       inputs: [], parents: ['powerEfforts'], where: { tab: 'capacity', view: 'critical' }, has: (marker?.cp ?? null) !== null,
       checks: marker?.wPrime === null || marker?.wPrime === undefined ? [] : [
+        preciseCheck(t('Your bests settle the critical power and W′'), ranges.cp, ranges.wPrime, (r) => `${number(Math.round(r.low))}–${number(Math.round(r.high))} W`, (r) => `${number(r.low / 1000, 1)}–${number(r.high / 1000, 1)} kJ`),
         check('wprime', t('W′ comes out positive'), marker.wPrime > 0 ? 'met' : 'doubt',
           marker.wPrime <= 0 ? t('{kj} kJ: the short bests were held back', { kj: number(marker.wPrime / 1000, 1) }) : `${number(marker.wPrime / 1000, 1)} kJ`),
       ],

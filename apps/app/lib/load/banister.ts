@@ -26,7 +26,7 @@ export interface BanisterFit {
   n: number;
   /** the model's performance on each day of the loads */
   fitted: { date: string; value: number }[];
-  /** resting from the day after the last load: the model's performance on each of the next days */
+  /** from the day after the last load, under the `future` loads given (none: resting): the model's performance on each of the next days */
   projection: { date: string; value: number }[];
   /** the highest of the projection */
   peak: { date: string; value: number };
@@ -102,15 +102,17 @@ function fitGrid(obs: { i: number; y: number }[], use: number[], g1s: Map<number
  * some of those days: the time constants by a grid search (τ2 < τ1), p0, k1, k2 by least squares,
  * the pair with the least squared error and positive gains kept; and the same fit cross-validated
  * over CV_FOLDS blocks of consecutive performances. Null with fewer than BANISTER_MIN_POINTS
- * performances or a span under BANISTER_MIN_SPAN days.
+ * performances or a span under BANISTER_MIN_SPAN days. The projection runs over `horizon` days past the
+ * last, with the `future` loads of the days after it (a scenario of What if), rest after them.
  */
-export function fitBanister(days: { date: string; load: number }[], performances: { date: string; value: number }[], horizon = 42): BanisterFit | null {
+export function fitBanister(days: { date: string; load: number }[], performances: { date: string; value: number }[], horizon = 42, future: number[] = []): BanisterFit | null {
   const index = new Map(days.map((d, i) => [d.date, i]));
   const obs = performances.filter((p) => index.has(p.date)).map((p) => ({ i: index.get(p.date)!, y: p.value })).sort((a, b) => a.i - b.i);
   if (obs.length < BANISTER_MIN_POINTS) return null;
   if (obs[obs.length - 1].i - obs[0].i < BANISTER_MIN_SPAN) return null;
-  // The loads continue with rest over the horizon, so the projection uses the same sums.
-  const loads = [...days.map((d) => d.load), ...Array(horizon).fill(0)];
+  // The loads continue with the future's, then rest, over the horizon, so the projection uses the same sums.
+  const ahead = Math.max(horizon, future.length);
+  const loads = [...days.map((d) => d.load), ...future, ...Array(ahead - future.length).fill(0)];
   // The history starts in the steady state of its first weeks, as the form's averages do (form.ts).
   const first = days.slice(0, SEED_DAYS);
   const seed = first.length ? first.reduce((s, d) => s + d.load, 0) / first.length : 0;
@@ -143,7 +145,7 @@ export function fitBanister(days: { date: string; load: number }[], performances
   const value = (i: number) => Math.round((p0 + k1 * g1[i] + minusK2 * g2[i]) * 100) / 100;
   const fitted = days.map((d, i) => ({ date: d.date, value: value(i) }));
   const last = days[days.length - 1].date;
-  const projection = Array.from({ length: horizon }, (_, k) => ({ date: next(last, k + 1), value: value(days.length + k) }));
+  const projection = Array.from({ length: ahead }, (_, k) => ({ date: next(last, k + 1), value: value(days.length + k) }));
   const peak = projection.reduce((m, p) => (p.value > m.value ? p : m), projection[0]);
   const meanAt = (g: number[]) => obs.reduce((s, o) => s + g[o.i], 0) / obs.length;
   const terms = { fitness: k1 * meanAt(g1), fatigue: -minusK2 * meanAt(g2) };

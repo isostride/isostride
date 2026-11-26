@@ -20,6 +20,11 @@ The versions of IsoStride (the app at app.isostride.com and the site at isostrid
 - The fitted Banister model needs 15 performances and is judged by its cross-validated R².
 - The automatic maximum heart rate from a 10 s window, a sensor's spike left out; VO2max from heart rate past the warm-up and on the effort pace; Edwards' TRIMP counts nothing under 50 % of the maximum; the current week's markers and monotony up to today.
 
+### Performance models, extended
+- How far today's critical speed, D′, critical power, W′ and predicted times may lie: each with its range, by the bests left out one at a time (the jackknife); the checks say whether the bests settle the critical speed and power.
+- D′ balance on the Run screen: how much of the reserve above the critical speed (and W′ above the critical power) is left through the run, with its lowest point (Skiba 2015).
+- What if on the load: the fitted response of each measure (VO2max from heart rate, VDOT) run over the weeks of the scenario, against resting from today.
+
 ### Other
 - Release notes of the version shown, from Settings › About and the site's footer.
 

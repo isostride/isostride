@@ -372,4 +372,8 @@ export const MODELS: Dictionary = {
   'weekly VDOT': 'tygodniowy VDOT',
   'The performance moves from week to week': 'Wynik zmienia się z tygodnia na tydzień',
   'the VDOT is the best of {days} days: it holds for weeks after a hard effort, so it cannot show fatigue': 'VDOT to najlepszy wynik z {days} dni: trzyma się tygodniami po ciężkim wysiłku, więc nie może pokazać zmęczenia',
+  'it takes 4 bests or more of 2–20 min to leave each out in turn and see how far the fit moves': 'potrzeba 4 wyników lub więcej z 2–20 min, by pomijać każdy po kolei i zobaczyć, jak bardzo przesuwa się dopasowanie',
+  '{rate} and {reserve} (95 %) with each best left out in turn: standard errors of {rateShare} and {reserveShare}, {rateGood} and {reserveGood} or less expected; more means one best or two decide the value': '{rate} i {reserve} (95 %) przy pomijaniu po kolei każdego wyniku: błędy standardowe {rateShare} i {reserveShare}, oczekiwane {rateGood} i {reserveGood} lub mniej; więcej znaczy, że o wartości decyduje jeden lub dwa wyniki',
+  'Your bests settle the critical speed and D′': 'Twoje wyniki wyznaczają prędkość krytyczną i D′',
+  'Your bests settle the critical power and W′': 'Twoje wyniki wyznaczają moc krytyczną i W′',
 };

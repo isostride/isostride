@@ -8,7 +8,7 @@ import { dateText, msg, number, t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import {
   MARKER_DAYS, PATTERN_WEEKS, WHATIF_MAX_PERCENT, WHATIF_WEEKS, curveWhatIf, effortsParam, loadWhatIf, parseClock, parseEfforts, parseWeeks, weeksParam,
-  type CurveState, type LoadSummary, type PerformanceNow, type WhatIfEffort,
+  type CurveState, type LoadSummary, type PerformanceNow, type WhatIfEffort, autoMaxHr, performancesFor, responseWhatIf, type ResponseWhatIf,
 } from '@/lib/load';
 import { duration as fmtDuration, pace as fmtPace } from '@/lib/format';
 import type { CurveModel, PerformanceSettings } from '@/lib/settings';
@@ -199,12 +199,17 @@ const PRESETS: [string, number[]][] = [[msg('As now'), [100, 100, 100, 100]], [m
  * obciazenia"): each week from tomorrow a share of the last four, spread over the days as they were,
  * and fitness, fatigue, form and the acute:chronic ratio over them, in the chart of Form.
  */
-export function LoadWhatIfView({ runs, performance, unit, today }: { runs: RunsIndex['runs']; performance: PerformanceSettings; unit: string; today: string }) {
+export function LoadWhatIfView({ runs, summaries, performance, unit, today }: { runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; performance: PerformanceSettings; unit: string; today: string }) {
   const [param, setParam] = useParam('weeks');
   const weeks = param === null ? PRESETS[1][1] : parseWeeks(param);
   const withLoad = useMemo(() => runs.filter((r) => typeof r.load === 'number').map((r) => ({ startTime: r.startTime, load: r.load as number })), [runs]);
   const r = useMemo(() => loadWhatIf(withLoad, performance, today, weeks), [withLoad, performance, today, weeks.join(',')]);
   const whatIf = useMemo(() => ({ planned: r.planned, from: r.from, until: r.until }), [r]);
+  // The fitted response of each measure that has a fit, run over the scenario's loads ("What if na dopasowanym modelu odpowiedzi").
+  const maxHr = performance.maxHr ?? autoMaxHr(Object.values(summaries));
+  const responses = useMemo(() => RESPONSE_MEASURES.map(([criterion, name]) => ({
+    criterion, name, fit: responseWhatIf(r, performancesFor(criterion, runs, summaries, performance.restHr, maxHr, today, performance.curve)),
+  })), [r, runs, summaries, performance, maxHr, today]);
   const [drafts, setDrafts] = useState<string[]>(weeks.map(String));
   useEffect(() => { setDrafts(weeks.map(String)); }, [param]);
   const set = (list: number[]) => setParam(weeksParam(list));
@@ -246,9 +251,50 @@ export function LoadWhatIfView({ runs, performance, unit, today }: { runs: RunsI
         {r.weeks.some((w) => w.beyond) && <p className="chart-note warn-text" role="note">{t('A week marked ! is heavier than any week you have run ({load} {unit}): the model has never seen how you respond to it.', { load: number(Math.round(r.heaviest)), unit })}</p>}
         <p className="chart-note">{t('Form is fitness less fatigue, the morning after the week; the acute:chronic ratio is the highest of the week, and the ramp the change of fitness over it. What the model would say, not advice: its trust is the one under “Why?”.')}</p>
       </div>
+      <ResponseCard responses={responses} day={day} />
       <div style={{ marginTop: 12 }}>
         <FormTab runs={runs} whatIf={whatIf} />
       </div>
     </>
+  );
+}
+
+/** The measures of performance the response is fitted to, as the Response tab offers them. */
+const RESPONSE_MEASURES: ['hr' | 'vdot', string][] = [['hr', msg('VO2max from heart rate')], ['vdot', msg('VDOT')]];
+
+/**
+ * The fitted response under the scenario (requirement "What if on Performance"): for each measure with a
+ * fit, its value today, at the end of the weeks and its highest after, against resting from today.
+ */
+function ResponseCard({ responses, day }: { responses: { criterion: string; name: string; fit: ResponseWhatIf | null }[]; day: (d: string) => string }) {
+  const fitted = responses.filter((x) => x.fit !== null);
+  return (
+    <div className="card chart" style={{ marginTop: 12 }}>
+      <h3 className="chart-title">{t('Your fitted response under these weeks')}</h3>
+      {fitted.length === 0 ? (
+        <p className="chart-note">{t('No fitted response yet: it needs 15 performances or more over 6 weeks (the Response tab).')}</p>
+      ) : (
+        <>
+          <div className="table-scroll">
+            <table className="data" aria-label={t('Fitted response under the scenario')}>
+              <thead><tr><th>{t('Measure')}</th><th className="num">{t('Today')}</th><th className="num">{t('After the weeks')}</th><th className="num">{t('Highest')}</th><th className="num">{t('Resting from today: highest')}</th><th className="num">{t('Prediction (cross-validated R²)')}</th></tr></thead>
+              <tbody>
+                {fitted.map(({ criterion, name, fit }) => (
+                  <tr key={criterion} data-response={criterion}>
+                    <td className="strong">{t(name)}</td>
+                    <td className="num tnum">{number(fit!.today, 1)}</td>
+                    <td className="num tnum strong">{number(fit!.end, 1)}</td>
+                    <td className="num tnum">{t('{value} on {day}', { value: number(fit!.peak.value, 1), day: day(fit!.peak.date) })}</td>
+                    <td className="num tnum">{t('{value} on {day}', { value: number(fit!.rest.value, 1), day: day(fit!.rest.date) })}</td>
+                    <td className="num tnum">{number(fit!.r2cv, 2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="chart-note">{t('Banister’s model fitted to your runs, as on the Response tab, run over the loads of these weeks and three weeks of rest after them. It is as good as its prediction of the performances left out of the fit: under 0.3 it says little.')}</p>
+        </>
+      )}
+    </div>
   );
 }

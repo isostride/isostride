@@ -52,17 +52,24 @@ export function estimateCurve(points: { duration: number; value: number }[], met
   const f = linearFit(law.map((p) => Math.log(p.t)), law.map((p) => Math.log(p.r)));
   // r = e^a · t^(−k): a and k from the envelope's fit, started from the log–log line.
   const [a, k] = fitEnvelope('riegel', law, ([a0, k0], t) => Math.exp(a0 - k0 * Math.log(t)), [f.intercept, -f.slope], [0.02, 0.01]);
-  const csPts = points.filter((p) => p.duration >= CS_RANGE[0] && p.duration <= CS_RANGE[1]).map((p) => ({ t: p.duration, r: rate(p.value) }));
-  let critical: CurveEstimate['critical'] = null;
-  if (csPts.length >= MIN_FIT_POINTS) {
-    // Distance (or work) against time for the start: the slope is the critical rate, the intercept the reserve above it.
-    const c = linearFit(csPts.map((p) => p.t), csPts.map((p) => p.r * p.t));
-    const [cr, reserve] = fitEnvelope('critical', csPts, ([cr0, d0], t) => cr0 + d0 / t, [c.slope, c.intercept], [Math.abs(c.slope) * 0.02 || 0.01, Math.abs(c.intercept) * 0.1 + 1]);
-    critical = { rate: cr, reserve, n: csPts.length };
-  }
+  const critical = fitCritical(points, metric);
   // d = v·t = e^a · t^(1−k)  ⇒  t = (d / e^a)^(1/(1−k)); meaningless when the law says speed rises with time.
   const predictions = metric === 'speed' && k < 1 && k > -0.5 ? PREDICTED_DISTANCES.map((distance) => ({ distance, seconds: Math.pow(distance / Math.exp(a), 1 / (1 - k)) })) : [];
   return { metric, a, k, n: fit.length, critical, predictions };
+}
+
+/**
+ * The critical speed (power) model alone, as estimateCurve fits it: v = CS + D′/t (P = CP + W′/t) as the
+ * envelope of the bests of CS_RANGE, started from distance (work) against time; null below MIN_FIT_POINTS
+ * of them.
+ */
+export function fitCritical(points: { duration: number; value: number }[], metric: CurveMetric = 'speed'): CurveEstimate['critical'] {
+  const csPts = points.filter((p) => p.duration >= CS_RANGE[0] && p.duration <= CS_RANGE[1]).map((p) => ({ t: p.duration, r: rateOf(metric, p.value) }));
+  if (csPts.length < MIN_FIT_POINTS) return null;
+  // Distance (or work) against time for the start: the slope is the critical rate, the intercept the reserve above it.
+  const c = linearFit(csPts.map((p) => p.t), csPts.map((p) => p.r * p.t));
+  const [cr, reserve] = fitEnvelope('critical', csPts, ([cr0, d0], t) => cr0 + d0 / t, [c.slope, c.intercept], [Math.abs(c.slope) * 0.02 || 0.01, Math.abs(c.intercept) * 0.1 + 1]);
+  return { rate: cr, reserve, n: csPts.length };
 }
 
 /** The estimated value at a length of time, from the power law: a pace, s/km, or a power, W. */

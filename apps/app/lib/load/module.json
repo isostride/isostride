@@ -8,7 +8,8 @@
     "lib/gear",
     "lib/i18n",
     "lib/kernel",
-    "lib/settings"
+    "lib/settings",
+    "lib/stats"
   ],
   "runs": "both"
 }

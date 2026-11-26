@@ -84,9 +84,9 @@ describe('Performance model', () => {
     ];
     const hs: Record<string, LoadSummary> = { easy0: steady(60, 140, { bests: easy(180) }), early: sums.early, easy1: steady(60, 140, { bests: easy(180) }) };
     const series = criticalSeries(held, hs, 'power');
-    expect(series.easy0).toEqual({ rate: expect.closeTo(250, 6), from: 'first' });
-    expect(series.early).toEqual({ rate: expect.closeTo(250, 6), from: 'own' });
-    expect(series.easy1).toEqual({ rate: expect.closeTo(250, 6), from: 'held' });
+    expect(series.easy0).toEqual({ rate: expect.closeTo(250, 6), reserve: expect.closeTo(15000, 0), from: 'first' });
+    expect(series.early).toEqual({ rate: expect.closeTo(250, 6), reserve: expect.closeTo(15000, 0), from: 'own' });
+    expect(series.easy1).toEqual({ rate: expect.closeTo(250, 6), reserve: expect.closeTo(15000, 0), from: 'held' });
     expect(criticalSeries([held[0]], { easy0: hs.easy0 }, 'power').easy0).toBeNull();
 
     // With the threshold left to the curve, Power TSS uses it.

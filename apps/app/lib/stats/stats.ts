@@ -119,3 +119,40 @@ export function nelderMead(f: (x: number[]) => number, x0: number[], step: numbe
   const second = run(first.x);
   return second.value <= first.value ? second : first;
 }
+
+/** Student's t of `df` degrees of freedom for a two-sided 95 % interval (tables; past 30 the normal 1.96). */
+export function t975(df: number): number {
+  const table = [12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262, 2.228, 2.201, 2.179, 2.16, 2.145, 2.131, 2.12, 2.11, 2.101, 2.093, 2.086, 2.08, 2.074, 2.069, 2.064, 2.06, 2.056, 2.052, 2.048, 2.045, 2.042];
+  return df < 1 ? Number.NaN : df <= 30 ? table[df - 1] : 1.96;
+}
+
+/**
+ * The jackknife of a statistic of a sample (Quenouille 1949; Tukey 1958): the statistic again with each
+ * point left out in turn, its standard error √((n−1)/n · Σ(θᵢ − θ̄)²), and a 95 % interval of ± Student's
+ * t of n−1 degrees around the statistic of the whole sample. Null under 3 points, or when the statistic
+ * has no value for the whole or for a sample left one short.
+ */
+export function jackknife<T>(sample: T[], statistic: (s: T[]) => number | null): { value: number; se: number; low: number; high: number } | null {
+  return jackknifeMany(sample, (s) => [statistic(s)])[0];
+}
+
+/**
+ * The jackknife of several statistics of one fit at once (as jackknife): the fit is made once for the
+ * whole sample and once for each point left out, and every statistic read from it. Each is null where it
+ * has no value for the whole or for a sample left one short.
+ */
+export function jackknifeMany<T>(sample: T[], statistics: (s: T[]) => (number | null)[]): ({ value: number; se: number; low: number; high: number } | null)[] {
+  const n = sample.length;
+  const whole = statistics(sample);
+  if (n < 3) return whole.map(() => null);
+  const left = Array.from({ length: n }, (_, i) => statistics(sample.filter((_, k) => k !== i)));
+  return whole.map((value, j) => {
+    if (value === null || !Number.isFinite(value)) return null;
+    const vs = left.map((l) => l[j] ?? null);
+    if (vs.some((v) => v === null || !Number.isFinite(v))) return null;
+    const m = (vs as number[]).reduce((s, v) => s + v, 0) / n;
+    const se = Math.sqrt(((n - 1) / n) * (vs as number[]).reduce((s, v) => s + (v - m) ** 2, 0));
+    const half = t975(n - 1) * se;
+    return { value, se, low: value - half, high: value + half };
+  });
+}

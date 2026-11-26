@@ -965,6 +965,17 @@
     ] },
     { "element": "57e12626-04a5-48ed-91c5-a77303df52bc", "name": "What if keeps the runs' start", "tests": [
       "tests/unit/model-review.test.ts › Performance models reviewed › What if leaves the start of the averages to the runs"
+    ] },
+    { "element": "669bfe77-d966-4805-aeb1-ab13a53e35a8", "name": "Ranges of the markers", "tests": [
+      "tests/integration/model-gaps.test.ts › Performance models extended › The range of the markers by the jackknife",
+      "tests/unit/assumptions.test.ts › Model assumptions › Critical speed settled by its bests"
+    ] },
+    { "element": "0191b531-d40b-4a1b-b4b1-3cc8ad9da2ff", "name": "D′ balance through a run", "tests": [
+      "tests/integration/model-gaps.test.ts › Performance models extended › D′ balance through a run",
+      "e2e/performance.spec.ts › Performance model › D′ balance of a run"
+    ] },
+    { "element": "715c8059-109f-4253-ab8a-d1aa01376d75", "name": "Fitted response under a scenario", "tests": [
+      "tests/integration/model-gaps.test.ts › Performance models extended › What if runs the fitted response over the scenario"
     ] }
   ]
 }

@@ -19,6 +19,7 @@ const PinButton = eager(() => import('../dashboard/PinButton').then((m) => m.Pin
 /** The editor of the run's tags: loaded when it opens. */
 const TagEditor = eager(() => import('./TagEditor').then((m) => m.TagEditor));
 /** Compare with the previous run of a workout's layout: loaded after the screen. */
+const BalanceDialog = eager(() => import('./BalanceCard').then((m) => m.BalanceDialog));
 const WorkoutLink = eager(() => import('./WorkoutLink').then((m) => m.WorkoutLink));
 /** The map made large, coloured by a metric: loaded when it opens. */
 const RouteExpanded = eager(() => import('./RouteExpanded').then((m) => m.RouteExpanded));
@@ -107,6 +108,8 @@ function RunPage() {
   /** the zones of the metrics, from the settings */
   const [zones, setZones] = useState<Record<string, number[]>>({});
   // The run's load by the model of Settings, and the form that morning (requirement "Load model chosen in Settings").
+  // The D′ balance of the run, in a dialog (requirement "D′ balance of a run").
+  const [balanceOpen, setBalanceOpen] = useState(false);
   const [effort, setEffort] = useState<{ load: number; estimated: boolean; unit: string; model: string; form: number } | null>(null);
   // The view the page opens with ("chce aby wszystko bylo endkodowane w url"): the link's, then the
   // run's memory, then the last choices made on any run. A run opened afresh, its link naming nothing
@@ -391,8 +394,10 @@ function RunPage() {
         {tagged.note && <span className="muted small run-note" title={tagged.note}>✉ {tagged.note}</span>}
         <button type="button" className="btn" onClick={() => void editTags()} title={t("The run's title, workout type, technique cue, shoes and a note")}>{t('Tags and note')}</button>
         <Link className="btn" href={`/compare?items=r:${run.id}:0`} title={t('Open this run in Compare, beside your segments and other runs')}>{t('Compare this run')}</Link>
+        <button type="button" className="btn" onClick={() => setBalanceOpen(true)} title={t('How much of the reserve above your critical speed (D′) is left through the run')}>{t('D′ balance')}</button>
         <WorkoutLink run={run} />
       </div>
+      {balanceOpen && <BalanceDialog run={run} folder={folder} onClose={() => setBalanceOpen(false)} />}
       {tagEdit && <TagEditor title={title ?? `${date(run.startTime)} ${time(run.startTime)}`} tag={tagEdit.file.tags[id] ?? {}} gear={tagEdit.gear} dictionary={tagEdit.file.dictionary} onSave={(tag) => void saveTags(tag)} onCancel={() => setTagEdit(null)} />}
       <div className="card run-board pin-host">
         <PinButton folder={folder} kind="run" target={run.id} name={title ?? `${date(run.startTime)} ${time(run.startTime)}`} opts={slots.filter((k) => k !== null).join(',')} />
