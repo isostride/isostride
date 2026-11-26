@@ -954,8 +954,8 @@
     { "element": "54355ac3-9e2f-425f-86a0-237f3ffca525", "name": "Markers of the week up to today", "tests": [
       "tests/unit/model-review.test.ts › Performance models reviewed › The markers of the current week up to today"
     ] },
-    { "element": "eca23ec3-e158-4cff-9709-f40a557b940a", "name": "Monotony of the week so far", "tests": [
-      "tests/unit/model-review.test.ts › Performance models reviewed › The monotony of the current week over its days so far"
+    { "element": "eca23ec3-e158-4cff-9709-f40a557b940a", "name": "Monotony of a week not over yet", "tests": [
+      "tests/unit/model-review.test.ts › Performance models reviewed › The monotony of a week not over yet over the last 7 days"
     ] },
     { "element": "f28e62ba-e487-412d-a3d5-b4b237199edd", "name": "VO2max past the warm-up", "tests": [
       "tests/unit/model-review.test.ts › Performance models reviewed › VO2max from heart rate past the warm-up"
@@ -976,6 +976,25 @@
     ] },
     { "element": "715c8059-109f-4253-ab8a-d1aa01376d75", "name": "Fitted response under a scenario", "tests": [
       "tests/integration/model-gaps.test.ts › Performance models extended › What if runs the fitted response over the scenario"
+    ] },
+    { "element": "93ec17f5-c38d-435b-b88f-1e1c62285652", "name": "Decline from all-out long bests", "tests": [
+      "tests/integration/model-round-3.test.ts › Performance models reviewed again › The decline of the whole curve from all-out long bests only"
+    ] },
+    { "element": "f59622e3-7c5a-4cea-96d7-dd9ff1f6fd5d", "name": "D′ balance against earlier bests", "tests": [
+      "tests/integration/model-round-3.test.ts › Performance models reviewed again › D′ balance against the bests before the run",
+      "e2e/performance.spec.ts › Performance model › D′ balance of a run"
+    ] },
+    { "element": "678a6e8e-8ac5-457f-8b34-0da495bc93b8", "name": "Decoupling past the warm-up", "tests": [
+      "tests/integration/model-round-3.test.ts › Performance models reviewed again › Decoupling past the warm-up"
+    ] },
+    { "element": "72cbdf50-0b4d-460d-923a-665a513925b8", "name": "Aerobic values now, up to today", "tests": [
+      "tests/integration/model-round-3.test.ts › Performance models reviewed again › Efficiency and VO2max now, up to today"
+    ] },
+    { "element": "7e6850ce-d770-4683-8952-71cb97d03d82", "name": "Range of the time constants", "tests": [
+      "tests/integration/model-round-3.test.ts › Performance models reviewed again › The range of the fitted time constants"
+    ] },
+    { "element": "99fbdfd5-e849-4481-8302-ba63a16ff368", "name": "VDOT of all-out efforts", "tests": [
+      "tests/integration/model-round-3.test.ts › Performance models reviewed again › VDOT of the all-out efforts of a day"
     ] }
   ]
 }

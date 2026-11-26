@@ -1,5 +1,6 @@
 import { dayOf } from '@/lib/gear';
-import { markersOverTime, type MarkerWeek } from './insights';
+import { effortOf } from './efforts';
+import type { MarkerWeek } from './insights';
 import type { LoadRow } from './models';
 import type { LoadSummary } from './summary';
 
@@ -65,19 +66,47 @@ export function uthVo2max(restHr: number, maxHr: number): number {
   return Math.round(((15.3 * maxHr) / restHr) * 10) / 10;
 }
 
-/** The heart rate estimate now: the median of the runs of this many days up to the last of them. */
+/**
+ * The heart rate estimate now: the median of the runs of this many days up to `today` (the last of them
+ * when left out). Up to today: after a break the estimate of the runs before it is no longer that of now.
+ */
 export const HR_VO2_MEDIAN_DAYS = 28;
-export function hrVo2Now(perRun: { startTime: string; vo2max: number }[]): { value: number | null; runs: number } {
+export function hrVo2Now(perRun: { startTime: string; vo2max: number }[], today?: string): { value: number | null; runs: number } {
   if (!perRun.length) return { value: null, runs: 0 };
-  const last = Date.parse(perRun[perRun.length - 1].startTime);
-  const recent = perRun.filter((p) => Date.parse(p.startTime) > last - HR_VO2_MEDIAN_DAYS * 86_400_000).map((p) => p.vo2max).sort((a, b) => a - b);
-  return { value: recent[Math.floor(recent.length / 2)], runs: recent.length };
+  const last = today ? new Date(`${today}T23:59:59`).getTime() : Date.parse(perRun[perRun.length - 1].startTime);
+  const recent = perRun.filter((p) => { const at = Date.parse(p.startTime); return at > last - HR_VO2_MEDIAN_DAYS * 86_400_000 && at <= last; }).map((p) => p.vo2max).sort((a, b) => a - b);
+  return { value: recent.length ? recent[Math.floor(recent.length / 2)] : null, runs: recent.length };
 }
 
-/** What the fitted model takes for a performance: VO2max from heart rate, a mean per day; or the weekly VDOT. */
+/** The shortest best a VDOT is read from, s (model's choice: 5 minutes; Daniels' tables start at 1500 m). */
+export const VDOT_MIN_SECONDS = 300;
+
+/**
+ * The VDOT of each day with an all-out effort: the highest VDOT (Daniels) among the bests of
+ * VDOT_MIN_SECONDS and more of the day's runs that were all-out by the heart rate held over them
+ * (efforts.ts). A performance on the day it was run: the VDOT of the predicted 5 km is the best of
+ * MARKER_DAYS days, which holds for weeks after a hard effort and so cannot show fatigue. None without a
+ * maximum heart rate.
+ */
+export function effortVdots(rows: LoadRow[], summaries: Record<string, LoadSummary>, maxHr: number | null): { date: string; value: number }[] {
+  if (!maxHr) return [];
+  const by = new Map<string, number>();
+  for (const r of rows) {
+    const day = dayOf(r.startTime);
+    for (const b of summaries[r.id]?.bests ?? []) {
+      // i18n-ignore
+      if (b.duration < VDOT_MIN_SECONDS || b.speed === null || effortOf(b.duration, b.speedHr, maxHr) !== 'allout') continue;
+      const v = danielsVdot(b.speed * b.duration, b.duration);
+      if (v > (by.get(day) ?? 0)) by.set(day, v);
+    }
+  }
+  return [...by].sort(([a], [b]) => a.localeCompare(b)).map(([date, v]) => ({ date, value: Math.round(v * 10) / 10 }));
+}
+
+/** What the fitted model takes for a performance: VO2max from heart rate, a mean per day; or the VDOT of the day's all-out efforts. */
 export type Criterion = 'hr' | 'vdot';
-export function performancesFor(criterion: Criterion, rows: LoadRow[], summaries: Record<string, LoadSummary>, restHr: number, maxHr: number | null, today: string, curve: 'riegel' | 'whole' = 'riegel'): { date: string; value: number }[] {
-  if (criterion === 'vdot') return vdotOverTime(markersOverTime(rows, summaries, today, curve)).flatMap((w) => (w.vdot === null ? [] : [{ date: w.end, value: w.vdot }]));
+export function performancesFor(criterion: Criterion, rows: LoadRow[], summaries: Record<string, LoadSummary>, restHr: number, maxHr: number | null, today: string): { date: string; value: number }[] {
+  if (criterion === 'vdot') return effortVdots(rows, summaries, maxHr).filter((p) => p.date <= today);
   if (!maxHr) return [];
   const by = new Map<string, number[]>();
   for (const r of hrVo2Runs(rows, summaries, restHr, maxHr)) { const d = dayOf(r.startTime); (by.get(d) ?? by.set(d, []).get(d)!).push(r.vo2max); }

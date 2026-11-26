@@ -66,14 +66,28 @@ describe('Performance models reviewed', () => {
     expect(weeks[weeks.length - 1].cs).toBeCloseTo(4, 3);
   });
 
-  it('The monotony of the current week over its days so far', () => {
-    // Monday 100, Tuesday 50, Wednesday (today) 100: the monotony of three days, not of a week with four days of rest.
-    const days = formSeries([{ startTime: '2026-11-23T08:00:00', load: 100 }, { startTime: '2026-11-24T08:00:00', load: 50 }, { startTime: '2026-11-25T08:00:00', load: 100 }], { fitnessDays: 42, fatigueDays: 7 });
+  it('The monotony of a week not over yet over the last 7 days', () => {
+    // A history of three days: Monday 100, Tuesday 50, Wednesday (today) 100: the monotony of the days there
+    // are, not of a week with four days of rest to come.
+    const p = { fitnessDays: 42, fatigueDays: 7 };
+    const days = formSeries([{ startTime: '2026-11-23T08:00:00', load: 100 }, { startTime: '2026-11-24T08:00:00', load: 50 }, { startTime: '2026-11-25T08:00:00', load: 100 }], p);
     const [week] = weeklyLoad(days);
     const mean = 250 / 3;
     const sd = Math.sqrt(((100 - mean) ** 2 * 2 + (50 - mean) ** 2) / 3);
     expect(week.load).toBe(250);
     expect(week.monotony).toBeCloseTo(Math.round((mean / sd) * 100) / 100, 6);
+    // With the week before run (Monday to Sunday 60, 0, 80, 0, 100, 0, 120), Monday 100 and Tuesday 90 are read
+    // with the five days before them, Foster's week ending today: over the two days alone the monotony was 19.
+    const before = [60, 0, 80, 0, 100, 0, 120].map((load, k) => ({ startTime: `2026-11-${16 + k}T08:00:00`, load }));
+    const two = weeklyLoad(formSeries([...before, { startTime: '2026-11-23T08:00:00', load: 100 }, { startTime: '2026-11-24T08:00:00', load: 90 }], p));
+    const seven = [80, 0, 100, 0, 120, 100, 90];
+    const m7 = 490 / 7;
+    const sd7 = Math.sqrt(seven.reduce((s, v) => s + (v - m7) ** 2, 0) / 7);
+    expect(two[1].load).toBe(190);
+    expect(two[1].monotony).toBeCloseTo(Math.round((m7 / sd7) * 100) / 100, 6);
+    expect(two[1].strain).toBe(Math.round(490 * (m7 / sd7)));
+    // The week that is over keeps its own seven days.
+    expect(two[0].load).toBe(360);
   });
 
   it('VO2max from heart rate past the warm-up', () => {

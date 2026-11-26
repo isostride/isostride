@@ -117,6 +117,10 @@ describe('Model assumptions', () => {
     expect(status(rtss.by.load, 'threshold')).toBe('unmet');
     // All-out bests: the threshold from the bests of the 90 days.
     expect(status(report(ALL_OUT, { ...SET, load: 'rtss' }).by.load, 'threshold')).toBe('met');
+    // Against critical speed, a pace of half an hour, the loads read lower than scores named for the pace of an hour:
+    // said with an automatic threshold, for the runner to judge; not with a threshold of the runner's own.
+    expect(status(report(ALL_OUT, { ...SET, load: 'rtss' }).by.load, 'scale')).toBe('unknown');
+    expect(status(report(ALL_OUT, { ...SET, load: 'rtss', thresholdPace: 250 }).by.load, 'scale')).toBeUndefined();
     expect(rtss.by.form.trust).toBe('no');
     expect(report(NEVER_ALL_OUT, { ...SET, load: 'rtss', thresholdPace: 250 }).by.load).toMatchObject({ parents: [], trust: 'ok' });
 

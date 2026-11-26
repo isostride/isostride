@@ -15,6 +15,13 @@ export interface BanisterFit {
   /** the time constants of fitness and fatigue, days */
   tau1: number;
   tau2: number;
+  /**
+   * the time constants the performances cannot tell from those (95 %): the least and the most of the
+   * pairs of the grid whose squared error lies within the F-ratio of the best's, SSE ≤ SSEmin · 0.05^(−2/(n−5))
+   * (two parameters of the grid, five of the model)
+   */
+  tau1Range: [number, number];
+  tau2Range: [number, number];
   /** the share of the performances' variance the model explains */
   r2: number;
   /**
@@ -45,6 +52,13 @@ export const TAU1_RANGE: [number, number] = [15, 60];
 export const TAU2_RANGE: [number, number] = [2, 20];
 /** The blocks of consecutive performances of the cross-validation (model's choice). */
 export const CV_FOLDS = 5;
+/**
+ * Fitness lasts this many times longer than fatigue at least (model's choice: 2): two time constants
+ * close to each other give two sums all but alike, and the fit then takes their difference with gains
+ * many times the performance itself (22 and 20 days with terms of 81 and 75 on a performance of 50, the
+ * truth 42 and 7).
+ */
+export const TAU_APART = 2;
 
 const next = (day: string, n = 1) => { const d = new Date(`${day}T12:00:00`); d.setDate(d.getDate() + n); return dayOf(d.toISOString()); };
 
@@ -78,19 +92,23 @@ function ols3(y: number[], a: number[], b: number[]): [number, number, number] |
 
 type GridFit = { sse: number; tau1: number; tau2: number; c: [number, number, number] };
 
-/** The grid search over the performances `use` (indices into obs): the pair of time constants with the least squared error and positive gains. */
-function fitGrid(obs: { i: number; y: number }[], use: number[], g1s: Map<number, number[]>, g2s: Map<number, number[]>): GridFit | null {
+/**
+ * The grid search over the performances `use` (indices into obs): the pair of time constants (τ1 ≥
+ * TAU_APART · τ2) with the least squared error and positive gains; every such pair's error into `tried`.
+ */
+function fitGrid(obs: { i: number; y: number }[], use: number[], g1s: Map<number, number[]>, g2s: Map<number, number[]>, tried?: { tau1: number; tau2: number; sse: number }[]): GridFit | null {
   const y = use.map((k) => obs[k].y);
   let best: GridFit | null = null;
   for (const [tau1, g1] of g1s) {
     const a = use.map((k) => g1[obs[k].i]);
     for (const [tau2, g2] of g2s) {
-      if (tau2 >= tau1) continue;
+      if (tau1 < TAU_APART * tau2) continue;
       const b = use.map((k) => g2[obs[k].i]);
       const c = ols3(y, a, b);
       if (!c || c[1] <= 0 || c[2] >= 0) continue;
       let sse = 0;
       for (let k = 0; k < y.length; k++) sse += (y[k] - (c[0] + c[1] * a[k] + c[2] * b[k])) ** 2;
+      tried?.push({ tau1, tau2, sse });
       if (!best || sse < best.sse) best = { sse, tau1, tau2, c };
     }
   }
@@ -99,8 +117,9 @@ function fitGrid(obs: { i: number; y: number }[], use: number[], g1s: Map<number
 
 /**
  * The model fitted to the daily loads (every day, from the first) and the performances measured on
- * some of those days: the time constants by a grid search (τ2 < τ1), p0, k1, k2 by least squares,
- * the pair with the least squared error and positive gains kept; and the same fit cross-validated
+ * some of those days: the time constants by a grid search (τ1 ≥ TAU_APART · τ2), p0, k1, k2 by least
+ * squares, the pair with the least squared error and positive gains kept, with the range of the pairs
+ * the performances cannot tell from it; and the same fit cross-validated
  * over CV_FOLDS blocks of consecutive performances. Null with fewer than BANISTER_MIN_POINTS
  * performances or a span under BANISTER_MIN_SPAN days. The projection runs over `horizon` days past the
  * last, with the `future` loads of the days after it (a scenario of What if), rest after them.
@@ -124,8 +143,12 @@ export function fitBanister(days: { date: string; load: number }[], performances
   const mean = y.reduce((s, v) => s + v, 0) / y.length;
   const sst = y.reduce((s, v) => s + (v - mean) ** 2, 0);
   const all = obs.map((_, k) => k);
-  const best = fitGrid(obs, all, g1s, g2s);
+  const tried: { tau1: number; tau2: number; sse: number }[] = [];
+  const best = fitGrid(obs, all, g1s, g2s, tried);
   if (!best) return null;
+  // The pairs the performances cannot tell from the best: within the F-ratio (2 and n − 5 degrees) of its error.
+  const within = tried.filter((q) => q.sse <= best.sse * 0.05 ** (-2 / (obs.length - 5)) + 1e-12);
+  const span = (of: (q: { tau1: number; tau2: number }) => number): [number, number] => [Math.min(...within.map(of)), Math.max(...within.map(of))];
   // Cross-validation: each block predicted by the grid fitted to the others (the mean of the others when none fits).
   let press = 0;
   for (let f = 0; f < CV_FOLDS; f++) {
@@ -150,7 +173,7 @@ export function fitBanister(days: { date: string; load: number }[], performances
   const meanAt = (g: number[]) => obs.reduce((s, o) => s + g[o.i], 0) / obs.length;
   const terms = { fitness: k1 * meanAt(g1), fatigue: -minusK2 * meanAt(g2) };
   return {
-    p0, k1, k2: -minusK2, tau1: best.tau1, tau2: best.tau2,
+    p0, k1, k2: -minusK2, tau1: best.tau1, tau2: best.tau2, tau1Range: span((q) => q.tau1), tau2Range: span((q) => q.tau2),
     r2: sst > 0 ? 1 - best.sse / sst : 0, r2cv: sst > 0 ? 1 - press / sst : 0,
     n: obs.length, fitted, projection, peak, terms,
   };

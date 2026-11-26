@@ -21,32 +21,38 @@ export interface LoadWeek {
   /** its Monday */
   start: string;
   load: number;
-  /** mean daily load over its standard deviation (Foster 1998); null for a week of one value */
+  /** mean daily load over its standard deviation (Foster 1998); null when every day has the same load; of a week not over yet, that of the 7 days up to its last */
   monotony: number | null;
-  /** the week's load times its monotony */
+  /** the week's load times its monotony; of a week not over yet, the load of the 7 days up to its last times their monotony */
   strain: number | null;
-  /** the change of fitness (CTL) over the week */
+  /** the change of fitness (CTL) over the week; of the first week, from the end of its first day */
   ramp: number;
 }
 
 /**
  * Weeks of the daily series, Monday to Sunday: load, monotony, strain, ramp rate. The last week, when the
- * series ends before its Sunday, has its monotony over its days so far: the days to come are no rest.
+ * series ends before its Sunday, has its monotony and strain over the 7 days up to the last day (as many
+ * as the series has): Foster's week ending today. Over its days so far alone (the review of 26 Nov 2026)
+ * a Monday of 100 and a Tuesday of 90 read a monotony of 19. The first week's ramp counts from the end
+ * of its first day: the averages start from the mean load of the first weeks (form.ts), not from zero.
  */
 export function weeklyLoad(days: FormDay[]): LoadWeek[] {
   const by = new Map<string, FormDay[]>();
   for (const d of days) { const w = weekOf(d.date); (by.get(w) ?? by.set(w, []).get(w)!).push(d); }
   const out: LoadWeek[] = [];
-  let before = 0;
+  const lastDay = days[days.length - 1]?.date ?? '';
+  let before: number | null = null;
   for (const [start, list] of [...by].sort(([a], [b]) => a.localeCompare(b))) {
-    const lastDay = days[days.length - 1].date;
-    const loads = Array.from({ length: 7 }, (_, k) => shift(start, k)).filter((d, k) => k === 0 || d <= lastDay).map((d) => list.find((x) => x.date === d)?.load ?? 0);
-    const load = loads.reduce((s, v) => s + v, 0);
-    const mean = load / loads.length;
-    const sd = Math.sqrt(loads.reduce((s, v) => s + (v - mean) ** 2, 0) / loads.length);
+    const own = Array.from({ length: 7 }, (_, k) => shift(start, k)).filter((d) => d <= lastDay).map((d) => list.find((x) => x.date === d)?.load ?? 0);
+    const load = own.reduce((s, v) => s + v, 0);
+    const over = shift(start, 6) <= lastDay;
+    const seven = over ? own : days.slice(-7).map((d) => d.load);
+    const total = seven.reduce((s, v) => s + v, 0);
+    const mean = total / seven.length;
+    const sd = Math.sqrt(seven.reduce((s, v) => s + (v - mean) ** 2, 0) / seven.length);
     const monotony = sd > 0 ? mean / sd : null;
     const end = list[list.length - 1].fitness;
-    out.push({ start, load: Math.round(load), monotony: monotony === null ? null : Math.round(monotony * 100) / 100, strain: monotony === null ? null : Math.round(load * monotony), ramp: Math.round((end - before) * 10) / 10 });
+    out.push({ start, load: Math.round(load), monotony: monotony === null ? null : Math.round(monotony * 100) / 100, strain: monotony === null ? null : Math.round(total * monotony), ramp: Math.round((end - (before ?? list[0].fitness)) * 10) / 10 });
     before = end;
   }
   return out;
@@ -136,6 +142,12 @@ export function zonesByWeek(rows: LoadRow[], summaries: Record<string, LoadSumma
  * and their Z3 is no moderate intensity.
  */
 export const SEILER_SHARES: [number, number] = [0.82, 0.87];
+/**
+ * The share of the time at low intensity that the 80 % of sessions run easy comes to, by time in a heart
+ * rate zone: the warm-ups and recoveries of the hard sessions count as low (Seiler & Kjerland 2006: 91 % of
+ * the time in zone for 75 % of the sessions by their goal). The reference of the intensity bar.
+ */
+export const LOW_REFERENCE = 0.9;
 
 /** Each week's seconds at low, moderate and high intensity (Seiler's zones of `maxHr`); none without a maximum. */
 export function seilerByWeek(rows: LoadRow[], summaries: Record<string, LoadSummary>, maxHr: number | null): ZoneWeek[] {
@@ -158,7 +170,7 @@ export interface EfficiencyRun {
   ef: number;
   /** %, for runs of DECOUPLING_MIN and more */
   decoupling: number | null;
-  /** its mean heart rate lies in Z1–Z2 */
+  /** its mean heart rate lies in Seiler's low zone: under SEILER_SHARES[0] of the maximum */
   easy: boolean;
   moving: number;
 }
@@ -168,9 +180,14 @@ export const DECOUPLING_MIN = 45 * 60;
 /** The window of the trend of the efficiency factor, days. */
 export const EF_TREND_DAYS = 28;
 
-/** The efficiency of each run with a heart rate, and its decoupling when it is long enough. */
-export function efficiencyRuns(rows: LoadRow[], summaries: Record<string, LoadSummary>, hrZones: number[]): EfficiencyRun[] {
-  const easyMax = hrZones.length >= 2 ? hrZones[1] : hrZones[0] ?? Infinity;
+/**
+ * The efficiency of each run with a heart rate, and its decoupling when it is long enough. A run is
+ * easy when its mean heart rate lies under Seiler's first threshold, SEILER_SHARES[0] of the maximum (as
+ * the intensity distribution reads low intensity; the zones of Settings, by default 60–90 % of 190 bpm,
+ * left few runs easy); none without a maximum.
+ */
+export function efficiencyRuns(rows: LoadRow[], summaries: Record<string, LoadSummary>, maxHr: number | null): EfficiencyRun[] {
+  const easyMax = maxHr ? SEILER_SHARES[0] * maxHr : -Infinity;
   return rows.flatMap((r) => {
     const s = summaries[r.id];
     if (!s || s.ef === null || s.avgHr === null) return [];
@@ -188,21 +205,23 @@ export function trailingMean<T extends { startTime: string }>(points: T[], value
 }
 
 /**
- * The efficiency now: the mean factor of the easy runs of the EF_TREND_DAYS days up to the last
- * run and of the days before them, and the median decoupling of the last long runs (5 at most).
+ * The efficiency now: the mean factor of the easy runs of the EF_TREND_DAYS days up to `today` (the last
+ * run's day when left out) and of the days before them, and the median decoupling of the last long runs
+ * (5 at most) of the MARKER_DAYS days up to it. Up to today, not to the last run: after a break the
+ * values of the runs before it are no longer those of now.
  */
-export function efficiencyNow(points: EfficiencyRun[]): { ef: number | null; before: number | null; easyRuns: number; decoupling: number | null; longRuns: number; longRuns90: number } {
+export function efficiencyNow(points: EfficiencyRun[], today?: string): { ef: number | null; before: number | null; easyRuns: number; decoupling: number | null; longRuns: number; longRuns90: number } {
   if (!points.length) return { ef: null, before: null, easyRuns: 0, decoupling: null, longRuns: 0, longRuns90: 0 };
-  const last = Date.parse(points[points.length - 1].startTime);
+  const last = today ? new Date(`${today}T23:59:59`).getTime() : Date.parse(points[points.length - 1].startTime);
   const within = (p: EfficiencyRun, from: number, to: number) => { const t = Date.parse(p.startTime); return t > from && t <= to; };
   const easy = points.filter((p) => p.easy);
   const mean = (list: EfficiencyRun[]) => (list.length ? list.reduce((s, p) => s + p.ef, 0) / list.length : null);
   const recent = easy.filter((p) => within(p, last - EF_TREND_DAYS * DAY, last));
-  const long = points.filter((p) => p.decoupling !== null);
+  const long = points.filter((p) => p.decoupling !== null && within(p, last - MARKER_DAYS * DAY, last));
   const lastLong = long.slice(-5).map((p) => p.decoupling!).sort((a, b) => a - b);
   return {
     ef: mean(recent), before: mean(easy.filter((p) => within(p, last - 2 * EF_TREND_DAYS * DAY, last - EF_TREND_DAYS * DAY))), easyRuns: recent.length,
     decoupling: lastLong.length ? lastLong[Math.floor(lastLong.length / 2)] : null, longRuns: lastLong.length,
-    longRuns90: long.filter((p) => within(p, last - MARKER_DAYS * DAY, last)).length,
+    longRuns90: long.length,
   };
 }

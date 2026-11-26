@@ -11,6 +11,17 @@ The versions of IsoStride (the app at app.isostride.com and the site at isostrid
 ### On a phone
 - Every screen, dialog and step of the setup wizard fits a phone: the wizard's steps, the rule of a new segment, the tables (their secondary columns left out), the map of the models read down the screen.
 
+### Performance models, reviewed again
+- Péronnet–Thibault and the omni-domain model: the decline past 7 (30) minutes is the runner's own only when a best of 30 minutes or more lies within 3 % of the curve with Riegel's decline, or above it. Easy long runs bent the curve down to them (a marathon of 2:55 read as 3:14 to 4:18); they are now taken for easy runs, and the note says whose decline it is. Without such a best the omni-domain model takes Riegel's decline too, not none.
+- D′ balance of a run is read against the bests of the 90 days before the run, the run itself left out: a run that goes past them shows under 0 % (with the run in, it ended at exactly 0 %).
+- The ranges of the markers leave out each run in turn, not each best: one hard effort leaves a best of every shorter length.
+- Fitted response: beside each time constant, the range of those that fit as well (95 %); fitness is taken to last twice as long as fatigue at least. On VDOT, a performance is the VDOT of a day's all-out efforts of 5 minutes or more, on the day they were run, in place of the weekly VDOT of the best of 90 days.
+- Weekly load: the first week's ramp no longer holds the load the averages start from; the monotony and strain of a week not over yet are those of the last 7 days (a Monday of 100 and a Tuesday of 90 read a monotony of 19).
+- Decoupling is read past the first 10 minutes: a heart rate still rising in the warm-up read as 4 % of drift.
+- Intensity: the mark on the bar stands at 90 % low, what 80 % of sessions run easy comes to by time in zone (Seiler & Kjerland 2006). Easy runs of the efficiency factor are those under 82 % of the maximum heart rate, not those of the zones of Settings.
+- VO2max from heart rate and the efficiency now are those of the days up to today, not up to the last run.
+- rTSS and Power TSS with an automatic threshold say how they stand against scores that take the pace or power of an hour.
+
 ### Performance models, reviewed
 - rTSS and Power TSS: the automatic threshold is taken only from bests that show all-out short efforts (D′ worth 12 s or more at the critical speed); weeks of easy running keep the last such threshold instead of lowering it to the easy pace.
 - Péronnet–Thibault: the decline past 7 minutes is fitted only with bests of 30 minutes or more; without them it is Riegel's 1.06, and the note says so. The anaerobic reserve declines by the authors' constant.

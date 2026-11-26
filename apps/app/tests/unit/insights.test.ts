@@ -8,17 +8,23 @@ const row = (id: string, startTime: string) => ({ id, startTime, duration: 3600 
 
 describe('Performance markers', () => {
   it('Weekly load, monotony and strain', () => {
-    // A week of 100 a day but Sunday: monotony = mean / sd; strain = load × monotony; fitness rises: a positive ramp.
-    const days = formSeries([0, 1, 2, 3, 4, 5].map((k) => ({ startTime: `2026-11-${String(2 + k).padStart(2, '0')}T07:00:00`, load: 100 })), { fitnessDays: 42, fatigueDays: 7 }, '2026-11-08');
+    // A week of 100 a day but Sunday, then one of 200 a day: monotony = mean / sd; strain = load × monotony.
+    const week = (from: number, load: number) => [0, 1, 2, 3, 4, 5].map((k) => ({ startTime: `2026-11-${String(from + k).padStart(2, '0')}T07:00:00`, load }));
+    const days = formSeries([...week(2, 100), ...week(9, 200)], { fitnessDays: 42, fatigueDays: 7 }, '2026-11-15');
     expect(weekOf('2026-11-08')).toBe('2026-11-02');
-    const [w] = weeklyLoad(days);
+    const [w, second] = weeklyLoad(days);
     expect(w.start).toBe('2026-11-02');
     expect(w.load).toBe(600);
     const mean = 600 / 7;
     const sd = Math.sqrt((6 * (100 - mean) ** 2 + mean ** 2) / 7);
     expect(w.monotony).toBeCloseTo(mean / sd, 2);
     expect(w.strain).toBe(Math.round(600 * w.monotony!));
-    expect(w.ramp).toBeGreaterThan(0);
+    // The averages start from the mean load of the first days (129 a day), so the first week's ramp is the
+    // change of fitness within it, from the end of its first day: a few points down, not the 125 it starts from.
+    expect(w.ramp).toBeLessThan(0);
+    expect(w.ramp).toBeGreaterThan(-10);
+    // The heavier week raises fitness: a positive ramp.
+    expect(second.ramp).toBeGreaterThan(0);
     // The same load every day: no spread, no monotony.
     expect(weeklyLoad(formSeries([0, 1, 2, 3, 4, 5, 6].map((k) => ({ startTime: `2026-11-${String(2 + k).padStart(2, '0')}T07:00:00`, load: 50 })), { fitnessDays: 42, fatigueDays: 7 }))[0].monotony).toBeNull();
   });
@@ -59,18 +65,20 @@ describe('Performance markers', () => {
   });
 
   it('Efficiency and decoupling', () => {
-    // A steady hour, heart rate drifting up from 140 to 150 at 3 m/s: efficiency about 1.24 m per beat; the halves
-    // average 142.5 and 147.5 bpm, a decoupling of 1 − 142.5/147.5 = 3.4 %.
+    // A steady hour, heart rate drifting up from 140 to 150 at 3 m/s: efficiency about 1.24 m per beat; past the
+    // 10 minutes of the warm-up the halves average 143.75 and 147.92 bpm, a decoupling of 1 − 143.75/147.92 = 2.8 %.
     const run = syntheticRun(3600, (t) => ({ speed: 3, heartRate: 140 + (10 * t) / 3600 }));
     const s = summarizeLoad(run);
     expect(s.moving).toBeGreaterThan(3500);
     expect(s.ef!).toBeCloseTo((3 * 60) / 145, 2);
-    expect(s.decoupling!).toBeCloseTo(100 * (1 - 142.5 / 147.5), 0);
-    // Easy when the mean heart rate is below Z3; decoupling only for runs of 45 min and more.
+    expect(s.decoupling!).toBeCloseTo(100 * (1 - 143.75 / 147.92), 1);
+    // Easy when the mean heart rate is under 82 % of the maximum (156 of 190); decoupling only for runs of 45 min and more.
     const rows = [row('long', '2026-11-03T07:00:00Z'), row('short', '2026-11-04T07:00:00Z'), row('none', '2026-11-05T07:00:00Z')];
-    const eff = efficiencyRuns(rows, { long: s, short: base({ moving: 1800, avgHr: 160, decoupling: 2 }), none: base({ ef: null }) }, HR_ZONES);
-    expect(eff.map((e) => [e.runId, e.easy, e.decoupling === null])).toEqual([['long', false, false], ['short', false, true]]);
-    expect(efficiencyRuns([row('e', '2026-11-03T07:00:00Z')], { e: base({ avgHr: 125 }) }, HR_ZONES)[0].easy).toBe(true);
+    const eff = efficiencyRuns(rows, { long: s, short: base({ moving: 1800, avgHr: 160, decoupling: 2 }), none: base({ ef: null }) }, 190);
+    expect(eff.map((e) => [e.runId, e.easy, e.decoupling === null])).toEqual([['long', true, false], ['short', false, true]]);
+    expect(efficiencyRuns([row('e', '2026-11-03T07:00:00Z')], { e: base({ avgHr: 125 }) }, 190)[0].easy).toBe(true);
+    // Without a maximum heart rate no run is known to be easy.
+    expect(efficiencyRuns([row('e', '2026-11-03T07:00:00Z')], { e: base({ avgHr: 125 }) }, null)[0].easy).toBe(false);
     // The trailing mean over 28 days.
     const pts = [{ startTime: '2026-10-01T07:00:00Z', v: 1 }, { startTime: '2026-10-15T07:00:00Z', v: 3 }, { startTime: '2026-11-20T07:00:00Z', v: 5 }];
     expect(trailingMean(pts, (p) => p.v, 28)).toEqual([1, 2, 5]);

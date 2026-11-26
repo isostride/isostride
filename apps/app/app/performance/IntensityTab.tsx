@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { msg, number, t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
-import { SEILER_SHARES, intensityShares, seilerByWeek, zonesByWeek, type LoadSummary } from '@/lib/load';
+import { LOW_REFERENCE, SEILER_SHARES, intensityShares, seilerByWeek, zonesByWeek, type LoadSummary } from '@/lib/load';
 import { zoneColor, zoneRanges } from '@/lib/settings';
 import { TimeChart } from './TimeChart';
 
@@ -44,11 +44,11 @@ export function IntensityTab({ runs, summaries, hrZones, maxHr }: { runs: RunsIn
           <div><dt>{t('High (above {lt2})', { lt2 })}</dt><dd className="tnum">{pct(shares.high)}</dd></div>
           <div><dt>{t('Time with heart rate')}</dt><dd className="tnum">{number(Math.round(shares.seconds / 3600))} <span className="unit">h</span></dd></div>
         </dl>
-        <div className="intensity-bar" role="img" aria-label={t('Low {low}, moderate {moderate}, high {high}; reference 80 % low', { low: pct(shares.low), moderate: pct(shares.moderate), high: pct(shares.high) })}>
+        <div className="intensity-bar" role="img" aria-label={t('Low {low}, moderate {moderate}, high {high}; reference 90 % low', { low: pct(shares.low), moderate: pct(shares.moderate), high: pct(shares.high) })}>
           <span style={{ width: width(shares.low), background: zoneColor(0, 3) }} />
           <span style={{ width: width(shares.moderate), background: zoneColor(1, 3) }} />
           <span style={{ width: width(shares.high), background: zoneColor(2, 3) }} />
-          <i className="intensity-ref" style={{ left: '80%' }} title={t('80/20: about 80 % of the time at low intensity')} />
+          <i className="intensity-ref" style={{ left: `${LOW_REFERENCE * 100}%` }} title={t('About 90 % of the time at low intensity: what 80 % of the sessions easy comes to, by time in zone')} />
         </div>
         <h3 className="chart-title" style={{ marginTop: 16 }}>{t('Time in the heart rate zones')}</h3>
         <TimeChart label={t('Time in the heart rate zones')} times={weeks.map((w) => time(w.start))} height={240}

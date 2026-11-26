@@ -325,6 +325,8 @@ test.describe('Performance model', () => {
     // Intensity: the shares of low, moderate and high add up to the whole.
     await page.getByRole('radio', { name: 'Intensity' }).click();
     await expect(page.getByRole('img', { name: 'Time in the heart rate zones' }).locator('.tc-bar').first()).toBeAttached();
+    // The mark of the bar: 90 % low, what 80 % of the sessions run easy comes to by time in zone.
+    await expect(page.getByRole('img', { name: /^Low \d+ %, moderate \d+ %, high \d+ %; reference 90 % low$/ })).toBeVisible();
     const shares = await page.getByLabel('Intensity shares').locator('dd.tnum').allTextContents();
     expect(Math.abs(shares.slice(0, 3).reduce((s, t) => s + Number(t.replace(/\D/g, '')), 0) - 100)).toBeLessThanOrEqual(2);
     await bar.getByRole('button', { name: /^Why\? Intensity distribution/ }).click();
@@ -370,8 +372,8 @@ test.describe('Performance model', () => {
     await expect(critical).toContainText(/Critical speed\d:\d\d \/km/);
     await expect(critical).toContainText(/Critical power\d+ W/);
     await expect(page.getByRole('img', { name: 'Critical speed over time' }).locator('.tc-line')).toHaveCount(1);
-    // The range the bests leave each value in: the fit again with each best left out in turn.
-    await expect(critical.locator('[data-range]').first()).toContainText(/^\d:\d\d–\d:\d\d \/km by your bests$/);
+    // The range the runs leave each value in: the fit again with each run left out in turn.
+    await expect(critical.locator('[data-range]').first()).toContainText(/^\d:\d\d–\d:\d\d \/km by your runs$/);
     await bar.getByRole('button', { name: /^Why\? Critical speed and D′/ }).click();
     await expect(panel('Critical speed and D′').getByRole('link', { name: /^Best efforts of 2–20 min/ })).toBeVisible();
     await expect(panel('Critical speed and D′')).toContainText('Your bests settle the critical speed and D′');
@@ -392,7 +394,8 @@ test.describe('Performance model', () => {
     await page.getByRole('radio', { name: 'Decoupling' }).click();
     await expect(page.getByLabel('Decoupling now').or(page.getByText(/^No run of 45 minutes or more yet/))).toBeVisible();
     await page.getByRole('radio', { name: 'VO2max from heart rate' }).click();
-    await expect(page.getByLabel('VO2max now')).toContainText(/VO2max from heart rate\d+\.\d/);
+    // The value now is that of the 28 days up to today: none when the runs of the folder are older.
+    await expect(page.getByLabel('VO2max now')).toContainText(/VO2max from heart rate(\d+\.\d|–)/);
     await expect(page.getByLabel('VO2max now')).toContainText(/Uth ratio\d+\.\d/);
     await expect(bar.locator('.why-item')).toHaveCount(2);
 
@@ -406,12 +409,15 @@ test.describe('Performance model', () => {
     if (await fitted.count()) {
       await expect(fitted).toContainText(/Fit \(R²\)-?\d\.\d\d/);
       await expect(fitted).toContainText(/Fitness τ1\d+ d/);
+      // The time constants that fit as well as the best pair.
+      await expect(fitted.locator('[data-range="tau1"]')).toHaveText(/^\d+–\d+ d fit as well$/);
       await expect(page.getByRole('img', { name: 'Fitted performance over time' }).locator('.tc-rest')).toHaveCount(1);
     }
-    // It rests on the load and on the VDOT, and its "Why?" says so.
+    // It rests on the load and on the VDOT of each day's all-out efforts, and its "Why?" says so.
     await bar.getByRole('button', { name: /^Why\? Fitted response · VDOT/ }).click();
     await expect(panel('Fitted response · VDOT').getByRole('link', { name: /^Load of a run/ })).toBeVisible();
-    await expect(panel('Fitted response · VDOT').getByRole('link', { name: /^VO2max as VDOT/ })).toBeVisible();
+    await expect(panel('Fitted response · VDOT')).toContainText('the VDOT of the all-out efforts of each day');
+    await expect(panel('Fitted response · VDOT')).toContainText('Each effort is the most you could do');
     await page.keyboard.press('Escape');
 
     // Fitness function "Performance views read no run file" (ADR "Performance markers from summaries").
@@ -471,8 +477,10 @@ test.describe('Performance model', () => {
     await expect(map.getByRole('link', { name: /^Critical speed and D′\s*4:\d\d \/km/ })).toBeVisible();
     // A line from each model to every model resting on it, across the columns to the responses too.
     const edge = (from: string, to: string) => map.locator(`.map-edge[data-from="${from}"][data-to="${to}"]`);
-    await expect(map.locator('.map-edge')).toHaveCount(11);
-    for (const [from, to] of [['efforts', 'cs'], ['load', 'form'], ['load', 'fittedHr'], ['vo2hr', 'fittedHr'], ['vdot', 'fittedVdot']]) await expect(edge(from, to)).toHaveCount(1);
+    await expect(map.locator('.map-edge')).toHaveCount(10);
+    for (const [from, to] of [['efforts', 'cs'], ['load', 'form'], ['load', 'fittedHr'], ['vo2hr', 'fittedHr'], ['load', 'fittedVdot']]) await expect(edge(from, to)).toHaveCount(1);
+    // The response on VDOT reads the VDOT of each day's all-out efforts itself: it no longer rests on the VDOT of the predicted 5 km.
+    await expect(edge('vdot', 'fittedVdot')).toHaveCount(0);
     // A coloured line marks the model that holds back the trust of the next: both wear the same trust, the line its colour.
     for (const line of await map.locator('.map-edge.caps').all()) {
       const trust = (await line.getAttribute('class'))!.match(/caps-(\w+)/)![1];
@@ -482,7 +490,6 @@ test.describe('Performance model', () => {
     // Under the pointer a model's chain stands out: what it rests on and what rests on it; the rest recede.
     await map.locator('.map-node[data-model="vdot"]').hover();
     await expect(edge('efforts', 'vdot')).toHaveClass(/lit/);
-    await expect(edge('vdot', 'fittedVdot')).toHaveClass(/lit/);
     await expect(edge('load', 'form')).toHaveClass(/faded/);
     await expect(map.locator('.map-node[data-model="ef"]')).toHaveClass(/faded/);
     await expect(map.locator('.map-node[data-model="efforts"]')).not.toHaveClass(/faded/);
@@ -566,13 +573,14 @@ test.describe('Performance model', () => {
     await page.locator('tr.row').first().click();
     await page.getByRole('img', { name: /^Run metrics · / }).waitFor();
     // In a dialog from the run's head, so the screen keeps its layout: the reserve above the critical speed
-    // of the 90 days up to the run, through it, and its lowest point; Esc closes it.
+    // of the 90 days before the run (the run itself left out), through it, and its lowest point; Esc closes it.
     await page.getByRole('button', { name: 'D′ balance' }).click();
     const dialog = page.getByRole('dialog', { name: 'D′ balance' });
     const balance = dialog.getByRole('img', { name: /^Reserve above the critical speed through the run: D′ \(pace\): lowest -?\d+ % at \d+:\d\d/ });
     await expect(balance).toBeVisible({ timeout: 30_000 });
     await expect(balance.locator('[data-balance="speed"] path')).toHaveCount(1);
     await expect(dialog.getByLabel('Lowest reserve')).toContainText(/D′ \(pace\), lowest-?\d+ %/);
+    await expect(dialog.locator('[data-threshold]')).toContainText('those of the bests of the 90 days before this run, without it');
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
   });

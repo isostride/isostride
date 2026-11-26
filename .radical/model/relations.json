@@ -144,7 +144,7 @@
   },
   {
     "id": "0539615a-eec1-46f6-ba3b-259d9fbc108c",
-    "quote": "szacowanie VO2max z tempa i tętna: opiera się na wzorach populacyjnych, a CS liczę z Twoich własnych najlepszych odcinków.\nmozesz to zrobic\nzrob je",
+    "quote": "szacowanie VO2max z tempa i tętna: opiera się na wzorach populacyjnych, a CS liczę z Twoich własnych najlepszych odcinków.\nmozesz to zrobic\nzrob je\nkolejna runda review modelu performance w isostride .... co jest zle co bys jeszcze zmienil\nzrob wszystkie",
     "relationType": "derives",
     "sourceId": "2ee5b387-72f8-482a-95d0-9159fd6bb065",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -404,6 +404,12 @@
     "relationType": "derives",
     "sourceId": "5728343f-2b0f-43e8-8c7b-2709cf92e3d6",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "0c9ceaf7-ab8d-4f18-87fb-69ae24309483",
+    "relationType": "verifies",
+    "sourceId": "7e6850ce-d770-4683-8952-71cb97d03d82",
+    "targetId": "22d6df09-ddc7-4b2a-b735-e4b8aab92b10"
   },
   {
     "id": "0cae894d-f5a1-4c9a-b6fe-6b2741ab7a2e",
@@ -1376,6 +1382,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "241cdf13-c2f9-4ce9-a4cf-80a8eb1a3069",
+    "relationType": "verifies",
+    "sourceId": "678a6e8e-8ac5-457f-8b34-0da495bc93b8",
+    "targetId": "91d74a54-7182-48e5-b12f-bb403539e0e5"
+  },
+  {
     "id": "24592bb9-45ca-4454-8f45-b06c269653f1",
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
@@ -1905,6 +1917,12 @@
     "targetId": "84a81738-ab66-4624-bec0-3b893f7e7939"
   },
   {
+    "id": "341eddee-da37-4bf8-a349-355be612e9bc",
+    "relationType": "verifies",
+    "sourceId": "72cbdf50-0b4d-460d-923a-665a513925b8",
+    "targetId": "2ee5b387-72f8-482a-95d0-9159fd6bb065"
+  },
+  {
     "id": "3495391d-857a-447b-8e06-dd62c0c76deb",
     "relationType": "traces-to",
     "sourceId": "7b3e4237-0133-4605-9a4b-c44539577d82",
@@ -1934,6 +1952,12 @@
     "relationType": "satisfies",
     "sourceId": "84b558e0-d87c-4134-8479-f01b164bcd47",
     "targetId": "dfc9fa5c-2440-4d8a-88d5-76c2d462d09a"
+  },
+  {
+    "id": "34f4341f-a84c-4509-9673-29634af158c5",
+    "relationType": "verifies",
+    "sourceId": "72cbdf50-0b4d-460d-923a-665a513925b8",
+    "targetId": "91d74a54-7182-48e5-b12f-bb403539e0e5"
   },
   {
     "id": "35081e36-aa07-47c2-9ffa-5a19de9ca560",
@@ -2605,6 +2629,12 @@
     "targetId": "aec32856-5ea5-4f0e-8316-178aff6a9838"
   },
   {
+    "id": "4988259f-81f5-44da-a28f-3e0bef6b21df",
+    "relationType": "verifies",
+    "sourceId": "93ec17f5-c38d-435b-b88f-1e1c62285652",
+    "targetId": "2b61dfcd-5b1d-4162-be5d-353933843c37"
+  },
+  {
     "id": "49914230-3d48-4c57-84f1-a846e3c7bbab",
     "relationType": "verifies",
     "sourceId": "cc160c7c-2632-4d74-902c-56af70f51643",
@@ -2938,7 +2968,7 @@
   },
   {
     "id": "5632168a-0f6d-4aa4-8165-ae1d735ef6f7",
-    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei",
+    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei\nkolejna runda review modelu performance w isostride .... co jest zle co bys jeszcze zmienil\nzrob wszystkie",
     "relationType": "derives",
     "sourceId": "cbed4aea-601a-491c-b4a3-735482d5b55e",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -3110,7 +3140,7 @@
   },
   {
     "id": "5c230553-9991-4daf-8605-277b1201c95d",
-    "quote": "znajdz luki i sugestie poprawy\na tez rzeczy poza pr?\nD′ balance w trakcie biegu",
+    "quote": "znajdz luki i sugestie poprawy\na tez rzeczy poza pr?\nD′ balance w trakcie biegu\nkolejna runda review modelu performance w isostride .... co jest zle co bys jeszcze zmienil\nzrob wszystkie",
     "relationType": "derives",
     "sourceId": "d7c2bc29-2103-4d8e-a9c2-cac458b36e4d",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -3143,7 +3173,7 @@
   },
   {
     "id": "5c6a7db3-c0bf-4250-a825-fb1c7048ecee",
-    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei",
+    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei\nkolejna runda review modelu performance w isostride .... co jest zle co bys jeszcze zmienil\nzrob wszystkie",
     "relationType": "derives",
     "sourceId": "2cc97e54-4899-4f94-9b8c-24845459f7c0",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -3514,7 +3544,7 @@
   },
   {
     "id": "68ec85dd-6ef7-4ad1-a339-e0168e41ed35",
-    "quote": "znajdz luki i sugestie poprawy\na tez rzeczy poza pr?\nPoza PR zostały trzy nowe funkcje: niepewność CS, D′ i prognoz",
+    "quote": "znajdz luki i sugestie poprawy\na tez rzeczy poza pr?\nPoza PR zostały trzy nowe funkcje: niepewność CS, D′ i prognoz\nkolejna runda review modelu performance w isostride .... co jest zle co bys jeszcze zmienil\nzrob wszystkie",
     "relationType": "derives",
     "sourceId": "56d9fdc9-3727-448c-9c63-800cceadb062",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -6759,7 +6789,7 @@
   },
   {
     "id": "ca919e40-0420-4177-8539-c4bc4bdd806c",
-    "quote": "dopasowanie wag modelu Banistera do Twoich wyników: potrzebuje regularnych maksymalnych prób, a markery z zakładki Fitness markers to właśnie dane, na których takie dopasowanie można później oprzeć;\nmozesz to zrobic\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei",
+    "quote": "dopasowanie wag modelu Banistera do Twoich wyników: potrzebuje regularnych maksymalnych prób, a markery z zakładki Fitness markers to właśnie dane, na których takie dopasowanie można później oprzeć;\nmozesz to zrobic\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei\nkolejna runda review modelu performance w isostride .... co jest zle co bys jeszcze zmienil\nzrob wszystkie",
     "relationType": "derives",
     "sourceId": "22d6df09-ddc7-4b2a-b735-e4b8aab92b10",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -7474,6 +7504,12 @@
     "targetId": "c8fb6f34-4a5f-4f86-99e2-77f6e6d27d54"
   },
   {
+    "id": "e1026a9c-3a17-44c5-a9a9-d03bb57f44ac",
+    "relationType": "verifies",
+    "sourceId": "99fbdfd5-e849-4481-8302-ba63a16ff368",
+    "targetId": "22d6df09-ddc7-4b2a-b735-e4b8aab92b10"
+  },
+  {
     "id": "e10f807a-6229-498e-b60e-5b63d684383a",
     "quote": "widze ze odrazu na wykresie zaznaczaja sie bloki .... jest to nieczytelne",
     "relationType": "derives",
@@ -7936,7 +7972,7 @@
   },
   {
     "id": "ede5536b-d37f-40f4-ab01-ec9c1aaec495",
-    "quote": "ponandto chce wiedziec jakie sa zalezenia ... np. jesli nigdy nie pomieglem na max na 3 min to kryzwa mocy jest bezwartosciowa",
+    "quote": "ponandto chce wiedziec jakie sa zalezenia ... np. jesli nigdy nie pomieglem na max na 3 min to kryzwa mocy jest bezwartosciowa\nkolejna runda review modelu performance w isostride .... co jest zle co bys jeszcze zmienil\nzrob wszystkie",
     "relationType": "derives",
     "sourceId": "06b9896e-33c2-4668-b6eb-3f0115d9ceea",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -8138,7 +8174,7 @@
   },
   {
     "id": "f3fa0dbb-9c39-49f2-9c42-00b9fe4e0bba",
-    "quote": "chce moc wybrac model ... ktory pozniej powinien byc uzywany tu i tu",
+    "quote": "chce moc wybrac model ... ktory pozniej powinien byc uzywany tu i tu\nkolejna runda review modelu performance w isostride .... co jest zle co bys jeszcze zmienil\nzrob wszystkie",
     "relationType": "derives",
     "sourceId": "2b61dfcd-5b1d-4162-be5d-353933843c37",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -8182,7 +8218,7 @@
   },
   {
     "id": "f5709ef9-574e-4065-8096-ef14a1a0aeec",
-    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej",
+    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej\nkolejna runda review modelu performance w isostride .... co jest zle co bys jeszcze zmienil\nzrob wszystkie",
     "relationType": "derives",
     "sourceId": "91d74a54-7182-48e5-b12f-bb403539e0e5",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -8405,6 +8441,12 @@
     "relationType": "performed-by",
     "sourceId": "bde80f97-62d4-41c9-b217-d60a4eaeb9fa",
     "targetId": "dcc9c750-4930-43ec-b29a-96d8cc3419e7"
+  },
+  {
+    "id": "fae22128-ef47-4901-ba89-582b08e8273a",
+    "relationType": "verifies",
+    "sourceId": "f59622e3-7c5a-4cea-96d7-dd9ff1f6fd5d",
+    "targetId": "d7c2bc29-2103-4d8e-a9c2-cac458b36e4d"
   },
   {
     "id": "faf1cac9-c98c-4799-8d77-6ae908c7d358",
