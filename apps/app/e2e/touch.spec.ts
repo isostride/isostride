@@ -16,6 +16,9 @@ test.describe('Run chart by finger', () => {
     await openRun(page);
     const chart = page.getByRole('img', { name: /^Run metrics · / });
     await chart.waitFor();
+    // The notice of the import, at the foot of the screen for 5 s, lies over the middle of the chart on a phone: closed, as a runner closes it.
+    const notice = page.locator('.toast-close');
+    if (await notice.count()) await notice.click();
     await chart.scrollIntoViewIfNeeded();
     // The hints name the finger's gestures.
     await expect(page.getByText(/drag sideways to select · two fingers to zoom and move/)).toBeVisible();

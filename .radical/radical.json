@@ -20,7 +20,8 @@
     { "element": "49354ed3-2ed2-4462-b304-0688c5ddb16c", "name": "Settings", "paths": ["apps/app/lib/settings"] },
     { "element": "2632e603-65fd-4661-b830-d128d7f98975", "name": "Training log", "paths": ["apps/app/lib/log"] },
     { "element": "340e82f0-6223-4f6f-85eb-5418fff8ddec", "name": "Performance model", "paths": ["apps/app/lib/load"] },
-    { "element": "c72b5772-c80f-4e76-95de-c7ed8a022f88", "name": "Site", "paths": ["apps/site"] }
+    { "element": "c72b5772-c80f-4e76-95de-c7ed8a022f88", "name": "Site", "paths": ["apps/site"] },
+    { "element": "1ed2f843-cc40-4a84-ba19-256544fbc4a6", "name": "Demo", "paths": ["apps/app/lib/demo"] }
   ],
   "verifies": [
     { "element": "2a0542b2-ead0-42d2-ad1c-24694dc2d613", "name": "Import new FIT files", "tests": [
@@ -1103,6 +1104,31 @@
     ] },
     { "element": "92b3542d-791d-417d-af3b-e744488f2edc", "name": "Part of a run selected by finger", "tests": [
       "e2e/touch.spec.ts › Run chart by finger › A part of a run selected and zoomed by finger"
+    ] },
+    { "element": "bd820799-735e-4043-95fa-355ce88fbbe4", "name": "Demo opened from its link", "tests": [
+      "e2e/demo.spec.ts › Demo › Demo opened from its link, looked around and left"
+    ] },
+    { "element": "ffb7e01d-1250-491d-bb9e-3fa363ffe3e0", "name": "Demo folder made in parts", "tests": [
+      "tests/integration/demo.test.ts › Demo folder › Demo folder is made in parts and opened again"
+    ] },
+    { "element": "08269d76-49c8-4db3-baf3-5931b2cc7557", "name": "Demo runner of about 3:15", "tests": [
+      "tests/unit/demo.test.ts › Demo runner › Demo runner trains for two years",
+      "tests/unit/demo.test.ts › Demo runner › Demo plan is the same whenever it is made",
+      "tests/unit/demo.test.ts › Demo runner › Demo runner has a critical pace of about 3:15",
+      "tests/unit/demo.test.ts › Demo runner › Demo run reads back from its FIT file as generated",
+      "tests/unit/demo.test.ts › Demo runner › Demo race is run to the critical speed model"
+    ] },
+    { "element": "7aca2a4b-01ac-4019-9b24-bf94ec3df2e8", "name": "Demo from the Welcome screen", "tests": [
+      "e2e/demo.spec.ts › Demo › Demo offered on the Welcome screen"
+    ] },
+    { "element": "47c8550d-853b-4d53-a1a5-1a91570805b4", "name": "Run chart on the whole screen", "tests": [
+      "e2e/run.spec.ts › Back to the previous screen › Run chart expanded to the whole screen"
+    ] },
+    { "element": "87d111b0-7678-4fba-a5be-42b8c9d98ac9", "name": "Run actions in one group", "tests": [
+      "e2e/run.spec.ts › Run chart › Run tagged from its screen"
+    ] },
+    { "element": "18575003-6117-4f94-a8f9-efd4d778edab", "name": "This week against the weeks before", "tests": [
+      "tests/unit/dashboard.test.ts › Dashboard › This week read against the weeks before"
     ] }
   ]
 }

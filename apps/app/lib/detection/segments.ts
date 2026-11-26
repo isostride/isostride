@@ -182,6 +182,11 @@ export function detectRouteSegments(tracks: RunTrack[]): RouteSegment[] {
       passes,
     });
   }
+  // Two segments from one point in one direction (a way out and back, turned at 3 km and at 5 km) had one
+  // id, and a suggestion kept or dismissed by it was either of them: such get their length in the id.
+  const named = new Map<string, number>();
+  for (const s of segments) named.set(s.id, (named.get(s.id) ?? 0) + 1);
+  for (const s of segments) if (named.get(s.id)! > 1) s.id = `${s.id}-${s.length}`;
   return segments.sort((a, b) => b.runs - a.runs || b.length - a.length);
 }
 

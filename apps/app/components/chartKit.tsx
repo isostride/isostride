@@ -27,17 +27,25 @@ export function useTouch(): boolean {
 export function useWidth<T extends HTMLElement = HTMLDivElement>(initial = 800): [RefObject<T | null>, number] {
   const ref = useRef<T>(null);
   const [width, setWidth] = useState(initial);
+  const seen = useRef<T | null>(null);
+  const stop = useRef<(() => void) | null>(null);
   // Measured before the first paint, so a chart is never drawn at the guess and then redrawn at its
-  // width (layout shift 0); then followed as the box changes.
+  // width (layout shift 0); then followed as the box changes. Looked at after every render: a box drawn
+  // only once the data are there (a tile's "No load yet" first) is measured when it appears, not left at the guess.
   useLayoutEffect(() => {
     const el = ref.current;
+    if (el === seen.current) return;
+    seen.current = el;
+    stop.current?.();
+    stop.current = null;
     if (!el) return;
     const cs = getComputedStyle(el);
     setWidth(Math.max(200, Math.round(el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight))));
     const ro = new ResizeObserver(([e]) => setWidth(Math.max(200, Math.round(e.contentRect.width))));
     ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+    stop.current = () => ro.disconnect();
+  });
+  useEffect(() => () => stop.current?.(), []);
   return [ref, width];
 }
 
@@ -155,14 +163,23 @@ export function timeTicks(seconds: number, count = 6): number[] {
 }
 
 /** Month starts between two times (ms), for a date axis. */
-export function monthTicks(t0: number, t1: number): number[] {
+/**
+ * The firsts of the months in a range of time. With `room` (the width of the axis, px) only as many as their
+ * names have room for: every month, or those of every second, third, sixth or twelfth month of the year (two
+ * years of months on a phone's chart ran into one word, "JanFebMarApr").
+ */
+export function monthTicks(t0: number, t1: number, room?: number): number[] {
   const out: number[] = [];
   const d = new Date(t0);
   d.setDate(1);
   d.setHours(0, 0, 0, 0);
   for (d.setMonth(d.getMonth() + 1); d.getTime() <= t1; d.setMonth(d.getMonth() + 1)) out.push(d.getTime());
-  return out;
+  if (room === undefined || out.length < 2) return out;
+  const every = [1, 2, 3, 6, 12].find((n) => (room / out.length) * n >= MONTH_ROOM) ?? 12;
+  return out.filter((t) => new Date(t).getMonth() % every === 0);
 }
+/** The room the short name of a month takes on an axis, px. */
+const MONTH_ROOM = 34;
 
 export const monthLabel = (t: number) => dateText(t, { month: 'short' });
 export const dayLabel = (t: number) => dateText(t, { day: 'numeric', month: 'short' });

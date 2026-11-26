@@ -64,7 +64,7 @@ function failure(e: unknown): string {
  * COROS account in a window of COROS, fetch the runs the folder has not got into it and import them,
  * disconnect. The connection is read by the screen before it is drawn (layout shift 0).
  */
-export function CorosCard({ initial, busy }: { initial: CorosConnection | null; busy: boolean }) {
+export function CorosCard({ initial, busy, off }: { initial: CorosConnection | null; busy: boolean; /** why the integration cannot be used here (the demo): the card is shown greyed, its buttons disabled */ off?: string }) {
   const { folder, handle } = useOpenFolder();
   const [conn, setConn] = useState<CorosConnection | null>(initial);
   /** what is being done now: connecting, or fetching with its count */
@@ -134,7 +134,7 @@ export function CorosCard({ initial, busy }: { initial: CorosConnection | null; 
 
   const working = work !== null || busy;
   return (
-    <section className="card folder-page coros-card" aria-label="COROS">
+    <section className={`card folder-page coros-card ${off ? 'off' : ''}`} aria-label="COROS" aria-disabled={off ? true : undefined}>
       <div className="folder-top">
         <span className="folder-icon" aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="7" /><path d="M12 9v3l2 1.5" /><path d="M9 2h6M9 22h6" /></svg>
@@ -142,18 +142,18 @@ export function CorosCard({ initial, busy }: { initial: CorosConnection | null; 
         <div className="coros-name">
           <b>COROS</b>
           <span className="muted small">
-            {conn ? t('Connected since {date}', { date: dateText(conn.connectedAt, { day: 'numeric', month: 'short', year: 'numeric' }) }) : t('Not connected')}
+            {off ? t('Off in the demo') : conn ? t('Connected since {date}', { date: dateText(conn.connectedAt, { day: 'numeric', month: 'short', year: 'numeric' }) }) : t('Not connected')}
           </span>
         </div>
       </div>
       <div className="folder-actions">
-        {conn ? (
+        {conn && !off ? (
           <>
             <button type="button" className="btn primary" onClick={fetchRuns} disabled={working}>{t('Fetch runs from COROS')}</button>
             <button type="button" className="btn ghost" onClick={disconnect} disabled={working}>{t('Disconnect')}</button>
           </>
         ) : (
-          <button type="button" className="btn primary" onClick={connect} disabled={working}>{t('Connect COROS')}</button>
+          <button type="button" className="btn primary" onClick={connect} disabled={working || !!off}>{t('Connect COROS')}</button>
         )}
       </div>
       {work && (
@@ -164,6 +164,7 @@ export function CorosCard({ initial, busy }: { initial: CorosConnection | null; 
           {work.kind === 'fetch' && <div className="progress"><div style={{ width: work.total ? `${(100 * work.done) / work.total}%` : '3%' }} /></div>}
         </div>
       )}
+      {off && <p className="integration-off small">{off}</p>}
       <div className="folder-notes muted small">
         <p><b>{t('Fetch runs from COROS')}</b> {t('brings the FIT files of your runs from your COROS account into this folder (the last 30 days at first, then since the last fetch) and imports them. COROS gives at most 50 files a day.')}</p>
         <p><b>{t('Connect COROS')}</b> {t('signs you in on COROS’s own page. The sign-in is kept in this browser only, not in the folder, and goes to no one but COROS.')}</p>

@@ -123,6 +123,28 @@ export function weekFigures(runs: Pick<IndexedRun, 'startTime' | 'distance' | 'd
   return { km, runs: n, time, byDay, lastWeekKm };
 }
 
+/**
+ * What this week's distance is read against (the runner's "widgety ... wygladaja biednie", 26 Nov 2026):
+ * last week's up to the same day of the week (a week half run against a whole one always reads behind),
+ * and the mean of the four whole weeks before this one; null where there is none to compare with.
+ */
+export function weekContext(runs: Pick<IndexedRun, 'startTime' | 'distance'>[], today: Date): { lastWeekToDateKm: number; averageKm: number | null; weeks: number } {
+  const monday = mondayOf(today);
+  const day = (today.getDay() + 6) % 7;
+  const before = [0, 0, 0, 0];
+  let lastWeekToDateKm = 0;
+  for (const r of runs) {
+    const at = new Date(r.startTime);
+    const w = weekIndex(at, monday);
+    if (w >= -4 && w <= -1) before[-w - 1] += r.distance / 1000;
+    if (w === -1 && (at.getDay() + 6) % 7 <= day) lastWeekToDateKm += r.distance / 1000;
+  }
+  // Only the weeks since the first run count: a runner two weeks in has two weeks to average.
+  const first = runs.reduce<number | null>((m, r) => { const w = weekIndex(new Date(r.startTime), monday); return m === null || w < m ? w : m; }, null);
+  const weeks = first === null ? 0 : Math.min(4, Math.max(0, -first));
+  return { lastWeekToDateKm, averageKm: weeks ? before.slice(0, weeks).reduce((a, b) => a + b, 0) / weeks : null, weeks };
+}
+
 /** The distance of each of the last `weeks` weeks up to the day's, oldest first: each week's Monday (YYYY-MM-DD) and km. */
 export function weeklyDistance(runs: Pick<IndexedRun, 'startTime' | 'distance'>[], weeks: number, today: Date): { monday: string; km: number; runs: number }[] {
   const monday = mondayOf(today);

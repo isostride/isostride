@@ -1332,3 +1332,31 @@ A: (użytkownik) Przypięcie CLI Radical w lockfile ? (no requirement: asked wha
 A: (użytkownik) to zrob: Zaznaczanie i zoom fragmentu biegu dotykiem na telefonie: wykres obsługuje tylko mysz; to osobna funkcja, nie poprawka.
 A: (model) Done on the run chart, the strip of the whole run under it and the small map. The model's choices: a drag sideways by one finger selects a part, as the mouse does; two fingers zoom around the point between them and, moved together, move the range; a tap shows the values at that point, two taps within 350 ms on a lap select it; a drag up or down stays the page's scroll; the strip's window is dragged, and a part selected on it, by finger as by mouse; on the small map a tap picks a point of the route (two taps a stretch) and a drag stays the page's scroll; on a device worked by finger the hints under the chart and the map name these gestures. Not done: zooming the large map by two fingers (its buttons zoom, a finger moves it).
 A: (użytkownik) ok
+A: (użytkownik) chce na stronie umiesicc opcje demo ... czyli mozliwosc otwara isostride z przykladowymi danymi aby pokazac mozliwosci rozwiazania ... demo powinno byc skonstyrowane tak ze pokazuje biegacza .... z tempem krytycznym ok 3:15 .... wszystkie dane powinny byc sensowne ... oczywiscie nie chozdi o to aby ukrywac ze nie jest to realny zawodnik
+A: (użytkownik) wydaje mi sie fajnie by bylo miec ok 2 lata danych
+A: (użytkownik) uruchom wersje testwoa (no requirement)
+A: (użytkownik) daj mi znac jak mam demo uruchomic ... (no requirement)
+A: (użytkownik) czy pliki sa zapisyane na dysku ? czy dane generowane w locie?
+A: (model) Generated in the visitor's browser, in a Web Worker, and kept in the browser's private storage (the origin private file system) as a folder like any other: FIT files, imported as a watch's are; nothing is downloaded or sent, and nothing is written on the disk outside the browser.
+A: (użytkownik) popracuj nad dashboardem ...chodzi mi o rozmieszcenie kafelkow .. oraz widoku krzywej predkosci
+A: (użytkownik) w peformance overview ... prawie wszystko jest rought ... chyba dane nie sa dobrze wygenerowane
+A: (model) The demo's data were made again from the critical speed model and the fitted response: the app now fits a critical pace of 3:16 /km and D′ 206 m to them, and the models read Reliable but for those that are Rough by design (no requirement: a fault of the generated data).
+A: (użytkownik) czemu w demo ciagle integracja z corosem dziala?
+A: (użytkownik) ok ... poporacuj nad widgetami na dashboardzie ... teraz widze ze wygladaja biednie a jest to przeciec wizytkowa
+A: (użytkownik) klikniecie na 90 days ... powodu przeskok do samej gory dashboard
+A: (użytkownik) w kolekjnie rundzie zobacz na wykres biegu: tez troche odsstaje pod wzgledem iwzualnym
+A: (użytkownik) na telfonie kiepsko to wylada.. .moze pokazuj wykresy w aspekcie rozyntoalnym? fullscreen?
+A: (użytkownik) dodaktowo zobacz tutja: wydac przejscie tla napisu (no requirement: the demo bar's own background removed)
+A: (użytkownik) popraw pozycje przycksu full screen
+A: (użytkownik) powiniejn byc po prawej stronie ... ale w rogu wykresu ... a nie nad mapa
+A: (użytkownik) dodaktowo ... nazwij expand
+A: (użytkownik) tak samo jak w mapie
+A: (użytkownik) dodaktowo te grupy przyciskow zlewaja sie z iiny mi: i to nie tylko w wersji mobile
+A: (użytkownik) przegladnij wogole wersje pobile ... zobacz na pozycje przecyskow
+A: (użytkownik) czy w demo w settings .. jakies opcje nie powinny byc wyszarzone
+A: (użytkownik) podaj jeszcze adres strony uruchomionej lokalnei (no requirement)
+A: (użytkownik) nie pisz zmyslony biegacz ... w demo ... daj przykladowy biegacz..
+A: (użytkownik) jak to bedzie dzialalo na produckji app.isostridel.com/?demo?
+A: (model) The site's Try the demo leads to app.isostride.com/?demo; the static app reads ?demo in the browser, so neither the host nor its Content-Security-Policy changes; the demo is made in the visitor's browser (the last months in about 5 s, the earlier history behind the open app), opened again at once the next time, made again after 8 weeks, and left with Use your own data; a browser with too little storage keeps the last months. Not tried in Safari or Firefox.
+A: (model) An independent review of the session's changes found 23 faults it confirmed; 21 were fixed (a tab closed while the demo was made left it half made, the setup wizard could open over the demo, a demo left in one tab emptied the others, the demo bar moved the screen under it, tiles' charts kept a guessed width, tooltips ran out of their tiles, focus was lost when the expanded chart closed, out-and-back runs ended on the spot). Left: a second tab opened while the history is made waits for it; on Compare on a phone the Tab order differs from the order of the head's buttons.
+A: (użytkownik) ok

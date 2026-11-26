@@ -149,10 +149,12 @@ export async function runBlocks(folder: DataFolder): Promise<BlocksReport> {
     runIds.push(row.id);
   }
 
-  // The segments: those found before when the runs are the same ones.
+  // The segments: those found before when the runs are the same ones. Two found by an earlier version of the app
+  // could share an id (two lengths from one start, see detectRouteSegments): such a list is found again, once.
   const runsLooked = runIds.join(',');
   const keptSegments = await readJson<SegmentsFile>(folder, PATHS.segments);
-  const segments = keptSegments?.algorithmVersion === ALGORITHM_VERSION && keptSegments.runs === runsLooked
+  const distinctIds = (list: RouteSegment[]) => new Set(list.map((s) => s.id)).size === list.length;
+  const segments = keptSegments?.algorithmVersion === ALGORITHM_VERSION && keptSegments.runs === runsLooked && distinctIds(keptSegments.segments)
     ? keptSegments.segments
     : detectRouteSegments(runIds.map((id) => ({ runId: id, pts: tracks.get(id)! })));
   if (segments !== keptSegments?.segments) await writeJson(folder, PATHS.segments, { algorithmVersion: ALGORITHM_VERSION, segments, runs: runsLooked } satisfies SegmentsFile);
@@ -166,67 +168,79 @@ export async function runBlocks(folder: DataFolder): Promise<BlocksReport> {
     grouped.set(k, [...(grouped.get(k) ?? []), i]);
   }
   const keys = { defs: Object.fromEntries(active.map((d) => [d.id, defKey(d)])), runs: Object.fromEntries(runIds.map((id) => [id, runKey(byId.get(id)!)])) };
+  const unchanged = (def: BlockDefinition, id: string) => !!oldKeys && oldKeys.defs[def.id] === keys.defs[def.id] && oldKeys.runs[id] === keys.runs[id];
+  const routes = segments.filter((seg) => seg.passes >= MIN_ROUTE_INSTANCES).map((seg) => ({ seg, route: fingerprint(JSON.stringify(seg.track)) }));
+
+  // Everything a run's file is needed for, computed run by run: the instances of the blocks, the run's
+  // facts, the paces of its passes over the routes. Block by block and route by route, each asked for
+  // every run in turn, and past the files kept in memory (KEPT_VALUES) a run's file was read and parsed
+  // again for each of them: a first detection of 570 runs read 6000 files (26 Nov 2026).
+  const detected = new Map<string, BlockInstance[]>();
+  for (const id of runIds) {
+    const row = byId.get(id)!;
+    const track = tracks.get(id)!;
+    for (const def of active) {
+      if (unchanged(def, id) || !mayFind(def, track)) continue;
+      const run = await fileOf(id);
+      if (run) detected.set(`${def.id}|${id}`, detectInstances(def, run, row, track));
+    }
+    if (!cache.facts[id]) {
+      const run = await fileOf(id);
+      if (run) cache.facts[id] = factsOf(run);
+    }
+    for (const { seg, route } of routes) {
+      const k = `${route}|${id}`;
+      if (cache.paces[k]) continue;
+      const run = findPasses(seg.track, track).length ? await fileOf(id) : null;
+      cache.paces[k] = run ? passPaces(seg, run, track) : [];
+    }
+  }
+
   const instances: BlockInstance[] = [];
   for (const def of active) {
     for (const id of runIds) {
-      const row = byId.get(id)!;
-      if (oldKeys && oldKeys.defs[def.id] === keys.defs[def.id] && oldKeys.runs[id] === keys.runs[id]) {
-        instances.push(...(grouped.get(`${def.id}|${id}`) ?? []).map((i) => withContext(i, row)));
-        continue;
-      }
-      if (!mayFind(def, tracks.get(id)!)) continue;
-      const run = await fileOf(id);
-      if (run) instances.push(...detectInstances(def, run, row, tracks.get(id)!));
+      if (unchanged(def, id)) instances.push(...(grouped.get(`${def.id}|${id}`) ?? []).map((i) => withContext(i, byId.get(id)!)));
+      else instances.push(...(detected.get(`${def.id}|${id}`) ?? []));
     }
   }
   await writeJson(folder, PATHS.blockInstances, { algorithmVersion: ALGORITHM_VERSION, instances } satisfies BlockInstancesFile);
 
-  // The suggestions, from each run's facts and the paces of its passes, kept or computed now.
-  const facts: RunFacts[] = [];
-  for (const id of runIds) {
-    let f = cache.facts[id];
-    if (!f) {
-      const run = await fileOf(id);
-      if (!run) continue;
-      f = cache.facts[id] = factsOf(run);
-    }
-    facts.push(f);
-  }
+  // The suggestions, from each run's facts and the paces of its passes.
+  const facts: RunFacts[] = runIds.flatMap((id) => (cache.facts[id] ? [cache.facts[id]] : []));
   const usedPaces = new Set<string>();
   const usedAccepted = new Set<string>();
-  const routePaces = async (seg: RouteSegment): Promise<number[]> => {
-    const route = fingerprint(JSON.stringify(seg.track));
+  const paces = new Map<RouteSegment, number[]>();
+  for (const { seg, route } of routes) {
     const out: number[] = [];
     for (const id of runIds) {
       const k = `${route}|${id}`;
       usedPaces.add(k);
-      if (!cache.paces[k]) {
-        const track = tracks.get(id)!;
-        const run = findPasses(seg.track, track).length ? await fileOf(id) : null;
-        cache.paces[k] = run ? passPaces(seg, run, track) : [];
-      }
       out.push(...cache.paces[k]);
     }
-    return out;
-  };
-  const paces = new Map<RouteSegment, number[]>();
-  for (const seg of segments) if (seg.passes >= MIN_ROUTE_INSTANCES) paces.set(seg, await routePaces(seg));
+    paces.set(seg, out);
+  }
 
   // A suggestion only when enough of its instances meet the matching conditions (the author's
   // report of 19 Nov 2026: a block whose passes were all rejected left the Trend empty).
   const recommendations: Recommendation[] = [];
-  for (const rec of recommend(segments, facts, tracks, defs, rows, (seg) => paces.get(seg) ?? [])) {
-    const def = fromRecommendation(rec, 'active');
-    const sugg = defKey(def);
+  const suggested = recommend(segments, facts, tracks, defs, rows, (seg) => paces.get(seg) ?? []).map((rec) => { const def = fromRecommendation(rec, 'active'); return { rec, def, sugg: defKey(def) }; });
+  // What each run gives each suggestion, run by run again: a run's file read once for all of them.
+  for (const id of runIds) {
+    const row = byId.get(id)!;
+    const track = tracks.get(id)!;
+    for (const { def, sugg } of suggested) {
+      const k = `${sugg}|${runKeyFor(def, row)}`;
+      if (cache.accepted[k] !== undefined) continue;
+      const run = mayFind(def, track) ? await fileOf(id) : null;
+      cache.accepted[k] = run ? detectInstances(def, run, row, track).filter((i) => i.status === 'accepted').length : 0;
+    }
+  }
+  for (const { rec, def, sugg } of suggested) {
     let accepted = 0;
     const acceptedRuns = new Set<string>();
     for (const id of runIds) {
       const k = `${sugg}|${runKeyFor(def, byId.get(id)!)}`;
       usedAccepted.add(k);
-      if (cache.accepted[k] === undefined) {
-        const run = mayFind(def, tracks.get(id)!) ? await fileOf(id) : null;
-        cache.accepted[k] = run ? detectInstances(def, run, byId.get(id)!, tracks.get(id)!).filter((i) => i.status === 'accepted').length : 0;
-      }
       accepted += cache.accepted[k];
       if (cache.accepted[k]) acceptedRuns.add(id);
     }

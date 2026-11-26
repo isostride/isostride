@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ReadError, useDataVersion, useWidth, eager } from '@/components';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { ReadError, niceTicks, useDataVersion, useWidth, eager } from '@/components';
 import { readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile } from '@/lib/blocks';
 import { useLocale, useOpenFolder } from '@/lib/client';
 import type { SavedAnalysesFile, SavedAnalysis } from '@/lib/compare';
-import { TILE_KINDS, addTile, moveTile, paceProfile, readDashboard, removeTile, resizeTile, sizeOf, weekFigures, weeklyDistance, writeDashboard, type Tile, type TileKind } from '@/lib/dashboard';
+import { TILE_KINDS, addTile, moveTile, paceProfile, readDashboard, removeTile, resizeTile, sizeOf, weekContext, weekFigures, weeklyDistance, writeDashboard, type Tile, type TileKind } from '@/lib/dashboard';
 import { date, km, pace } from '@/lib/format';
 import { dateText, msg, number, t, tn } from '@/lib/i18n';
 import { PATHS, readJson, type DataFolder, readRunFile } from '@/lib/fs';
@@ -41,16 +41,6 @@ const hm = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600
 const mmss = (s: number) => minSec(s);
 // The sign of the value as it is written: one that writes as zero has none (−0.04 km read "−0.0 km").
 const signed = (v: number, digits = 0) => { const r = Number(v.toFixed(digits)); return `${r > 0 ? '+' : r < 0 ? '−' : ''}${number(Math.abs(v), digits)}`; };
-/** Fills a count's place with a mark, so Counted can put the number in its own element. */
-const MARK = { n: '\u0000' };
-/**
- * A count with its noun in the language in use, the number in its own element (a big figure on a
- * tile): the text of tn(n, one, other, MARK) split where the number goes.
- */
-function Counted({ n, text, className }: { n: number; text: string; className: string }) {
-  const [before, after = ''] = text.split(MARK.n);
-  return <>{before}<span className={className}>{number(n)}</span>{after}</>;
-}
 const localDay = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 interface Data {
@@ -217,59 +207,130 @@ function AddTile({ tiles, data, onAdd, onReset }: { tiles: Tile[]; data: Data; o
   );
 }
 
+/** A change with its direction: ▲ 2, ▼ 3, or – when it rounds to none; read out in words. */
+function Change({ value }: { value: number }) {
+  const r = Math.round(value);
+  if (!r) return <span className="dash-change" aria-label={t('no change')}>–</span>;
+  return <span className="dash-change" aria-label={r > 0 ? t('up {n}', { n: number(r) }) : t('down {n}', { n: number(-r) })}>{r > 0 ? '▲' : '▼'} {number(Math.abs(r))}</span>;
+}
+
+/** Where the pointer is along a chart drawn from `left` over `plot` px, as an index of its `n` points. */
+function pointAt(e: MouseEvent<SVGSVGElement>, left: number, plot: number, n: number): number {
+  const px = e.clientX - e.currentTarget.getBoundingClientRect().left;
+  return Math.min(n - 1, Math.max(0, Math.round(((px - left) / (plot || 1)) * (n - 1))));
+}
+
+/**
+ * This week: its distance, read against the runner's own weeks (the share of the mean of the four weeks
+ * before, and last week up to the same day: a week half run against a whole one always reads behind),
+ * and its days as columns with their kilometres.
+ */
+/**
+ * Where a tile's tooltip stands over the point at `px` of a chart `width` wide: on the left half its left edge
+ * near the point, on the right half its right edge, so a tooltip wider than guessed (Polish) stays inside the tile.
+ */
+function tipAt(px: number, width: number): CSSProperties {
+  return px <= width / 2 ? { left: Math.max(0, px - 24) } : { right: Math.max(0, width - px - 24) };
+}
+
 function WeekTile({ runs, today }: { runs: IndexedRun[]; today: Date }) {
   const w = weekFigures(runs, today);
+  const c = weekContext(runs, today);
   const top = Math.max(...w.byDay, 1);
   const day = (today.getDay() + 6) % 7;
-  const diff = w.km - w.lastWeekKm;
   const initials = days();
+  const share = c.averageKm ? w.km / c.averageKm : null;
+  // The average named by the weeks it is of: a runner two weeks in has two weeks to average.
+  const vars = { percent: number(Math.round(share ? share * 100 : 0)), km: number(c.averageKm ?? 0, 1) };
+  const against = share === null ? '' : c.weeks >= 4 ? t('{percent} % of your 4-week average, {km} km', vars) : c.weeks === 1 ? t('{percent} % of last week, {km} km', vars) : t('{percent} % of your average of {n} weeks, {km} km', { ...vars, n: c.weeks });
   return (
     <div className="dash-week">
-      <div className="dash-figures">
-        <div><span className="dash-big tnum">{number(w.km, 1)}</span> km</div>
-        <div><Counted n={w.runs} text={tn(w.runs, '{n} run', '{n} runs', MARK)} className="dash-mid tnum" /></div>
-        <div><span className="dash-mid tnum">{hm(w.time)}</span> h</div>
+      <div className="dash-hero">
+        <p className="dash-hero-value"><b>{number(w.km, 1)}</b> km</p>
+        <dl className="dash-stats">
+          <div><dt>{t('Runs')}</dt><dd className="tnum">{number(w.runs)}</dd></div>
+          <div><dt>{t('Time')}</dt><dd className="tnum">{hm(w.time)} h</dd></div>
+          <div><dt>{t('Last week by this day')}</dt><dd className="tnum">{number(c.lastWeekToDateKm, 1)} km</dd></div>
+        </dl>
       </div>
-      <p className="muted small">{w.lastWeekKm ? t('{diff} km on last week ({km} km)', { diff: signed(diff, 1), km: number(w.lastWeekKm, 1) }) : t('Nothing last week')}</p>
+      {share !== null && (
+        <div className="dash-meter">
+          <div className="dash-meter-track" role="img" aria-label={against}><i style={{ width: `${Math.min(100, share * 100)}%` }} /></div>
+          <span className="muted small" aria-hidden="true">{against}</span>
+        </div>
+      )}
       <div className="dash-days" role="img" aria-label={t('Kilometres by day: {days}', { days: w.byDay.map((v, i) => `${initials[i]} ${number(v, 1)}`).join(', ') })}>
-        {w.byDay.map((v, i) => (
-          <span key={i} className={i === day ? 'today' : ''}>
-            <i style={{ height: `${v ? Math.max(6, (v / top) * 100) : 0}%` }} />
-            <small>{initials[i]}</small>
-          </span>
-        ))}
+        {w.byDay.map((v, i) => {
+          const h = v ? Math.max(5, (v / top) * 100) : 0;
+          return (
+            <span key={i} className={`dash-day ${i === day ? 'today' : i > day ? 'ahead' : ''}`}>
+              <span className="dash-day-bar">
+                {v > 0 && <em className="tnum" style={{ bottom: `calc(${h}% + 4px)` }}>{number(v, v >= 10 ? 0 : 1)}</em>}
+                <i style={{ height: `${h}%` }} />
+              </span>
+              <small>{initials[i]}</small>
+            </span>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-/** The last 12 weeks' kilometres as columns, each with its value on pointing. */
+/**
+ * The last 12 weeks' kilometres as columns on a scale, the mean of the whole weeks before this one drawn
+ * across them, this week's value on its column; each week's on pointing.
+ */
 function WeeklyTile({ runs, today }: { runs: IndexedRun[]; today: Date }) {
   const weeks = weeklyDistance(runs, 12, today);
   const [box, width] = useWidth(600);
   const [hover, setHover] = useState<number | null>(null);
-  const H = 200, B = 22, top = Math.max(...weeks.map((w) => w.km), 1);
-  const colW = (width - 8) / weeks.length;
-  const avg = weeks.reduce((s, w) => s + w.km, 0) / weeks.length;
+  const H = 300;
+  const M = { l: 34, r: 64, t: 20, b: 24 };
+  const whole = weeks.slice(0, -1);
+  const avg = whole.length ? whole.reduce((s, w) => s + w.km, 0) / whole.length : 0;
+  const most = Math.max(...weeks.map((w) => w.km), 1);
+  const ticks = niceTicks(0, most, 4);
+  // The scale reaches past the longest week: a tick more where the last one falls short of it.
+  while (ticks[ticks.length - 1] < most) ticks.push(ticks[ticks.length - 1] + (ticks[1] - ticks[0]));
+  const yMax = ticks[ticks.length - 1];
+  const plot = width - M.l - M.r;
+  const colW = plot / weeks.length;
+  const barW = Math.min(24, colW * 0.6);
+  const y = (v: number) => M.t + (1 - v / yMax) * (H - M.t - M.b);
+  const shown = hover ?? weeks.length - 1;
   return (
     <div ref={box} className="dash-weekly">
-      <p className="muted small">{t('On average {km} km a week over 12 weeks', { km: number(avg, 1) })}</p>
+      <p className="muted small">{t('{km} km a week on average over the {n} whole weeks before this one', { km: number(avg, 1), n: number(whole.length) })}</p>
       <svg width={width} height={H} role="img" aria-label={t('Kilometres a week, the last 12 weeks: {weeks}', { weeks: weeks.map((w) => `${date(w.monday)} ${number(w.km, 1)}`).join(', ') })} onMouseLeave={() => setHover(null)}>
-        <line x1={0} x2={width} y1={H - B} y2={H - B} stroke="var(--axis)" />
+        {ticks.map((v) => (
+          <g key={v}>
+            <line x1={M.l} x2={M.l + plot} y1={y(v)} y2={y(v)} stroke={v ? 'var(--line)' : 'var(--axis)'} />
+            <text x={M.l - 8} y={y(v) + 3.5} textAnchor="end" fontSize="10.5" fill="var(--muted)">{number(v)}</text>
+          </g>
+        ))}
         {weeks.map((w, i) => {
-          const h = (w.km / top) * (H - B - 18);
-          const x = 4 + i * colW + colW * 0.18;
+          const x = M.l + i * colW + (colW - barW) / 2;
+          const top = y(w.km);
+          const r = Math.min(4, (H - M.b - top) / 2);
           return (
             <g key={w.monday} onMouseEnter={() => setHover(i)}>
-              <rect x={4 + i * colW} y={0} width={colW} height={H} fill="transparent" />
-              {h > 0 && <path d={`M${x},${H - B}V${H - B - h + 4}a4,4 0 0 1 4,-4h${colW * 0.64 - 8}a4,4 0 0 1 4,4V${H - B}Z`} fill={i === weeks.length - 1 ? 'var(--accent)' : 'color-mix(in srgb, var(--accent) 55%, transparent)'} />}
-              {i % 2 === (weeks.length - 1) % 2 && <text x={x + colW * 0.32} y={H - 6} textAnchor="middle" fontSize="10.5" fill="var(--muted)">{dateText(`${w.monday}T12:00:00`, { day: 'numeric', month: 'short' })}</text>}
+              <rect x={M.l + i * colW} y={0} width={colW} height={H} fill="transparent" />
+              {w.km > 0 && <path d={`M${x},${H - M.b}V${top + r}a${r},${r} 0 0 1 ${r},${-r}h${barW - 2 * r}a${r},${r} 0 0 1 ${r},${r}V${H - M.b}Z`} fill={i === weeks.length - 1 ? 'var(--accent)' : 'color-mix(in srgb, var(--accent) 45%, var(--surface))'} opacity={hover === null || hover === i ? 1 : 0.55} />}
+              {i === shown && w.km > 0 && <text x={x + barW / 2} y={top - 6} textAnchor="middle" fontSize="11.5" fontWeight="650" fill="var(--text)">{number(w.km, 1)}</text>}
+              {(weeks.length - 1 - i) % Math.max(1, Math.ceil(52 / colW)) === 0 && <text x={x + barW / 2} y={H - 7} textAnchor="middle" fontSize="10.5" fill={i === weeks.length - 1 ? 'var(--text)' : 'var(--muted)'} fontWeight={i === weeks.length - 1 ? 650 : 400}>{dateText(`${w.monday}T12:00:00`, { day: 'numeric', month: 'short' })}</text>}
             </g>
           );
         })}
+        {avg > 0 && (
+          <g pointerEvents="none">
+            <line x1={M.l} x2={M.l + plot + 6} y1={y(avg)} y2={y(avg)} stroke="var(--text-2)" strokeWidth="1" />
+            <text x={M.l + plot + 10} y={y(avg) + 3.5} fontSize="10.5" fill="var(--text-2)">{t('avg {km}', { km: number(avg, 1) })}</text>
+          </g>
+        )}
       </svg>
       {hover !== null && (
-        <div className="tooltip dash-tip" style={{ left: Math.min(width - 160, 4 + hover * colW) }}>
+        <div className="tooltip dash-tip" style={tipAt(M.l + (hover + 0.5) * colW, width)}>
           <b>{t('Week of {date}', { date: date(weeks[hover].monday) })}</b>
           <div className="tnum">{number(weeks[hover].km, 1)} km · {tn(weeks[hover].runs, '{n} run', '{n} runs')}</div>
         </div>
@@ -293,12 +354,14 @@ const perfKnown = (ref: string) => { const [tab, view] = ref.split('/'); return 
 const runTitle = (r: IndexedRun) => r.title ?? dateText(r.startTime, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 /**
- * The last run: its figures and its pace along the run as a line, faster higher, scaled to the
- * middle 90 % of its paces so a slow start or a stop does not flatten the rest. Named: its title as
- * a link.
+ * The last run: what it was (its type, its shoes), its figures, and its pace along the run on a scale,
+ * faster higher, scaled to the middle 90 % of its paces so a slow start or a stop does not flatten the
+ * rest, with the run's mean drawn across; the pace at a point on pointing. Named: its title as a link.
  */
 function RunTile({ folder, run, named = false }: { folder: DataFolder; run: IndexedRun; named?: boolean }) {
   const [profile, setProfile] = useState<number[] | null>(null);
+  const [box, width] = useWidth(360);
+  const [hover, setHover] = useState<number | null>(null);
   useEffect(() => {
     let live = true;
     readRunFile(folder, run.id).then((f) => { if (live) setProfile(f ? paceProfile(f.samples.values.speed ?? []) : []); }).catch(() => undefined);
@@ -307,12 +370,21 @@ function RunTile({ folder, run, named = false }: { folder: DataFolder; run: Inde
   const shown = profile && profile.length > 1 ? profile : null;
   const sorted = shown ? [...shown].sort((a, b) => a - b) : [];
   const [lo, hi] = shown ? [sorted[Math.floor(sorted.length * 0.05)], sorted[Math.ceil(sorted.length * 0.95) - 1]] : [0, 1];
-  const y = (p: number) => 4 + ((Math.min(hi, Math.max(lo, p)) - lo) / (hi - lo || 1)) * 40;
-  const path = shown?.map((p, i) => `${i ? 'L' : 'M'}${(i / (shown.length - 1)) * 100},${y(p).toFixed(1)}`).join('');
+  const H = 96;
+  const M = { l: 36, r: 6, t: 8, b: 8 };
+  const plot = width - M.l - M.r;
+  const y = (p: number) => M.t + ((Math.min(hi, Math.max(lo, p)) - lo) / (hi - lo || 1)) * (H - M.t - M.b);
+  const x = (i: number) => M.l + (i / ((shown?.length ?? 2) - 1)) * plot;
+  const line = shown?.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p).toFixed(1)}`).join('') ?? '';
+  const mean = run.avgSpeed > 0 ? 1000 / run.avgSpeed : null;
   return (
     <div className="dash-last">
       {named && <Link className="dash-last-title" href={`/run?id=${run.id}`}>{run.title ?? date(run.startTime)}</Link>}
-      {(named || run.title) && <span className="muted small">{dateText(run.startTime, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>}
+      <div className="dash-last-meta">
+        {(named || run.title) && <span className="muted small">{dateText(run.startTime, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>}
+        {run.workoutType && <span className="chip">{run.workoutType}</span>}
+        {run.shoes && <span className="chip">{run.shoes}</span>}
+      </div>
       <dl className="dash-facts">
         <div><dt>{t('Distance')}</dt><dd className="tnum">{km(run.distance)} km</dd></div>
         <div><dt>{t('Time')}</dt><dd className="tnum">{hm(run.duration)}</dd></div>
@@ -321,56 +393,112 @@ function RunTile({ folder, run, named = false }: { folder: DataFolder; run: Inde
         {typeof run.load === 'number' && <div><dt>{t('Load')}</dt><dd className="tnum">{number(Math.round(run.load))}</dd></div>}
       </dl>
       {/* The chart's room held while the run's file is read, so the row of tiles never moves (layout shift 0). */}
-      {!shown && <svg viewBox="0 0 100 48" preserveAspectRatio="none" className="dash-spark dash-run-pace" aria-hidden="true" />}
-      {shown && (
-        <svg viewBox="0 0 100 48" preserveAspectRatio="none" className="dash-spark dash-run-pace" role="img" aria-label={t('Pace along the run, from {from} to {to} /km, fastest {fastest} /km', { from: mmss(shown[0]), to: mmss(shown[shown.length - 1]), fastest: mmss(sorted[0]) })}>
-          <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-        </svg>
-      )}
+      <div ref={box} className="dash-chart" style={{ height: H }}>
+        {shown && (
+          <svg width={width} height={H} role="img" aria-label={t('Pace along the run, from {from} to {to} /km, fastest {fastest} /km', { from: mmss(shown[0]), to: mmss(shown[shown.length - 1]), fastest: mmss(sorted[0]) })} onMouseMove={(e) => setHover(pointAt(e, M.l, plot, shown.length))} onMouseLeave={() => setHover(null)}>
+            <text x={M.l - 8} y={M.t + 7} textAnchor="end" fontSize="10.5" fill="var(--muted)">{mmss(lo)}</text>
+            <text x={M.l - 8} y={H - M.b} textAnchor="end" fontSize="10.5" fill="var(--muted)">{mmss(hi)}</text>
+            <line x1={M.l} x2={M.l + plot} y1={H - M.b} y2={H - M.b} stroke="var(--axis)" />
+            <path d={`${line}L${x(shown.length - 1)},${H - M.b}L${M.l},${H - M.b}Z`} fill="var(--accent)" opacity="0.1" />
+            {mean !== null && mean > lo && mean < hi && <line x1={M.l} x2={M.l + plot} y1={y(mean)} y2={y(mean)} stroke="var(--text-2)" strokeWidth="1" opacity="0.55" />}
+            <path d={line} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+            {hover !== null && <><line x1={x(hover)} x2={x(hover)} y1={M.t} y2={H - M.b} stroke="var(--axis)" /><circle cx={x(hover)} cy={y(shown[hover])} r="4" fill="var(--accent)" stroke="var(--surface)" strokeWidth="2" /></>}
+          </svg>
+        )}
+        {shown && hover !== null && shown[hover] !== undefined && <div className="tooltip dash-tip" style={tipAt(x(hover), width)}><b className="tnum">{mmss(shown[hover])} /km</b><div className="muted">{t('{percent} % into the run', { percent: number(Math.round((hover / (shown.length - 1)) * 100)) })}</div></div>}
+      </div>
       <Link className="row-open" href={`/run?id=${run.id}`}>{t('Open the run →')}</Link>
     </div>
   );
 }
 
-/** Fitness, fatigue and form today, and the form of the last six weeks as a line. */
+/**
+ * Fitness, fatigue and form today, each of the first two with its change in 7 days, and the form of the
+ * last six weeks on a scale around zero; the day's three figures on pointing.
+ */
 function FormTile({ runs, fitnessDays, fatigueDays }: { runs: IndexedRun[]; fitnessDays: number; fatigueDays: number }) {
   const days = useMemo(() => formSeries(runs.filter((r) => typeof r.load === 'number').map((r) => ({ startTime: r.startTime, load: r.load as number })), { fitnessDays, fatigueDays }, localDay(new Date())), [runs, fitnessDays, fatigueDays]);
+  const [box, width] = useWidth(360);
+  const [hover, setHover] = useState<number | null>(null);
   const now = days[days.length - 1];
   if (!now) return <p className="muted small">{t("No load yet: the form needs the runs' loads.")}</p>;
   const recent = days.slice(-42);
-  const [lo, hi] = [Math.min(0, ...recent.map((d) => d.form)), Math.max(0, ...recent.map((d) => d.form))];
-  const y = (v: number) => 4 + (1 - (v - lo) / (hi - lo || 1)) * 52;
-  const path = recent.map((d, i) => `${i ? 'L' : 'M'}${(i / (recent.length - 1 || 1)) * 100},${y(d.form).toFixed(1)}`).join('');
+  const before = days[Math.max(0, days.length - 8)];
+  const forms = recent.map((d) => d.form);
+  // Zero always on the scale, and room enough that a flat form is not drawn as a mountain.
+  const lo = Math.min(-2, ...forms);
+  const hi = Math.max(2, ...forms);
+  const H = 150;
+  const M = { l: 30, r: 40, t: 10, b: 22 };
+  const plot = width - M.l - M.r;
+  const x = (i: number) => M.l + (i / (recent.length - 1 || 1)) * plot;
+  const y = (v: number) => M.t + (1 - (v - lo) / (hi - lo)) * (H - M.t - M.b);
+  const line = recent.map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(d.form).toFixed(1)}`).join('');
+  const end = recent.length - 1;
+  // The ends of the scale beside zero, where they do not sit on its label.
+  const ticks = [hi, lo].filter((v) => Math.abs(y(v) - y(0)) >= 13);
+  const at = hover === null ? null : recent[hover];
   return (
     <div className="dash-form">
-      <div className="dash-figures">
-        <div><span className="dash-big tnum">{signed(now.form)}</span> {t('form')}</div>
-        <div><span className="dash-mid tnum">{number(Math.round(now.fitness))}</span> {t('fitness')}</div>
-        <div><span className="dash-mid tnum">{number(Math.round(now.fatigue))}</span> {t('fatigue')}</div>
+      <div className="dash-hero">
+        <p className="dash-hero-value"><b>{signed(now.form)}</b> {t('form')}</p>
+        <dl className="dash-stats">
+          <div><dt>{t('Fitness')}</dt><dd className="tnum">{number(Math.round(now.fitness))} <Change value={Math.round(now.fitness) - Math.round(before.fitness)} /></dd></div>
+          <div><dt>{t('Fatigue')}</dt><dd className="tnum">{number(Math.round(now.fatigue))} <Change value={Math.round(now.fatigue) - Math.round(before.fatigue)} /></dd></div>
+        </dl>
       </div>
-      <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="dash-spark" role="img" aria-label={tn(recent.length, 'Form over the last {n} day, from {from} to {to}', 'Form over the last {n} days, from {from} to {to}', { from: signed(recent[0].form), to: signed(now.form) })}>
-        <line x1="0" x2="100" y1={y(0)} y2={y(0)} stroke="var(--axis)" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" />
-        <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-      </svg>
+      <p className="muted small">{t('Form is fitness less fatigue; ▲ ▼ the change in 7 days.')}</p>
+      <div ref={box} className="dash-chart" style={{ height: H }}>
+        <svg width={width} height={H} role="img" aria-label={tn(recent.length, 'Form over the last {n} day, from {from} to {to}', 'Form over the last {n} days, from {from} to {to}', { from: signed(recent[0].form), to: signed(now.form) })} onMouseMove={(e) => setHover(pointAt(e, M.l, plot, recent.length))} onMouseLeave={() => setHover(null)}>
+          {ticks.map((v) => (
+            <g key={v}>
+              <line x1={M.l} x2={M.l + plot} y1={y(v)} y2={y(v)} stroke="var(--line)" />
+              <text x={M.l - 8} y={y(v) + 3.5} textAnchor="end" fontSize="10.5" fill="var(--muted)">{signed(v)}</text>
+            </g>
+          ))}
+          <line x1={M.l} x2={M.l + plot} y1={y(0)} y2={y(0)} stroke="var(--axis)" />
+          <text x={M.l - 8} y={y(0) + 3.5} textAnchor="end" fontSize="10.5" fill="var(--muted)">0</text>
+          <path d={`${line}L${x(end)},${y(0)}L${x(0)},${y(0)}Z`} fill="var(--accent)" opacity="0.12" />
+          <path d={line} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+          <circle cx={x(end)} cy={y(now.form)} r="4" fill="var(--accent)" stroke="var(--surface)" strokeWidth="2" />
+          <text x={x(end) + 9} y={y(now.form) + 4} fontSize="11.5" fontWeight="650" fill="var(--text)">{signed(now.form)}</text>
+          <text x={M.l} y={H - 5} fontSize="10.5" fill="var(--muted)">{dateText(`${recent[0].date}T12:00:00`, { day: 'numeric', month: 'short' })}</text>
+          <text x={x(end)} y={H - 5} textAnchor="end" fontSize="10.5" fill="var(--muted)">{t('Today')}</text>
+          {at && <><line x1={x(hover!)} x2={x(hover!)} y1={M.t} y2={H - M.b} stroke="var(--axis)" /><circle cx={x(hover!)} cy={y(at.form)} r="4" fill="var(--accent)" stroke="var(--surface)" strokeWidth="2" /></>}
+        </svg>
+        {at && (
+          <div className="tooltip dash-tip" style={tipAt(x(hover!), width)}>
+            <b>{dateText(`${at.date}T12:00:00`, { weekday: 'short', day: 'numeric', month: 'short' })}</b>
+            <div className="tnum">{t('form')} {signed(at.form)} · {t('fitness')} {number(Math.round(at.fitness))} · {t('fatigue')} {number(Math.round(at.fatigue))}</div>
+          </div>
+        )}
+      </div>
       <Link className="row-open" href="/performance?tab=load&view=form">{t('Performance →')}</Link>
     </div>
   );
 }
 
-/** The last runs as a short list: the day and the title, the distance and the pace. */
+/**
+ * The last runs as a short list, each row the way to its run: the day, what it was (its title, its
+ * type), its distance as a bar against the longest of them, and its pace.
+ */
 function RecentTile({ runs }: { runs: IndexedRun[] }) {
   const recent = [...runs].reverse().slice(0, 6);
   if (!recent.length) return <p className="muted small">{t('No run yet.')}</p>;
+  const longest = Math.max(...recent.map((r) => r.distance), 1);
   return (
     <ul className="dash-recent">
       {recent.map((r) => (
         <li key={r.id}>
-          <span className="dash-recent-what">
-            <Link className="strong" href={`/run?id=${r.id}`}>{dateText(r.startTime, { weekday: 'short', day: 'numeric', month: 'short' })}</Link>
-            {r.title && <span className="muted small">{r.title}</span>}
-          </span>
-          <span className="tnum">{km(r.distance)} km</span>
-          <span className="tnum muted">{pace(r.avgSpeed)} /km</span>
+          <Link className="dash-recent-row" href={`/run?id=${r.id}`}>
+            <span className="dash-recent-day"><b>{dateText(r.startTime, { weekday: 'short' })}</b><small className="tnum">{dateText(r.startTime, { day: 'numeric', month: 'short' })}</small></span>
+            <span className="dash-recent-what">
+              <span className="dash-recent-name">{r.title ?? r.workoutType ?? t('Run')}</span>
+              {r.title && r.workoutType && <small>{r.workoutType}</small>}
+            </span>
+            <span className="dash-recent-km"><span className="tnum">{km(r.distance)} km</span><i aria-hidden="true"><i style={{ width: `${Math.max(4, (r.distance / longest) * 100)}%` }} /></i></span>
+            <span className="dash-recent-pace tnum">{pace(r.avgSpeed)} /km</span>
+          </Link>
         </li>
       ))}
       <li className="dash-more"><Link className="row-open" href="/">{t('All runs →')}</Link></li>
@@ -378,27 +506,52 @@ function RecentTile({ runs }: { runs: IndexedRun[] }) {
   );
 }
 
-/** A segment: its efforts' pace over time as a line, the latest and its count. */
+/**
+ * A segment: the pace of its latest effort, read against its first and its fastest, and every effort's
+ * pace over time on a scale, faster higher (each a dot while they are few); an effort's on pointing.
+ */
 function SegmentTile({ def, efforts }: { def: BlockDefinition; efforts: BlockInstance[] }) {
+  const [box, width] = useWidth(360);
+  const [hover, setHover] = useState<number | null>(null);
   const mine = efforts.filter((e) => e.definitionId === def.id && e.status === 'accepted' && e.metrics.speed).sort((a, b) => a.runStart.localeCompare(b.runStart));
   if (!mine.length) return <p className="muted small">{t('No effort yet.')}</p>;
   const paces = mine.map((e) => 1000 / e.metrics.speed!);
   const [lo, hi] = [Math.min(...paces), Math.max(...paces)];
+  const H = 110;
+  const M = { l: 36, r: 10, t: 8, b: 20 };
+  const plot = width - M.l - M.r;
+  const end = paces.length - 1;
+  const x = (i: number) => M.l + (end ? i / end : 0.5) * plot;
   // Faster higher.
-  const y = (p: number) => 4 + ((p - lo) / (hi - lo || 1)) * 52;
-  const path = paces.map((p, i) => `${i ? 'L' : 'M'}${(i / (paces.length - 1 || 1)) * 100},${y(p).toFixed(1)}`).join('');
-  const lastE = mine[mine.length - 1];
-  const change = paces.length > 1 ? paces[paces.length - 1] - paces[0] : 0;
+  const y = (p: number) => M.t + ((p - lo) / (hi - lo || 1)) * (H - M.t - M.b);
+  const line = paces.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p).toFixed(1)}`).join('');
+  const lastE = mine[end];
+  const change = paces.length > 1 ? paces[end] - paces[0] : 0;
   return (
     <div className="dash-segment">
-      <div className="dash-figures">
-        <div><span className="dash-big tnum">{mmss(paces[paces.length - 1])}</span> /km</div>
-        <div><Counted n={mine.length} text={tn(mine.length, '{n} effort', '{n} efforts', MARK)} className="dash-mid tnum" /></div>
+      <div className="dash-hero">
+        <p className="dash-hero-value"><b>{mmss(paces[end])}</b> /km</p>
+        <dl className="dash-stats">
+          <div><dt>{t('Efforts')}</dt><dd className="tnum">{number(mine.length)}</dd></div>
+          <div><dt>{t('Fastest')}</dt><dd className="tnum">{mmss(lo)}</dd></div>
+        </dl>
       </div>
       <p className="muted small">{t('Latest {date}', { date: date(lastE.runStart) })}{paces.length > 1 ? ` · ${change <= 0 ? t('{time} faster than the first', { time: mmss(-change) }) : t('{time} slower than the first', { time: mmss(change) })}` : ''}</p>
-      <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="dash-spark" role="img" aria-label={tn(mine.length, 'Pace of its {n} effort over time', 'Pace of its {n} efforts over time')}>
-        <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-      </svg>
+      <div ref={box} className="dash-chart" style={{ height: H }}>
+        <svg width={width} height={H} role="img" aria-label={tn(mine.length, 'Pace of its {n} effort over time', 'Pace of its {n} efforts over time')} onMouseMove={(e) => setHover(pointAt(e, M.l, plot, paces.length))} onMouseLeave={() => setHover(null)}>
+          <text x={M.l - 8} y={M.t + 7} textAnchor="end" fontSize="10.5" fill="var(--muted)">{mmss(lo)}</text>
+          {hi > lo && <text x={M.l - 8} y={H - M.b} textAnchor="end" fontSize="10.5" fill="var(--muted)">{mmss(hi)}</text>}
+          <line x1={M.l} x2={M.l + plot} y1={H - M.b} y2={H - M.b} stroke="var(--axis)" />
+          {end > 0 && <path d={`${line}L${x(end)},${H - M.b}L${x(0)},${H - M.b}Z`} fill="var(--accent)" opacity="0.1" />}
+          <path d={line} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+          {paces.length <= 40 && paces.map((p, i) => <circle key={i} cx={x(i)} cy={y(p)} r={i === end ? 4 : 2.5} fill="var(--accent)" stroke="var(--surface)" strokeWidth={i === end ? 2 : 1} />)}
+          {paces.length > 40 && <circle cx={x(end)} cy={y(paces[end])} r="4" fill="var(--accent)" stroke="var(--surface)" strokeWidth="2" />}
+          <text x={M.l} y={H - 5} fontSize="10.5" fill="var(--muted)">{date(mine[0].runStart)}</text>
+          {end > 0 && <text x={M.l + plot} y={H - 5} textAnchor="end" fontSize="10.5" fill="var(--muted)">{date(lastE.runStart)}</text>}
+          {hover !== null && <><line x1={x(hover)} x2={x(hover)} y1={M.t} y2={H - M.b} stroke="var(--axis)" /><circle cx={x(hover)} cy={y(paces[hover])} r="4" fill="var(--accent)" stroke="var(--surface)" strokeWidth="2" /></>}
+        </svg>
+        {hover !== null && mine[hover] && <div className="tooltip dash-tip" style={tipAt(x(hover), width)}><b className="tnum">{mmss(paces[hover])} /km</b><div className="muted">{date(mine[hover].runStart)}</div></div>}
+      </div>
       <Link className="row-open" href={`/compare?items=b:${def.id}:0`}>{t('Compare →')}</Link>
     </div>
   );

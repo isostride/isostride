@@ -87,16 +87,20 @@ function copyFailed() {
   copyBroken?.();
 }
 
-/** Starts a request in a fresh Processing Worker; resolves with its final event. */
-function start(request: WorkerRequest, onProgress?: Progress, signal?: AbortSignal): Promise<Final> {
+/**
+ * Starts a request in a fresh Processing Worker; resolves with its final event. `shown`: the job it is a
+ * part of, shown already (the demo's history is made call after call under one job): its caller advances
+ * and ends that one.
+ */
+function start(request: WorkerRequest, onProgress?: Progress, signal?: AbortSignal, shown?: number): Promise<Final> {
   const job = request.type;
   const w = new Worker(new URL('../../workers/pipeline.worker.ts', import.meta.url));
   running.add(w);
-  const k = begin(job);
+  const k = shown ?? begin(job);
   const end = () => {
     w.terminate();
     running.delete(w);
-    finish(k);
+    if (shown === undefined) finish(k);
   };
   return new Promise((resolve, reject) => {
     // Abandoned (the screen moved on): the worker stops reading and the promise rejects.
@@ -105,7 +109,7 @@ function start(request: WorkerRequest, onProgress?: Progress, signal?: AbortSign
       const m = e.data;
       if (m.type === 'copy-broken') return copyFailed();
       if (m.type === 'progress') {
-        advance(k, m.done, m.total);
+        if (shown === undefined) advance(k, m.done, m.total);
         onProgress?.(m);
       } else {
         end();
@@ -208,12 +212,31 @@ function acrossTabs<T>(folderName: string, job: () => Promise<T>): Promise<T> {
 }
 
 /** Runs one job in a fresh Processing Worker, after the jobs writing the data before it; resolves when it is done. */
-export async function runInWorker(job: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures'>, handle: FileSystemDirectoryHandle, onProgress?: Progress, opts: { ifOutdated?: boolean } = {}): Promise<DoneEvent> {
+export async function runInWorker(job: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures' | 'demo'>, handle: FileSystemDirectoryHandle, onProgress?: Progress, opts: { ifOutdated?: boolean } = {}): Promise<DoneEvent> {
   const turn = writing.then(() => acrossTabs(handle.name, () => start({ type: job, handle, copy: copyId, ...opts }, onProgress)));
   writing = turn.catch(() => undefined);
   const m = await turn;
   if (m.type !== 'done') throw new Error(t('unexpected {type}', { type: m.type }));
   return m;
+}
+
+/**
+ * A part of the demo folder made (lib/pipeline: seedDemo) in a Processing Worker, in its turn among the
+ * jobs that write. `shown`: the job it is shown under, when its caller shows several parts as one
+ * (shownJob). The demo's own steps are in lib/client/demo, loaded only when the demo is opened.
+ */
+export async function demoPart(handle: FileSystemDirectoryHandle, part: 'recent' | 'more', lang: 'en' | 'pl', onProgress?: Progress, shown?: number): Promise<DoneEvent> {
+  const turn = writing.then(() => acrossTabs(handle.name, () => start({ type: 'demo', handle, copy: null, part, lang }, onProgress, undefined, shown)));
+  writing = turn.catch(() => undefined);
+  const m = await turn;
+  if (m.type !== 'done') throw new Error(t('unexpected {type}', { type: m.type }));
+  return m;
+}
+
+/** A job shown to the screens while its caller runs its parts: its number, and how to advance and end it. */
+export function shownJob(job: WorkerJob): { k: number; advance(done: number, total: number): void; end(): void } {
+  const k = begin(job);
+  return { k, advance: (done, total) => advance(k, done, total), end: () => finish(k) };
 }
 
 /** The instances of blocks that are not kept (being built, or living in a link), computed now in the Processing Worker. */

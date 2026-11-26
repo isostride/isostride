@@ -9,6 +9,12 @@ It is an analysis tool, not a training planner.
 
 The app runs entirely in the browser. There is no server and no account, and nothing is sent anywhere. Your FIT files and everything derived from them stay in a folder on your computer.
 
+## Demo
+
+To look around before any file is at hand, open [app.isostride.com/?demo](https://app.isostride.com/?demo) (the site's *Try the demo*, or the button on the app's first screen). The app opens on two years of training of a sample runner with a critical pace of about 3:15 /km: easy runs, sessions, tempo, long runs, hills, races from 800 m to the half marathon, tests of the critical speed, a cold, an injury and a week of holidays, with gear, tags, segments and saved analyses. Nothing is downloaded: the runs are generated in your browser as FIT files, imported as any folder is, and kept in the browser's own storage (about 300 MB), so the demo opens at once the next time and gets the days since. The last months come first, in a few seconds; the earlier history is added behind the open app. A bar on every screen says the data are a sample runner's; *Use your own data* leaves the demo and removes its data from the browser. Integrations are off in it.
+
+`npx tsx --tsconfig tsconfig.json scripts/make-demo.ts <folder>` (in `apps/app`) writes the same demo into a folder on disk.
+
 ## Repository
 
 A monorepo (npm workspaces):
@@ -107,6 +113,7 @@ Code layout:
 | `lib/detection` | segments of a block in a run, recommendations |
 | `lib/compare`, `lib/stats` | trend, A/B, regression and bootstrap |
 | `lib/curve` | pace curve and its estimate |
+| `lib/demo` | the demo runner: the plan of two years, each run second by second, its FIT file |
 
 All heavy processing runs in the worker. An architecture test fails if main-thread code imports the processing modules.
 

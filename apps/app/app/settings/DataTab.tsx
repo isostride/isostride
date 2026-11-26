@@ -43,7 +43,9 @@ function reasonText(reason: string): string {
  */
 export function DataTab() {
   const { folder, handle } = useOpenFolder();
-  const { pick } = useFolder();
+  const { pick, state } = useFolder();
+  /** the demo's folder (lib/client/demo): kept in the browser, no service fetched into it */
+  const demo = state.status === 'open' && !!state.demo;
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [facts, setFacts] = useState<{ runs: number; unseen: number; first: string | null; last: string | null } | null>(null);
   const [job, setJob] = useState<JobState | null>(null);
@@ -66,7 +68,8 @@ export function DataTab() {
     return watchJob((j) => {
       const mine = j && (j.job === 'import' || j.job === 'recompute') ? j : null;
       setJob(mine);
-      if (mine) was = true;
+      // The demo's history read again when it is in, as the other screens do, though no button waits for it.
+      if (mine || j?.job === 'demo') was = true;
       else if (was) { was = false; read().catch(() => undefined); }
     });
   }, [read]);
@@ -107,11 +110,12 @@ export function DataTab() {
           </span>
           <div className="folder-name">
             <b>{folder.name}</b>
-            <span className="muted small">{t('FIT files in this folder or its fit/ subfolder')}</span>
+            <span className="muted small">{demo ? t('The demo: runs of a sample runner, kept in this browser') : t('FIT files in this folder or its fit/ subfolder')}</span>
           </div>
           {facts && facts.unseen > 0 && <span className="folder-new tnum">{tn(facts.unseen, '{n} new file', '{n} new files')}</span>}
           {/* Another folder, a choice of its own ("change folder daj osobny niebieskim kolorem"). */}
-          <button type="button" className="btn primary folder-change" onClick={() => pick().catch(() => undefined)} disabled={busy}>{t('Change folder…')}</button>
+          {/* Greyed in the demo: it has no folder to change; Use your own data, in the bar at the top, leaves it for one. */}
+          <button type="button" className="btn primary folder-change" onClick={() => pick().catch(() => undefined)} disabled={busy || demo} title={demo ? t('The demo has no folder to change: “Use your own data”, at the top, leaves it for a folder of yours.') : undefined}>{t('Change folder…')}</button>
         </div>
         <dl className="folder-facts form-figures" aria-label={t('What the folder holds')}>
           <div><dt>{t('Runs')}</dt><dd className="tnum">{facts ? facts.runs : '–'}</dd></div>
@@ -164,7 +168,9 @@ export function DataTab() {
       {/* The sources the runs can come from besides the folder itself ("w data ... wyszczegolni sekcje integracje ... i tam daj coros"). */}
       <section className="integrations" aria-labelledby="integrations-title">
         <h2 id="integrations-title" className="section-title">{t('Integrations')} <span className="muted">· {t('services your runs can be fetched from into this folder')}</span></h2>
-        <CorosCard initial={coros ?? null} busy={busy} />
+        {/* No service in the demo: an account connected in this browser would put the visitor's own runs among the sample ones.
+            The card stays, greyed (the runner's "czy w demo w settings .. jakies opcje nie powinny byc wyszarzone"): what the app can do is seen, and that it is off here. */}
+        <CorosCard initial={demo ? null : coros ?? null} busy={busy} off={demo ? t('Integrations are off in the demo: runs fetched from your account would mix with the sample ones. Connect COROS once you use your own folder.') : undefined} />
       </section>
       </>)}
     </section>

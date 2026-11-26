@@ -260,7 +260,7 @@ function Timeline({ r, format, tick, minSpan, invert, onPick }: { r: AbResult; f
           </g>
         ))}
         <line x1={L} x2={width - R} y1={H - B} y2={H - B} stroke="var(--axis)" />
-        {monthTicks(t0, t1).map((m) => <text key={m} x={x(m)} y={H - 8} fontSize="11" textAnchor="middle" fill="var(--muted)">{monthLabel(m)}</text>)}
+        {monthTicks(t0, t1, width - L - R).map((m) => <text key={m} x={x(m)} y={H - 8} fontSize="11" textAnchor="middle" fill="var(--muted)">{monthLabel(m)}</text>)}
         {pts.map(({ p, g }) => (
           <g key={p.instance.id} style={{ cursor: 'pointer' }} onClick={() => onPick(p.instance)}>
             <circle cx={x(Date.parse(p.instance.runStart))} cy={y(val(p))} r={12} fill="transparent" />

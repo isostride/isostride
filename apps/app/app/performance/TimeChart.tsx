@@ -94,7 +94,7 @@ export function TimeChart({ label, times, series, format, tick = format, height 
     times.forEach((t, i) => { if (Math.abs(x(t) - mx) < Math.abs(x(times[best]) - mx)) best = i; });
     setHover(best);
   };
-  const months = monthTicks(t0 - pad, t1 + pad);
+  const months = monthTicks(t0 - pad, t1 + pad, width - M.l - M.r);
   // A lone line (no bars, no other line) carries a wash beneath it and its last value at its end.
   const lone = lines.length === 1 && !bars.length ? lines[0] : null;
   const pointsOf = (s: TimeSeries) => s.values.flatMap((v, i) => (v === null ? [] : [[x(times[i]), y(v)] as const]));

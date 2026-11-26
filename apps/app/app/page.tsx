@@ -103,7 +103,7 @@ function RunsPage() {
   useEffect(() => {
     let was = false;
     return watchJob((j) => {
-      if (j && (j.job === 'import' || j.job === 'recompute')) {
+      if (j && (j.job === 'import' || j.job === 'recompute' || j.job === 'demo')) {
         was = true;
         setProgress({ done: j.done, total: j.total });
       } else if (was) {

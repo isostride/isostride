@@ -4,16 +4,18 @@ import { openDataFolder } from '@/lib/copy';
 import type { BlockDefinition, BlockInstance } from '@/lib/blocks';
 import { curvesOf, type CurvePoint, type CurveSource } from '@/lib/curve';
 import { figuresOf, instancesOf, similarOf, type EffortFigures, type SimilarQuery, type SimilarResult } from '@/lib/detection';
-import { addedRuns, cached, dataStamp, importFolder, recomputeEverything, refreshBlocks, refreshContext } from '@/lib/pipeline';
+import { addedRuns, cached, dataStamp, importFolder, recomputeEverything, refreshBlocks, refreshContext, seedDemo } from '@/lib/pipeline';
 
 /** Messages between the Web App and the Processing Worker. */
-/** context: gear or tags changed; blocks: block definitions changed; instances: blocks not kept, computed now; curve: pace curves of stretches; similar: stretches like a selected one; figures: the curves of stretches by distance. */
-export type WorkerJob = 'import' | 'recompute' | 'context' | 'blocks' | 'instances' | 'curve' | 'similar' | 'figures';
+/** context: gear or tags changed; blocks: block definitions changed; instances: blocks not kept, computed now; curve: pace curves of stretches; similar: stretches like a selected one; figures: the curves of stretches by distance; demo: the next part of the demo folder made. */
+export type WorkerJob = 'import' | 'recompute' | 'context' | 'blocks' | 'instances' | 'curve' | 'similar' | 'figures' | 'demo';
 /** id: the request's number, its events carry it (the worker that stays answers several requests). */
 /** copy: the id of the folder's copy in the browser, when the page keeps one (ADR "A copy in the browser on phones"). */
 export type WorkerRequest = { id?: number; copy?: string | null } & (
   /** ifOutdated: a recompute only while the folder is still an older version's (the app's own rebuild), else an import */
-  | { type: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures'>; handle: FileSystemDirectoryHandle; ifOutdated?: boolean }
+  | { type: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures' | 'demo'>; handle: FileSystemDirectoryHandle; ifOutdated?: boolean }
+  /** part: the last half year, or the next runs of the history before it; lang: the language of the demo's own texts */
+  | { type: 'demo'; handle: FileSystemDirectoryHandle; part: 'recent' | 'more'; lang: 'en' | 'pl' }
   | { type: 'figures'; handle: FileSystemDirectoryHandle; stretches: SimilarQuery[] }
   | { type: 'similar'; handle: FileSystemDirectoryHandle; query: SimilarQuery }
   | { type: 'instances'; handle: FileSystemDirectoryHandle; defs: BlockDefinition[] }
@@ -24,7 +26,8 @@ export interface CancelRequest { type: 'cancel'; id: number }
 export type WorkerEvent = { id?: number } & (
   | { type: 'progress'; done: number; total: number; file: string }
   /** runIds: the runs an import added; rebuilt: false when a recompute asked for found the folder current already */
-  | { type: 'done'; imported: number; duplicates: number; errors: number; runIds?: string[]; rebuilt?: boolean }
+  /** remaining: the runs of the demo still to make */
+  | { type: 'done'; imported: number; duplicates: number; errors: number; runIds?: string[]; rebuilt?: boolean; remaining?: number }
   /** the worker's copy of the folder failed: it writes the folder alone from here (lib/copy) */
   | { type: 'copy-broken' }
   | { type: 'instances'; instances: Record<string, BlockInstance[]> }
@@ -93,6 +96,11 @@ self.onmessage = async (msg: MessageEvent<WorkerRequest | CancelRequest>) => {
     if (e.data.type === 'similar') {
       const query = e.data.query;
       post({ type: 'similar', result: (await cached(folder, 'similar', JSON.stringify(query), () => similarOf(folder, query, onProgress))).value });
+      return;
+    }
+    if (e.data.type === 'demo') {
+      const made = await seedDemo(folder, { part: e.data.part, lang: e.data.lang, onProgress });
+      post({ type: 'done', imported: made.imported, duplicates: 0, errors: 0, remaining: made.remaining });
       return;
     }
     if (e.data.type === 'context' || e.data.type === 'blocks') {

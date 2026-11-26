@@ -1,7 +1,7 @@
 import { ALGORITHM_VERSION, KNOWN_METRICS, SCHEMA_VERSION, type MetricInfo, type MetricsFile, type Windows, type Lap, type Samples, type RunFile, type RunIndexRow, type RunsIndex } from '@/lib/kernel';
 import { IMPORT_REASONS, PATHS, importReason, isLastingReason, listFitFiles, readJson, writeJson, type DataFolder, emptyManifest, readManifest, writeManifest, type Manifest } from '@/lib/fs';
 import { buildWindows } from '@/lib/prepare';
-import { FitImportError, parseFit, runId } from './parseFit';
+import { FitImportError, parseFit, runId, type ParsedRun } from './parseFit';
 
 /**
  * The index and the manifest are written each time this many files are handled, and at the end: an import
@@ -33,6 +33,11 @@ export interface ImportOptions {
   now?: () => number;
   /** the files handled between two writes of the index and the manifest (IMPORT_CHECKPOINT) */
   checkpoint?: number;
+  /**
+   * A file's run when the caller holds it read already (the demo writes a FIT file and knows what a
+   * reading of it gives): the file is not read and decoded again. Undefined for a file: it is read.
+   */
+  parsed?: (file: string) => ParsedRun | undefined;
 }
 
 /**
@@ -90,7 +95,7 @@ export async function importRuns(folder: DataFolder, opts: ImportOptions = {}): 
     const t0 = now();
     let outcome: FileOutcome;
     try {
-      const run = parseFit(await folder.readBytes(file));
+      const run = opts.parsed?.(file) ?? parseFit(await folder.readBytes(file));
       const existing = byStart.get(run.startTime);
       if (existing && existing.file === file) {
         // The index names this very file and the manifest does not: an import cut off between the two

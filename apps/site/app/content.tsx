@@ -26,6 +26,8 @@ export interface Content {
   sections: string;
   nav: [id: string, label: string][];
   openApp: string;
+  /** the demo: its button, what it is, and its link in the caption of the first screenshot */
+  demo: { cta: string; note: string; inCaption: string };
   source: string;
   /** the link to the page in the other language: its name in that language, its short name */
   other: { name: string; short: string };
@@ -70,6 +72,11 @@ export const CONTENT: Record<Lang, Content> = {
     sections: 'Sections',
     nav: [['why', 'Why'], ['local', 'Local and open source'], ['metrics', 'Metrics'], ['models', 'Models'], ['open', 'Open platform']],
     openApp: 'Open the app',
+    demo: {
+      cta: 'Try the demo',
+      note: 'The demo opens the app on two years of training of a sample runner, generated in your browser. No files needed, nothing to install.',
+      inCaption: 'Open the demo',
+    },
     source: 'Source on GitHub',
     other: { name: 'Polski', short: 'PL' },
     hero: {
@@ -170,6 +177,11 @@ export const CONTENT: Record<Lang, Content> = {
     sections: 'Sekcje',
     nav: [['why', 'Dlaczego'], ['local', 'Dane u Ciebie'], ['metrics', 'Metryki'], ['models', 'Modele'], ['open', 'Otwarty kod']],
     openApp: 'Otwórz aplikację',
+    demo: {
+      cta: 'Wypróbuj demo',
+      note: 'Demo otwiera aplikację na dwóch latach treningu przykładowego biegacza, wygenerowanych w Twojej przeglądarce. Nie potrzebujesz plików i niczego nie instalujesz.',
+      inCaption: 'Otwórz demo',
+    },
     source: 'Kod na GitHubie',
     other: { name: 'English', short: 'EN' },
     hero: {

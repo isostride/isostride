@@ -13,11 +13,13 @@ import { watchJob } from '@/lib/client';
 export function useDataVersion(): number {
   const [version, setVersion] = useState(0);
   useEffect(() => {
-    let was = false;
+    let was: string | null = null;
     return watchJob((j) => {
-      if (j && (j.job === 'import' || j.job === 'recompute' || j.job === 'blocks')) was = true;
-      // Ended, whatever runs after it (a read of Compare started meanwhile is no reason to wait).
-      else if (was) { was = false; setVersion((v) => v + 1); }
+      const now = j && (j.job === 'import' || j.job === 'recompute' || j.job === 'blocks' || j.job === 'demo') ? j.job : null;
+      // Ended, whatever runs after it (a read of Compare started meanwhile is no reason to wait), or given way to
+      // another one still running: a segment's efforts found while the demo's history is made for minutes.
+      if (was && now !== was) setVersion((v) => v + 1);
+      was = now;
     });
   }, []);
   return version;

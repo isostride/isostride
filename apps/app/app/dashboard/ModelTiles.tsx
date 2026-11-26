@@ -52,6 +52,8 @@ export function ModelTiles({ folder, models, render }: {
           <div className="dash-model">
             <div className="dash-big tnum">{saysNow(m.key, report.now)}</div>
             <TrustChip trust={m.trust} />
+            {/* What the figure tells, so the tile is read without its screen. */}
+            <p className="muted small">{m.tells}</p>
             <Link className="row-open" href={performanceHref(m.where.tab, m.where.view)}>{t('Performance →')}</Link>
           </div>
         ));

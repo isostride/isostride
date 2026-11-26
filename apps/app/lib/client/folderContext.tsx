@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { BrowserFolder, usesCopy, type DataFolder } from '@/lib/fs';
+import { DEMO_KEY, chooseDemo, demoChosen, demoLeft, demoSupported, forgetDemo } from './demoChoice';
 import { onCopyBroken, setCopyId } from './worker';
 import { getValue, setValue } from './handleStore';
 
@@ -9,16 +10,26 @@ import { getValue, setValue } from './handleStore';
 export type FolderState =
   | { status: 'checking' }
   /** insecure: opened over plain http (not localhost), where the browser hides folder access */
-  | { status: 'unsupported'; insecure: boolean }
+  | { status: 'unsupported'; insecure: boolean; demoFailed?: boolean }
   /** lost: the folder remembered could not be opened (moved, renamed, its disk away), by its name */
-  | { status: 'not-chosen'; lost?: string }
+  /** demoFailed: the demo was asked for and could not be made here */
+  | { status: 'not-chosen'; lost?: string; demoFailed?: boolean }
   | { status: 'access-pending'; name: string }
-  | { status: 'open'; folder: DataFolder; handle: FileSystemDirectoryHandle };
+  /** the demo's last months are being made: so many of its runs so far */
+  | { status: 'demo-preparing'; done: number; total: number }
+  /** demo: the folder is the demo's, in the browser's private storage */
+  | { status: 'open'; folder: DataFolder; handle: FileSystemDirectoryHandle; demo?: boolean };
 
 interface FolderApi {
   state: FolderState;
   pick(): Promise<void>;
   confirmAccess(): Promise<void>;
+  /** Opens the app on the demo (lib/client/demo). */
+  openDemo(): Promise<void>;
+  /** Leaves the demo for the visitor's own folder, the demo's data removed from the browser. */
+  leaveDemo(): Promise<void>;
+  /** the demo's earlier history being made behind the open app: so many of its runs so far; 'short' when the browser has no room for it (the demo is its last months); null when none is being made */
+  demoHistory: { done: number; total: number } | 'short' | null;
 }
 
 const Ctx = createContext<FolderApi | null>(null);
@@ -87,9 +98,56 @@ async function opened(handle: FileSystemDirectoryHandle, fresh = false): Promise
 export function FolderProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<FolderState>({ status: 'checking' });
   const [remembered, setRemembered] = useState<FileSystemDirectoryHandle | null>(null);
+  const [demoHistory, setDemoHistory] = useState<{ done: number; total: number } | 'short' | null>(null);
+
+  /**
+   * The app opened on the demo: its last months made first (seconds, shown as they are made), the app
+   * opened on them, and the earlier history made behind it. A demo that cannot be made (no room, a
+   * storage the browser withholds) is said so on the Welcome screen, and the choice of it forgotten.
+   */
+  const openDemoNow = useCallback(async () => {
+    chooseDemo();
+    setState({ status: 'demo-preparing', done: 0, total: 0 });
+    try {
+      const { openDemoFolder } = await import('./demo');
+      const handle = await openDemoFolder((done, total) => setState((s) => (s.status === 'demo-preparing' ? { status: 'demo-preparing', done, total } : s)), setDemoHistory);
+      setState({ status: 'open', folder: new BrowserFolder(handle), handle, demo: true });
+    } catch {
+      forgetDemo();
+      // Back to what this browser can do without the demo: the choice of a folder, or the word that it has none.
+      setState(typeof window.showDirectoryPicker === 'function' ? { status: 'not-chosen', demoFailed: true } : { status: 'unsupported', insecure: !window.isSecureContext, demoFailed: true });
+    }
+  }, []);
+  // One opening at a time: React's strict mode (the dev server) runs the opening effect twice, and two openings ran
+  // two loops of the history and replaced the folder under the screens a moment after they opened.
+  const opening = useRef<Promise<void> | null>(null);
+  const openDemo = useCallback(() => (opening.current ??= openDemoNow().finally(() => { opening.current = null; })), [openDemoNow]);
+
+  // The demo left in another tab removes its folder: this tab, on it, opens the app again from its start too, not
+  // left on screens whose data are gone.
+  const onDemo = state.status === 'open' && !!state.demo;
+  useEffect(() => {
+    if (!onDemo) return;
+    const left = (e: StorageEvent) => { if (e.key === DEMO_KEY && e.newValue !== '1') location.assign('/'); };
+    addEventListener('storage', left);
+    return () => removeEventListener('storage', left);
+  }, [onDemo]);
+
+  const leaveDemo = useCallback(async () => {
+    forgetDemo();
+    // The app opened again from its start: on the folder chosen before, or on the choice of one. The demo's
+    // folder is removed there, once no worker of this page writes it any more.
+    location.assign('/');
+  }, []);
 
   useEffect(() => {
     (async () => {
+      if (demoChosen()) {
+        if (demoSupported()) return openDemo();
+        forgetDemo();
+      }
+      // A demo left before: its folder removed, now that no worker of that page writes it.
+      if (demoLeft()) void import('./demo').then((m) => m.removeLeftDemo());
       if (typeof window.showDirectoryPicker !== 'function') return setState({ status: 'unsupported', insecure: !window.isSecureContext });
       const handle = await getValue<FileSystemDirectoryHandle>(HANDLE_KEY).catch(() => undefined);
       if (!handle) return setState({ status: 'not-chosen' });
@@ -100,10 +158,12 @@ export function FolderProvider({ children }: { children: ReactNode }) {
       if (perm === 'granted') setState(await opened(handle).catch((): FolderState => ({ status: 'not-chosen', lost: handle.name })));
       else setState({ status: 'access-pending', name: handle.name });
     })().catch(() => setState({ status: 'not-chosen' }));
-  }, []);
+  }, [openDemo]);
 
   const pick = useCallback(async () => {
     const handle = await window.showDirectoryPicker!({ id: 'strideprism-data', mode: 'readwrite' });
+    // A folder of their own chosen from the demo: the demo is left.
+    forgetDemo();
     await setValue(HANDLE_KEY, handle);
     setRemembered(handle);
     setState(await opened(handle, true));
@@ -115,7 +175,7 @@ export function FolderProvider({ children }: { children: ReactNode }) {
     if (perm === 'granted') setState(await opened(remembered).catch((): FolderState => ({ status: 'not-chosen', lost: remembered.name })));
   }, [remembered]);
 
-  return <Ctx.Provider value={{ state, pick, confirmAccess }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ state, pick, confirmAccess, openDemo, leaveDemo, demoHistory }}>{children}</Ctx.Provider>;
 }
 
 export function useFolder(): FolderApi {
