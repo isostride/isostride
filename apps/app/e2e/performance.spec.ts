@@ -581,6 +581,9 @@ test.describe('Performance model', () => {
     await expect(balance.locator('[data-balance="speed"] path')).toHaveCount(1);
     await expect(dialog.getByLabel('Lowest reserve')).toContainText(/D′ \(pace\), lowest-?\d+ %/);
     await expect(dialog.locator('[data-threshold]')).toContainText('those of the bests of the 90 days before this run, without it');
+    // The dialog takes the focus as it opens, in the step that starts listening for Esc: the test waits for it,
+    // and says so should the dialog once more stay open (on master, 26 Nov 2026, Esc left it open once).
+    await expect(dialog.getByRole('button', { name: 'Close' })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
   });
