@@ -48,6 +48,7 @@ export function Welcome() {
                 <span>{t('Setup · step {step} of {steps}', { step: number(1), steps: number(SETUP_STEPS.length) })}</span>
                 <SetupSteps at={0} compact />
               </div>
+              {state.lost && <div className="banner err"><span>⚠</span><span>{t('The folder {name} could not be opened: it was moved, renamed or removed, or its disk is not connected. Choose it again, or another.', { name: state.lost })}</span></div>}
               <h2>{t('Choose your data folder')}</h2>
               <p>{t("The folder with your watch's FIT files, or an empty one to put them in. IsoStride reads it here, in your browser, and keeps its own files beside them.")}</p>
               <p className="muted small">{t('Your browser asks you to pick it: a web page cannot open a folder by itself.')}</p>

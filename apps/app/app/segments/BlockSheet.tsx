@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { EditGlyph, useConfirm } from '@/components';
+import { EditGlyph, useConfirm, useFocusTrap } from '@/components';
 import { asRuleDefinition, shownName, type BlockDefinition, type BlockStart, type Rule, type Tolerances } from '@/lib/blocks';
 import { useLocale } from '@/lib/client';
 import { msg, number, t } from '@/lib/i18n';
 import { RuleBuilder, type BuilderOptions } from './RuleBuilder';
+import { minSec } from '@/lib/kernel';
 
-const fmtPace = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+const fmtPace = (s: number) => minSec(s);
 
 const FIELDS: { key: Exclude<keyof Tolerances, 'start'>; label: string; unit: string; scale?: number; pace?: boolean }[] = [
   { key: 'paceMin', label: msg('Pace band from'), unit: '/km', pace: true },
@@ -48,6 +49,7 @@ export function BlockSheet({ def, kept, options, handle, onClose, onSave, onDele
   const [tol, setTol] = useState<Tolerances>(one.tolerances);
   // Opened, the editor takes the focus; Esc closes it wherever the focus is.
   const box = useRef<HTMLDivElement>(null);
+  useFocusTrap(box);
   const close = useRef(onClose);
   useEffect(() => { close.current = onClose; }, [onClose]);
   useEffect(() => {

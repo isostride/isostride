@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
-import { Key, TipRow, WashGradient, columnPath, dayLabel, monthLabel, monthTicks, niceTicks, useSvgId, useWidth } from '@/components';
+import { Key, TipRow, WashGradient, columnPath, dayLabel, monthLabel, monthTicks, niceTicks, tickDecimals, useSvgId, useWidth } from '@/components';
 import { useOpenFolder } from '@/lib/client';
 import { msg, number, t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
@@ -60,7 +60,7 @@ export function FormTab({ runs, whatIf }: { runs: RunsIndex['runs']; /** a scena
   const now = all[all.length - 1];
 
   if (!withLoad.length) {
-    return <div className="card empty">{t('No run has a load yet. Import runs, or open the')} <Link href="/performance?tab=model">{t('Model')}</Link> {t('tab and save it to compute the loads.')}</div>;
+    return <div className="card empty">{t('No run has a load yet. Import runs, or open the')} <Link href="/settings?tab=models">{t('Model')}</Link> {t('tab and save it to compute the loads.')}</div>;
   }
 
   const t0 = timeOf(days[0].date);
@@ -151,7 +151,7 @@ export function FormTab({ runs, whatIf }: { runs: RunsIndex['runs']; /** a scena
             {formTicks.map((v) => (
               <g key={`f${v}`}>
                 <line x1={M.l} x2={width - M.r} y1={yForm(v)} y2={yForm(v)} stroke={v === 0 ? 'var(--axis)' : 'var(--grid)'} />
-                <text x={M.l - 8} y={yForm(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{signed(v)}</text>
+                <text x={M.l - 8} y={yForm(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{`${v > 0 ? '+' : ''}${number(v || 0, tickDecimals(formTicks))}`}</text>
               </g>
             ))}
             <polyline className="form-form" points={line((d) => d.form, yForm)} fill="none" stroke="var(--series-3)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />

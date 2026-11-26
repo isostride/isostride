@@ -5,8 +5,9 @@ import { useState } from 'react';
 import { reasonText, type BlockInstance } from '@/lib/blocks';
 import type { Rejected } from '@/lib/compare';
 import { dateText, msg, number, t } from '@/lib/i18n';
+import { minSec } from '@/lib/kernel';
 
-const fmtPace = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+const fmtPace = (s: number) => minSec(s);
 const day = (iso: string) => dateText(iso, { day: 'numeric', month: 'short', year: 'numeric' });
 /** The source of the heart rate: a strap by its name, or the watch's wrist sensor ("wrist (COROS PACE 4)", as the context names it). */
 const hrFrom = (source: string) => { const m = /^wrist \((.*)\)$/.exec(source); return m ? t('wrist ({device})', { device: m[1] }) : source; };

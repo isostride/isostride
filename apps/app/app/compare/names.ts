@@ -1,5 +1,6 @@
 import { asRule, shownName, type BlockDefinition, type BlockParams } from '@/lib/blocks';
 import { dateText, msg, number, t } from '@/lib/i18n';
+import { minSec } from '@/lib/kernel';
 
 /** A run's name in the Analysis screen: its title if any, its date and its distance. */
 export const runName = (start: string, distance: number, title?: string | null) =>
@@ -17,7 +18,7 @@ export const TYPE_LABEL: Record<BlockParams['type'], string> = {
 export function similarName(kind: 'route' | 'profile', ref: { runStart: string; distance: number; pace: number } | null): string {
   const what = ref
     // i18n-ignore: kept in English in the name saved; shown through similarShown()
-    ? `${new Date(ref.runStart).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })} · ${(ref.distance / 1000).toFixed(1)} km · ${Math.floor(ref.pace / 60)}:${String(Math.round(ref.pace % 60)).padStart(2, '0')} /km ±10 %`
+    ? `${new Date(ref.runStart).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })} · ${(ref.distance / 1000).toFixed(1)} km · ${minSec(ref.pace)} /km ±10 %`
     : 'the selection';
   // i18n-ignore: kept in English in the name saved; shown through similarShown()
   return kind === 'route' ? `Same route as ${what}` : `Same profile as ${what}`;

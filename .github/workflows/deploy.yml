@@ -37,8 +37,10 @@ env:
   AWS_REGION: ${{ vars.AWS_REGION || 'eu-central-1' }}
   AWS_CI_ROLE_ARN: ${{ vars.AWS_CI_ROLE_ARN }}
   TEST_DATA_BUCKET: ${{ vars.TEST_DATA_BUCKET }}
-  # Where the jobs of this run leave their reports for the verdict.
-  REPORTS: s3://${{ vars.TEST_DATA_BUCKET }}/ci/${{ github.run_id }}-${{ github.run_attempt }}
+  # Where the jobs of this run leave their reports for the verdict: by the run, whatever the attempt. With
+  # the attempt in it, "Re-run failed jobs" could never pass: the verdict of the second attempt read only
+  # the reports of the jobs run again, and failed on those of the jobs that had passed in the first.
+  REPORTS: s3://${{ vars.TEST_DATA_BUCKET }}/ci/${{ github.run_id }}
 
 jobs:
   # Whether this tree passed the check before: asked on master and on a run started by hand, never on a
@@ -51,10 +53,10 @@ jobs:
       tree: ${{ steps.tree.outputs.tree }}
       checked: ${{ steps.tree.outputs.checked }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Sign in to AWS (the marks of the trees checked)
         if: github.event_name != 'pull_request'
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@45666896f5d8e0f10ae255413f3a4cdd03bdc8f5 # v6.3.1
         with:
           role-to-assume: ${{ env.AWS_CI_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
@@ -75,7 +77,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
       - name: Tests
         working-directory: apps/app
@@ -92,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
       # Fitness functions "Tests pass in any order" and "Flaky tests enter quarantine": the suite three
       # times in random order, a failed test retried once.
@@ -118,7 +120,7 @@ jobs:
       matrix:
         shard: [1, 2, 3]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
           browsers: chromium
@@ -144,7 +146,7 @@ jobs:
         run: tar -czf app.tgz apps/app/.next-build
       - name: The build for the verdict
         if: matrix.shard == 1
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: build-app
           path: app.tgz
@@ -162,8 +164,8 @@ jobs:
     timeout-minutes: 15
     container: mcr.microsoft.com/playwright:v1.65.1-noble
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
           cache: npm
@@ -175,7 +177,7 @@ jobs:
         run: sh scripts/check.sh e2e 1/1 webkit
       - name: Report for the verdict
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: e2e-webkit
           path: |
@@ -192,7 +194,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
           fit-files: 'false'
@@ -211,7 +213,7 @@ jobs:
           npm run build:site
           tar -czf site.tgz apps/site/.next-build
       - name: The site's build for the deploy
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: build-site
           path: site.tgz
@@ -230,27 +232,27 @@ jobs:
     timeout-minutes: 10
     steps:
       # Two commits: the coverage of new code compares the commit with the one before it.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
       - uses: ./.github/actions/setup
         with:
           fit-files: 'false'
       - name: WebKit's report
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: e2e-webkit
           path: apps/app/ci/e2e-webkit
       # The builds of this run: missing when their job failed, and the verdict then fails on them.
       - name: The app's build
         continue-on-error: true
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: build-app
           path: builds
       - name: The site's build
         continue-on-error: true
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: build-site
           path: builds
@@ -290,7 +292,7 @@ jobs:
           tar -czf builds.tgz apps/app/.next-build apps/site/.next-build
       - name: Keep the builds for the deploy
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: builds
           path: builds.tgz
@@ -306,7 +308,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
         with:
           fit-files: 'false'
@@ -316,7 +318,7 @@ jobs:
           tar -czf builds.tgz apps/app/.next-build apps/site/.next-build
       - name: Keep the builds for the deploy
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: builds
           path: builds.tgz
@@ -337,20 +339,30 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             package.json
             CHANGELOG.md
             apps/app/scripts/release.mjs
           sparse-checkout-cone-mode: false
-      - uses: actions/download-artifact@v8
+      # Only the tip of master is deployed: a run of an older commit started again (to clear a red mark, or
+      # one that waited while a newer one was merged and deployed) would put the older version back over
+      # the newer, without a word. It ends here, green, with nothing deployed.
+      - name: Is this still the tip of master?
+        run: |
+          tip=$(git ls-remote "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" refs/heads/master | cut -f1)
+          if [ "$tip" = "$GITHUB_SHA" ]; then echo "DEPLOY=true" >> "$GITHUB_ENV"; else echo "::notice::master is at $tip, this run is of $GITHUB_SHA: nothing deployed"; fi
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: env.DEPLOY == 'true'
         with:
           name: builds
       - run: tar -xzf builds.tgz
+        if: env.DEPLOY == 'true'
 
       - name: Sign in to AWS (deploy)
-        uses: aws-actions/configure-aws-credentials@v6
+        if: env.DEPLOY == 'true'
+        uses: aws-actions/configure-aws-credentials@45666896f5d8e0f10ae255413f3a4cdd03bdc8f5 # v6.3.1
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
@@ -358,12 +370,14 @@ jobs:
       # The hashed files kept a year (a new build has new names), the rest checked on every visit;
       # old hashed files stay, so a page open during a deploy still finds its scripts.
       - name: Deploy the app
+        if: env.DEPLOY == 'true'
         run: |
           aws s3 sync apps/app/.next-build/_next/static "s3://${{ vars.APP_BUCKET }}/_next/static" --cache-control "public,max-age=31536000,immutable"
           aws s3 sync apps/app/.next-build "s3://${{ vars.APP_BUCKET }}" --delete --exclude "_next/static/*" --cache-control "no-cache"
           aws cloudfront create-invalidation --distribution-id "${{ vars.APP_DISTRIBUTION_ID }}" --paths "/*"
 
       - name: Deploy the site
+        if: env.DEPLOY == 'true'
         run: |
           aws s3 sync apps/site/.next-build/_next/static "s3://${{ vars.SITE_BUCKET }}/_next/static" --cache-control "public,max-age=31536000,immutable"
           aws s3 sync apps/site/.next-build "s3://${{ vars.SITE_BUCKET }}" --delete --exclude "_next/static/*" --cache-control "no-cache"
@@ -372,6 +386,7 @@ jobs:
       # The version deployed tagged v<version> (0.1.0 as v0.1) with its notes from CHANGELOG.md, once:
       # a deploy of the same version later leaves the tag where it is.
       - name: Tag the version
+        if: env.DEPLOY == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

@@ -1,4 +1,4 @@
-import { lineWithInterval, mean } from '@/lib/stats';
+import { lineWithInterval, mean, t975 } from '@/lib/stats';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 import { correctForPace, noiseThreshold, selectInstances, sourceOf, type ContextFilter, type Rejected } from './select';
 
@@ -66,7 +66,8 @@ export function computeTrend(all: BlockInstance[], definitionId: string, metric:
   }
   const series: TrendSeries[] = [];
   for (const [source, insts] of bySource) {
-    const points = correctForPace(insts, metric, { overTime: true }).map((c) => ({ instance: c.instance, date: c.instance.runStart, raw: c.raw, corrected: c.corrected }));
+    const pace = correctForPace(insts, metric, { overTime: true });
+    const points = pace.points.map((c) => ({ instance: c.instance, date: c.instance.runStart, raw: c.raw, corrected: c.corrected }));
     const ys = points.map((p) => (corrected ? p.corrected : p.raw));
     // Each run once: its day and the mean of its efforts.
     const byRun = new Map<string, { at: number; values: number[] }>();
@@ -80,9 +81,13 @@ export function computeTrend(all: BlockInstance[], definitionId: string, metric:
       const span = (Date.parse(points[points.length - 1].date) - t0) / DAY;
       const line = lineWithInterval(xs, runs.map((r) => mean(r.values)));
       if (line) {
-        noise = line.residual;
+        // Corrected for pace: the interval of the slope and the spread about the line from the fit of the day
+        // and the pace together, which gave the slope on pace (the line is the same, its interval wider).
+        const fitted = corrected ? pace.fit : null;
+        noise = fitted ? fitted.residual : line.residual;
         const change = line.slope * span;
-        const ci: [number, number] = [line.ci[0] * span, line.ci[1] * span];
+        const half = fitted ? t975(fitted.df) * fitted.se : null;
+        const ci: [number, number] = half === null ? [line.ci[0] * span, line.ci[1] * span] : [(line.slope - half) * span, (line.slope + half) * span];
         const verdict: Verdict = (ci[0] > 0 || ci[1] < 0) && Math.abs(change) > noise ? 'change' : 'no detectable change';
         fit = { slope: line.slope, intercept: line.intercept, change, ci, verdict };
       }

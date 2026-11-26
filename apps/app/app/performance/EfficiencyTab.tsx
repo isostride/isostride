@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { number, t } from '@/lib/i18n';
+import { number, signOf, t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import { DECOUPLING_MIN, EF_TREND_DAYS, efficiencyNow, efficiencyRuns, trailingMean, type LoadSummary } from '@/lib/load';
 import { TimeChart } from './TimeChart';
@@ -22,7 +22,7 @@ export function EfficiencyTab({ part, runs, summaries, maxHr, today }: { part: '
     return (
       <div className="card chart">
         <dl className="form-figures" aria-label={t('Efficiency now')}>
-          <div><dt>{t('Efficiency, easy runs')}</dt><dd className="tnum">{now.ef !== null ? number(now.ef, 2) : '–'} <span className="unit">{t('m/beat')}</span></dd><dd className="muted sub">{now.ef !== null && now.before !== null ? t('{change} % vs the {days} days before', { change: `${now.ef >= now.before ? '+' : '−'}${number(Math.abs(((now.ef - now.before) / now.before) * 100), 1)}`, days: EF_TREND_DAYS }) : ''}</dd></div>
+          <div><dt>{t('Efficiency, easy runs')}</dt><dd className="tnum">{now.ef !== null ? number(now.ef, 2) : '–'} <span className="unit">{t('m/beat')}</span></dd><dd className="muted sub">{now.ef !== null && now.before !== null ? t('{change} % vs the {days} days before', { change: `${signOf(((now.ef - now.before) / now.before) * 100, 1)}${number(Math.abs(((now.ef - now.before) / now.before) * 100), 1)}`, days: EF_TREND_DAYS }) : ''}</dd></div>
           <div><dt>{t('Easy runs')}</dt><dd className="tnum">{number(points.filter((p) => p.easy).length)} <span className="unit">{t('of {total}', { total: number(points.length) })}</span></dd></div>
         </dl>
         <h3 className="chart-title">{t('Efficiency factor')}</h3>

@@ -1,4 +1,4 @@
-import { mean, sd, welch } from '@/lib/stats';
+import { mean, sd, t975, welch } from '@/lib/stats';
 import { t } from '@/lib/i18n';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 import { CONTEXT_FIELDS, correctForPace, selectInstances, sourceOf, type ContextField, type ContextFilter, type Rejected } from './select';
@@ -82,7 +82,7 @@ export function computeAb(
     if (groupOf(i)) grouped.push(i);
     else rejected.push({ instance: i, reasons: [t('in neither group ({a} or {b})', { a: labels[0], b: labels[1] })] });
   }
-  const corr = correctForPace(grouped, metric, { groupOf });
+  const { points: corr, fit: paceFit } = correctForPace(grouped, metric, { groupOf });
   const a = corr.filter((c) => groupOf(c.instance) === 'A');
   const b = corr.filter((c) => groupOf(c.instance) === 'B');
   const val = (p: AbPoint) => (corrected ? p.corrected : p.raw);
@@ -117,9 +117,16 @@ export function computeAb(
   const mixed = [a, b].some((g) => new Set(g.map((p) => sourceOf(p.instance, metric))).size > 1);
   if (mixed) warnings.push(t('The groups mix devices ({devices}); filter by one to compare like with like.', { devices: [...sources].join(', ') }));
 
-  const pooled = Math.sqrt(((va.length - 1) * sd(va) ** 2 + (vb.length - 1) * sd(vb) ** 2) / Math.max(1, va.length + vb.length - 2));
-  result.noise = pooled;
+  let pooled = Math.sqrt(((va.length - 1) * sd(va) ** 2 + (vb.length - 1) * sd(vb) ** 2) / Math.max(1, va.length + vb.length - 2));
   result.ci = welch(va, vb)?.ci ?? null;
+  // Corrected for pace: the interval of the difference at one pace, from the fit that gave the slope (the
+  // analysis of covariance), which holds what the slope costs; Welch's on the corrected values left it out.
+  if (corrected && paceFit && va.length >= 2 && vb.length >= 2) {
+    const half = t975(paceFit.df) * paceFit.se;
+    result.ci = [result.difference! - half, result.difference! + half];
+    pooled = paceFit.residual;
+  }
+  result.noise = pooled;
   if (result.ci && va.length >= MIN_AB_INSTANCES && vb.length >= MIN_AB_INSTANCES) {
     const [lo, hi] = result.ci;
     result.verdict = (lo > 0 || hi < 0) && Math.abs(result.difference!) > pooled ? 'change' : 'no detectable change';
@@ -159,8 +166,9 @@ export function meanProfile(points: AbPoint[], metric: BlockMetric): (number | n
 export function abCsv(r: AbResult, definition: string): string {
   const f = (x: number | null | undefined) => (x === null || x === undefined ? '' : x.toFixed(3));
   const rows = [
-    ['definition', 'metric', 'values', 'group_a', 'n_a', 'mean_a', 'group_b', 'n_b', 'mean_b', 'difference', 'raw_difference', 'ci_low', 'ci_high', 'noise', 'verdict', 'warnings'],
-    [definition, r.metric, r.corrected ? 'corrected' : 'raw', r.a.label, r.a.points.length, f(r.a.mean), r.b.label, r.b.points.length, f(r.b.mean), f(r.difference), f(r.rawDifference), f(r.ci?.[0]), f(r.ci?.[1]), f(r.noise), r.verdict ?? 'no verdict', r.warnings.join(' ')],
+    // The runs beside the efforts: the means, the interval and the verdict count each run once.
+    ['definition', 'metric', 'values', 'group_a', 'n_a', 'runs_a', 'mean_a', 'group_b', 'n_b', 'runs_b', 'mean_b', 'difference', 'raw_difference', 'ci_low', 'ci_high', 'noise', 'verdict', 'warnings'],
+    [definition, r.metric, r.corrected ? 'corrected' : 'raw', r.a.label, r.a.points.length, r.a.runs, f(r.a.mean), r.b.label, r.b.points.length, r.b.runs, f(r.b.mean), f(r.difference), f(r.rawDifference), f(r.ci?.[0]), f(r.ci?.[1]), f(r.noise), r.verdict ?? 'no verdict', r.warnings.join(' ')],
   ];
   return rows.map((row) => row.map(cell).join(',')).join('\n') + '\n';
 }

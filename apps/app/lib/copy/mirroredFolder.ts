@@ -66,7 +66,11 @@ export class MirroredFolder implements DataFolder {
   async readBytes(path: string): Promise<Uint8Array> {
     if (!this.copied(path)) return this.folder.readBytes(path);
     try {
-      return await this.copy.readBytes(path);
+      const kept = await this.copy.readBytes(path);
+      // An empty file in the copy is a writing cut off, as in readText.
+      if (kept.length) return kept;
+      // i18n-ignore: caught below, never shown
+      throw new Error('empty');
     } catch {
       // Not in the copy yet (or the copy failed): from the folder, then into the copy.
       const bytes = await this.folder.readBytes(path);
@@ -75,10 +79,15 @@ export class MirroredFolder implements DataFolder {
     }
   }
 
-  // The folder first, then the copy: a write the folder refused never reaches the copy alone.
+  // The folder first, then the copy: a write the folder refused never reaches the copy alone. Before the
+  // folder is written the copy's file is emptied, which reads as "not here, ask the folder": a tab killed
+  // between the two writes (a note saved, the browser left at once) left the older file in the copy, read
+  // from then on in place of the folder's, and the next save wrote the older text over the newer (the
+  // review of 26 Nov 2026).
   async writeText(path: string, text: string): Promise<void> {
     this.touched.add(path);
     if (this.copyOnly(path)) return this.toCopy(() => this.copy.writeText(path, text));
+    if (this.copied(path)) await this.toCopy(() => this.copy.writeText(path, ''));
     await this.folder.writeText(path, text);
     if (this.copied(path)) await this.toCopy(() => this.copy.writeText(path, text));
   }
@@ -86,14 +95,22 @@ export class MirroredFolder implements DataFolder {
   async writeBytes(path: string, bytes: Uint8Array): Promise<void> {
     this.touched.add(path);
     if (this.copyOnly(path)) return this.toCopy(() => this.copy.writeBytes(path, bytes));
+    if (this.copied(path)) await this.toCopy(() => this.copy.writeBytes(path, new Uint8Array()));
     await this.folder.writeBytes(path, bytes);
     if (this.copied(path)) await this.toCopy(() => this.copy.writeBytes(path, bytes));
   }
 
+  // The copy first: cut off between the two, the file is still in the folder and read from it again,
+  // where the other order left in the copy a file the folder no longer held.
   async remove(path: string): Promise<void> {
     this.touched.add(path);
-    await this.folder.remove(path);
     if (this.copied(path) || (path === '' && !this.broken)) await this.toCopy(() => this.copy.remove(path));
+    await this.folder.remove(path);
+  }
+
+  /** The copy is no longer the folder's (a worker's copy failed, and it wrote the folder alone): the folder alone from here, a new copy at the next opening. */
+  leaveCopy(): void {
+    if (!this.broken) { this.broken = true; this.brokenCopy?.(); }
   }
 
   /**

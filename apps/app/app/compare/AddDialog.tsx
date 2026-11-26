@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { useFocusTrap } from '@/components';
 import { asRule, basisOf, shapeName, shownSuggestionName, type BlockDefinition, type BlockParams, type Recommendation, type Tolerances } from '@/lib/blocks';
 import type { AnalysisItem } from '@/lib/compare';
 import { msg, t } from '@/lib/i18n';
@@ -36,11 +37,13 @@ export function AddDialog({ defs, recs, runs, items, allRuns, onAdd, onAccept, o
   onDismiss: (rec: Recommendation) => void;
   onClose: () => void;
 }) {
+  const box = useRef<HTMLDivElement>(null);
+  useFocusTrap(box);
   return (
     // The look of the command palette (components/CommandPalette): a search with its glyph, groups with
     // their counts, each option with the glyph of its kind ("panel add compare .. wyglada biednie").
     <div className="palette-backdrop cmdk-backdrop" onClick={onClose}>
-      <div className="cmdk add-picker" role="dialog" aria-modal="true" aria-label={t('Add segment or run')} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      <div ref={box} className="cmdk add-picker" role="dialog" aria-modal="true" aria-label={t('Add segment or run')} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
         <ListTab defs={defs} recs={recs} runs={runs} items={items} allRuns={allRuns} onAdd={onAdd} onAccept={onAccept} onDismiss={onDismiss} onClose={onClose} />
         {/* One way to make a block (requirement "One way to make a block"): the editor of the Segments screen. */}
         <div className="cmdk-foot">

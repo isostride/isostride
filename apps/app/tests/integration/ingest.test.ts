@@ -200,9 +200,10 @@ describe('Skip unreadable FIT file', () => {
     const manifest = (await readManifest(folder))!;
     expect(manifest.files['fit/broken.fit']).toEqual({ status: 'error', reason: 'not a FIT file' });
     expect(manifest.files[`fit/${FILES.hike}`]).toEqual({ status: 'error', reason: 'not a run (sport: hiking)' });
-    // Tried again on the next import.
+    // The file that may have been cut short is tried again on the next import; the hike, not a run however
+    // often it is read, is not.
     const again = await importFolder(folder);
-    expect(again.outcomes.map((o) => o.file).sort()).toEqual([`fit/${FILES.hike}`, 'fit/broken.fit']);
+    expect(again.outcomes.map((o) => o.file)).toEqual(['fit/broken.fit']);
   });
 });
 

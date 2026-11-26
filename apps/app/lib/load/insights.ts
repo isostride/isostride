@@ -1,5 +1,6 @@
 import { CS_RANGE, estimateCurve, fitWholeCurve, wholePredictions } from '@/lib/curve';
 import { dayOf } from '@/lib/gear';
+import { median } from '@/lib/stats';
 import { zoneOf } from '@/lib/settings';
 import type { FormDay } from './form';
 import type { LoadRow } from './models';
@@ -21,7 +22,7 @@ export interface LoadWeek {
   /** its Monday */
   start: string;
   load: number;
-  /** mean daily load over its standard deviation (Foster 1998); null when every day has the same load; of a week not over yet, that of the 7 days up to its last */
+  /** mean daily load over its standard deviation (Foster 1998); null when every day has the same load, or while the series holds fewer than the 7 days; of a week not over yet, that of the 7 days up to its last */
   monotony: number | null;
   /** the week's load times its monotony; of a week not over yet, the load of the 7 days up to its last times their monotony */
   strain: number | null;
@@ -30,30 +31,44 @@ export interface LoadWeek {
 }
 
 /**
- * Weeks of the daily series, Monday to Sunday: load, monotony, strain, ramp rate. The last week, when the
- * series ends before its Sunday, has its monotony and strain over the 7 days up to the last day (as many
- * as the series has): Foster's week ending today. Over its days so far alone (the review of 26 Nov 2026)
- * a Monday of 100 and a Tuesday of 90 read a monotony of 19. The first week's ramp counts from the end
- * of its first day: the averages start from the mean load of the first weeks (form.ts), not from zero.
+ * The weeks up to today's of a list of weeks that holds only those with something in them: the last `n`
+ * weeks of the calendar, not the last `n` of the list (after a break those reached back before it: a
+ * spring of hard running read as the intensity of now; the review of 26 Nov 2026).
+ */
+export function weeksUpTo<T extends { start: string }>(weeks: T[], today: string, n: number): T[] {
+  const last = weekOf(today);
+  const from = shift(last, -7 * (n - 1));
+  return weeks.filter((w) => w.start >= from && w.start <= last);
+}
+
+/**
+ * Weeks of the daily series, Monday to Sunday: load, monotony, strain, ramp rate. Monotony and strain are
+ * of 7 days: the week's own, or, when the series ends before its Sunday, the 7 days up to the last day
+ * (Foster's week ending today: over its days so far alone a Monday of 100 and a Tuesday of 90 read a
+ * monotony of 19). None while the series holds fewer than those 7 days: a history of two days read the
+ * same 19, and a first week begun on a Thursday counted three days of rest before the first run (the
+ * reviews of 26 Nov 2026). The first week's ramp counts from the end of its first day: the averages start
+ * from the mean load of the first weeks (form.ts), not from zero.
  */
 export function weeklyLoad(days: FormDay[]): LoadWeek[] {
   const by = new Map<string, FormDay[]>();
   for (const d of days) { const w = weekOf(d.date); (by.get(w) ?? by.set(w, []).get(w)!).push(d); }
   const out: LoadWeek[] = [];
   const lastDay = days[days.length - 1]?.date ?? '';
+  const at = new Map(days.map((d, k) => [d.date, k]));
   let before: number | null = null;
   for (const [start, list] of [...by].sort(([a], [b]) => a.localeCompare(b))) {
-    const own = Array.from({ length: 7 }, (_, k) => shift(start, k)).filter((d) => d <= lastDay).map((d) => list.find((x) => x.date === d)?.load ?? 0);
-    const load = own.reduce((s, v) => s + v, 0);
-    const over = shift(start, 6) <= lastDay;
-    const seven = over ? own : days.slice(-7).map((d) => d.load);
-    const total = seven.reduce((s, v) => s + v, 0);
-    const mean = total / seven.length;
-    const sd = Math.sqrt(seven.reduce((s, v) => s + (v - mean) ** 2, 0) / seven.length);
+    const load = list.reduce((s, d) => s + d.load, 0);
+    const sunday = shift(start, 6);
+    const end = at.get(sunday <= lastDay ? sunday : lastDay)!;
+    const seven = end >= 6 ? days.slice(end - 6, end + 1).map((d) => d.load) : null;
+    const total = seven?.reduce((s, v) => s + v, 0) ?? 0;
+    const mean = total / 7;
+    const sd = seven ? Math.sqrt(seven.reduce((s, v) => s + (v - mean) ** 2, 0) / 7) : 0;
     const monotony = sd > 0 ? mean / sd : null;
-    const end = list[list.length - 1].fitness;
-    out.push({ start, load: Math.round(load), monotony: monotony === null ? null : Math.round(monotony * 100) / 100, strain: monotony === null ? null : Math.round(total * monotony), ramp: Math.round((end - (before ?? list[0].fitness)) * 10) / 10 });
-    before = end;
+    const fitness = list[list.length - 1].fitness;
+    out.push({ start, load: Math.round(load), monotony: monotony === null ? null : Math.round(monotony * 100) / 100, strain: monotony === null ? null : Math.round(total * monotony), ramp: Math.round((fitness - (before ?? list[0].fitness)) * 10) / 10 });
+    before = fitness;
   }
   return out;
 }
@@ -218,10 +233,10 @@ export function efficiencyNow(points: EfficiencyRun[], today?: string): { ef: nu
   const mean = (list: EfficiencyRun[]) => (list.length ? list.reduce((s, p) => s + p.ef, 0) / list.length : null);
   const recent = easy.filter((p) => within(p, last - EF_TREND_DAYS * DAY, last));
   const long = points.filter((p) => p.decoupling !== null && within(p, last - MARKER_DAYS * DAY, last));
-  const lastLong = long.slice(-5).map((p) => p.decoupling!).sort((a, b) => a - b);
+  const lastLong = long.slice(-5).map((p) => p.decoupling!);
   return {
     ef: mean(recent), before: mean(easy.filter((p) => within(p, last - 2 * EF_TREND_DAYS * DAY, last - EF_TREND_DAYS * DAY))), easyRuns: recent.length,
-    decoupling: lastLong.length ? lastLong[Math.floor(lastLong.length / 2)] : null, longRuns: lastLong.length,
+    decoupling: median(lastLong), longRuns: lastLong.length,
     longRuns90: long.length,
   };
 }

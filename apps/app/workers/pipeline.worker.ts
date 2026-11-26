@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { forgetRunFiles, keepRunFiles, type DataFolder } from '@/lib/fs';
+import { forgetRunFiles, isOutdated, keepRunFiles, readManifest, type DataFolder } from '@/lib/fs';
 import { openDataFolder } from '@/lib/copy';
 import type { BlockDefinition, BlockInstance } from '@/lib/blocks';
 import { curvesOf, type CurvePoint, type CurveSource } from '@/lib/curve';
@@ -12,7 +12,8 @@ export type WorkerJob = 'import' | 'recompute' | 'context' | 'blocks' | 'instanc
 /** id: the request's number, its events carry it (the worker that stays answers several requests). */
 /** copy: the id of the folder's copy in the browser, when the page keeps one (ADR "A copy in the browser on phones"). */
 export type WorkerRequest = { id?: number; copy?: string | null } & (
-  | { type: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures'>; handle: FileSystemDirectoryHandle }
+  /** ifOutdated: a recompute only while the folder is still an older version's (the app's own rebuild), else an import */
+  | { type: Exclude<WorkerJob, 'instances' | 'curve' | 'similar' | 'figures'>; handle: FileSystemDirectoryHandle; ifOutdated?: boolean }
   | { type: 'figures'; handle: FileSystemDirectoryHandle; stretches: SimilarQuery[] }
   | { type: 'similar'; handle: FileSystemDirectoryHandle; query: SimilarQuery }
   | { type: 'instances'; handle: FileSystemDirectoryHandle; defs: BlockDefinition[] }
@@ -22,8 +23,10 @@ export type WorkerRequest = { id?: number; copy?: string | null } & (
 export interface CancelRequest { type: 'cancel'; id: number }
 export type WorkerEvent = { id?: number } & (
   | { type: 'progress'; done: number; total: number; file: string }
-  /** runIds: the runs an import added */
-  | { type: 'done'; imported: number; duplicates: number; errors: number; runIds?: string[] }
+  /** runIds: the runs an import added; rebuilt: false when a recompute asked for found the folder current already */
+  | { type: 'done'; imported: number; duplicates: number; errors: number; runIds?: string[]; rebuilt?: boolean }
+  /** the worker's copy of the folder failed: it writes the folder alone from here (lib/copy) */
+  | { type: 'copy-broken' }
   | { type: 'instances'; instances: Record<string, BlockInstance[]> }
   | { type: 'curves'; curves: Record<string, CurvePoint[]> }
   | { type: 'similar'; result: SimilarResult }
@@ -33,8 +36,13 @@ export type WorkerEvent = { id?: number } & (
 
 const send = (e: WorkerEvent) => (self as unknown as { postMessage(m: unknown): void }).postMessage(e);
 
-/** The run files this worker read, kept while the data stamp stays (the worker that stays: lib/client). */
-const KEEP_RUNS = 150;
+/**
+ * The run files this worker read, kept while the data stamp stays (the worker that stays: lib/client): up
+ * to this many values of samples and windows, about 100 MB at 8 bytes a value: some 150 runs of an hour
+ * recorded each second, or 30 of five hours. By their size and not their number, which on a phone let
+ * 150 long runs take the memory the tab had (the review of 26 Nov 2026).
+ */
+const KEEP_VALUES = 12_000_000;
 let keptFor: string | null = null;
 /** The folder the worker that stays reads, kept between its requests. */
 let readingFolder: Promise<DataFolder> | null = null;
@@ -52,7 +60,8 @@ self.onmessage = async (msg: MessageEvent<WorkerRequest | CancelRequest>) => {
   const reading = e.data.type === 'instances' || e.data.type === 'curve' || e.data.type === 'figures' || e.data.type === 'similar';
   // The worker that stays reads one folder through one BrowserFolder, which keeps the handles and
   // texts it learned (the page starts another worker for another folder); a writing job's worker has its own.
-  const folder = await (reading ? (readingFolder ??= openDataFolder(e.data.handle, e.data.copy ?? null)) : openDataFolder(e.data.handle, e.data.copy ?? null));
+  const copyBroken = () => send({ type: 'copy-broken' });
+  const folder = await (reading ? (readingFolder ??= openDataFolder(e.data.handle, e.data.copy ?? null, copyBroken)) : openDataFolder(e.data.handle, e.data.copy ?? null, copyBroken));
   const onProgress = (p: { done: number; total: number; file: string }) => {
     // Given up: the job stops at its next file, the worker goes on with the others.
     if (id !== undefined && cancelled.has(id)) throw new DOMException('abandoned', 'AbortError');
@@ -63,7 +72,7 @@ self.onmessage = async (msg: MessageEvent<WorkerRequest | CancelRequest>) => {
       // The run files kept for the data as they are: another stamp (new runs, a recompute, another folder), none kept.
       const stamp = await dataStamp(folder);
       if (stamp !== keptFor) { forgetRunFiles(); keptFor = stamp; }
-      keepRunFiles(KEEP_RUNS);
+      keepRunFiles(KEEP_VALUES);
     }
     if (e.data.type === 'instances') {
       // Computed once for the data as it is, then read from derived/cache/.
@@ -91,8 +100,12 @@ self.onmessage = async (msg: MessageEvent<WorkerRequest | CancelRequest>) => {
       post({ type: 'done', imported: 0, duplicates: 0, errors: 0 });
       return;
     }
-    const report = await (e.data.type === 'recompute' ? recomputeEverything : importFolder)(folder, { onProgress });
-    post({ type: 'done', imported: report.imported, duplicates: report.duplicates, errors: report.errors, runIds: e.data.type === 'import' ? addedRuns(report) : [] });
+    // The app's own rebuild is decided on the page, before its turn: two tabs opened after an update each
+    // asked for one, and the second deleted and rebuilt what the first had just built. Looked at again here,
+    // under the lock: a folder current by now is imported into, no more.
+    const rebuild = e.data.type === 'recompute' && !(e.data.ifOutdated && !isOutdated(await readManifest(folder)));
+    const report = await (rebuild ? recomputeEverything : importFolder)(folder, { onProgress });
+    post({ type: 'done', imported: report.imported, duplicates: report.duplicates, errors: report.errors, runIds: e.data.type === 'import' ? addedRuns(report) : [], ...(e.data.type === 'recompute' ? { rebuilt: rebuild } : {}) });
   } catch (err) {
     post({ type: 'error', message: err instanceof Error ? err.message : String(err) });
   } finally {

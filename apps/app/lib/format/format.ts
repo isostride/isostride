@@ -9,10 +9,12 @@ export function pace(speed: number | null | undefined): string {
   return s === 60 ? `${m + 1}:00` : `${m}:${String(s).padStart(2, '0')}`;
 }
 
+/** h:mm:ss or m:ss, to the whole second: rounded before it is split (299.87 s is 5:00; split first, it read 4:60). */
 export function duration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.round(seconds % 60);
+  const whole = Math.round(seconds);
+  const h = Math.floor(whole / 3600);
+  const m = Math.floor((whole % 3600) / 60);
+  const s = whole % 60;
   return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
 }
 

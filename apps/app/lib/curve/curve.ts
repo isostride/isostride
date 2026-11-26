@@ -1,6 +1,6 @@
 import { fastestFragment, fastestOver } from '@/lib/blocks';
 import { PATHS, readJson, type DataFolder, readRunFile } from '@/lib/fs';
-import { metricSeries, type RunFile, type RunsIndex } from '@/lib/kernel';
+import { metricSeries, runningGap, type RunFile, type RunsIndex } from '@/lib/kernel';
 
 /**
  * The curves of Analysis: for each length of time, the best stretch of that length inside the
@@ -18,8 +18,8 @@ export function better(metric: CurveMetric, a: number, b: number): boolean {
   return metric === 'power' ? a > b : a < b;
 }
 
-/** A sample's power is held until the next one, but no longer than this, s: a pause counts as no power (model's choice). */
-const POWER_HOLD = 5;
+// A sample's power (or effort pace) is held until the next one, but no longer than the gap the watch
+// leaves while it records (runningGap of the kernel: 5 s, or 10 s recording smart): a pause counts as none.
 
 /** The lengths of the curve, s: 30 s to 2 h on a logarithmic axis (model's choice). */
 export const CURVE_DURATIONS = [30, 60, 120, 180, 300, 600, 900, 1200, 1800, 2700, 3600, 5400, 7200];
@@ -60,7 +60,8 @@ export function strongestFragment(run: RunFile, duration: number, range: [number
   for (let i = 0; i < t.length; i++) if (t[i] >= range[0] && t[i] < range[1]) { ts.push(t[i]); ps.push(power[i] ?? 0); }
   // energy[i]: the work, J, from the first sample to sample i.
   const energy = [0];
-  for (let i = 1; i < ts.length; i++) energy.push(energy[i - 1] + ps[i - 1] * Math.min(ts[i] - ts[i - 1], POWER_HOLD));
+  const hold = runningGap(t);
+  for (let i = 1; i < ts.length; i++) energy.push(energy[i - 1] + ps[i - 1] * Math.min(ts[i] - ts[i - 1], hold));
   const short = ts.length ? duration - (ts[ts.length - 1] - ts[0]) : Infinity;
   for (const slack of short > 0 && short <= 2 ? [0, short] : [0]) {
     let best: { from: number; to: number; power: number } | null = null;
@@ -100,7 +101,8 @@ function fastestPace(run: RunFile, duration: number, range: [number, number], so
   if (effort.some((v) => v !== null && v > 0)) {
     // The distance the effort pace would cover: each sample's speed held until the next, a pause as none.
     const ds = [0];
-    for (let k = 1; k < inside.length; k++) ds.push(ds[k - 1] + Math.max(0, effort[inside[k - 1]] ?? 0) * Math.min(ts[k] - ts[k - 1], POWER_HOLD));
+    const hold = runningGap(t);
+    for (let k = 1; k < inside.length; k++) ds.push(ds[k - 1] + Math.max(0, effort[inside[k - 1]] ?? 0) * Math.min(ts[k] - ts[k - 1], hold));
     return fastestOver(ts, ds, 'time', duration);
   }
   const distance = run.samples.distance;

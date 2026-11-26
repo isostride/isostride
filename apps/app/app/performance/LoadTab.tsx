@@ -31,15 +31,15 @@ export function LoadTab({ days, unit }: { days: FormDay[]; unit: string }) {
       <h3 className="chart-title">{t('Weekly load')}</h3>
       <TimeChart label={t('Weekly load')} times={times} zero
         series={[{ key: 'load', label: t('load'), color: 'var(--series-1)', kind: 'bar', values: shown.map((w) => w.load) }]}
-        format={(v) => `${number(Math.round(v))} ${unit}`} tick={(v) => number(Math.round(v))} />
+        format={(v) => `${number(Math.round(v))} ${unit}`} tick={(v, _s, d) => number(v, d)} />
       <h3 className="chart-title" style={{ marginTop: 16 }}>{t('Monotony')}</h3>
       <TimeChart label={t('Monotony')} times={times} height={150} guide={{ value: MONOTONY_HIGH, label: number(MONOTONY_HIGH) }}
         series={[{ key: 'monotony', label: t('monotony'), color: 'var(--series-4)', kind: 'line', values: shown.map((w) => w.monotony) }]}
-        format={(v) => number(v, 2)} tick={(v) => number(v, 1)} />
+        format={(v) => number(v, 2)} tick={(v, _s, d) => number(v, Math.max(1, d))} />
       <h3 className="chart-title" style={{ marginTop: 16 }}>{t('Strain')}</h3>
       <TimeChart label={t('Strain')} times={times} height={150} zero
         series={[{ key: 'strain', label: t('strain'), color: 'var(--series-2)', kind: 'bar', values: shown.map((w) => w.strain) }]}
-        format={(v) => number(Math.round(v))} tick={(v) => number(Math.round(v))} />
+        format={(v) => number(Math.round(v))} tick={(v, _s, d) => number(v, d)} />
       <h3 className="chart-title" style={{ marginTop: 16 }}>{t('Ramp rate')}</h3>
       <TimeChart label={t('Ramp rate')} times={times} height={150} zero
         series={[{ key: 'ramp', label: t('ramp rate'), color: 'var(--series-3)', kind: 'bar', values: shown.map((w) => w.ramp) }]}

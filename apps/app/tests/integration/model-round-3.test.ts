@@ -37,6 +37,14 @@ describe('Performance models reviewed again', () => {
     expect(own.decline).toBe(true);
     expect(own.params.a).toBeCloseTo(0.2, 2);
     expect(own.far).toEqual([2700, 3600, 5400, 7200]);
+    // One all-out half hour (a raced 10 km) among long runs at 85 % of what the runner can do: the decline is fitted,
+    // to the bests that are all-out. Fitted to all of them, the curve came to rest on the easy long bests under a
+    // maximal aerobic speed 6 % too high, and the marathon of 3:21 read as 4:09.
+    const racer = { mas: 4.4, s: 200, a: RIEGEL_DECLINE * 4.4 };
+    const raced = fitWholeCurve(bests(racer, (d) => (d > 1800 ? 0.85 : 1)), 'speed')!;
+    expect(raced.decline).toBe(true);
+    expect(raced.params.mas).toBeCloseTo(4.4, 1);
+    expect(Math.abs(marathon(raced) / marathon({ ...raced, params: racer }) - 1)).toBeLessThan(0.03);
     // Power: easy long runs 15 % under the curve leave the decline Riegel's, 6 % of the critical power, and an
     // hour within 1 % of what the runner can hold (it read 274 W against 295).
     const power = { cp: 300, wp: 20000, pmax: 900, a: 15 };
@@ -44,6 +52,11 @@ describe('Performance models reviewed again', () => {
     expect(watts.decline).toBe(false);
     expect(watts.params.a).toBeCloseTo(RIEGEL_DECLINE * watts.params.cp, 9);
     expect(Math.abs(wholeValue(watts, 3600) / ompdRate(power, 3600) - 1)).toBeLessThan(0.01);
+    // All-out up to 45 minutes, an hour and more at 85 %: two hours within 3 % of what the runner can hold (236 W against 278).
+    const strong = { cp: 300, wp: 20000, pmax: 900, a: RIEGEL_DECLINE * 300 };
+    const held = fitWholeCurve(CURVE_DURATIONS.map((duration) => ({ duration, value: ompdRate(strong, duration) * (duration > 2700 ? 0.85 : 1) })), 'power')!;
+    expect(held.decline).toBe(true);
+    expect(Math.abs(wholeValue(held, 7200) / ompdRate(strong, 7200) - 1)).toBeLessThan(0.03);
   });
 
   it('D′ balance against the bests before the run', () => {

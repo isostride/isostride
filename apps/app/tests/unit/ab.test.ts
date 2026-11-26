@@ -73,7 +73,7 @@ describe('Export to CSV', () => {
     const r = computeAb(shoes([250, 251, 249, 250, 251, 249, 250, 250], [244, 245, 243, 244, 245, 243, 244, 244]), 'def', 'groundContactTime', split, ['Shoes A', 'Shoes B']);
     const [head, row] = abCsv(r, 'Promenade NE').trim().split('\n');
     expect(head).toContain('difference,raw_difference,ci_low,ci_high,noise,verdict');
-    expect(row).toContain('Shoes A,8,250.000,Shoes B,8,244.000,-6.000');
+    expect(row).toContain('Shoes A,8,8,250.000,Shoes B,8,8,244.000,-6.000');
     expect(row).toContain(',change,');
   });
 });

@@ -36,7 +36,7 @@ export function Vo2Tab({ runs, summaries, performance, today }: { runs: RunsInde
           { key: 'hr', label: t('run'), color: 'var(--series-2)', kind: 'dots', values: perRun.map((p) => p.vo2max) },
           { key: 'median', label: t('{days}-day median', { days: HR_VO2_MEDIAN_DAYS }), color: 'var(--series-3)', kind: 'line', values: trend },
         ]}
-        format={(v) => `${number(v, 1)} ml/kg/min`} tick={(v) => number(Math.round(v))} />
+        format={(v) => `${number(v, 1)} ml/kg/min`} tick={(v, _s, d) => number(v, d)} />
     </div>
   );
 }

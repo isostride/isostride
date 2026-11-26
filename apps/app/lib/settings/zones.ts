@@ -1,5 +1,5 @@
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
-import { isPace, metricInfo, type Direction, type MetricInfo } from '@/lib/kernel';
+import { isPace, metricInfo, type Direction, type MetricInfo, minSec } from '@/lib/kernel';
 import { DEFAULT_PERFORMANCE, parsePerformance, type PerformanceSettings } from './performance';
 
 /**
@@ -126,17 +126,27 @@ function parseOne(text: string, pace: boolean): number | null {
   return t !== '' && Number.isFinite(v) && v > 0 ? v : null;
 }
 
-/** The boundaries the runner typed, separated by commas, semicolons or spaces (pace as m:ss); null if one does not read. */
+/**
+ * The boundaries the runner typed, separated by commas, semicolons or spaces (pace as m:ss); null if one
+ * does not read. A comma is the decimal sign where it cannot be a separator: with semicolons between the
+ * boundaries ("9,5; 10,5"), or in each of several boundaries set apart by spaces ("9,5 10,5"). Split at
+ * every comma, a Polish "9,5; 10,5; 11,5" was saved as the zones 5, 9, 10, 11 without a word (the review
+ * of 26 Nov 2026).
+ */
 export function parseBoundaries(metric: string, text: string): number[] | null {
   const pace = PACES.has(metric);
-  const parts = text.split(/[\s,;]+/).filter((p) => p !== '');
+  const spaced = text.trim().split(/\s+/).filter((p) => p !== '');
+  // Never in a pace (m:ss has no decimals); a comma not between two digits separates as ever.
+  const decimalComma = !pace && (text.includes(';') || (spaced.length > 1 && spaced.every((p) => /^\d+,\d+$/.test(p))));
+  const parts = (decimalComma ? text.replace(/(\d),(?=\d)/g, '$1.') : text).split(/[\s,;]+/).filter((p) => p !== '');
   const values = parts.map((p) => parseOne(p, pace));
   return values.every((v): v is number => v !== null) ? sortBoundaries(metric, values) : null;
 }
 
-/** Boundaries as the runner types them. */
+/** Boundaries as the runner types them: between commas, or between semicolons when one has decimals (a comma may then be its decimal sign). */
 export function formatBoundaries(metric: string, boundaries: number[]): string {
-  return boundaries.map((b) => (PACES.has(metric) ? `${Math.floor(b / 60)}:${String(Math.round(b % 60)).padStart(2, '0')}` : String(b))).join(', ');
+  const decimals = !PACES.has(metric) && boundaries.some((b) => !Number.isInteger(b));
+  return boundaries.map((b) => (PACES.has(metric) ? minSec(b) : String(b))).join(decimals ? '; ' : ', ');
 }
 
 export async function readSettings(folder: DataFolder): Promise<SettingsFile> {

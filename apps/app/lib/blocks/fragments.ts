@@ -49,7 +49,9 @@ export function fastestOver(ts: number[], ds: number[], kind: 'time' | 'distance
       if (j < 0) break;
       if (ok && !ok(i, j)) continue;
       const cand = { from: ts[i], to: ts[j], distance: ds[j] - ds[i] };
-      const better = !best || (kind === 'distance' ? cand.to - cand.from < best.to - best.from : cand.distance > best.distance);
+      // By speed: the stretches of one length differ in what they overshoot it by (one of 30 s lasts 30 to 36 s
+      // between samples 1 to 7 s apart), and the longer one covered more ground at a slower pace.
+      const better = !best || cand.distance * (best.to - best.from) > best.distance * (cand.to - cand.from);
       if (better) best = cand;
     }
     if (best) return best;

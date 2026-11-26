@@ -90,7 +90,13 @@ export function detectRouteSegments(tracks: RunTrack[]): RouteSegment[] {
     let off = 0;
     const close = (end: number) => {
       const len = (end - i0) * 10;
-      if (ref >= MIN_RUNS && len >= MIN_LENGTH && len <= MAX_LENGTH) cands.push({ pts: t.pts.slice(i0, end), count: ref });
+      if (ref < MIN_RUNS || len < MIN_LENGTH) return;
+      // A stretch longer than MAX_LENGTH with no junction in it (a loop of 4 km run every time, a path along a
+      // river) in equal parts of that length at most: left out whole, such a runner had no route segment at all
+      // (the review of 26 Nov 2026).
+      const parts = Math.ceil(len / MAX_LENGTH);
+      const step = (end - i0) / parts;
+      for (let k = 0; k < parts; k++) cands.push({ pts: t.pts.slice(i0 + Math.round(k * step), i0 + Math.round((k + 1) * step)), count: ref });
     };
     for (let i = 1; i < c.length; i++) {
       if (i - i0 === 5) ref = median(c.slice(i0, i));

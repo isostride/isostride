@@ -38,8 +38,8 @@ export function TimeChart({ label, times, series, format, tick = format, height 
   series: TimeSeries[];
   /** a value in words, for the tooltip */
   format: (v: number, s: TimeSeries) => string;
-  /** a value on the axis */
-  tick?: (v: number, s: TimeSeries) => string;
+  /** a value on the axis, with the decimals its ticks need (ticks of 44, 44.5, 45 written as whole numbers read "44, 45, 45") */
+  tick?: (v: number, s: TimeSeries, decimals: number) => string;
   height?: number;
   /** the lower, the higher (a pace, a time) */
   invert?: boolean;
@@ -109,7 +109,7 @@ export function TimeChart({ label, times, series, format, tick = format, height 
         {ticks.map((v) => (
           <g key={v}>
             <line x1={M.l} x2={width - M.r} y1={y(v)} y2={y(v)} stroke={v === 0 && withZero ? 'var(--axis)' : 'var(--grid)'} />
-            <text x={M.l - 10} y={y(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{tick(Number(v.toFixed(tickDecimals(ticks))), first)}</text>
+            <text x={M.l - 10} y={y(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" className="tnum">{tick(Number(v.toFixed(tickDecimals(ticks))), first, tickDecimals(ticks))}</text>
           </g>
         ))}
         {guide && (

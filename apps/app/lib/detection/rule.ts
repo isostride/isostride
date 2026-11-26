@@ -1,6 +1,6 @@
 import { DEFAULT_TOLERANCES, bestProfileMatch, followsLayout, hasAlways, repLaps, lapKey, lapSubject, matchesRunFilter, meetsConditions, runSubject, stretchSubject, stretches, trackOf, type Conditions, type Rule, type Tolerances } from '@/lib/blocks';
 import { resample, type TrackPoint } from '@/lib/geo';
-import { metricSeries, type IndexedRun, type RunFile } from '@/lib/kernel';
+import { isPace, metricSeries, secondsPerKm, type IndexedRun, type RunFile } from '@/lib/kernel';
 import { startKind, stopTimes } from './instance';
 import { effortIn, mainEffort } from './logical';
 import { findPasses } from './routeMatch';
@@ -64,9 +64,23 @@ function fastest(rule: Rule, run: RunFile, acc: Int32Array | null, startsRight: 
   const cnt = new Int32Array(idx.length + 1);
   for (let k = 0; k < idx.length; k++) { const h = hr[idx[k]]; sum[k + 1] = sum[k] + (h ?? 0); cnt[k + 1] = cnt[k] + (h === null ? 0 : 1); }
   const hrSet = c.hrMin !== null || c.hrMax !== null;
+  // The other metric of the conditions, summed the same way, as a stretch's is read (the samples in motion):
+  // it was not looked at here, and "Fastest 5 min · Power 300–350 W" gave the fastest 5 minutes whatever their power.
+  const other = c.metric ? metricSeries(run.samples, c.metric) : null;
+  const speed = metricSeries(run.samples, 'speed');
+  const msum = new Float64Array(idx.length + 1);
+  const mcnt = new Int32Array(idx.length + 1);
+  if (other) for (let k = 0; k < idx.length; k++) { const v = other[idx[k]]; const on = v !== null && (speed[idx[k]] ?? 1) >= 0.5; msum[k + 1] = msum[k] + (on ? v : 0); mcnt[k + 1] = mcnt[k] + (on ? 1 : 0); }
   const ok = list.filter((s) => {
     const pace = (s.to - s.from) / (s.distance / 1000);
     if ((c.paceMin !== null && pace < c.paceMin) || (c.paceMax !== null && pace > c.paceMax)) return false;
+    if (other) {
+      const n = mcnt[s.j] - mcnt[s.i];
+      const mean = n ? (msum[s.j] - msum[s.i]) / n : null;
+      const value = mean !== null && isPace(c.metric!) ? secondsPerKm(mean) : mean;
+      const [lo, hi] = [c.metricMin ?? null, c.metricMax ?? null];
+      if ((lo !== null || hi !== null) && (value === null || (lo !== null && value < lo) || (hi !== null && value > hi))) return false;
+    }
     if (hrSet) {
       const n = cnt[s.j] - cnt[s.i];
       const mean = n ? (sum[s.j] - sum[s.i]) / n : null;
@@ -141,7 +155,10 @@ export function ruleSegments(rule: Rule, run: RunFile, row: IndexedRun, ctx: { t
     candidates = m ? [{ from: m.from, to: m.to }] : [];
   }
   if (candidates) {
-    const kept = candidates.filter((seg) => meetsConditions(c, seg.lap ? lapSubject(run, seg.lap - 1, c.metric) : stretchSubject(run, seg.from, seg.to, c.metric)) && (!acc || holds(acc, seg.from, seg.to)));
+    // The start too (standing, flying), as for laps and steady stretches: it was asked of those alone, and "Reps of
+    // 6 × 1 km · standing start" kept every rep. An effort's start is already asked of its search above.
+    const startOk = (seg: Segment) => (shape.type === 'fastest' ? true : startsRight(seg.from));
+    const kept = candidates.filter((seg) => meetsConditions(c, seg.lap ? lapSubject(run, seg.lap - 1, c.metric) : stretchSubject(run, seg.from, seg.to, c.metric)) && (!acc || holds(acc, seg.from, seg.to)) && startOk(seg));
     return rule.pick === 'best' && kept.length > 1 ? [kept.reduce((a, b) => ((stretchSubject(run, b.from, b.to).pace ?? Infinity) < (stretchSubject(run, a.from, a.to).pace ?? Infinity) ? b : a))] : kept;
   }
 

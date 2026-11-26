@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, SCREEN_LEAVE, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget, previousPage, runStartOf, eager } from '@/components';
+import { MIN_SPAN, RouteMap, RunChart, clampDomain, clock, useTouch, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, SCREEN_LEAVE, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget, previousPage, runStartOf, eager } from '@/components';
 import { readChartSettings, runInWorker, useChartSettings, useLocale, useOpenFolder } from '@/lib/client';
-import { msg, number, t, tn } from '@/lib/i18n';
-import { readGear, readRunTags, writeRunTags, type Gear, type RunTag, type RunTagsFile } from '@/lib/gear';
+import { msg, number, signOf, t, tn } from '@/lib/i18n';
+import { readGear, readRunTags, saveRunTag, type Gear, type RunTag, type RunTagsFile } from '@/lib/gear';
 import { PATHS, readJson, readRunFile, markRunsSeen } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
 import { asRule, efficiencyOf, rangeStats, readDefinitions, reasonText, shownName, zoneShares, type BlockInstance, type Rule } from '@/lib/blocks';
@@ -77,6 +77,7 @@ function RunPage() {
   const params = useSearchParams();
   const id = params.get('id') ?? '';
   const { folder, handle } = useOpenFolder();
+  const touch = useTouch();
   const router = useRouter();
   // A run opened is no longer new (requirement "New runs marked new").
   useEffect(() => { if (id) markRunsSeen(folder, [id]).catch(() => undefined); }, [folder, id]);
@@ -250,7 +251,7 @@ function RunPage() {
   const editTags = async () => setTagEdit({ file: await readRunTags(folder), gear: await readGear(folder) });
   const saveTags = async (tag: RunTag) => {
     if (!tagEdit) return;
-    await writeRunTags(folder, { ...tagEdit.file, tags: { ...tagEdit.file.tags, [id]: tag } });
+    await saveRunTag(folder, id, tag);
     await runInWorker('context', handle);
     setTagEdit(null);
     setTagsSaved((n) => n + 1);
@@ -446,7 +447,7 @@ function RunPage() {
             <div className="legend chart-foot">
               <span><i style={{ background: 'var(--surface-2)' }} />{t('alternate laps')}</span>
               {(showBlocks || pointed) && <span><i style={{ background: 'var(--band)', borderTop: '2px solid var(--series-1)' }} />{t('effort of a segment (top line: accepted)')}</span>}
-              <span>{t('each line on its own scale · drag to select · scroll to zoom at the pointer · what is shown is the selection')}</span>
+              <span>{touch ? t('each line on its own scale · drag sideways to select · two fingers to zoom and move · what is shown is the selection') : t('each line on its own scale · drag to select · scroll to zoom at the pointer · what is shown is the selection')}</span>
             </div>
           </div>
           <div className="run-side">
@@ -485,7 +486,7 @@ function RunPage() {
             <span className="muted tnum range-span">{clock(stats.from)}–{clock(stats.to)}</span>
             {selection && stats.decoupling !== null && (
               <span className="chip tnum decoupling" title={t("Decoupling of pace from heart rate: the efficiency (speed per heartbeat) of the selection's first half against its second; above 5 % the heart rate drifted up against the pace")}>
-                {t('Pa:HR {value} %', { value: `${stats.decoupling >= 0 ? '+' : '−'}${number(Math.abs(stats.decoupling), 1)}` })}
+                {t('Pa:HR {value} %', { value: `${signOf(stats.decoupling, 1)}${number(Math.abs(stats.decoupling), 1)}` })}
               </span>
             )}
             <span className="spacer" />

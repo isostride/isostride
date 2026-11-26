@@ -97,6 +97,8 @@ export async function unseenFitFiles(folder: DataFolder): Promise<string[]> {
 
 /** Reasons a whole file gives: read again, it gives them again (a hike is not a run however often it is read). */
 const LASTING: string[] = [IMPORT_REASONS.notRun, IMPORT_REASONS.noSamples, IMPORT_REASONS.noSession];
+/** Whether a file's reason for failing is one that lasts (LASTING). */
+export const isLastingReason = (reason: string | undefined): boolean => LASTING.includes(readReason(reason ?? '')?.key ?? '');
 
 /**
  * The FIT files of the folder an import failed on for a reason that may pass (a file cut short while
@@ -112,7 +114,7 @@ export async function filesToImport(folder: DataFolder): Promise<{ unseen: strin
   const [manifest, files] = await Promise.all([readManifest(folder), listFitFiles(folder)]);
   return {
     unseen: files.filter((f) => !manifest?.files[f]),
-    failed: manifest ? files.filter((f) => { const s = manifest.files[f]; return s?.status === 'error' && !LASTING.includes(readReason(s.reason)?.key ?? ''); }) : [],
+    failed: manifest ? files.filter((f) => { const s = manifest.files[f]; return s?.status === 'error' && !isLastingReason(s.reason); }) : [],
     outdated: isOutdated(manifest),
     // Runs imported whose context and segments an import cut off never wrote.
     pending: manifest?.joined === false,

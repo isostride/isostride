@@ -142,8 +142,8 @@ export const MODELS: Dictionary = {
   '{bpm} bpm is the default, never saved: {why}': '{bpm} bpm to wartość domyślna, nigdy niezapisana: {why}',
   'Your maximum heart rate is known': 'Twoje tętno maksymalne jest znane',
   '{bpm} bpm, set in Model': '{bpm} bpm, ustawione w modelu wydolności',
-  '{bpm} bpm is the highest in your runs: too low if you have never gone all out, and then {why}':
-    '{bpm} bpm to najwyższe tętno w twoich biegach: za niskie, jeśli żaden bieg nie był wysiłkiem maksymalnym, a wtedy {why}',
+  '{bpm} bpm is the highest held in your runs (a single peak far above every other run and not held for a minute is taken for the sensor’s): too low if you have never gone all out, and then {why}':
+    '{bpm} bpm to najwyższe tętno utrzymane w twoich biegach (pojedynczy szczyt daleko ponad każdym innym biegiem, nieutrzymany przez minutę, jest uznany za błąd czujnika): za niskie, jeśli żaden bieg nie był wysiłkiem maksymalnym, a wtedy {why}',
   'no heart rate in the runs': 'brak tętna w biegach',
   'The heart rate zones are yours': 'Strefy tętna są twoje',
   '{n} zones, saved in Settings': { one: '{n} strefa, zapisana w Ustawieniach', few: '{n} strefy, zapisane w Ustawieniach', many: '{n} stref, zapisanych w Ustawieniach', other: '{n} strefy, zapisane w Ustawieniach' },
@@ -377,7 +377,7 @@ export const MODELS: Dictionary = {
   'The loads compare with those of other tools': 'Obciążenia dają się porównać z innymi narzędziami',
   '{what} is held for about half an hour, not an hour: against it a run scores several per cent less than against the threshold of an hour that such scores are named for. Set your own threshold in Model to match another tool': '{what} utrzymuje się przez około pół godziny, nie godzinę: względem niej bieg dostaje kilka procent mniej niż względem progu godzinnego, od którego takie wyniki biorą nazwę. Ustaw własny próg w Modelu, by zgadzać się z innym narzędziem',
   'it takes 3 runs or more in the last {days} days, and a fit that stands without any one of them, to leave each out in turn and see how far it moves': 'potrzeba 3 biegów lub więcej w ostatnich {days} dniach i dopasowania, które utrzymuje się bez dowolnego z nich, by pomijać każdy po kolei i zobaczyć, jak bardzo się przesuwa',
-  '{rate} and {reserve} (95 %) with each run left out in turn: standard errors of {rateShare} and {reserveShare}, {rateGood} and {reserveGood} or less expected; more means one run or two decide the value': '{rate} i {reserve} (95 %) przy pomijaniu po kolei każdego biegu: błędy standardowe {rateShare} i {reserveShare}, oczekiwane {rateGood} i {reserveGood} lub mniej; więcej znaczy, że o wartości decyduje jeden lub dwa biegi',
+  '{rate} and {reserve} with each run left out in turn: standard errors of {rateShare} and {reserveShare}, {rateGood} and {reserveGood} or less expected; more means one run or two decide the value': '{rate} i {reserve} przy pomijaniu po kolei każdego biegu: błędy standardowe {rateShare} i {reserveShare}, oczekiwane {rateGood} i {reserveGood} lub mniej; więcej znaczy, że o wartości decyduje jeden lub dwa biegi',
   'Your bests settle the critical speed and D′': 'Twoje wyniki wyznaczają prędkość krytyczną i D′',
   'Your bests settle the critical power and W′': 'Twoje wyniki wyznaczają moc krytyczną i W′',
 };

@@ -9,10 +9,11 @@ import { dateText, msg, number, t, tn } from '@/lib/i18n';
 import { dayOf, newGearId, readGear, writeGear, type Gear, type GearType } from '@/lib/gear';
 import type { RunsIndex } from '@/lib/kernel';
 import { autoMaxHr, criticalByRun, summariesCurrent, type LoadSummary } from '@/lib/load';
-import { DEFAULT_PERFORMANCE, DEFAULT_ZONES, LOAD_MODELS, zoneMetricsOf, formatBoundaries, parseBoundaries, parsePerformance, readSettings, writeSettings, writeSetup, zonesFromMaxHr, zonesFromPace, zonesFromPower, type LoadModel, type PerformanceSettings, type ZoneMetric } from '@/lib/settings';
+import { DEFAULT_PERFORMANCE, DEFAULT_ZONES, LOAD_MODELS, zoneMetricsOf, formatBoundaries, invalidPerformance, parseBoundaries, parsePerformance, readSettings, writeSettings, writeSetup, zonesFromMaxHr, zonesFromPace, zonesFromPower, type LoadModel, type PerformanceSettings, type ZoneMetric } from '@/lib/settings';
 import { LoadModelChoice } from '../performance/LoadModelPicker';
 import { ChartsCard, DisplayCard, LanguageCard } from '../settings/DeviceCards';
 import { SetupSteps, useMetrics } from '@/components';
+import { minSec } from '@/lib/kernel';
 
 const STEPS = [msg('Your runs'), msg('You'), msg('Zones'), msg('Gear'), msg('Load model'), msg('Look & feel'), msg('Done')] as const;
 /** The zones in groups, every metric's shown ("chodzi mi tez o strefy ... np. vertical oscillation, ground contact"). */
@@ -23,10 +24,10 @@ const ZONE_GROUPS: [string, string[]][] = [
   [msg('Other'), ['efficiency', 'altitude']],
 ];
 const num = (t: string): number | null => (t.trim() !== '' && Number.isFinite(Number(t)) ? Number(t) : null);
-const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+const mmss = (s: number) => minSec(s);
 const paceOf = (t: string): number | null | undefined => {
   if (!t.trim()) return null;
-  const m = t.trim().match(/^(\d{1,2}):(\d{2})$/);
+  const m = t.trim().match(/^(\d{1,2}):([0-5]\d)$/);
   return m ? Number(m[1]) * 60 + Number(m[2]) : undefined;
 };
 const GEAR_NAME: Record<GearType, string> = { shoes: msg('Shoes'), hrSensor: msg('Heart rate strap') };
@@ -125,7 +126,10 @@ export function Wizard() {
 
   const rest = num(texts.restHr);
   const max = num(texts.maxHr);
-  const badYou = rest === null || rest < 25 || rest > 120 || (texts.maxHr.trim() !== '' && (max === null || max < 100 || max > 240));
+  const NONE = { restHr: null, maxHr: null, thresholdPace: null, thresholdPower: null, fitnessDays: null, fatigueDays: null };
+  // The ranges and the pairs the model's card asks too (lib/settings): past them a value was saved as the
+  // default without a word (fitness 28 and fatigue 28 as 42 and 7, a maximum under the resting rate as none).
+  const badYou = rest === null || (texts.maxHr.trim() !== '' && max === null) || invalidPerformance({ ...NONE, restHr: rest, maxHr: max }).length > 0;
   const parsedZones = Object.fromEntries(ALL.map((k) => [k, (zones[k] ?? '').trim() ? parseBoundaries(k, zones[k]) : []]));
   const badZones = ALL.filter((k) => parsedZones[k] === null);
   const maxForZones = max ?? have?.maxHr ?? null;
@@ -134,7 +138,7 @@ export function Wizard() {
   const tPower = texts.thresholdPower.trim() ? num(texts.thresholdPower) : null;
   const fitness = num(texts.fitnessDays);
   const fatigue = num(texts.fatigueDays);
-  const badModel = tPace === undefined || (texts.thresholdPower.trim() !== '' && (tPower === null || tPower < 50 || tPower > 800)) || fitness === null || fitness < 7 || fitness > 120 || fatigue === null || fatigue < 2 || fatigue > 30;
+  const badModel = tPace === undefined || (texts.thresholdPower.trim() !== '' && tPower === null) || fitness === null || fatigue === null || invalidPerformance({ ...NONE, thresholdPace: tPace ?? null, thresholdPower: tPower, fitnessDays: fitness, fatigueDays: fatigue }).length > 0;
   const firstDay = have?.runs.length ? dayOf([...have.runs].sort((a, b) => a.startTime.localeCompare(b.startTime))[0].startTime) : dayOf(new Date().toISOString());
   const addGear = () => {
     if (!newGear.name.trim()) return;
@@ -348,6 +352,7 @@ export function Wizard() {
             {step > 0 && <button type="button" className="btn" onClick={() => setStep(step - 1)}>{t('Back')}</button>}
             <span className="spacer" />
             {saving && <span className="muted small" role="status">{saving}</span>}
+            {!canNext && (step === 1 || step === 4) && <span className="form-error small" role="alert">{t('A value on this step is missing, outside its range or not a number (decimals take a dot, a pace is m:ss); the maximum heart rate must be above the resting one, and fatigue shorter than fitness.')}</span>}
             {step < STEPS.length - 1
               ? <button type="button" className="btn primary" disabled={!canNext || job !== null} onClick={() => setStep(step + 1)}>{t('Next')}</button>
               : <button type="button" className="btn primary" disabled={saving !== null} onClick={finish}>{t('Save and finish')}</button>}

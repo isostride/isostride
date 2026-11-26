@@ -51,16 +51,20 @@ function matchFrom(ref: RefPoint[], run: TrackPoint[], start: number, radius: nu
   // The run may meander; allow it to lag or lead by up to 400 m of track.
   const LOOKAHEAD = 40;
   for (const r of ref) {
+    // The nearest point of the first approach that heads the reference's way. The nearest point whatever its
+    // heading was, by a turnaround, one of the way back (3 m to the side), and the reference point then went
+    // unmatched: a third of the passes of a stretch ending at a turnaround were missed. And the nearest of the
+    // whole lookahead was, on a loop of 400 m or less, a point a lap ahead: two laps read as one pass (the
+    // review of 26 Nov 2026).
     let bestQ = -1;
     let bestD = Infinity;
     for (let k = q; k < Math.min(run.length, q + LOOKAHEAD); k++) {
       const d = distance(run[k], r);
-      if (d < bestD) {
-        bestD = d;
-        bestQ = k;
-      }
+      if (d <= radius && angleBetween(run[k].heading, r.heading) <= MAX_ANGLE) {
+        if (d < bestD) { bestD = d; bestQ = k; }
+      } else if (bestQ >= 0) break;
     }
-    if (bestQ >= 0 && bestD <= radius && angleBetween(run[bestQ].heading, r.heading) <= MAX_ANGLE) {
+    if (bestQ >= 0) {
       matched++;
       q = bestQ;
       lastMatched = bestQ;

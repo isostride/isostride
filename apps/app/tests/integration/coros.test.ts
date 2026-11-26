@@ -46,10 +46,11 @@ describe('Runs fetched from COROS', () => {
     expect((await importFolder(folder)).imported).toBe(2);
     expect((await readJson<RunsIndex>(folder, PATHS.runsIndex))!.runs).toHaveLength(2);
 
-    // The next fetch, a day later: from the day before the last one, nothing asked again.
+    // The next fetch, a day later: listed from 30 days before the last one (a run the watch gave COROS late is
+    // dated before it), nothing asked again.
     const again = fakeCoros();
     const next = await fetchCorosRuns(folder, again.call, { download: again.download, today: new Date(2026, 10, 25, 12) });
-    expect(again.calls[0].args).toMatchObject({ startDate: '20261123', endDate: '20261125' });
+    expect(again.calls[0].args).toMatchObject({ startDate: '20261025', endDate: '20261125' });
     expect(again.files()).toEqual([]);
     expect(next).toEqual({ missing: 0, files: [], stopped: null });
   });

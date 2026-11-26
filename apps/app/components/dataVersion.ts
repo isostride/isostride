@@ -16,7 +16,8 @@ export function useDataVersion(): number {
     let was = false;
     return watchJob((j) => {
       if (j && (j.job === 'import' || j.job === 'recompute' || j.job === 'blocks')) was = true;
-      else if (!j && was) { was = false; setVersion((v) => v + 1); }
+      // Ended, whatever runs after it (a read of Compare started meanwhile is no reason to wait).
+      else if (was) { was = false; setVersion((v) => v + 1); }
     });
   }, []);
   return version;

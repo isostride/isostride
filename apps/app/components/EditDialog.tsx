@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
+import { keepTabInside } from './focusTrap';
 import { t } from '@/lib/i18n';
 
 /** What is edited: the glyph in the dialog's head. */
@@ -58,13 +59,8 @@ export function EditDialog({ kind, kindLabel, title, children, onSave, onCancel,
     // A confirmation over it catches its Esc first (components/ConfirmDialog).
     const key = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.preventDefault(); cancel.current(); }
-      if (e.key === 'Tab' && box.current) {
-        const all = [...box.current.querySelectorAll<HTMLElement>('input, select, textarea, button, a[href], summary, [tabindex]:not([tabindex="-1"])')].filter((x) => !x.hasAttribute('disabled') && x.offsetParent !== null);
-        if (!all.length) return;
-        const [a, z] = [all[0], all[all.length - 1]];
-        if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
-        else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
-      }
+      // From the form itself too (it holds the focus when it has no field): Shift+Tab then left for the page behind.
+      keepTabInside(e, box.current);
     };
     window.addEventListener('keydown', key);
     return () => { window.removeEventListener('keydown', key); before?.focus?.(); };

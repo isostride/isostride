@@ -1,12 +1,14 @@
 import { ALGORITHM_VERSION, KNOWN_METRICS, SCHEMA_VERSION, type MetricInfo, type MetricsFile, type Windows, type Lap, type Samples, type RunFile, type RunIndexRow, type RunsIndex } from '@/lib/kernel';
-import { IMPORT_REASONS, PATHS, importReason, listFitFiles, readJson, writeJson, type DataFolder, emptyManifest, readManifest, writeManifest, type Manifest } from '@/lib/fs';
+import { IMPORT_REASONS, PATHS, importReason, isLastingReason, listFitFiles, readJson, writeJson, type DataFolder, emptyManifest, readManifest, writeManifest, type Manifest } from '@/lib/fs';
 import { buildWindows } from '@/lib/prepare';
 import { FitImportError, parseFit, runId } from './parseFit';
 
-
-
-
-
+/**
+ * The index and the manifest are written each time this many files are handled, and at the end: an import
+ * of a thousand files cut off (the tab closed, the phone asleep) goes on from its last such point and not
+ * from its first file (the review of 26 Nov 2026).
+ */
+export const IMPORT_CHECKPOINT = 50;
 
 export interface FileOutcome {
   file: string;
@@ -29,6 +31,8 @@ export interface ImportReport {
 export interface ImportOptions {
   onProgress?: (p: { done: number; total: number; file: string }) => void;
   now?: () => number;
+  /** the files handled between two writes of the index and the manifest (IMPORT_CHECKPOINT) */
+  checkpoint?: number;
 }
 
 /**
@@ -46,7 +50,7 @@ export async function importRuns(folder: DataFolder, opts: ImportOptions = {}): 
     algorithmVersion: ALGORITHM_VERSION,
     runs: [],
   };
-  const byStart = new Map(index.runs.map((r) => [r.startTime, r.id]));
+  const byStart = new Map(index.runs.map((r) => [r.startTime, r]));
   // The folder's metrics: every metric some run holds (derived/metrics.json).
   const catalog = new Map(((await readJson<MetricsFile>(folder, PATHS.metrics))?.metrics ?? []).map((m) => [m.key, m]));
   const keep = (metrics: MetricInfo[]) => {
@@ -56,10 +60,30 @@ export async function importRuns(folder: DataFolder, opts: ImportOptions = {}): 
   };
 
   const files = await listFitFiles(folder);
-  // Files an earlier import handled are not read again; a file that failed is tried again.
-  const todo = files.filter((f) => !manifest.files[f] || manifest.files[f].status === 'error');
+  // Files an earlier import handled are not read again; a file that failed is tried again, unless it
+  // failed for good (not a run, no samples: a folder of 300 rides and hikes was read and decoded whole
+  // again for each new run; a recompute starts from an empty manifest and reads them once more).
+  const todo = files.filter((f) => !manifest.files[f] || (manifest.files[f].status === 'error' && !isLastingReason(manifest.files[f].reason)));
+  /** an import before this one wrote the index and was cut off before the manifest: its runs wait to be joined */
+  let resumed = false;
 
   const report: ImportReport = { outcomes: [], imported: 0, duplicates: 0, errors: 0, skipped: files.length - todo.length };
+  // What is known so far, written: the run files first (each as it is imported), then the index that
+  // names them and the manifest that says which files are handled, so each names only what is there.
+  const commit = async () => {
+    index.runs.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    index.algorithmVersion = ALGORITHM_VERSION;
+    // The manifest keeps the version it was built with: an import of new files into a folder built by an
+    // older version does not make its other runs current (it took the mark for a rebuild away), and a tab
+    // still running an older app does not mark a folder built by a newer one as old. A rebuild starts
+    // from an empty manifest, which holds this version.
+    manifest.schemaVersion = SCHEMA_VERSION;
+    // The new runs wait for their context and segments (lib/pipeline finishes it, or the next import).
+    if (report.imported > 0 || resumed) manifest.joined = false;
+    await writeJson(folder, PATHS.runsIndex, index);
+    await writeJson(folder, PATHS.metrics, { algorithmVersion: ALGORITHM_VERSION, metrics: [...catalog.values()] } satisfies MetricsFile);
+    await writeManifest(folder, manifest);
+  };
   let done = 0;
   for (const file of todo) {
     opts.onProgress?.({ done, total: todo.length, file });
@@ -68,9 +92,15 @@ export async function importRuns(folder: DataFolder, opts: ImportOptions = {}): 
     try {
       const run = parseFit(await folder.readBytes(file));
       const existing = byStart.get(run.startTime);
-      if (existing) {
-        manifest.files[file] = { status: 'duplicate', runId: existing };
-        outcome = { file, status: 'duplicate', runId: existing, seconds: 0 };
+      if (existing && existing.file === file) {
+        // The index names this very file and the manifest does not: an import cut off between the two
+        // writes. The run is there; it is no duplicate of itself, and it still waits for its context.
+        manifest.files[file] = { status: 'imported', runId: existing.id };
+        outcome = { file, status: 'imported', runId: existing.id, seconds: 0 };
+        resumed = true;
+      } else if (existing) {
+        manifest.files[file] = { status: 'duplicate', runId: existing.id };
+        outcome = { file, status: 'duplicate', runId: existing.id, seconds: 0 };
         report.duplicates++;
       } else {
         const id = runId(run.startTime);
@@ -93,9 +123,10 @@ export async function importRuns(folder: DataFolder, opts: ImportOptions = {}): 
           windows,
         };
         await writeJson(folder, PATHS.runFile(id), runFile);
-        index.runs.push(indexRow(runFile));
+        const row = indexRow(runFile);
+        index.runs.push(row);
         keep(run.metrics);
-        byStart.set(run.startTime, id);
+        byStart.set(run.startTime, row);
         manifest.files[file] = { status: 'imported', runId: id };
         outcome = { file, status: 'imported', runId: id, seconds: 0 };
         report.imported++;
@@ -109,20 +140,10 @@ export async function importRuns(folder: DataFolder, opts: ImportOptions = {}): 
     outcome.seconds = (now() - t0) / 1000;
     report.outcomes.push(outcome);
     done++;
+    if (done % (opts.checkpoint ?? IMPORT_CHECKPOINT) === 0 && done < todo.length) await commit();
   }
 
-  index.runs.sort((a, b) => a.startTime.localeCompare(b.startTime));
-  index.algorithmVersion = ALGORITHM_VERSION;
-  // The manifest keeps the version it was built with: an import of new files into a folder built by an
-  // older version does not make its other runs current (it took the mark for a rebuild away), and a tab
-  // still running an older app does not mark a folder built by a newer one as old. A rebuild starts
-  // from an empty manifest, which holds this version.
-  manifest.schemaVersion = SCHEMA_VERSION;
-  // The new runs wait for their context and segments (lib/pipeline finishes it, or the next import).
-  if (report.imported > 0) manifest.joined = false;
-  await writeJson(folder, PATHS.runsIndex, index);
-  await writeJson(folder, PATHS.metrics, { algorithmVersion: ALGORITHM_VERSION, metrics: [...catalog.values()] } satisfies MetricsFile);
-  await writeManifest(folder, manifest);
+  await commit();
   opts.onProgress?.({ done, total: todo.length, file: '' });
   return report;
 }

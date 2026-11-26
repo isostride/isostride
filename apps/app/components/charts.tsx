@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { useTouch } from './chartKit';
 import { MIN_SPAN, wheelFactor } from './chartZoom';
 import { fitCamera, panCamera, project, visibleRange, zoomCamera, type Camera, type RoutePoint } from './mapCamera';
 import { useMapTiles } from '@/lib/client';
@@ -135,6 +136,7 @@ export function RouteMap({ lat, lon, t: times, cursor, selection = null, onSelec
   const wrapRef = useRef<HTMLDivElement>(null);
   const grid = useId();
   const [first, setFirst] = useState<number | null>(null);
+  const touch = useTouch();
   const [tiles] = useMapTiles();
   const pts = useMemo(() => {
     const out: RoutePoint[] = [];
@@ -235,18 +237,22 @@ export function RouteMap({ lat, lon, t: times, cursor, selection = null, onSelec
     if (first === null) setFirst(best[2]);
     else { onSelect({ from: Math.min(first, best[2]), to: Math.max(first, best[2]) }); setFirst(null); }
   };
-  // A drag pans the map, by mouse or (with controls) by finger; a press and release in place is a click on the route.
+  // A drag pans the map, by mouse or (with controls) by finger; a press and release in place is a click on the
+  // route. On the small map a finger's drag stays the page's scroll, but its tap picks a point of the route, as
+  // the hint says (it took no touch at all, and a part of a run could not be chosen there on a phone).
   const down = (e: PointerEvent<SVGSVGElement>) => {
-    if (e.pointerType !== 'mouse' && !controls) return;
+    const pans = e.pointerType === 'mouse' || !!controls;
+    if (!pans && !onSelect) return;
     const [mx0, my0, k] = toMap(e);
     const c0 = cam;
     let moved = false;
     const mv = (m: globalThis.PointerEvent) => {
       if (m.pointerId !== e.pointerId) return;
       const [mx, my] = toMap(m);
-      if (!moved && Math.hypot(mx - mx0, my - my0) < 4 * k) return;
+      // A finger wanders more than a mouse before it counts as a drag.
+      if (!moved && Math.hypot(mx - mx0, my - my0) < (pans ? 4 : 10) * k) return;
       moved = true;
-      move(panCamera(c0, mx - mx0, my - my0));
+      if (pans) move(panCamera(c0, mx - mx0, my - my0));
     };
     const up = (m: globalThis.PointerEvent) => {
       if (m.pointerId !== e.pointerId) return;
@@ -324,7 +330,9 @@ export function RouteMap({ lat, lon, t: times, cursor, selection = null, onSelec
           {t('Expand')}
         </button>
       )}
-      <span className="map-hint" aria-live="polite">{onSelect && first !== null ? t('Now click the end of the segment') : hint ?? (onSelect ? t('Scroll to zoom · drag to move · click two points to select') : t('Scroll to zoom · drag to move'))}</span>
+      <span className="map-hint" aria-live="polite">{onSelect && first !== null ? (touch ? t('Now tap the end of the segment') : t('Now click the end of the segment')) : hint ?? (touch
+        ? (onSelect ? (controls ? t('The buttons zoom · drag to move · tap two points to select') : t('Tap two points to select')) : controls ? t('The buttons zoom · drag to move') : '')
+        : onSelect ? t('Scroll to zoom · drag to move · click two points to select') : t('Scroll to zoom · drag to move'))}</span>
       {controls && (
         <div className="map-zoom" role="group" aria-label={t('Zoom of the map')}>
           <button type="button" className="btn sm icon" aria-label={t('Zoom in')} onClick={() => zoomBy(0.5)}>+</button>

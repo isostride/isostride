@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { BrowserFolder, usesCopy, type DataFolder } from '@/lib/fs';
-import { setCopyId } from './worker';
+import { onCopyBroken, setCopyId } from './worker';
 import { getValue, setValue } from './handleStore';
 
 /** The Data Folder lifecycle as the screens see it (model: Data Folder lifecycle). */
@@ -10,7 +10,8 @@ export type FolderState =
   | { status: 'checking' }
   /** insecure: opened over plain http (not localhost), where the browser hides folder access */
   | { status: 'unsupported'; insecure: boolean }
-  | { status: 'not-chosen' }
+  /** lost: the folder remembered could not be opened (moved, renamed, its disk away), by its name */
+  | { status: 'not-chosen'; lost?: string }
   | { status: 'access-pending'; name: string }
   | { status: 'open'; folder: DataFolder; handle: FileSystemDirectoryHandle };
 
@@ -63,6 +64,8 @@ async function opened(handle: FileSystemDirectoryHandle, fresh = false): Promise
   // The copy's code only on a device that keeps one, or had one to prune: the screens' scripts stay in their budget.
   const copies = copy || before ? await import('@/lib/copy') : null;
   const folder = copies ? await copies.openDataFolder(handle, copy, startNewCopy) : new BrowserFolder(handle);
+  // A worker whose copy failed wrote the folder alone: this page reads the folder alone too from then on.
+  onCopyBroken(() => { if (copies && folder instanceof copies.MirroredFolder) folder.leaveCopy(); });
   const { moveLegacyData } = await import('@/lib/legacy');
   await moveLegacyData(folder);
   if (copies) void copies.pruneCopies(copy).catch(() => undefined);
@@ -92,9 +95,11 @@ export function FolderProvider({ children }: { children: ReactNode }) {
       if (!handle) return setState({ status: 'not-chosen' });
       setRemembered(handle);
       const perm = await handle.queryPermission?.({ mode: 'readwrite' });
-      if (perm === 'granted') setState(await opened(handle));
+      // A folder that cannot be opened (moved, renamed, deleted, its disk not connected) is said so, with the
+      // choice of a folder: left unanswered, the app stayed on an empty page at every opening (the review of 26 Nov 2026).
+      if (perm === 'granted') setState(await opened(handle).catch((): FolderState => ({ status: 'not-chosen', lost: handle.name })));
       else setState({ status: 'access-pending', name: handle.name });
-    })();
+    })().catch(() => setState({ status: 'not-chosen' }));
   }, []);
 
   const pick = useCallback(async () => {
@@ -107,7 +112,7 @@ export function FolderProvider({ children }: { children: ReactNode }) {
   const confirmAccess = useCallback(async () => {
     if (!remembered) return;
     const perm = await remembered.requestPermission?.({ mode: 'readwrite' });
-    if (perm === 'granted') setState(await opened(remembered));
+    if (perm === 'granted') setState(await opened(remembered).catch((): FolderState => ({ status: 'not-chosen', lost: remembered.name })));
   }, [remembered]);
 
   return <Ctx.Provider value={{ state, pick, confirmAccess }}>{children}</Ctx.Provider>;

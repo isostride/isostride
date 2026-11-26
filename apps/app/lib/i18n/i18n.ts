@@ -96,12 +96,17 @@ export const msg = <T extends string>(text: T): T => text;
 
 /** A number in the language in use: 5.24 in English, 5,24 in Polish; digits fixed when given. */
 export function number(v: number, digits?: number, opts: Intl.NumberFormatOptions = {}): string {
+  // A value that writes as zero is zero: −0.04 to one decimal read "-0.0", and −0 "-0".
+  if (digits === undefined ? v === 0 : Math.abs(v) < 0.5 * 10 ** -digits) v = 0;
   return formatter(numberFormats, Intl.NumberFormat, {
     useGrouping: false,
     ...(digits === undefined ? { maximumFractionDigits: 20 } : { minimumFractionDigits: digits, maximumFractionDigits: digits }),
     ...opts,
   }).format(v);
 }
+
+/** The sign of a number as it is written to `digits` decimals: the minus of print only when it does not write as zero (−0.04 to one decimal is +0.0). */
+export const signOf = (v: number, digits = 0): '+' | '−' => (Number(v.toFixed(digits)) < 0 ? '−' : '+');
 
 /** A date (or time) in the language in use: options as for toLocaleDateString. */
 export function dateText(d: Date | string | number, opts: Intl.DateTimeFormatOptions): string {

@@ -83,6 +83,10 @@ export class FitImportError extends Error {
 }
 
 const SEMICIRCLE_TO_DEG = 180 / 2 ** 31;
+/** A record this far before the session's start or after its end is not of the run, s (an hour: a session's times are the watch's own). */
+const OUTSIDE_SESSION = 3600;
+/** The longest run read when its session gives no time, s (two days). */
+const LONGEST_RUN = 48 * 3600;
 
 type Mesg = Record<string, unknown> & { developerFields?: Record<string, number> };
 
@@ -123,10 +127,20 @@ export function runFromMessages(messages: Record<string, unknown[] | undefined>)
   // The time the running session covers, when the file holds others: a second of slack at its end.
   const from = (session.startTime as Date).getTime();
   const to = from + ((num(session.totalElapsedTime) ?? num(session.totalTimerTime) ?? 0) + 1) * 1000;
-  const inSession = (at: unknown) => sessions.length === 1 || (at instanceof Date && at.getTime() >= from && at.getTime() <= to);
+  // A file of one session is read whole, but for records far outside it: a watch whose clock was set
+  // during the run (a flat battery, then the first GPS fix) dates a record a year on, and the run then
+  // had 3 million windows and took the memory the import had (the review of 26 Nov 2026).
+  const elapsed = num(session.totalElapsedTime) ?? num(session.totalTimerTime) ?? 0;
+  const latest = from + (elapsed > 0 ? elapsed + OUTSIDE_SESSION : LONGEST_RUN) * 1000;
+  const inSession = (at: unknown) => (sessions.length === 1
+    ? !(at instanceof Date) || (at.getTime() >= from - OUTSIDE_SESSION * 1000 && at.getTime() <= latest)
+    : at instanceof Date && at.getTime() >= from && at.getTime() <= to);
 
   const records = ((messages.recordMesgs ?? []) as Mesg[]).filter((r) => inSession(r.timestamp));
   if (!records.length) throw new FitImportError(IMPORT_REASONS.noSamples);
+  // In the order of their time: the windows and every search count on it.
+  const at = (r: Mesg) => (r.timestamp instanceof Date ? r.timestamp.getTime() : 0);
+  if (records.some((r, k) => k > 0 && at(r) < at(records[k - 1]))) records.sort((a, b) => at(a) - at(b));
   // The distance of a later leg counts on from the legs before it: the run's own starts at 0.
   const distance0 = sessions.length > 1 ? num(records[0].distance) ?? 0 : 0;
 
@@ -135,14 +149,16 @@ export function runFromMessages(messages: Record<string, unknown[] | undefined>)
 
   // Developer fields are keyed by their field description: each one a metric named as it names
   // itself; one name from two apps kept apart (requirement "Read developer fields").
-  const developer: { key: string; field: number; info: MetricInfo }[] = [];
+  // The SDK gives a developer field's value as the file holds it: the scale and the offset its description
+  // names are applied here, as the SDK applies the profile's to its own fields (value ÷ scale − offset).
+  const developer: { key: string; field: number; info: MetricInfo; scale: number; offset: number }[] = [];
   for (const d of (messages.fieldDescriptionMesgs ?? []) as Mesg[]) {
     const name = String(d.fieldName ?? '').trim();
     if (!name || (d.nativeMesgNum !== undefined && d.nativeMesgNum !== 'record' && d.nativeMesgNum !== Profile.MesgNum.RECORD)) continue;
     let key = DEVELOPER_KEYS[name] ?? developerKey(name);
     if (developer.some((x) => x.key === key)) key = `${key}.${String(d.developerDataIndex ?? developer.length)}`;
     const unit = unitOf(String(d.units ?? '').trim());
-    developer.push({ key, field: d.key as number, info: KNOWN_METRICS[key] ?? unknownMetric(key, name, unit, 'developer') });
+    developer.push({ key, field: d.key as number, info: KNOWN_METRICS[key] ?? unknownMetric(key, name, unit, 'developer'), scale: num(d.scale) || 1, offset: num(d.offset) ?? 0 });
   }
 
   const values: Record<string, Series> = {};
@@ -175,7 +191,10 @@ export function runFromMessages(messages: Record<string, unknown[] | undefined>)
       standard[key] ??= KNOWN_METRICS[key] ?? unknownMetric(key, nameOfField(key), unitOf(RECORD_UNITS[field] ?? ''), 'standard');
       put(key, i, v);
     }
-    for (const d of developer) put(d.key, i, num(r.developerFields?.[d.field]));
+    for (const d of developer) {
+      const raw = num(r.developerFields?.[d.field]);
+      put(d.key, i, raw === null || (d.scale === 1 && d.offset === 0) ? raw : raw / d.scale - d.offset);
+    }
     i++;
   }
   // Every series as long as the samples, null where a record lacked the field.

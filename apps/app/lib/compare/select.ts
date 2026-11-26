@@ -1,4 +1,4 @@
-import { mean, sd, linearFit, linearFit2 } from '@/lib/stats';
+import { fitWithCovariate, mean, sd, linearFit } from '@/lib/stats';
 import { reasonText, type BlockInstance, type BlockMetric } from '@/lib/blocks';
 import { msg, t } from '@/lib/i18n';
 import { isPace, metricInfo, secondsPerKm, type MetricInfo } from '@/lib/kernel';
@@ -76,45 +76,59 @@ export interface Corrected {
 }
 
 /**
+ * What a correction for pace leaves to compare: the effect of what is compared (the difference B − A of
+ * the groups, or the change per day of a trend) at one pace, its standard error and degrees of freedom,
+ * and the spread of the runs about the fit (lib/stats, fitWithCovariate).
+ */
+export interface PaceFit {
+  effect: number;
+  se: number;
+  df: number;
+  residual: number;
+}
+
+/**
  * Corrects the metric for the residual pace difference left after strict matching (spec section 5):
  * each value moved to the mean pace by the slope of the metric on pace. A pace (pace, effort pace:
- * isPace of the kernel) is not corrected. Too few instances, or a slope the data do not settle: raw values.
+ * isPace of the kernel) is not corrected. Too few runs, or a slope the data do not settle: raw values,
+ * and no fit.
  *
- * The slope must not hold what is being compared (the review of 26 Nov 2026):
- * - with `groupOf` (A/B), it is the slope inside the groups, each centred on its own means: over both
- *   groups together a difference between them that goes with a difference of pace became "the effect
- *   of pace" and was taken away (+5 bpm read as +0.4);
- * - with `overTime` (a trend), it is the slope of pace beside time, fitted together: over months the
- *   pace itself improves, and a slope on pace alone took the trend away with it. When pace and time
- *   cannot be told apart, nothing is corrected.
+ * The slope must not hold what is being compared, and what it costs to estimate belongs in the interval
+ * of what is compared (the reviews of 26 Nov 2026). So the metric is fitted on what is compared and on
+ * pace together, the run the unit (each run once: the means of its efforts):
+ * - with `groupOf` (A/B), the group and the pace: the slope inside the groups (over both together a
+ *   difference between them that goes with a difference of pace became "the effect of pace" and was
+ *   taken away: +5 bpm read as +0.4);
+ * - with `overTime` (a trend), the day and the pace: over months the pace itself improves, and a slope
+ *   on pace alone took the trend away with it. When pace and time cannot be told apart, nothing is corrected.
+ * `fit` is that fit's answer for what is compared; the corrected values are for showing (their runs'
+ * means lie about the same line, or differ by the same difference).
  */
-export function correctForPace(instances: BlockInstance[], metric: BlockMetric, by: { groupOf?: (i: BlockInstance) => string | null; overTime?: boolean } = {}): Corrected[] {
+export function correctForPace(instances: BlockInstance[], metric: BlockMetric, by: { groupOf?: (i: BlockInstance) => string | null; overTime?: boolean } = {}): { points: Corrected[]; fit: PaceFit | null } {
   const rows = instances.map((i) => ({ instance: i, raw: valueOf(i, metric)!, pace: i.context.block.pace }));
-  const raw = () => rows.map((r) => ({ instance: r.instance, raw: r.raw, corrected: r.raw }));
+  const raw = () => ({ points: rows.map((r) => ({ instance: r.instance, raw: r.raw, corrected: r.raw })), fit: null });
   if (isPace(metric) || rows.length < 3) return raw();
+  const byRun = new Map<string, typeof rows>();
+  for (const r of rows) byRun.set(r.instance.runId, [...(byRun.get(r.instance.runId) ?? []), r]);
+  const runs = [...byRun.values()].map((g) => ({ of: g[0].instance, raw: mean(g.map((r) => r.raw)), pace: mean(g.map((r) => r.pace)) }));
   let slope: number;
-  if (by.groupOf) {
-    const groups = new Map<string, typeof rows>();
-    for (const r of rows) { const g = by.groupOf(r.instance) ?? ''; groups.set(g, [...(groups.get(g) ?? []), r]); }
-    let sxy = 0;
-    let sxx = 0;
-    for (const g of groups.values()) {
-      const [mp, mr] = [mean(g.map((r) => r.pace)), mean(g.map((r) => r.raw))];
-      for (const r of g) { sxy += (r.pace - mp) * (r.raw - mr); sxx += (r.pace - mp) ** 2; }
-    }
-    if (!(sxx > 0)) return raw();
-    slope = sxy / sxx;
-  } else if (by.overTime) {
-    const t0 = Date.parse(rows[0].instance.runStart);
-    const fit = linearFit2(rows.map((r) => r.raw), rows.map((r) => (Date.parse(r.instance.runStart) - t0) / 86_400_000), rows.map((r) => r.pace));
-    if (!fit) return raw();
-    slope = fit[2];
+  let fit: PaceFit | null = null;
+  if (by.groupOf || by.overTime) {
+    const t0 = Math.min(...runs.map((r) => Date.parse(r.of.runStart)));
+    // A group as 0 or 1 (the first group met is 0: A/B gives its instances in A's and B's order of time, and names them itself).
+    const groups = by.groupOf ? [...new Set(runs.map((r) => by.groupOf!(r.of) ?? ''))].sort() : [];
+    if (by.groupOf && groups.length !== 2) return raw();
+    const x = runs.map((r) => (by.groupOf ? groups.indexOf(by.groupOf(r.of) ?? '') : (Date.parse(r.of.runStart) - t0) / 86_400_000));
+    const f = fitWithCovariate(runs.map((r) => r.raw), x, runs.map((r) => r.pace));
+    if (!f) return raw();
+    slope = f.covariate;
+    fit = { effect: f.effect, se: f.se, df: f.df, residual: f.residual };
   } else {
-    slope = linearFit(rows.map((r) => r.pace), rows.map((r) => r.raw)).slope;
+    slope = linearFit(runs.map((r) => r.pace), runs.map((r) => r.raw)).slope;
   }
   if (!Number.isFinite(slope)) return raw();
-  const mp = mean(rows.map((r) => r.pace));
-  return rows.map((r) => ({ instance: r.instance, raw: r.raw, corrected: r.raw - slope * (r.pace - mp) }));
+  const mp = mean(runs.map((r) => r.pace));
+  return { points: rows.map((r) => ({ instance: r.instance, raw: r.raw, corrected: r.raw - slope * (r.pace - mp) })), fit };
 }
 
 /** The noise threshold: the standard deviation of the metric between instances in the same context (spec section 5). */

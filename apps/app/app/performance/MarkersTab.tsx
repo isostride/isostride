@@ -18,10 +18,10 @@ const delta = (a: number | null, b: number | null, fmt: (v: number) => string, l
   if (Math.abs(d) < 1e-9) return t('same as 90 days ago');
   return `${t('{delta} vs 90 days ago', { delta: `${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}` })}${(lowerBetter ? d < 0 : d > 0) ? ' ↑' : ' ↓'}`;
 };
-/** The range a value may lie in by its bests (95 %, the jackknife), in words; nothing without one. */
+/** The range a value moves in by its runs (the jackknife), in words; nothing without one. */
 const rangeText = (r: Range | null | undefined, fmt: (lo: number, hi: number) => string) => (r ? t('{range} by your runs', { range: fmt(r.low, r.high) }) : null);
 const RangeNote = ({ text }: { text: string | null }) => (text ? <dd className="muted sub" data-range>{text}</dd> : null);
-const RANGE_NOTE = msg('The range under a value: where it would lie, 95 % of the time, by the runs it rests on: the model fitted again with each run of the last 90 days left out in turn (the jackknife). A wide range means one run decides it.');
+const RANGE_NOTE = msg('The range under a value: how far it moves by the runs it rests on: the model fitted again with each run of the last 90 days left out in turn (the jackknife), about two standard errors each way. A wide range means one run decides it. A narrow one is no promise: a value that rests on the best of the runs is known less well than a mean, and bests held back move every fit alike.');
 
 const empty = () => <div className="card empty">{t('Nothing yet: it needs, within {days} days, bests of at least three lengths between 2 and 20 minutes.', { days: MARKER_DAYS })}</div>;
 
@@ -57,7 +57,7 @@ export function CriticalTab({ runs, summaries, today }: Props) {
           <h3 className="chart-title" style={{ marginTop: 16 }}>{t('Critical power')}</h3>
           <TimeChart label={t('Critical power over time')} times={times}
             series={[{ key: 'cp', label: t('critical power'), color: 'var(--series-2)', kind: 'line', values: weeks.map((w) => w.cp) }]}
-            format={(v) => `${number(Math.round(v))} W`} tick={(v) => number(Math.round(v))} />
+            format={(v) => `${number(Math.round(v))} W`} tick={(v, _s, d) => number(v, d)} />
         </>
       )}
     </div>
@@ -90,11 +90,11 @@ export function PredictionsTab({ runs, summaries, today, model = 'riegel' }: Pro
       <h3 className="chart-title">{t('Predicted times')}</h3>
       <TimeChart label={t('Predicted race times over time')} times={times} invert height={220}
         series={RACES.slice(0, 3).map(([d, name], k) => ({ key: `p${k}`, label: t(name), color: `var(--series-${k + 1})`, kind: 'line' as const, values: weeks.map((w) => { const s = predicted(w, d); return s === null ? null : s / 60; }) }))}
-        format={(v) => fmtDuration(Math.round(v * 60))} tick={(v) => `${number(Math.round(v))}′`} />
+        format={(v) => fmtDuration(Math.round(v * 60))} tick={(v, _s, d) => `${number(v, d)}′`} />
       <h3 className="chart-title" style={{ marginTop: 16 }}>VDOT</h3>
       <TimeChart label={t('VDOT over time')} times={times} height={180}
         series={[{ key: 'vdot', label: 'VDOT', color: 'var(--series-1)', kind: 'line', values: vdots.map((w) => w.vdot) }]}
-        format={(v) => `${number(v, 1)} ml/kg/min`} tick={(v) => number(Math.round(v))} />
+        format={(v) => `${number(v, 1)} ml/kg/min`} tick={(v, _s, d) => number(v, d)} />
     </div>
   );
 }

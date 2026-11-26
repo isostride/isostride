@@ -41,7 +41,7 @@ export function FittedTab({ criterion, runs, summaries, performance, days, today
           { key: 'model', label: t('model'), color: 'var(--series-2)', kind: 'line', values: all.map((p) => (fittedDays.has(p.date) ? p.value : null)) },
           { key: 'rest', label: t('if you rest from today'), color: 'var(--series-3)', kind: 'line', values: all.map((p) => (fittedDays.has(p.date) ? null : p.value)) },
         ]}
-        format={(v) => number(v, 1)} tick={(v) => number(Math.round(v))} />
+        format={(v) => number(v, 1)} tick={(v, _s, d) => number(v, d)} />
     </div>
   );
 }

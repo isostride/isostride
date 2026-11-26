@@ -31,6 +31,18 @@ export async function readRunTags(folder: DataFolder): Promise<RunTagsFile> {
   return (await readJson<RunTagsFile>(folder, PATHS.runTags)) ?? { dictionary: { ...DEFAULT_DICTIONARY }, tags: {} };
 }
 
+/**
+ * Sets one run's tags in the file as it is now, not as a screen read it when it opened: written back whole
+ * from a screen's copy, a note set meanwhile in another window (or by another screen of this one) was gone
+ * (the review of 26 Nov 2026).
+ */
+export async function saveRunTag(folder: DataFolder, runId: string, tag: RunTag): Promise<RunTagsFile> {
+  const file = await readRunTags(folder);
+  const next = { ...file, tags: { ...file.tags, [runId]: tag } };
+  await writeRunTags(folder, next);
+  return next;
+}
+
 export async function writeRunTags(folder: DataFolder, file: RunTagsFile): Promise<void> {
   // Empty tags are dropped so the file holds only what the runner entered.
   const tags = Object.fromEntries(

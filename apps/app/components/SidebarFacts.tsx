@@ -6,7 +6,7 @@ import type { SavedAnalysesFile } from '@/lib/compare';
 import { PATHS, readJson, type DataFolder } from '@/lib/fs';
 import type { RunsIndex } from '@/lib/kernel';
 import { useLocale } from '@/lib/client';
-import { dateText, number, t, tn } from '@/lib/i18n';
+import { dateText, number, signOf, t, tn } from '@/lib/i18n';
 import { formSeries } from '@/lib/load';
 import { readSettings } from '@/lib/settings';
 import { useDataVersion } from './dataVersion';
@@ -50,7 +50,7 @@ export function SidebarFacts({ folder, path, onFacts }: { folder: DataFolder; pa
         '/': runs.length ? t('{runs} · last {date}', { runs: tn(runs.length, '{n} run', '{n} runs'), date: short(last!.startTime) }) : t('No run yet'),
         '/segments': `${tn(kept, '{n} kept', '{n} kept')}${suggested ? ` · ${tn(suggested, '{n} suggested', '{n} suggested')}` : ''}`,
         '/compare': analyses ? tn(analyses, '{n} saved analysis', '{n} saved analyses') : t('Trends, efforts, A/B'),
-        '/performance': form === null ? t('Load, capacity, models') : t('Form {form} today', { form: `${form >= 0 ? '+' : '−'}${number(Math.abs(Math.round(form)))}` }),
+        '/performance': form === null ? t('Load, capacity, models') : t('Form {form} today', { form: `${signOf(form)}${number(Math.abs(Math.round(form)))}` }),
         '/settings': t('Data, models, zones'),
       });
     })().catch(() => undefined);

@@ -47,6 +47,33 @@ describe('Copy in the browser', () => {
     expect([...copies.entriesMap.keys()]).toEqual(['c-4']);
   });
 
+  it('A write cut off between the folder and the copy is read from the folder', async () => {
+    const runner = new BrowserFolder(dirHandle(new MemDir('runs')));
+    const copy = await openCopy('c-1');
+    const path = '.isostride/user/run-tags.json';
+    await new MirroredFolder(runner, copy).writeText(path, '{"r1":{"note":"old"}}');
+    // The tab is killed once the folder has the new text and before the copy does.
+    const dying: DataFolder = { ...runner, name: runner.name, list: (p) => runner.list(p), readText: (p) => runner.readText(p), readBytes: (p) => runner.readBytes(p), writeBytes: (p, b) => runner.writeBytes(p, b), remove: (p) => runner.remove(p),
+      writeText: async (p, text) => { await runner.writeText(p, text); throw new Error('killed'); } };
+    await expect(new MirroredFolder(dying, copy).writeText(path, '{"r1":{"note":"new"}}')).rejects.toThrow('killed');
+    // The next opening reads the newer text (the copy kept the older one, and the next save wrote it back).
+    const next = new MirroredFolder(runner, copy);
+    expect(await next.readText(path)).toBe('{"r1":{"note":"new"}}');
+    expect(await copy.readText(path)).toBe('{"r1":{"note":"new"}}');
+    // A removal cut off the same way: the file is gone from the copy first, and the folder is asked.
+    const stuck: DataFolder = { ...dying, writeText: (p, text) => runner.writeText(p, text), remove: async () => { throw new Error('killed'); } };
+    await expect(new MirroredFolder(stuck, copy).remove(path)).rejects.toThrow('killed');
+    expect(await copy.readText(path)).toBeNull();
+    expect(await new MirroredFolder(runner, copy).readText(path)).toBe('{"r1":{"note":"new"}}');
+    // A worker's copy failed: the page leaves its copy, and is told once.
+    let told = 0;
+    const page = new MirroredFolder(runner, copy, () => told++);
+    await copy.writeText(path, 'stale');
+    page.leaveCopy();
+    page.leaveCopy();
+    expect([await page.readText(path), told]).toEqual(['{"r1":{"note":"new"}}', 1]);
+  });
+
   it('A copy that fails leaves the folder read alone, and the next opening a new copy', async () => {
     const runner = new BrowserFolder(dirHandle(new MemDir('runs')));
     await runner.writeText('.isostride/derived/runs-index.json', '{"runs":[]}');

@@ -20,12 +20,12 @@ A monorepo (npm workspaces):
 | `infra` | Terraform: Route 53, CloudFront, S3, the certificate and the deploy role ([infra/README.md](infra/README.md)) |
 | `.radical` | the model of the system: requirements, decisions, scenarios |
 
-From the root: `npm run dev` (the app on localhost:3000), `npm run dev:site` (localhost:3002), `npm run build`, `npm run check` (the app's full check). Each push and pull request runs `npm run check` on GitHub, and a push to `master` that passes it is deployed (`.github/workflows/deploy.yml`, CI/CD; the test FIT files come from a private bucket, see `infra/README.md`).
+From the root: `npm run dev` (the app on localhost:3000), `npm run dev:site` (localhost:3002), `npm run build`, `npm run check` (the app's full check). Each push and pull request runs `npm run check` on GitHub, and a push to `master` that passes it is deployed (`.github/workflows/deploy.yml`, CI/CD; the test FIT files come from a private bucket, see `infra/README.md`). A pull request from a fork gets no access to that bucket, so its check cannot pass there: a maintainer pushes its branch into this repository, where it is checked.
 
 ## Requirements
 
 - **Chrome, Edge or Opera** on a desktop. The app needs the File System Access API (`showDirectoryPicker`). Firefox and Safari get a "not supported" message.
-- Node.js 20 or later, to build or run it locally.
+- Node.js 26 (`.node-version`), to build or run it locally.
 
 ## Getting your data in
 

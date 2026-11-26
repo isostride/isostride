@@ -117,6 +117,8 @@ describe('Model assumptions', () => {
     expect(status(rtss.by.load, 'threshold')).toBe('unmet');
     // All-out bests: the threshold from the bests of the 90 days.
     expect(status(report(ALL_OUT, { ...SET, load: 'rtss' }).by.load, 'threshold')).toBe('met');
+    // Named as a pace: a critical speed of about 4.1 m/s is 4:04 /km (it read "0:04 /km", the speed taken for a pace).
+    expect(report(ALL_OUT, { ...SET, load: 'rtss' }).by.load.checks.find((c) => c.key === 'threshold')!.detail).toMatch(/^4:0\d \/km, from the bests/);
     // Against critical speed, a pace of half an hour, the loads read lower than scores named for the pace of an hour:
     // said with an automatic threshold, for the runner to judge; not with a threshold of the runner's own.
     expect(status(report(ALL_OUT, { ...SET, load: 'rtss' }).by.load, 'scale')).toBe('unknown');

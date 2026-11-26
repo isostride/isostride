@@ -1,5 +1,6 @@
+import { minSec } from '@/lib/kernel';
 /** m:ss of a time into a run. */
-export const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
+export const mmss = (sec: number) => minSec(sec);
 
 /** The Run screen of a run, with a stretch [from, to] s selected when given. */
 // i18n-ignore

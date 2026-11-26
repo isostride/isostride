@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useDataVersion, useWidth, eager } from '@/components';
+import { ReadError, useDataVersion, useWidth, eager } from '@/components';
 import { readDefinitions, type BlockDefinition, type BlockInstance, type BlockInstancesFile } from '@/lib/blocks';
 import { useLocale, useOpenFolder } from '@/lib/client';
 import type { SavedAnalysesFile, SavedAnalysis } from '@/lib/compare';
@@ -15,6 +15,7 @@ import { formSeries, type ModelKey } from '@/lib/load';
 import { TABS, performanceHref, type Tab } from '../performance/structure';
 import { readSettings } from '@/lib/settings';
 import { DashboardHead, todayText } from './Head';
+import { minSec } from '@/lib/kernel';
 
 /** The tiles resting on the models: loaded only when the Dashboard has one. */
 const ModelTiles = eager(() => import('./ModelTiles').then((m) => m.ModelTiles));
@@ -37,8 +38,9 @@ const days = () => Array.from({ length: 7 }, (_, i) => dateText(new Date(2024, 0
 const WIDTH_MARKS = ['⅓', '⅔', msg('Full')];
 const WIDTH_NAMES = [msg('one third'), msg('two thirds'), msg('the whole row')];
 const hm = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`;
-const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
-const signed = (v: number, digits = 0) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${number(Math.abs(v), digits)}`;
+const mmss = (s: number) => minSec(s);
+// The sign of the value as it is written: one that writes as zero has none (−0.04 km read "−0.0 km").
+const signed = (v: number, digits = 0) => { const r = Number(v.toFixed(digits)); return `${r > 0 ? '+' : r < 0 ? '−' : ''}${number(Math.abs(v), digits)}`; };
 /** Fills a count's place with a mark, so Counted can put the number in its own element. */
 const MARK = { n: '\u0000' };
 /**
@@ -73,6 +75,9 @@ export function DashboardPage() {
   const version = useDataVersion();
   const [tiles, setTiles] = useState<Tile[] | null>(null);
   const [data, setData] = useState<Data | null>(null);
+  /** the folder could not be read; `again` counts the tries */
+  const [failed, setFailed] = useState(false);
+  const [again, setAgain] = useState(0);
   const [editing, setEditing] = useState(false);
   // The tiles in the language in use, drawn again when it changes.
   useLocale();
@@ -90,12 +95,13 @@ export function DashboardPage() {
         runs: [...(index?.runs ?? [])].sort((a, b) => a.startTime.localeCompare(b.startTime)), defs: defs.filter((d) => d.status === 'active'),
         efforts: inst?.instances ?? [], analyses: saved?.analyses ?? [], fitnessDays: settings.performance.fitnessDays, fatigueDays: settings.performance.fatigueDays,
       });
-    })().catch(() => undefined);
+    })().catch(() => { if (live) setFailed(true); });
     return () => { live = false; };
-  }, [folder, version]);
+  }, [folder, version, again]);
 
   const change = useCallback((next: Tile[]) => { setTiles(next); writeDashboard(folder, next).catch(() => undefined); }, [folder]);
 
+  if (failed && (!tiles || !data)) return <div className="page wide-page dashboard-page"><DashboardHead /><ReadError onRetry={() => { setFailed(false); setAgain((n) => n + 1); }} /></div>;
   if (!tiles || !data) return <div className="page wide-page dashboard-page"><DashboardHead /><p className="muted small" role="status">{t('Reading your data…')}</p></div>;
 
   /**

@@ -87,14 +87,21 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
     if (metrics[m] !== null) metrics[m] = round(metrics[m]!, 3);
   }
 
-  const dist0 = valueAt(s.distance, idx[0]) ?? 0;
+  // From the first sample inside that has a distance to the last that has one: a file with records of the heart
+  // rate apart from those of the position leaves samples without one, and an effort starting on such a sample
+  // began at 0, the whole run's distance up to its end its own (the review of 26 Nov 2026).
+  const withDistance = idx.filter((i) => s.distance[i] !== null);
+  const dist0 = valueAt(s.distance, withDistance[0]) ?? 0;
   // The distance up to the end of the fragment, as its duration runs: to the last sample inside it the
   // fragment was a sample short (1 km in 240 s read 996 m, a pace of 4:01 for 4:00), the shorter the
   // rep the more. Between the last sample inside and the first after it, by the time; not across a pause.
-  const last = idx[idx.length - 1];
+  const last = withDistance[withDistance.length - 1];
   const inside = valueAt(s.distance, last) ?? dist0;
-  const after = last !== undefined && last + 1 < s.t.length && s.t[last + 1] - s.t[last] <= MAX_SAMPLE_COVER ? valueAt(s.distance, last + 1) : null;
-  const dist1 = after === null || last === undefined ? inside : inside + (after - inside) * Math.min(1, Math.max(0, (end - s.t[last]) / (s.t[last + 1] - s.t[last])));
+  // The next sample with a distance, past the fragment's last sample.
+  let next = (idx[idx.length - 1] ?? s.t.length) + 1;
+  while (next < s.t.length && s.distance[next] === null) next++;
+  const after = last !== undefined && next < s.t.length && s.t[next] - s.t[last] <= MAX_SAMPLE_COVER ? valueAt(s.distance, next) : null;
+  const dist1 = after === null || last === undefined ? inside : inside + (after - inside) * Math.min(1, Math.max(0, (end - s.t[last]) / (s.t[next] - s.t[last])));
   const distance = dist1 - dist0;
   const duration = end - start;
   const speed = metrics.speed ?? (duration > 0 ? distance / duration : 0);

@@ -7,7 +7,7 @@ import { runInWorker, useLocale, useOpenFolder } from '@/lib/client';
 import { msg, number, t } from '@/lib/i18n';
 import { AboutCard, ChartsCard, DisplayCard, LanguageCard } from './DeviceCards';
 import { METRICS_CHANGED, useMetrics, eager } from '@/components';
-import { metricInfo } from '@/lib/kernel';
+import { metricInfo, minSec } from '@/lib/kernel';
 
 /** The folder, its import and the integrations: the first tab, loaded with it. */
 const DataTab = eager(() => import('./DataTab').then((m) => m.DataTab));
@@ -21,7 +21,7 @@ import { DEFAULT_ZONES, zoneMetricsOf, formatBoundaries, parseBoundaries, readSe
 const PerformanceCard = eager(() => import('../performance/PerformanceCard').then((m) => m.PerformanceCard));
 
 /** A value of a metric as the runner reads it: pace as m:ss, others as they are. */
-const show = (m: ZoneMetric, v: number) => (m.pace ? `${Math.floor(v / 60)}:${String(Math.round(v % 60)).padStart(2, '0')}` : number(v));
+const show = (m: ZoneMetric, v: number) => (m.pace ? minSec(v) : number(v));
 
 /** The zones a metric's boundaries give, as chips: Z1 … Zn with their ranges. */
 function ZoneChips({ m, boundaries }: { m: ZoneMetric; boundaries: number[] }) {
