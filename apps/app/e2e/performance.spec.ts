@@ -370,8 +370,11 @@ test.describe('Performance model', () => {
     await expect(critical).toContainText(/Critical speed\d:\d\d \/km/);
     await expect(critical).toContainText(/Critical power\d+ W/);
     await expect(page.getByRole('img', { name: 'Critical speed over time' }).locator('.tc-line')).toHaveCount(1);
+    // The range the bests leave each value in: the fit again with each best left out in turn.
+    await expect(critical.locator('[data-range]').first()).toContainText(/^\d:\d\d–\d:\d\d \/km by your bests$/);
     await bar.getByRole('button', { name: /^Why\? Critical speed and D′/ }).click();
     await expect(panel('Critical speed and D′').getByRole('link', { name: /^Best efforts of 2–20 min/ })).toBeVisible();
+    await expect(panel('Critical speed and D′')).toContainText('Your bests settle the critical speed and D′');
     await page.keyboard.press('Escape');
     // The predicted times and the VDOT the predicted 5 km implies.
     await page.getByRole('radio', { name: 'Predictions and VDOT' }).click();
@@ -550,8 +553,28 @@ test.describe('Performance model', () => {
     await expect(weeks.getByRole('spinbutton')).toHaveCount(4);
     await weeks.getByRole('spinbutton').first().fill('200');
     await expect(page).toHaveURL(/weeks=200/);
+    // The fitted response under these weeks ("What if na dopasowanym modelu odpowiedzi"), or why there is none.
+    await expect(page.getByRole('table', { name: 'Fitted response under the scenario' }).or(page.getByText(/^No fitted response yet/))).toBeVisible();
     // No Pin: a scenario lives in the link.
     await expect(page.locator('.perf-widget .pin-btn, .perf-widget [aria-label^="Pin"]')).toHaveCount(0);
+  });
+  test('D′ balance of a run', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openWithFolder(page, await fitFiles(30, '2026-08-20'));
+    await importAll(page);
+    await showList(page);
+    await page.locator('tr.row').first().click();
+    await page.getByRole('img', { name: /^Run metrics · / }).waitFor();
+    // In a dialog from the run's head, so the screen keeps its layout: the reserve above the critical speed
+    // of the 90 days up to the run, through it, and its lowest point; Esc closes it.
+    await page.getByRole('button', { name: 'D′ balance' }).click();
+    const dialog = page.getByRole('dialog', { name: 'D′ balance' });
+    const balance = dialog.getByRole('img', { name: /^Reserve above the critical speed through the run: D′ \(pace\): lowest -?\d+ % at \d+:\d\d/ });
+    await expect(balance).toBeVisible({ timeout: 30_000 });
+    await expect(balance.locator('[data-balance="speed"] path')).toHaveCount(1);
+    await expect(dialog.getByLabel('Lowest reserve')).toContainText(/D′ \(pace\), lowest-?\d+ %/);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
   });
   test('Curve model chosen in Settings', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });

@@ -77,12 +77,22 @@ describe('Model assumptions', () => {
     expect(bestEfforts(ALL_OUT.rows, ALL_OUT.summaries, 'power', 185, TODAY)).toEqual([null, null, null, null, null, null]);
   });
 
+  it('Critical speed settled by its bests', () => {
+    // Bests on the critical speed model itself: none moves the fit when left out, the critical speed is settled.
+    const exact = { ...ALL_OUT, summaries: Object.fromEntries(Object.entries(ALL_OUT.summaries).map(([id, s]) => [id, { ...s, bests: s.bests.map((b) => ({ ...b, speed: 4.1 + 150 / b.duration })) }])) };
+    const by = report(exact, SET).by;
+    expect(status(by.cs, 'precise')).toBe('met');
+    expect(by.cs.trust).toBe('ok');
+  });
+
   it('Assumptions checked against the data', () => {
     // All-out, separate efforts and a known maximum heart rate: the bests and what rests on them are reliable.
     const good = report(ALL_OUT, SET);
     for (const k of ['allout', 'separate', 'shape', 'recent', 'maxhr']) expect(status(good.by.efforts, k), k).toBe('met');
     expect(good.by.efforts.trust).toBe('ok');
-    expect(good.by.cs).toMatchObject({ trust: 'ok', parents: ['efforts'], cappedBy: null });
+    // Six hand-made bests: left out in turn, one moves the fitted critical speed by over 5 %, so it is in doubt.
+    expect(status(good.by.cs, 'precise')).toBe('doubt');
+    expect(good.by.cs).toMatchObject({ own: 'rough', trust: 'rough', parents: ['efforts'], cappedBy: null });
     expect(good.by.vdot.trust).toBe('ok');
     // The half and the marathon lie far beyond the efforts: the predictions are rough at best.
     expect(status(good.by.predictions, 'endurance')).toBe('doubt');
@@ -115,7 +125,7 @@ describe('Model assumptions', () => {
     expect(auto.now.maxHr).toBe(178);
     expect(status(auto.by.efforts, 'maxhr')).toBe('doubt');
     expect(auto.by.efforts.trust).toBe('rough');
-    expect(auto.by.cs).toMatchObject({ own: 'ok', trust: 'rough', cappedBy: 'efforts' });
+    expect(auto.by.cs).toMatchObject({ own: 'rough', trust: 'rough' });
 
     // The load model's own assumptions: a resting heart rate never saved; zones that are the defaults.
     expect(status(report(ALL_OUT, { ...SET, confirmed: false }).by.load, 'resthr')).toBe('doubt');

@@ -97,7 +97,7 @@ export function Body({ tab, view, embedded = false }: { tab: Tab; view: string; 
       case 'aerobic/decoupling': return <EfficiencyTab part="decoupling" runs={runs} summaries={summaries} hrZones={hrZones} />;
       case 'aerobic/vo2': return <Vo2Tab runs={runs} summaries={summaries} performance={settings.performance} />;
       case 'whatif/curve': return <CurveWhatIfView now={report.now} runs={runs} summaries={summaries} model={settings.performance.curve} />;
-      case 'whatif/load': return <LoadWhatIfView runs={runs} performance={settings.performance} unit={unit} today={today} />;
+      case 'whatif/load': return <LoadWhatIfView runs={runs} summaries={summaries} performance={settings.performance} unit={unit} today={today} />;
       case 'response/hr': return <FittedTab criterion="hr" runs={runs} summaries={summaries} performance={settings.performance} days={days} today={today} />;
       default: return <FittedTab criterion="vdot" runs={runs} summaries={summaries} performance={settings.performance} days={days} today={today} />;
     }

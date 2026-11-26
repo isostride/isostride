@@ -8,3 +8,5 @@ export * from './vo2';
 export * from './assumptions';
 export * from './efforts';
 export * from './whatif';
+export * from './uncertainty';
+export * from './balance';

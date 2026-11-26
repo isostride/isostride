@@ -82,6 +82,8 @@ export const MIN_RESERVE_SECONDS = 12;
 /** The threshold of a run: its value, and where it comes from. */
 export interface CriticalAt {
   rate: number;
+  /** D′ (m) or W′ (J) of the same fit */
+  reserve: number;
   /** own: the bests of the 90 days up to the run; held: the last own one before; first: the first own one after (runs before any) */
   from: 'own' | 'held' | 'first';
 }
@@ -96,7 +98,7 @@ export interface CriticalAt {
 export function criticalSeries(rows: LoadRow[], summaries: Record<string, LoadSummary>, metric: CurveMetric): Record<string, CriticalAt | null> {
   const sorted = [...rows].filter((r) => summaries[r.id]).sort((a, b) => a.startTime.localeCompare(b.startTime));
   const at = sorted.map((r) => Date.parse(r.startTime));
-  const own: (number | null)[] = [];
+  const own: ({ rate: number; reserve: number } | null)[] = [];
   let from = 0;
   for (let i = 0; i < sorted.length; i++) {
     while (at[i] - at[from] > THRESHOLD_DAYS * DAY) from++;
@@ -110,15 +112,15 @@ export function criticalSeries(rows: LoadRow[], summaries: Record<string, LoadSu
     }
     const points = [...best].map(([duration, v]) => ({ duration, value: metric === 'power' ? v : 1000 / v }));
     const c = estimateCurve(points, metric)?.critical ?? null;
-    own.push(c && c.rate > 0 && c.reserve >= MIN_RESERVE_SECONDS * c.rate ? c.rate : null);
+    own.push(c && c.rate > 0 && c.reserve >= MIN_RESERVE_SECONDS * c.rate ? { rate: c.rate, reserve: c.reserve } : null);
   }
   const first = own.find((v) => v !== null) ?? null;
   const out: Record<string, CriticalAt | null> = {};
-  let held: number | null = null;
+  let held: { rate: number; reserve: number } | null = null;
   sorted.forEach((r, i) => {
     const v = own[i];
     if (v !== null) held = v;
-    out[r.id] = v !== null ? { rate: v, from: 'own' } : held !== null ? { rate: held, from: 'held' } : first !== null ? { rate: first, from: 'first' } : null;
+    out[r.id] = v !== null ? { ...v, from: 'own' } : held !== null ? { ...held, from: 'held' } : first !== null ? { ...first, from: 'first' } : null;
   });
   return out;
 }

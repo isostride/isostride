@@ -1797,6 +1797,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "2fe5845d-a8de-4ba6-8ac6-c8e8c1448ce9",
+    "relationType": "verifies",
+    "sourceId": "0191b531-d40b-4a1b-b4b1-3cc8ad9da2ff",
+    "targetId": "d7c2bc29-2103-4d8e-a9c2-cac458b36e4d"
+  },
+  {
     "id": "2ffca083-ddb5-49b7-901a-dd38e2e39bc6",
     "relationType": "illustrates",
     "sourceId": "45412314-e70a-445a-bb9e-27340722d02c",
@@ -2205,6 +2211,12 @@
     "relationType": "illustrates",
     "sourceId": "22c09ac4-050d-4fe3-b0e2-eedd9b8a51a3",
     "targetId": "b0289efc-ad5a-46b3-b57d-9abbb703ae9a"
+  },
+  {
+    "id": "3d9a2072-24dc-4f34-8540-9556840147ce",
+    "relationType": "verifies",
+    "sourceId": "715c8059-109f-4253-ab8a-d1aa01376d75",
+    "targetId": "d6e83e7b-9fee-4c63-9437-767f86bf5aed"
   },
   {
     "id": "3da07c05-e820-4b4c-a698-d535815c61d9",
@@ -3097,6 +3109,13 @@
     "targetId": "af580e00-9fde-4182-89d8-479d71707a14"
   },
   {
+    "id": "5c230553-9991-4daf-8605-277b1201c95d",
+    "quote": "znajdz luki i sugestie poprawy\na tez rzeczy poza pr?\nD′ balance w trakcie biegu",
+    "relationType": "derives",
+    "sourceId": "d7c2bc29-2103-4d8e-a9c2-cac458b36e4d",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "5c33f6f9-1fe5-4196-bbe2-fa2519310320",
     "relationType": "satisfies",
     "sourceId": "3614e7f4-9407-407b-a23b-56e0b424d992",
@@ -3494,6 +3513,13 @@
     "targetId": "cdc3cba3-c6e0-4935-ae73-d3ddd6fdd564"
   },
   {
+    "id": "68ec85dd-6ef7-4ad1-a339-e0168e41ed35",
+    "quote": "znajdz luki i sugestie poprawy\na tez rzeczy poza pr?\nPoza PR zostały trzy nowe funkcje: niepewność CS, D′ i prognoz",
+    "relationType": "derives",
+    "sourceId": "56d9fdc9-3727-448c-9c63-800cceadb062",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "68efe49a-856b-45c4-ad12-7114f9c54173",
     "relationType": "satisfies",
     "sourceId": "d0291cd1-bdf1-4c49-8333-4b658a02f95d",
@@ -3822,7 +3848,7 @@
   },
   {
     "id": "72c0f84b-77e6-4c6f-a04c-84486424ffe2",
-    "quote": "co gdybym mial takie a nie inne obciazenia; jak by kryzwa mocy wyhladala\nzrob je",
+    "quote": "co gdybym mial takie a nie inne obciazenia; jak by kryzwa mocy wyhladala\nzrob je\nWhat if na dopasowanym modelu odpowiedzi",
     "relationType": "derives",
     "sourceId": "d6e83e7b-9fee-4c63-9437-767f86bf5aed",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -5931,6 +5957,12 @@
     "relationType": "verifies",
     "sourceId": "800c5854-3b34-4e64-a064-39249d5a5b36",
     "targetId": "db69ac34-ea77-4637-a975-7b59ad32b41d"
+  },
+  {
+    "id": "b2ac684b-a49c-4ee1-b647-4dae7d10d5be",
+    "relationType": "verifies",
+    "sourceId": "669bfe77-d966-4805-aeb1-ab13a53e35a8",
+    "targetId": "56d9fdc9-3727-448c-9c63-800cceadb062"
   },
   {
     "id": "b2b57d1f-5acd-4588-91aa-8b9af28c29ee",

@@ -2,6 +2,7 @@ import { CS_RANGE, CURVE_DURATIONS, MIN_FIT_SECONDS, estimateCurve, fitWholeCurv
 import { dayOf } from '@/lib/gear';
 import { formSeed, formSeries, type FormDay } from './form';
 import { weeklyLoad } from './insights';
+import { fitBanister } from './banister';
 import { danielsVdot } from './vo2';
 
 /**
@@ -210,4 +211,44 @@ export function loadWhatIf(runs: { startTime: string; load: number }[], p: { fit
     };
   });
   return { days, planned, from, until, pattern, recentWeek, heaviest, today: todayDay, weeks: out };
+}
+
+/** The days after a scenario the fitted response is run on at rest, to show a peak that comes after it (model's choice: 3 weeks). */
+export const RESPONSE_AFTER = 21;
+
+export interface ResponseWhatIf {
+  /** the fitted response's value today, at the end of the scenario, and its highest from tomorrow on with the day */
+  today: number;
+  end: number;
+  peak: { date: string; value: number };
+  /** resting from today instead: its highest with the day */
+  rest: { date: string; value: number };
+  /** the projection under the scenario and then at rest, and resting from today, day by day */
+  plan: { date: string; value: number }[];
+  resting: { date: string; value: number }[];
+  r2cv: number;
+  n: number;
+}
+
+/**
+ * The fitted response under a load scenario (requirement "What if on Performance": "What if na
+ * dopasowanym modelu odpowiedzi"): Banister's model fitted to the runs alone, as on the Response tab, run
+ * forward over the scenario's daily loads and RESPONSE_AFTER days of rest after them, against resting
+ * from today. Null without a fit.
+ */
+export function responseWhatIf(scenario: LoadWhatIf, performances: { date: string; value: number }[]): ResponseWhatIf | null {
+  const past = scenario.days.filter((d) => d.date < scenario.from).map((d) => ({ date: d.date, load: d.load }));
+  const future = scenario.days.filter((d) => d.date >= scenario.from).map((d) => d.load);
+  if (!past.length) return null;
+  const resting = fitBanister(past, performances, future.length + RESPONSE_AFTER);
+  const plan = fitBanister(past, performances, future.length + RESPONSE_AFTER, future);
+  if (!resting || !plan) return null;
+  const top = (list: { date: string; value: number }[]) => list.reduce((m, p) => (p.value > m.value ? p : m), list[0]);
+  return {
+    today: plan.fitted[plan.fitted.length - 1].value,
+    end: future.length ? plan.projection[future.length - 1].value : plan.fitted[plan.fitted.length - 1].value,
+    peak: top(plan.projection), rest: top(resting.projection),
+    plan: plan.projection, resting: resting.projection,
+    r2cv: plan.r2cv, n: plan.n,
+  };
 }
