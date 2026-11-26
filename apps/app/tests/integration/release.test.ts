@@ -49,7 +49,7 @@ describe('Version raised by hand', () => {
     // The deploy job, on master only, may tag (contents: write) and reads the version, its notes and the script.
     const yml = fs.readFileSync(path.join(REPO, '.github/workflows/deploy.yml'), 'utf8');
     const deploy = yml.slice(yml.indexOf('\n  deploy:'));
-    expect(deploy).toMatch(/if: github\.event_name != 'pull_request' && github\.ref == 'refs\/heads\/master'/);
+    expect(deploy).toMatch(/if: \$\{\{ !cancelled\(\) && github\.event_name != 'pull_request' && github\.ref == 'refs\/heads\/master' && /);
     expect(deploy).toMatch(/permissions:\n\s+contents: write\n\s+id-token: write/);
     for (const f of ['package.json', 'CHANGELOG.md', 'apps/app/scripts/release.mjs']) expect(deploy).toContain(`            ${f}\n`);
     // Its step, run as the workflow runs it: the tag of 0.2.0 is v0.2, of 0.2.1 v0.2.1; a release made once.

@@ -995,6 +995,9 @@
     ] },
     { "element": "99fbdfd5-e849-4481-8302-ba63a16ff368", "name": "VDOT of all-out efforts", "tests": [
       "tests/integration/model-round-3.test.ts › Performance models reviewed again › VDOT of the all-out efforts of a day"
+    ] },
+    { "element": "ca0e2c80-7413-474f-ba55-6b57bcd216d8", "name": "Tree checked once", "tests": [
+      "tests/integration/pipeline.test.ts › CI/CD pipeline › A tree checked once is not checked again"
     ] }
   ]
 }
