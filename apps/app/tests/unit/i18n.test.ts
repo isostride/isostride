@@ -2,7 +2,16 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { dateText, loadLocale, localeOf, msg, number, setLocale, t, tn } from '@/lib/i18n';
 import { km } from '@/lib/format';
 
-beforeAll(() => loadLocale('pl'));
+// The language loaded and the browser's own formats of it used once before any test: on a slow machine their
+// first use took longer than a unit test may (the pipeline's limit of 100 ms, scaled to the machine).
+beforeAll(async () => {
+  await loadLocale('pl');
+  setLocale('pl');
+  number(1234.5, 1);
+  dateText(new Date('2026-11-24T12:00:00'), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  tn(2, '{n} run', '{n} runs');
+  setLocale('en');
+});
 afterEach(() => setLocale('en'));
 
 describe('App in English and Polish', () => {

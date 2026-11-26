@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { runInWorker, useOpenFolder, watchJob } from '@/lib/client';
-import { filesToImport } from '@/lib/fs';
+import { PATHS, filesToImport, readJson } from '@/lib/fs';
 import { t, tn } from '@/lib/i18n';
+import { summariesCurrent } from '@/lib/load';
 import type { DataFolder } from '@/lib/fs';
 import { AddedRuns } from './AddedRuns';
 import { onNotice, type Notice } from './notify';
@@ -27,39 +28,62 @@ function useAutoImport(): { notice: Notice | null; folder: DataFolder; dismiss: 
   useEffect(() => {
     let alive = true;
     let busy = false;
-    // A job running now (an import the runner started, a recompute): the look waits for the next time.
+    // A job running now (an import the runner started, a recompute): the look waits until it ends.
     let running = false;
-    const unwatch = watchJob((j) => { running = j !== null; });
     const jobRunning = () => running;
     let last = 0;
-    /** the first look since the app opened on the folder: the files an import failed on are tried again */
+    /**
+     * Until the first look since the app opened on the folder has done its work: the data built by an older
+     * version rebuilt, the files an import failed on tried again, an import cut off finished, the load
+     * summaries of an older version made again. A look that could not (a job was running, the folder could
+     * not be read) leaves it standing, and the next one opens the folder again: before, it was given up for
+     * the whole session, and a screen that started a job as it opened kept the rebuild from ever running
+     * (the review of 26 Nov 2026).
+     */
     let first = true;
     const look = async () => {
       if (busy || document.visibilityState !== 'visible' || Date.now() - last < SETTLE || jobRunning()) return;
       busy = true;
       last = Date.now();
-      const retry = first;
-      first = false;
+      const opening = first;
       try {
         // Data built by an older algorithm, when the app opens: rebuilt at once, by itself (requirement
         // "Offer recompute on mismatch": "Czy przeliczanie po zmianie algorytmu ma być samoczynne ... tak").
         const files = await filesToImport(folder);
-        if (retry && files.outdated && !jobRunning()) {
+        let rebuilt = false;
+        if (opening && files.outdated) {
+          if (jobRunning()) return;
           const done = await runInWorker('recompute', handle);
+          rebuilt = true;
           if (alive) setNotice({ text: tn(done.imported, 'Rebuilt {n} run for this version of the app.', 'Rebuilt {n} runs for this version of the app.'), ids: [] });
         }
         // After a recompute the folder is looked at again: it read every file there was.
-        const now = retry && files.outdated ? await filesToImport(folder) : files;
-        if ((now.unseen.length || (retry && now.failed.length)) && !jobRunning()) {
+        const now = rebuilt ? await filesToImport(folder) : files;
+        if (now.unseen.length || now.pending || (opening && now.failed.length)) {
+          if (jobRunning()) return;
           const done = await runInWorker('import', handle);
           if (alive && done.imported) setNotice({ text: tn(done.imported, 'Imported {n} new run from the folder.', 'Imported {n} new runs from the folder.'), ids: done.runIds ?? [] });
+        } else if (opening && !rebuilt) {
+          // The load summaries of an older version (an import makes them again by itself): the Dashboard's
+          // model tiles and a run's D′ balance read them without going through Performance.
+          const [index, sums] = await Promise.all([readJson<{ runs: unknown[] }>(folder, PATHS.runsIndex), readJson<{ version?: number; algorithmVersion?: number }>(folder, PATHS.loadSummaries)]);
+          if (index?.runs.length && !summariesCurrent(sums)) {
+            if (jobRunning()) return;
+            await runInWorker('context', handle);
+          }
         }
+        first = false;
       } catch {
         // The folder could not be read now (permission, a file being written): the next look tries again.
       } finally {
         busy = false;
       }
     };
+    // When the job that kept the opening look from its work ends, the look is taken again at once.
+    const unwatch = watchJob((j) => {
+      running = j !== null;
+      if (!running && first && alive) { last = 0; void look(); }
+    });
     look();
     document.addEventListener('visibilitychange', look);
     window.addEventListener('focus', look);

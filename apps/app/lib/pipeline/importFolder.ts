@@ -1,7 +1,7 @@
 import { readDefinitions } from '@/lib/blocks';
 import { joinContext } from '@/lib/context';
 import { changedFields, needsDetection, rejoinInstances, runBlocks } from '@/lib/detection';
-import { PATHS, markRunsNew, readJson, type DataFolder } from '@/lib/fs';
+import { PATHS, markRunsNew, readJson, readManifest, writeManifest, type DataFolder } from '@/lib/fs';
 import type { IndexedRun, RunsIndex } from '@/lib/kernel';
 import { bumpStamp } from './cache';
 import { importRuns, type ImportOptions, type ImportReport } from '@/lib/ingest';
@@ -18,11 +18,15 @@ export async function importFolder(folder: DataFolder, opts: ImportOptions = {})
   if (before > 0) await markRunsNew(folder, addedRuns(report));
   // Nothing added to a folder imported before (duplicates, files that could not be read): what is
   // derived from its runs stands as it is, nothing to compute again.
-  if (report.imported === 0 && before > 0) return report;
+  // Unless an import before this one was cut off before it joined its runs: that is finished now.
+  const pending = (await readManifest(folder))?.joined === false;
+  if (report.imported === 0 && before > 0 && !pending) return report;
   await joinContext(folder);
   await runBlocks(folder);
   // New runs: what was computed from the runs before is out of date.
-  if (report.imported > 0) await bumpStamp(folder);
+  if (report.imported > 0 || pending) await bumpStamp(folder);
+  const manifest = await readManifest(folder);
+  if (manifest && manifest.joined === false) await writeManifest(folder, { ...manifest, joined: true });
   return report;
 }
 

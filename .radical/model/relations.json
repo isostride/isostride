@@ -168,6 +168,12 @@
     "targetId": "6571fdbf-e3a5-4871-8aec-2f04b8ff4a85"
   },
   {
+    "id": "06a47a65-865d-48ae-b7e5-672d91e536e8",
+    "relationType": "verifies",
+    "sourceId": "bee402da-679f-49a5-9d2a-c2387657f4f3",
+    "targetId": "0cc6539e-3293-4327-970f-e394a053c69a"
+  },
+  {
     "id": "06dbb0df-8dc8-4294-b2ac-cb049758c072",
     "relationType": "constrains",
     "sourceId": "226353bd-e1a4-4d07-b2db-bf1aecd05a15",
@@ -865,6 +871,12 @@
     "targetId": "2a71cd65-f7bf-43c0-ad49-7b8a514047f3"
   },
   {
+    "id": "171dd628-07a1-41cb-8edc-5c8d3832eb80",
+    "relationType": "verifies",
+    "sourceId": "cc69f5d6-c31f-47e1-af2e-4f458cfa4a75",
+    "targetId": "8e01d6f8-adf0-46be-8b36-9c17029cd39c"
+  },
+  {
     "id": "17504a37-ca84-4f15-85ec-803ac30302a3",
     "relationType": "satisfies",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
@@ -1124,6 +1136,12 @@
     "targetId": "4c3ad656-ed99-4be7-991c-f998441a50f0"
   },
   {
+    "id": "1dba07c2-ba16-4604-873d-ebba652aca31",
+    "relationType": "verifies",
+    "sourceId": "fe13f8a6-fa61-4433-8bc0-aecb959409a4",
+    "targetId": "b216608f-bffe-457b-9a77-8a87ae614c9d"
+  },
+  {
     "id": "1de2ace8-4324-4ea5-b177-856e4ee7dfc3",
     "relationType": "illustrates",
     "sourceId": "a58faa23-2592-4664-90ca-6b1c0143af21",
@@ -1376,7 +1394,7 @@
   },
   {
     "id": "23d3af5d-adb3-49da-828b-00028436d25e",
-    "quote": "F5. Run tags: workout type, technique cue, note.\ntag dictionary",
+    "quote": "F5. Run tags: workout type, technique cue, note.\ntag dictionary\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "24464add-dd72-490e-a272-9d7b5b2c72bc",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -1487,7 +1505,7 @@
   },
   {
     "id": "26f95148-e23e-486f-a17a-855ad887fda9",
-    "quote": "F4. Gear register with date ranges.\nname, type (shoes, heart rate sensor), date range of use\nAdd gear, change a date range",
+    "quote": "F4. Gear register with date ranges.\nname, type (shoes, heart rate sensor), date range of use\nAdd gear, change a date range\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "f69a0da2-2a43-471f-9863-97268ea75c06",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -1508,7 +1526,7 @@
   },
   {
     "id": "28297808-afb3-4ac6-84af-b9a5d1f6b013",
-    "quote": "aplikacja bedzie wystawiona jako app.strideprism.com a strona na strideprism.com\nchce aby ci/cd dzialal stabilnie ... jesli check przechodzi na branchu to pwinien przechodzic na merge do main",
+    "quote": "aplikacja bedzie wystawiona jako app.strideprism.com a strona na strideprism.com\nchce aby ci/cd dzialal stabilnie ... jesli check przechodzi na branchu to pwinien przechodzic na merge do main\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "4f0f6f76-68be-40ad-aa24-033e76d0db05",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -2133,7 +2151,7 @@
   },
   {
     "id": "3955dc85-6a08-4812-ad27-6feb3663f5e2",
-    "quote": "czy aplikacja zadziala z inymi zegarkami ? garmin itp ?\nW tym samym PR",
+    "quote": "czy aplikacja zadziala z inymi zegarkami ? garmin itp ?\nW tym samym PR\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "d61eb6c6-1894-4c74-a00d-1d90d91e302d",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -2561,10 +2579,16 @@
   },
   {
     "id": "46d0dbeb-ff62-4c1a-862f-0fd9cc695271",
-    "quote": "A/B verdict. “Change” when the uncertainty interval of the difference excludes zero and the difference exceeds the noise threshold. Otherwise “no detectable change”.",
+    "quote": "A/B verdict. “Change” when the uncertainty interval of the difference excludes zero and the difference exceeds the noise threshold. Otherwise “no detectable change”.\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "a07463a7-0792-4e04-89c9-288eaaa8cd70",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "470ec675-f8d9-442b-931a-bf3b3359a55c",
+    "relationType": "verifies",
+    "sourceId": "51211aa4-e661-4f5f-ad5b-b92e0aea064c",
+    "targetId": "d61eb6c6-1894-4c74-a00d-1d90d91e302d"
   },
   {
     "id": "472082f1-14ff-44e4-acb8-f1e607b7a46a",
@@ -2616,7 +2640,7 @@
   },
   {
     "id": "48c23ebe-0a36-4bee-bf05-16b29241d8e6",
-    "quote": "czy jak zaimportowalem folder i dodam nowy pojedynczy trening do niego to automatycznie bedzie zalazodwany",
+    "quote": "czy jak zaimportowalem folder i dodam nowy pojedynczy trening do niego to automatycznie bedzie zalazodwany\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "2fd4011c-79a7-45bb-9151-a3712fcd769d",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -2943,6 +2967,12 @@
     "targetId": "60e86846-3529-4650-bb51-62d720d3242f"
   },
   {
+    "id": "559a8b63-50a6-4418-982b-2caa38d1c437",
+    "relationType": "verifies",
+    "sourceId": "3f655a96-31b1-46cb-8499-1686e0170596",
+    "targetId": "4707069b-7d1d-4655-ab89-8a63e7841dc6"
+  },
+  {
     "id": "55d13801-4426-419b-bc5e-3efacd2d4594",
     "relationType": "illustrates",
     "sourceId": "8b8003c2-e262-4787-95d6-4576f080cdf3",
@@ -3153,7 +3183,7 @@
   },
   {
     "id": "5c419e8e-b20e-4f61-8915-a4436692f5c5",
-    "quote": "then a model correction only for the residual pace difference. The result is always shown in both versions: raw and corrected.",
+    "quote": "then a model correction only for the residual pace difference. The result is always shown in both versions: raw and corrected.\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "b0289efc-ad5a-46b3-b57d-9abbb703ae9a",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -3314,6 +3344,12 @@
     "targetId": "69d17b09-2da3-460a-a147-f4e4abf8ccc6"
   },
   {
+    "id": "61b0a6a0-7000-4e18-af22-cc79fb725aac",
+    "relationType": "verifies",
+    "sourceId": "38f917b6-3773-4a06-a276-da79f543943e",
+    "targetId": "b0289efc-ad5a-46b3-b57d-9abbb703ae9a"
+  },
+  {
     "id": "61b5fbc9-2ede-457b-a7d5-a20b9bd2408a",
     "quote": "Block from these laps - to daj pod chartem albo usun wogole",
     "relationType": "derives",
@@ -3468,6 +3504,12 @@
     "relationType": "derives",
     "sourceId": "22398764-dd5b-45b9-9d1e-db0474ec13dc",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
+    "id": "66298858-173a-469f-99d8-b944ca6751b7",
+    "relationType": "verifies",
+    "sourceId": "3a63bb78-1c25-4287-8a31-2192f137a801",
+    "targetId": "fd0a299b-2073-4758-a3c8-abd7a18087be"
   },
   {
     "id": "66ab619f-526b-4529-a666-731079c26510",
@@ -4437,14 +4479,14 @@
   },
   {
     "id": "83151dc3-e684-4279-986d-5dd05ca82165",
-    "quote": "When the algorithm version in manifest.json is older than the application's, the application offers to recompute.",
+    "quote": "When the algorithm version in manifest.json is older than the application's, the application offers to recompute.\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "8e01d6f8-adf0-46be-8b36-9c17029cd39c",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
     "id": "831966f6-26f9-4c32-9790-9d0040bc2165",
-    "quote": "chcialbym miec model ktory modeluje performance .... np. TRIMP, critical pawer based ... chce aby model byl ustawiany przez uzytkownika w ustawieniach\nTRIMP Edwardsa, TRIMP Banistera, rTSS (tempo), Power TSS (CP)\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei\nzrob je",
+    "quote": "chcialbym miec model ktory modeluje performance .... np. TRIMP, critical pawer based ... chce aby model byl ustawiany przez uzytkownika w ustawieniach\nTRIMP Edwardsa, TRIMP Banistera, rTSS (tempo), Power TSS (CP)\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei\nzrob je\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "fd0a299b-2073-4758-a3c8-abd7a18087be",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -4517,7 +4559,7 @@
   },
   {
     "id": "85d42451-2847-429b-8288-432928a75dda",
-    "quote": "np. coros testy sa dobrymi kandydatamia",
+    "quote": "np. coros testy sa dobrymi kandydatamia\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "4707069b-7d1d-4655-ab89-8a63e7841dc6",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -4690,6 +4732,12 @@
     "targetId": "45412314-e70a-445a-bb9e-27340722d02c"
   },
   {
+    "id": "8a0ced13-8c81-496f-ada9-3cc6ca47b5c1",
+    "relationType": "verifies",
+    "sourceId": "5a685c04-7952-4a63-b559-39d36109a02c",
+    "targetId": "2fd4011c-79a7-45bb-9151-a3712fcd769d"
+  },
+  {
     "id": "8a4999b6-f095-4ffa-bc99-1e530f04a15d",
     "relationType": "constrains",
     "sourceId": "9ab44fc6-cc41-4349-925f-e27ed3d61d4e",
@@ -4769,6 +4817,12 @@
     "relationType": "verifies",
     "sourceId": "c2209298-ad42-48e4-b873-6c72a8310840",
     "targetId": "9fa1f01b-3bbb-482f-82b5-b5262fff4029"
+  },
+  {
+    "id": "8c640bfd-f289-445f-b017-c2b8b81a8913",
+    "relationType": "verifies",
+    "sourceId": "0a38bf41-9461-4f2e-9033-fd22a784a8b9",
+    "targetId": "909a96f5-edf8-4706-9ed2-f2623dc00f62"
   },
   {
     "id": "8c773c4a-c2ea-4fc4-a9f8-1e29c67f924e",
@@ -4949,6 +5003,12 @@
     "targetId": "aec32856-5ea5-4f0e-8316-178aff6a9838"
   },
   {
+    "id": "926d4fcd-93a9-4708-a47f-645ff3573bdc",
+    "relationType": "verifies",
+    "sourceId": "c0ac795c-8012-4f9c-9d0c-a253af4b1d54",
+    "targetId": "e99d27f4-aa92-4a29-b259-8c7709b007d1"
+  },
+  {
     "id": "927e2296-32d9-4546-a154-1054e8a6e0ab",
     "quote": "ma byc tylko nadole w widget selection",
     "relationType": "derives",
@@ -4982,7 +5042,7 @@
   },
   {
     "id": "932467cc-f70a-4a9c-a494-f5e8ff5b5953",
-    "quote": "Które pola z pliku FIT mają się stać metrykami?\nWszystkie liczbowe",
+    "quote": "Które pola z pliku FIT mają się stać metrykami?\nWszystkie liczbowe\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "7379e576-1802-487b-bc76-a9d745b2e2bd",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -5143,7 +5203,7 @@
   },
   {
     "id": "988dc125-5812-48c8-a5cc-9ec03821307e",
-    "quote": "F15. Export of instances and results to CSV.",
+    "quote": "F15. Export of instances and results to CSV.\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "0cc6539e-3293-4327-970f-e394a053c69a",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -5238,6 +5298,12 @@
     "relationType": "satisfies",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
     "targetId": "097750f8-c550-4b2c-afa6-84234eb13724"
+  },
+  {
+    "id": "9accf3d1-f2dc-4bed-a224-321c5b51f0f0",
+    "relationType": "verifies",
+    "sourceId": "0d840438-e0be-42d5-ae0b-a97ea6ac43de",
+    "targetId": "4f0f6f76-68be-40ad-aa24-033e76d0db05"
   },
   {
     "id": "9afa830e-8852-4e8a-8555-df0dc7695ce9",
@@ -5518,7 +5584,7 @@
   },
   {
     "id": "a4fef370-9804-449e-a43f-a707d5eec71b",
-    "quote": "chce miec persysnencej ustawein na poziomie runa ... w tym momencie resetuje sie wszystko, chce aby wszystko bylo endkodowane w url",
+    "quote": "chce miec persysnencej ustawein na poziomie runa ... w tym momencie resetuje sie wszystko, chce aby wszystko bylo endkodowane w url\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "b216608f-bffe-457b-9a77-8a87ae614c9d",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -6363,6 +6429,12 @@
     "relationType": "verifies",
     "sourceId": "929d3f69-cf3e-4522-95d1-a5424b36e37f",
     "targetId": "1230372e-f376-4ce4-93b5-2dc594e9a7b2"
+  },
+  {
+    "id": "bb1d8c33-bc76-4dbc-a708-b86a04094588",
+    "relationType": "verifies",
+    "sourceId": "f3f8f1c1-e2bc-4f53-a190-1fe58369cd46",
+    "targetId": "09bf8331-d3de-41d6-bf2f-709f1b770e1f"
   },
   {
     "id": "bb23273a-b6d6-4e0e-9fdf-ce9ac5ed85f6",
@@ -7252,6 +7324,12 @@
     "targetId": "9e7af7b2-85a4-43a5-9638-893bdaaa7b65"
   },
   {
+    "id": "d81014fc-2030-4b46-bd2d-e0924f5ddc98",
+    "relationType": "verifies",
+    "sourceId": "ac4e19ef-393e-42f4-99a7-9cc6e15c0b0f",
+    "targetId": "7379e576-1802-487b-bc76-a9d745b2e2bd"
+  },
+  {
     "id": "d81d1d5f-5152-4a36-85d9-ade04aaa7c6c",
     "relationType": "illustrates",
     "sourceId": "29452319-21e3-42fa-a4e2-87267d468dc4",
@@ -7367,6 +7445,12 @@
     "relationType": "implements",
     "sourceId": "81327506-c58c-4955-be4b-844f7499091b",
     "targetId": "67c05609-df7a-4838-bc6b-0180d42142d6"
+  },
+  {
+    "id": "dc32dffe-93b8-4c6f-bcec-066c411f7610",
+    "relationType": "verifies",
+    "sourceId": "c0ac795c-8012-4f9c-9d0c-a253af4b1d54",
+    "targetId": "a07463a7-0792-4e04-89c9-288eaaa8cd70"
   },
   {
     "id": "dc3bdea5-f89f-49d9-8f15-166d39e6d6ad",
@@ -7762,7 +7846,7 @@
   },
   {
     "id": "e7bbd74e-3cad-4912-974c-f3a0a5144739",
-    "quote": "Read all fields\nstart time (key), source file, device, distance, duration\nrun, timestamp (1 s), speed, heart rate, cadence, ground contact time, vertical oscillation, step length, power, altitude, GPS position, temperature, effort pace, leg spring stiffness\nrun, start, end, duration, distance",
+    "quote": "Read all fields\nstart time (key), source file, device, distance, duration\nrun, timestamp (1 s), speed, heart rate, cadence, ground contact time, vertical oscillation, step length, power, altitude, GPS position, temperature, effort pace, leg spring stiffness\nrun, start, end, duration, distance\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "7379e576-1802-487b-bc76-a9d745b2e2bd",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -7965,7 +8049,7 @@
   },
   {
     "id": "edad2bf4-5953-4c0a-9bf2-cf5f0c7a38d4",
-    "quote": "Minimum number of instances. Trend: at least 5. A/B comparison: at least 4 on each side. Below these numbers the system shows the points without a verdict.",
+    "quote": "Minimum number of instances. Trend: at least 5. A/B comparison: at least 4 on each side. Below these numbers the system shows the points without a verdict.\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "e99d27f4-aa92-4a29-b259-8c7709b007d1",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -8054,7 +8138,7 @@
   },
   {
     "id": "ef7f60ef-2b2b-4869-a3b0-2751e011c942",
-    "quote": "najszybsze 5 min przy tetnie powyzej 160\npokaz mi najszybszy bieg 10 min od marca itp\nNajszybszy fragment 10 min: W każdym biegu od marca szukany jest najszybszy ciągły odcinek 10 minut; odpowiedź to najlepszy z nich (bieg, minuta startu, tempo), plus ranking kolejnych.",
+    "quote": "najszybsze 5 min przy tetnie powyzej 160\npokaz mi najszybszy bieg 10 min od marca itp\nNajszybszy fragment 10 min: W każdym biegu od marca szukany jest najszybszy ciągły odcinek 10 minut; odpowiedź to najlepszy z nich (bieg, minuta startu, tempo), plus ranking kolejnych.\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "909a96f5-edf8-4706-9ed2-f2623dc00f62",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -8616,7 +8700,7 @@
   },
   {
     "id": "ff980325-0ba3-4c50-bad5-bfc4c77646b3",
-    "quote": "Noise threshold. Computed for each metric and definition as the standard deviation between instances in the same context.",
+    "quote": "Noise threshold. Computed for each metric and definition as the standard deviation between instances in the same context.\nprzegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\ntak zacznij od poczzatku ... i przejdz przez wszystkie",
     "relationType": "derives",
     "sourceId": "44d77356-e7fd-4ab0-82f4-8e0e015d2cc0",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"

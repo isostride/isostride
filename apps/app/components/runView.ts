@@ -25,6 +25,10 @@ export interface RunView {
   map: MapCamera | null;
 }
 
+/** The longest range of a run a link may ask for, s (a week), and the zoom levels a map has. */
+const MAX_RANGE = 7 * 86_400;
+const MAP_ZOOM: [number, number] = [0, 22];
+
 const num = (s: string | null) => (s === null || s.trim() === '' ? NaN : Number(s));
 
 /**
@@ -35,7 +39,8 @@ export function viewFromParams(p: URLSearchParams, base: RunView, keys: { has: (
   const v: RunView = { ...base, slots: [...base.slots] };
   const from = num(p.get('from'));
   const to = num(p.get('to'));
-  if (from >= 0 && to > from) v.range = [from, to];
+  // Within a week of running: a range of 1e15 s drew ticks until the tab hung.
+  if (from >= 0 && to > from && to <= MAX_RANGE) v.range = [from, to];
   const m = p.get('m');
   if (m !== null) {
     const slots = m.split(',').map((k) => (keys.has(k) ? k : null));
@@ -52,7 +57,7 @@ export function viewFromParams(p: URLSearchParams, base: RunView, keys: { has: (
   const b = p.get('b');
   if (b === '1' || b === '0') v.blocks = b === '1';
   const map = p.get('map')?.split(',').map(Number);
-  if (map && map.length === 3 && map.every(Number.isFinite)) v.map = { z: map[0], cx: map[1], cy: map[2] };
+  if (map && map.length === 3 && map.every(Number.isFinite) && map[0] >= MAP_ZOOM[0] && map[0] <= MAP_ZOOM[1]) v.map = { z: map[0], cx: map[1], cy: map[2] };
   return v;
 }
 

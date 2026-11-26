@@ -25,7 +25,13 @@ export function instancesCsv(instances: BlockInstance[], names: Map<string, stri
   return [head, ...rows].map((r) => r.map(cell).join(',')).join('\n') + '\n';
 }
 
-function cell(v: unknown): string {
-  const s = String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+/**
+ * A cell of the file. A text that a spreadsheet would run as a formula (it starts with =, +, -, @, a tab
+ * or a return, and is no number) gets an apostrophe before it: the names come from files that may be
+ * someone else's (a device, a segment, a tag, gear). Quoted when it holds a quote, a comma or a line end.
+ */
+export function cell(v: unknown): string {
+  const text = String(v);
+  const s = typeof v !== 'number' && /^[=+\-@\t\r]/.test(text) && !Number.isFinite(Number(text)) ? `'${text}` : text;
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }

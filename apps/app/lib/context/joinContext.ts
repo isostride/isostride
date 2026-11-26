@@ -1,6 +1,6 @@
 import { PATHS, readJson, writeJson, type DataFolder, readRunFile } from '@/lib/fs';
 import { type RunFile, type RunIndexRow, type RunsIndex, ALGORITHM_VERSION, type RunContext } from '@/lib/kernel';
-import { LOAD_SUMMARY_VERSION, formSeries, runLoads, summarizeLoad, type LoadSummary, type RunLoad } from '@/lib/load';
+import { LOAD_SUMMARY_VERSION, formSeries, runLoads, summariesCurrent, summarizeLoad, type LoadSummary, type RunLoad } from '@/lib/load';
 import { readSettings } from '@/lib/settings';
 import { computeDayStates, type DayState } from './dayState';
 import { dayOf, gearOn, readGear, type Gear, readRunTags, type RunTagsFile } from '@/lib/gear';
@@ -44,8 +44,8 @@ export interface LoadSummariesFile {
  */
 export async function loadSummaries(folder: DataFolder, rows: RunIndexRow[]): Promise<Record<string, LoadSummary>> {
   const file = await readJson<LoadSummariesFile>(folder, PATHS.loadSummaries);
-  const current = file?.version === LOAD_SUMMARY_VERSION && file.algorithmVersion === ALGORITHM_VERSION;
-  const kept = current ? file.runs : {};
+  const current = summariesCurrent(file);
+  const kept = current && file ? file.runs : {};
   const runs: Record<string, LoadSummary> = {};
   let changed = !current;
   for (const r of rows) {

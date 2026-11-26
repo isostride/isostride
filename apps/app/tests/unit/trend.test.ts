@@ -66,8 +66,14 @@ describe('Noise threshold', () => {
     const gct = [248, 251, 246, 250, 249];
     const all = gct.map((v, k) => inst(days('2026-08-01', 5)[k], { metrics: { groundContactTime: v } }));
     const s = computeTrend(all, 'def', 'groundContactTime', {}, false).series[0];
-    // Hand-computed sample standard deviation: sqrt(14.8 / 4) = 1.92 ms.
-    expect(s.noise).toBeCloseTo(1.924, 3);
+    // Five runs: the noise is their spread about the fitted line (slope 0.1 ms a day), not about their mean:
+    // residuals −0.6, 2.3, −2.8, 1.1 and 0, so sqrt(14.7 / 3) = 2.21 ms. A trend is no noise: values on a
+    // line have none.
+    expect(s.noise).toBeCloseTo(2.214, 3);
+    const line = [160, 158, 156, 154, 152].map((v, k) => inst(days('2026-08-01', 5)[k], { metrics: { heartRate: v } }));
+    expect(computeTrend(line, 'def', 'heartRate', {}, false).series[0].noise).toBeCloseTo(0, 9);
+    // Four runs, no line yet: the sample standard deviation of the values, sqrt(14.75 / 3) = 2.22 ms.
+    expect(computeTrend(all.slice(0, 4), 'def', 'groundContactTime', {}, false).series[0].noise).toBeCloseTo(Math.sqrt(14.75 / 3), 6);
   });
 });
 

@@ -67,8 +67,6 @@ export interface BestOfLength {
 /** The heart rate takes about this long to follow an effort, s: left out of a stretch's mean heart rate. */
 export const HR_LAG = 90;
 
-/** Raised when the summary changes, so every run is summarised again (3: where each best lies and the heart rate in it; 4: the bests of every length of the curve, 30 s to 2 h; 5: the curve fitted as an envelope moves the critical speed and power, so the loads of rTSS and Power TSS are counted again; 6: the bests taken whole and from the effort pace or without downhills, the heart rate's peak from a 10 s window, the efficiency from the effort pace, the steady part past the warm-up; 7: the decoupling past the warm-up). */
-export const LOAD_SUMMARY_VERSION = 7;
 
 /** A sample counts until the next one, but no longer than this, s: a pause counts as nothing. */
 const HOLD = 5;

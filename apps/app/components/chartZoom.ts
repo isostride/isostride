@@ -28,9 +28,13 @@ export function zoomDomain(d: Domain, factor: number, around: number, total: num
 /** The range moved by `by` s. */
 export const panDomain = (d: Domain, by: number, total: number): Domain => clampDomain([d[0] + by, d[1] + by], total);
 
+/** The most ticks a span is given, however long (model's choice). */
+const MAX_TICKS = 48;
+
 /** Round time ticks inside [a, b]: every 10 s up to every hour, about `count`. */
 export function spanTicks(a: number, b: number, count = 6): number[] {
-  const step = [10, 15, 30, 60, 120, 300, 600, 900, 1200, 1800, 3600].find((s) => (b - a) / s <= count) ?? 3600;
+  // Past six hours shown, every hour; past two days, whole hours further apart: never more than MAX_TICKS of them.
+  const step = [10, 15, 30, 60, 120, 300, 600, 900, 1200, 1800, 3600].find((s) => (b - a) / s <= count) ?? 3600 * Math.max(1, Math.ceil((b - a) / 3600 / MAX_TICKS));
   const out: number[] = [];
   for (let v = Math.ceil(a / step) * step; v <= b + 1e-9; v += step) out.push(v);
   return out;

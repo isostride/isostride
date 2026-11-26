@@ -46,3 +46,10 @@ export function routeName(length: number, heading: number, w: Words = SAVED_WORD
 export function lengthName(kind: 'time' | 'distance', target: number, w: Words = SAVED_WORDS): string {
   return kind === 'time' ? `${w.num(+(target / 60).toFixed(1))} min` : `${w.num(+(target / 1000).toFixed(2))} km`;
 }
+
+/** A context value as shown: the watch's own heart rate sensor, "wrist (COROS PACE 4)", in the language in use; any other (a name) as it is. */
+// Here, not with the comparisons: the charts every screen's script holds name a source, and with it came the whole of lib/compare.
+export function contextValue(v: string): string {
+  const wrist = /^wrist \((.*)\)$/.exec(v);
+  return wrist ? t('wrist ({device})', { device: wrist[1] }) : v;
+}

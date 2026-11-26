@@ -75,7 +75,7 @@ export interface Description {
 export function describeTrend(s: TrendSeries, metric: BlockMetric, fmt: (v: number) => string, w: MetricWords = wordsOf(metric)): Description {
   const label = t(w.name);
   const n = s.points.length;
-  if (!s.fit) return { headline: t('Not enough efforts yet'), sentence: tn(n, '{n} effort of {metric} here; a verdict needs at least {min}.', '{n} efforts of {metric} here; a verdict needs at least {min}.', { metric: label.toLowerCase(), min: MIN_TREND_INSTANCES }), change: false };
+  if (!s.fit) return { headline: t('Not enough efforts yet'), sentence: tn(n, '{n} effort of {metric} here, from {runs}; a verdict needs at least {min} runs.', '{n} efforts of {metric} here, from {runs}; a verdict needs at least {min} runs.', { metric: label.toLowerCase(), runs: tn(s.runs, '{n} run', '{n} runs'), min: MIN_TREND_INSTANCES }), change: false };
   const day = (iso: string) => dateText(iso, { day: 'numeric', month: 'short' });
   const first = s.points[0].date;
   const last = s.points[n - 1].date;
@@ -86,30 +86,30 @@ export function describeTrend(s: TrendSeries, metric: BlockMetric, fmt: (v: numb
   const noise = `±${amount(w, s.noise)}`;
   const interval = between(w, a, b);
   if (s.fit.verdict === 'change')
-    return { headline: t('Changed: {change}', { change: describeDelta(metric, s.fit.change, w) }), sentence: t('{what} That is more than the noise between efforts ({noise}), and the 95% interval of the change ({interval}) stays on one side of zero.', { what, noise, interval }), change: true };
+    return { headline: t('Changed: {change}', { change: describeDelta(metric, s.fit.change, w) }), sentence: t('{what} That is more than the noise between runs ({noise}), and the 95% interval of the change ({interval}) stays on one side of zero.', { what, noise, interval }), change: true };
   const sentence = Math.abs(s.fit.change) <= s.noise
-    ? t('{what} That is within the noise between efforts ({noise}).', { what, noise })
+    ? t('{what} That is within the noise between runs ({noise}).', { what, noise })
     : t('{what} That is not certain: the 95% interval of the change ({interval}) includes zero.', { what, interval });
   return { headline: t('No detectable change'), sentence, change: false };
 }
 
 /** An A/B comparison in plain words: B against A, by how much, and whether it is beyond the noise. */
-export function describeAb(r: { a: { label: string; points: unknown[] }; b: { label: string; points: unknown[] }; difference: number | null; ci: [number, number] | null; noise: number | null; verdict: 'change' | 'no detectable change' | null }, metric: BlockMetric, minEach: number, w: MetricWords = wordsOf(metric)): Description {
+export function describeAb(r: { a: { label: string; points: unknown[]; runs: number }; b: { label: string; points: unknown[]; runs: number }; difference: number | null; ci: [number, number] | null; noise: number | null; verdict: 'change' | 'no detectable change' | null }, metric: BlockMetric, minEach: number, w: MetricWords = wordsOf(metric)): Description {
   const label = t(w.name).toLowerCase();
   const counts = tn(r.a.points.length, '{n} effort with {a}, {m} with {b}', '{n} efforts with {a}, {m} with {b}', { a: r.a.label, b: r.b.label, m: number(r.b.points.length) });
   if (r.difference === null) return { headline: t('Nothing to compare yet'), sentence: `${counts}.`, change: false };
   const delta = describeDelta(metric, r.difference, { ...w, direction: 'neutral' });
   const what = t('With {b}, {metric} is {delta} than with {a} ({counts}).', { a: r.a.label, b: r.b.label, metric: label, delta, counts });
   if (!r.verdict || !r.ci || r.noise === null)
-    return { headline: t('No verdict yet'), sentence: t('{what} A verdict needs at least {min} efforts on each side.', { what, min: minEach }), change: false };
+    return { headline: t('No verdict yet'), sentence: t('{what} A verdict needs at least {min} runs on each side ({a} and {b} now): the efforts of one run are not separate measurements.', { what, min: minEach, a: number(r.a.runs), b: number(r.b.runs) }), change: false };
   const noise = `±${amount(w, r.noise)}`;
   const interval = between(w, r.ci[0], r.ci[1]);
   if (r.verdict === 'change') {
     const headline = [msg('Difference: {delta} with {b}'), msg('Difference: {delta} with {b}, better'), msg('Difference: {delta} with {b}, worse')][betterOrWorse(r.difference, w)];
-    return { headline: t(headline, { delta, b: r.b.label }), sentence: t('{what} That is more than the noise between efforts ({noise}), and the 95% interval of the difference ({interval}) stays on one side of zero.', { what, noise, interval }), change: true };
+    return { headline: t(headline, { delta, b: r.b.label }), sentence: t('{what} That is more than the noise between runs ({noise}), and the 95% interval of the difference ({interval}) stays on one side of zero.', { what, noise, interval }), change: true };
   }
   const sentence = Math.abs(r.difference) <= r.noise
-    ? t('{what} That is within the noise between efforts ({noise}).', { what, noise })
+    ? t('{what} That is within the noise between runs ({noise}).', { what, noise })
     : t('{what} That is not certain: the 95% interval of the difference ({interval}) includes zero.', { what, interval });
   return { headline: t('No detectable difference'), sentence, change: false };
 }

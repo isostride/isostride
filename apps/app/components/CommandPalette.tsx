@@ -172,6 +172,8 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
               if (e.key === 'ArrowDown') { e.preventDefault(); setActive((a) => Math.min(shown.length - 1, a + 1)); }
               if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => Math.max(0, a - 1)); }
               if (e.key === 'Enter' && shown[active]) shown[active].run();
+              // The search holds the focus while it is open: Tab does not leave it for the screen behind.
+              if (e.key === 'Tab') e.preventDefault();
             }}
           />
           {/* i18n-ignore: the name of the key, the same in every language */}

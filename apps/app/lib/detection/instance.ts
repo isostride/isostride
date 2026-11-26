@@ -1,10 +1,8 @@
-import { metricSeries, type IndexedRun, type RunFile, type Series } from '@/lib/kernel';
+import { MAX_SAMPLE_COVER, metricSeries, pauseGap, recordedSmart, sampleHold, type IndexedRun, type RunFile, type Series } from '@/lib/kernel';
 
 import { MIN_SECONDS, REASONS, SAVED_WORDS, blockMetricsOf, efficiencyOf, STANDING_WINDOW, type BlockDefinition, type BlockInstance, type BlockMetric, type Tolerances } from '@/lib/blocks';
 
 const STOPPED_SPEED = 0.5;
-/** seconds between two samples above which the watch was paused */
-const MAX_SAMPLE_GAP = 2;
 /** seconds around a stop left out of the metrics: slowing down and speeding up again */
 const STOP_MARGIN = 10;
 
@@ -17,9 +15,10 @@ const STOP_MARGIN = 10;
 /** The times a run is stopped: samples below walking speed, and the first sample after an auto-pause gap. */
 export function stopTimes(t: number[], speed: Series): number[] {
   const out: number[] = [];
+  const pause = pauseGap(t);
   for (let i = 0; i < t.length; i++) {
     const v = speed[i];
-    if ((v !== null && v < STOPPED_SPEED) || (i > 0 && t[i] - t[i - 1] > MAX_SAMPLE_GAP)) out.push(t[i]);
+    if ((v !== null && v < STOPPED_SPEED) || (i > 0 && t[i] - t[i - 1] > pause)) out.push(t[i]);
   }
   return out;
 }
@@ -41,13 +40,15 @@ export function startKind(t: number[], speed: Series, start: number, stops = sto
 export function movingPart(t: number[], speed: Series, idx: number[]): { moving: number[]; stopped: number; lastStop: number | null } {
   const stops: [number, number][] = [];
   let stopped = 0;
+  const pause = pauseGap(t);
   for (let k = 0; k < idx.length; k++) {
     const i = idx[k];
     const v = speed[i];
-    if (v !== null && v < STOPPED_SPEED) { stopped++; stops.push([t[i], t[i] + 1]); }
+    if (v !== null && v < STOPPED_SPEED) { stopped += sampleHold(t, i); stops.push([t[i], t[i] + sampleHold(t, i)]); }
     if (k > 0) {
       const gap = t[i] - t[idx[k - 1]];
-      if (gap > MAX_SAMPLE_GAP) { stopped += gap - 1; stops.push([t[idx[k - 1]] + 1, t[i]]); }
+      // A pause: longer than the watch leaves between two samples while it records (pauseGap).
+      if (gap > pause) { stopped += gap - 1; stops.push([t[idx[k - 1]] + 1, t[i]]); }
     }
   }
   const near = (time: number) => stops.some(([a, b]) => time >= a - STOP_MARGIN && time < b + STOP_MARGIN);
@@ -71,19 +72,29 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
   const metrics = {} as Record<BlockMetric, number | null>;
   const profile = {} as Record<BlockMetric, (number | null)[]>;
   const minutes = Math.max(1, Math.ceil((end - start) / 60));
+  // The moving samples of each minute, sorted out once: every metric's profile reads them (each metric
+  // looked through every sample for every minute, an hour's run 2 million looks a time).
+  const byMinute: number[][] = Array.from({ length: minutes }, () => []);
+  for (const i of moving) { const k = Math.floor((s.t[i] - start) / 60); if (k >= 0 && k < minutes) byMinute[k].push(i); }
   for (const m of blockMetricsOf(run.metrics.map((x) => x.key))) {
     if (m === 'efficiency') continue;
     const series = metricSeries(s, m);
-    metrics[m] = mean(moving.map((i) => series[i]));
-    profile[m] = Array.from({ length: minutes }, (_, k) => {
-      const v = mean(moving.filter((i) => s.t[i] >= start + k * 60 && s.t[i] < start + (k + 1) * 60).map((i) => series[i]));
+    metrics[m] = held(s.t, moving, series);
+    profile[m] = byMinute.map((inMinute) => {
+      const v = held(s.t, inMinute, series);
       return v === null ? null : round(v, 2);
     });
     if (metrics[m] !== null) metrics[m] = round(metrics[m]!, 3);
   }
 
   const dist0 = valueAt(s.distance, idx[0]) ?? 0;
-  const dist1 = valueAt(s.distance, idx[idx.length - 1]) ?? dist0;
+  // The distance up to the end of the fragment, as its duration runs: to the last sample inside it the
+  // fragment was a sample short (1 km in 240 s read 996 m, a pace of 4:01 for 4:00), the shorter the
+  // rep the more. Between the last sample inside and the first after it, by the time; not across a pause.
+  const last = idx[idx.length - 1];
+  const inside = valueAt(s.distance, last) ?? dist0;
+  const after = last !== undefined && last + 1 < s.t.length && s.t[last + 1] - s.t[last] <= MAX_SAMPLE_COVER ? valueAt(s.distance, last + 1) : null;
+  const dist1 = after === null || last === undefined ? inside : inside + (after - inside) * Math.min(1, Math.max(0, (end - s.t[last]) / (s.t[last + 1] - s.t[last])));
   const distance = dist1 - dist0;
   const duration = end - start;
   const speed = metrics.speed ?? (duration > 0 ? distance / duration : 0);
@@ -94,8 +105,11 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
   // Effort before the block: the moving part of the 2 minutes before it.
   const beforeIdx: number[] = [];
   for (let i = 0; i < s.t.length; i++) if (s.t[i] >= start - 120 && s.t[i] < start) beforeIdx.push(i);
-  const beforeSpeeds = movingPart(s.t, speedSeries, beforeIdx).moving.map((i) => (s.values.speed?.[i] ?? null)).filter((v): v is number => v !== null);
-  const effortBefore = beforeSpeeds.length >= 60 && speed > 0 ? meanOf(beforeSpeeds) / speed - 1 : null;
+  const beforeMoving = movingPart(s.t, speedSeries, beforeIdx).moving.filter((i) => (s.values.speed?.[i] ?? null) !== null);
+  // A minute of running before it at least, by the time its samples stand for.
+  const beforeSeconds = beforeMoving.reduce((sum, i) => sum + sampleHold(s.t, i), 0);
+  const beforeSpeed = held(s.t, beforeMoving, s.values.speed ?? []);
+  const effortBefore = beforeSeconds >= 60 && speed > 0 && beforeSpeed !== null ? beforeSpeed / speed - 1 : null;
   const pace = speed > 0 ? 1000 / speed : 0;
 
   const tol: Tolerances = def.tolerances;
@@ -106,10 +120,10 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
   // Efficiency (metres per heartbeat) from the same samples as the heart rate.
   const hrIdx = tol.hrSkip !== null ? moving.filter((i) => s.t[i] >= start + tol.hrSkip!) : moving;
   if (tol.hrSkip !== null) {
-    const hr = mean(hrIdx.map((i) => (s.values.heartRate?.[i] ?? null)));
+    const hr = held(s.t, hrIdx, s.values.heartRate ?? []);
     metrics.heartRate = hr === null ? null : round(hr, 3);
   }
-  const effSpeed = mean(hrIdx.map((i) => (s.values.speed?.[i] ?? null)));
+  const effSpeed = held(s.t, hrIdx, s.values.speed ?? []);
   const eff = efficiencyOf(effSpeed, metrics.heartRate ?? null);
   metrics.efficiency = eff === null ? null : round(eff, 4);
   profile.efficiency = (profile.speed ?? []).map((sp, k) => { const e = efficiencyOf(sp, profile.heartRate?.[k] ?? null); return e === null ? null : round(e, 4); });
@@ -152,9 +166,20 @@ export function buildInstance(def: BlockDefinition, run: RunFile, row: IndexedRu
 function valueAt(series: Series, i: number | undefined): number | null {
   return i === undefined ? null : series[i];
 }
-function mean(xs: (number | null)[]): number | null {
-  const v = xs.filter((x): x is number => x !== null && x !== undefined);
-  return v.length ? meanOf(v) : null;
+/** The mean of a series over the samples given, each by the time it stands for (a second each in a run recorded every second); null with no value. */
+function held(t: number[], indices: number[], series: Series): number | null {
+  let sum = 0;
+  let weight = 0;
+  // A run recorded every second: every sample a second, the plain mean (and no more work than it was).
+  const smart = recordedSmart(t);
+  for (const i of indices) {
+    const v = series[i];
+    if (v === null || v === undefined) continue;
+    const w = smart ? sampleHold(t, i) : 1;
+    sum += v * w;
+    weight += w;
+  }
+  return weight > 0 ? sum / weight : null;
 }
 function meanOf(xs: number[]): number {
   return xs.reduce((a, b) => a + b, 0) / xs.length;

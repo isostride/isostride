@@ -4,5 +4,5 @@ type: "requirement"
 label: "A/B verdict rule"
 action: "give the verdict \"Change\" when the uncertainty interval of the difference excludes zero and the difference exceeds the noise threshold, and \"no detectable change\" otherwise"
 ears_type: "ubiquitous"
-rationale: "Acceptance: a random split returns \"no detectable change\" in at least 9 of 10 trials."
+rationale: "Acceptance: a random split returns \"no detectable change\" in at least 9 of 10 trials. On 26 Nov 2026 a review of the whole app (the runner's \"przegladnij aplikacje raz jeszcze ... pod katem modeli ale nie tylko\"), found the interval a percentile bootstrap over single efforts: too narrow for the few samples a comparison has (at 4 a side it covered zero 85 % of the time for 95 %), and a verdict shown for every metric chosen with no word on how many are judged at once; the runner: \"tak zacznij od poczzatku ... i przejdz przez wszystkie\". Model's choices: the run is the unit, each by the mean of its efforts; the interval is Welch's for two samples of unequal spread (Student's t of the Welch–Satterthwaite degrees of freedom, rounded down) on the runs' means, a trend's that of the slope of the line through the runs' means (Student's t of n − 2); with several metrics judged at once a note says that about one comparison in twenty of the same thing reads a change."
 ---

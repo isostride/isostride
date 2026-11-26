@@ -1,5 +1,5 @@
 import type { BlockStart } from '@/lib/blocks';
-import { metricSeries, type IndexedRun, type Lap, type RunFile } from '@/lib/kernel';
+import { metricSeries, sampleHold, type IndexedRun, type Lap, type RunFile } from '@/lib/kernel';
 import { fastestFragment } from '@/lib/blocks';
 import { startKind, stopTimes } from './instance';
 export { effortName, fastestFragment, followsPattern, patternKey, patternName, patternOf, tagName } from '@/lib/blocks';
@@ -26,7 +26,7 @@ export function effortGain(run: RunFile, from: number, to: number, fragmentDista
   let restSeconds = 0;
   for (let i = 0; i < t.length; i++) {
     const v = speed[i];
-    if ((t[i] < from || t[i] >= to) && v !== null && v >= STOPPED_SPEED) restSeconds++;
+    if ((t[i] < from || t[i] >= to) && v !== null && v >= STOPPED_SPEED) restSeconds += sampleHold(t, i);
   }
   const restDistance = run.distance - fragmentDistance;
   if (restSeconds < MIN_REST_SECONDS || restDistance <= 0 || to <= from) return null;

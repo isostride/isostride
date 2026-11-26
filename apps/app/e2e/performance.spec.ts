@@ -79,9 +79,12 @@ test.describe('Performance model', () => {
     await tagsCard.getByRole('button', { name: 'Edit tempo' }).click();
     await tagDialog('tempo').getByRole('textbox', { name: 'Name' }).fill('threshold');
     await tagDialog('tempo').getByRole('button', { name: 'Save' }).click();
+    // The list shows a save at once and the file follows (saves take their turn): read until it is written
+    // whole, a file caught while it is written being empty.
+    const savedTypes = async () => { try { return JSON.parse(await readText(page, '.isostride/user/run-tags.json')).dictionary.workoutTypes as string[]; } catch { return null; } };
     await expect(tagsCard.getByRole('button', { name: 'Edit threshold' })).toBeVisible();
     await expect(tagsCard.getByRole('button', { name: 'Edit tempo' })).toHaveCount(0);
-    await expect.poll(async () => JSON.parse(await readText(page, '.isostride/user/run-tags.json')).dictionary.workoutTypes).toEqual(['easy', 'long', 'threshold', 'intervals', 'race']);
+    await expect.poll(savedTypes).toEqual(['easy', 'long', 'threshold', 'intervals', 'race']);
     // Deleted from its editor ("w samym edit jest usuwanie"), after asking in the app's own dialog; Cancel keeps it.
     await expect(tagsCard.getByRole('button', { name: 'Delete race' })).toHaveCount(0);
     const ask = page.getByRole('alertdialog', { name: 'Delete this tag?' });
@@ -96,7 +99,7 @@ test.describe('Performance model', () => {
     // Added with Add.
     await tagsCard.getByRole('textbox', { name: 'New workout type' }).fill('hills');
     await tagsCard.getByRole('group', { name: 'Workout type' }).getByRole('button', { name: 'Add' }).click();
-    await expect.poll(async () => JSON.parse(await readText(page, '.isostride/user/run-tags.json')).dictionary.workoutTypes).toEqual(['easy', 'long', 'threshold', 'intervals', 'hills']);
+    await expect.poll(savedTypes).toEqual(['easy', 'long', 'threshold', 'intervals', 'hills']);
     // The old address of Gear and tags opens the Gears tab; the old tabs' links the tabs that hold them now.
     await page.goto('/gear');
     await expect(page).toHaveURL(/\/settings\?tab=gears/);

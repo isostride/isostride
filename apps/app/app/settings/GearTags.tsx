@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useOpenFolder, runInWorker } from '@/lib/client';
 import { newGearId, readGear, renameTag, writeGear, type Gear, type GearType, readRunTags, writeRunTags, type RunTagsFile, type TagKind } from '@/lib/gear';
 import { readDefinitions, renameInDefinitions, writeDefinitions } from '@/lib/blocks';
@@ -38,20 +38,36 @@ export function GearTags({ part }: { part: 'gear' | 'tags' }) {
   }, [folder]);
   useEffect(() => { load(); }, [load]);
 
-  const saveGear = async (next: Gear[], what: string) => {
-    const before = new Map((index?.runs ?? []).map((r) => [r.id, `${r.shoesId}|${r.hrSensorId}`]));
-    await writeGear(folder, next);
-    await runInWorker('context', handle);
-    const after = await readJson<RunsIndex>(folder, PATHS.runsIndex);
-    const changed = (after?.runs ?? []).filter((r) => before.get(r.id) !== `${r.shoesId}|${r.hrSensorId}`).length;
-    setSaved(`${what} · ${tn(changed, '{n} run reassigned', '{n} runs reassigned')}`);
-    await load();
+  // Saves take their turn, and the list shows a save at once: the next one is built on it. Two pairs of
+  // shoes or two tags added one after the other were each built on the list read before the first was
+  // saved (its recompute still running), and the second wrote the first away.
+  const turns = useRef<Promise<unknown>>(Promise.resolve());
+  const waiting = useRef(0);
+  const inTurn = (work: () => Promise<void>): Promise<void> => {
+    waiting.current++;
+    const turn = turns.current.then(work).finally(async () => { if (--waiting.current === 0) await load(); });
+    turns.current = turn.catch(() => undefined);
+    return turn;
   };
 
-  const saveTags = async (next: RunTagsFile) => {
-    await writeRunTags(folder, next);
-    await runInWorker('context', handle);
-    await load();
+  const saveGear = (next: Gear[], what: string) => {
+    setGear(next);
+    return inTurn(async () => {
+      const before = new Map(((await readJson<RunsIndex>(folder, PATHS.runsIndex))?.runs ?? []).map((r) => [r.id, `${r.shoesId}|${r.hrSensorId}`]));
+      await writeGear(folder, next);
+      await runInWorker('context', handle);
+      const after = await readJson<RunsIndex>(folder, PATHS.runsIndex);
+      const changed = (after?.runs ?? []).filter((r) => before.get(r.id) !== `${r.shoesId}|${r.hrSensorId}`).length;
+      setSaved(`${what} · ${tn(changed, '{n} run reassigned', '{n} runs reassigned')}`);
+    });
+  };
+
+  const saveTags = (next: RunTagsFile) => {
+    setTags(next);
+    return inTurn(async () => {
+      await writeRunTags(folder, next);
+      await runInWorker('context', handle);
+    });
   };
 
   const counts = useMemo(() => {
