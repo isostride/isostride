@@ -17,22 +17,27 @@ describe('Performance models extended', () => {
     expect(j.se).toBeCloseTo(Math.sqrt(2.5 / 5), 9);
     expect(j.high - j.value).toBeCloseTo(t975(4) * j.se, 9);
     expect(jackknife([1, 2], (s) => s[0])).toBeNull();
-    // Bests that follow CS 4 m/s and D′ 200 m exactly: no best moves the fit, the range is narrow.
+    // The runs are left out in turn, not the bests: the bests of one hard effort are no separate measurements.
+    // Three runs with the same bests, CS 4 m/s and D′ 200 m exactly: no run moves the fit, the range is narrow.
     const lengths = [120, 180, 300, 600, 900, 1200];
-    const exact = { a: summary(lengths.map((d) => ({ duration: d, speed: 4 + 200 / d, power: 250 + 15000 / d }))) };
-    const rows = [{ id: 'a', startTime: '2026-11-20T08:00:00', duration: 3600 }];
-    const tight = markerRanges(rows, exact, '2026-11-25');
+    const hard = (factor = 1, lift: number[] = []) => summary(lengths.map((d) => ({ duration: d, speed: (4 + 200 / d) * factor * (lift.includes(d) ? 1.08 : 1), power: (250 + 15000 / d) * factor })));
+    const rows = ['a', 'b', 'c'].map((id, k) => ({ id, startTime: `2026-11-${18 + k}T08:00:00`, duration: 3600 }));
+    const tight = markerRanges(rows, { a: hard(), b: hard(), c: hard() }, '2026-11-25');
     expect(tight.cs!.value).toBeCloseTo(4, 3);
     expect(relativeSe(tight.cs)!).toBeLessThan(0.01);
     expect(tight.cp!.value).toBeCloseTo(250, 1);
     expect(tight.predictions.find((p) => p.distance === 5000)!.range).not.toBeNull();
-    // One best of 3 minutes 8 % above the rest: left out, the fit moves, the range widens.
-    const lifted = { a: summary(lengths.map((d) => ({ duration: d, speed: (4 + 200 / d) * (d === 180 ? 1.08 : 1), power: null }))) };
-    const wide = markerRanges(rows, lifted, '2026-11-25');
+    // One run with a best of 3 minutes 8 % above the others': left out, the fit moves, the range widens.
+    const wide = markerRanges(rows, { a: hard(), b: hard(), c: hard(1, [180]) }, '2026-11-25');
     expect(relativeSe(wide.dPrime)!).toBeGreaterThan(relativeSe(tight.dPrime)! * 10);
-    // Under 4 bests no best can be left out: no range.
-    const three = { a: summary([120, 300, 1200].map((d) => ({ duration: d, speed: 4 + 200 / d, power: null }))) };
-    expect(markerRanges(rows, three, '2026-11-25').cs).toBeNull();
+    // One hard run among easy ones (80 % of it) holds every best: without it the critical speed falls by a fifth,
+    // which leaving one of its six bests out would not show.
+    const one = markerRanges(rows, { a: hard(0.8), b: hard(0.8), c: hard() }, '2026-11-25');
+    expect(one.cs!.value).toBeCloseTo(4, 3);
+    expect(relativeSe(one.cs)!).toBeGreaterThan(0.1);
+    // Under 3 runs no range; nor when the fit has no value without one of them (the only run with the bests).
+    expect(markerRanges(rows.slice(0, 2), { a: hard(), b: hard() }, '2026-11-25').cs).toBeNull();
+    expect(markerRanges(rows, { a: summary([]), b: summary([]), c: hard() }, '2026-11-25').cs).toBeNull();
   });
 
   it('D′ balance through a run', () => {

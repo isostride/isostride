@@ -208,7 +208,7 @@ export function LoadWhatIfView({ runs, summaries, performance, unit, today }: { 
   // The fitted response of each measure that has a fit, run over the scenario's loads ("What if na dopasowanym modelu odpowiedzi").
   const maxHr = performance.maxHr ?? autoMaxHr(Object.values(summaries));
   const responses = useMemo(() => RESPONSE_MEASURES.map(([criterion, name]) => ({
-    criterion, name, fit: responseWhatIf(r, performancesFor(criterion, runs, summaries, performance.restHr, maxHr, today, performance.curve)),
+    criterion, name, fit: responseWhatIf(r, performancesFor(criterion, runs, summaries, performance.restHr, maxHr, today)),
   })), [r, runs, summaries, performance, maxHr, today]);
   const [drafts, setDrafts] = useState<string[]>(weeks.map(String));
   useEffect(() => { setDrafts(weeks.map(String)); }, [param]);

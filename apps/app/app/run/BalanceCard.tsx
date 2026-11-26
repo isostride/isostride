@@ -17,7 +17,8 @@ const POINTS = 600;
  * The D′ balance of a run (requirement "D′ balance of a run") in a dialog opened from the run's head, so
  * the Run screen keeps its one-screen layout: how much of the reserve above the critical speed is left
  * through the run (Skiba et al. 2015), and of W′ above the critical power when the run has power; each
- * against the critical speed and power of the 90 days up to the run, as the load model takes them.
+ * against the critical speed and power of the 90 days before the run, the run itself left out: a run
+ * that goes past what the earlier bests implied then shows under 0 %.
  */
 export function BalanceDialog({ run, folder, onClose }: { run: RunFile; folder: DataFolder; onClose: () => void }) {
   const close = useRef<HTMLButtonElement>(null);
@@ -43,13 +44,13 @@ export function BalanceDialog({ run, folder, onClose }: { run: RunFile; folder: 
 function BalanceCard({ run, folder }: { run: RunFile; folder: DataFolder }) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const [{ speed, power, loaded }, setCritical] = useState<{ speed: CriticalAt | null; power: CriticalAt | null; loaded: boolean }>({ speed: null, power: null, loaded: false });
-  // From the summaries and the index alone, as the load model takes its thresholds: no other run file is read.
+  // From the summaries and the index alone, as the load model takes its thresholds, but without this run: no other run file is read.
   useEffect(() => {
     let live = true;
     Promise.all([readJson<RunsIndex>(folder, PATHS.runsIndex), readJson<{ runs: Record<string, LoadSummary> }>(folder, PATHS.loadSummaries)]).then(([idx, sums]) => {
       if (!live) return;
       if (!idx || !sums) { setCritical({ speed: null, power: null, loaded: true }); return; }
-      setCritical({ speed: criticalSeries(idx.runs, sums.runs, 'speed')[run.id] ?? null, power: criticalSeries(idx.runs, sums.runs, 'power')[run.id] ?? null, loaded: true });
+      setCritical({ speed: criticalSeries(idx.runs, sums.runs, 'speed', true)[run.id] ?? null, power: criticalSeries(idx.runs, sums.runs, 'power', true)[run.id] ?? null, loaded: true });
     }).catch(() => live && setCritical({ speed: null, power: null, loaded: true }));
     return () => { live = false; };
   }, [folder, run.id]);
@@ -67,9 +68,12 @@ function BalanceCard({ run, folder }: { run: RunFile; folder: DataFolder }) {
     }
     return out;
   }, [run, speed, power]);
-  if (!loaded) return <p className="muted small" role="status">{t('Reading the critical speed of the 90 days up to this run…')}</p>;
-  if (!lines.length) return <p className="chart-note">{t('No critical speed at this run yet: it takes bests of 2–20 minutes in the 90 days up to it that show all-out short efforts (Performance, Capacity).')}</p>;
+  if (!loaded) return <p className="muted small" role="status">{t('Reading the critical speed of the 90 days before this run…')}</p>;
+  if (!lines.length) return <p className="chart-note">{t('No critical speed for this run yet: it takes bests of 2–20 minutes within 90 days that show all-out short efforts (Performance, Capacity).')}</p>;
 
+  // Where the thresholds come from: the 90 days before the run, held from older bests, or the first one after it.
+  const froms = [speed, power].filter((c): c is CriticalAt => c !== null).map((c) => c.from);
+  const origin = froms.includes('first') ? 'first' : froms.includes('held') ? 'held' : 'own';
   const end = run.samples.t[run.samples.t.length - 1] ?? 1;
   const lowest = Math.min(0, ...lines.map((l) => l.balance.low?.share ?? 1));
   const ticks = niceTicks(lowest * 100, 100, 4);
@@ -111,7 +115,11 @@ function BalanceCard({ run, folder }: { run: RunFile; folder: DataFolder }) {
       </svg>
       </div>
       {lines.length > 1 && <div className="chart-legend">{lines.map((l) => <Key key={l.key} color={l.color} label={l.label} />)}</div>}
-      <p className="chart-note">{t('How much of the reserve above the critical speed (D′) is left through the run: spent above it, coming back below it (Skiba 2015). Under 0 % the run went past what your bests imply: the critical speed or D′ of the 90 days before it is too low.')}</p>
+      <p className="chart-note" data-threshold={origin}>
+        {t('How much of the reserve above the critical speed (D′) is left through the run: spent above it, coming back below it (Skiba 2015). The critical speed and D′ are those of the bests of the 90 days before this run, without it: under 0 % the run went past what they implied.')}
+        {origin === 'held' ? <>{' '}{t('Those 90 days show no all-out short efforts, so the last critical speed before them holds.')}</> : null}
+        {origin === 'first' ? <>{' '}{t('No bests before this run settle a critical speed: it is read against the first one after it, which may rest on this run, and then it cannot go under 0 %.')}</> : null}
+      </p>
     </div>
   );
 }

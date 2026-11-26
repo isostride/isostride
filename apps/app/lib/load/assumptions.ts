@@ -3,13 +3,13 @@ import { duration as fmtDuration, pace as fmtPace } from '@/lib/format';
 import { msg, number, t, tn } from '@/lib/i18n';
 import { LOAD_MODELS, type PerformanceSettings } from '@/lib/settings';
 import { BANISTER_MIN_POINTS, BANISTER_MIN_SPAN, TAU1_RANGE, TAU2_RANGE, fitBanister, type BanisterFit } from './banister';
-import { bestEfforts, effortEvidence, type BestEffort, type EffortEvidence } from './efforts';
+import { ALLOUT_MEAN, bestEfforts, effortEvidence, type BestEffort, type EffortEvidence } from './efforts';
 import type { FormDay } from './form';
-import { DECOUPLING_MIN, EF_TREND_DAYS, MARKER_DAYS, efficiencyNow, efficiencyRuns, intensityShares, markersOverTime, seilerByWeek, weeklyLoad, type LoadWeek, type MarkerWeek } from './insights';
+import { DECOUPLING_MIN, EF_TREND_DAYS, MARKER_DAYS, SEILER_SHARES, efficiencyNow, efficiencyRuns, intensityShares, markersOverTime, seilerByWeek, weeklyLoad, type LoadWeek, type MarkerWeek } from './insights';
 import { MIN_RESERVE_SECONDS, autoMaxHr, criticalSeries, type CriticalAt, type LoadRow } from './models';
 import { WARMUP, type LoadSummary } from './summary';
 import { RATE_PRECISION, RESERVE_PRECISION, markerRanges, relativeSe, type MarkerRanges, type Range } from './uncertainty';
-import { HR_VO2_MEDIAN_DAYS, HR_VO2_MIN_RESERVE, HR_VO2_MIN_SECONDS, hrVo2Now, hrVo2Runs, performancesFor, uthVo2max, vdotOverTime } from './vo2';
+import { HR_VO2_MEDIAN_DAYS, HR_VO2_MIN_RESERVE, HR_VO2_MIN_SECONDS, VDOT_MIN_SECONDS, hrVo2Now, hrVo2Runs, performancesFor, uthVo2max, vdotOverTime } from './vo2';
 
 /**
  * What each model of the Performance screen rests on and assumes, checked against the runner's data
@@ -217,17 +217,17 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
   const powerCurve = bestEfforts(have, summaries, 'power', maxHr, today, MARKER_DAYS, CURVE_DURATIONS);
   const evidence = effortEvidence(efforts, today);
   const powerEvidence = effortEvidence(powerEfforts, today);
-  const effRuns = efficiencyRuns(have, summaries, hrZones);
-  const eff = efficiencyNow(effRuns);
+  const effRuns = efficiencyRuns(have, summaries, maxHr);
+  const eff = efficiencyNow(effRuns, today);
   const perRun = maxHr ? hrVo2Runs(have, summaries, p.restHr, maxHr) : [];
-  const vo2 = hrVo2Now(perRun);
+  const vo2 = hrVo2Now(perRun, today);
   const uth = maxHr ? uthVo2max(p.restHr, maxHr) : null;
   const shares = intensityShares(seilerByWeek(have, summaries, maxHr).slice(-12));
   const loadWeeks = weeklyLoad(days);
   const loads = days.map((d) => ({ date: d.date, load: d.load }));
   const fitted = {
-    hr: fitBanister(loads, performancesFor('hr', have, summaries, p.restHr, maxHr, today, p.curve)),
-    vdot: fitBanister(loads, performancesFor('vdot', have, summaries, p.restHr, maxHr, today, p.curve)),
+    hr: fitBanister(loads, performancesFor('hr', have, summaries, p.restHr, maxHr, today)),
+    vdot: fitBanister(loads, performancesFor('vdot', have, summaries, p.restHr, maxHr, today)),
   };
   const ranges = markerRanges(have, summaries, today, p.curve);
   const now: PerformanceNow = {
@@ -295,15 +295,15 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
   };
 
   /**
-   * Whether the bests settle a critical rate and its reserve: the standard errors of the jackknife against
-   * RATE_PRECISION and RESERVE_PRECISION, in doubt past them; unknown under 4 bests, where a best cannot be
-   * left out.
+   * Whether the bests settle a critical rate and its reserve: the standard errors of the jackknife of the
+   * runs against RATE_PRECISION and RESERVE_PRECISION, in doubt past them; unknown under 3 runs, or when
+   * the fit has no value without one of them.
    */
   const preciseCheck = (label: string, rate: Range | null, reserve: Range | null, show: (r: Range) => string, showReserve: (r: Range) => string): Check => {
     const a = relativeSe(rate);
     const b = relativeSe(reserve);
-    if (a === null || b === null || !rate || !reserve) return check('precise', label, 'unknown', t('it takes 4 bests or more of 2–20 min to leave each out in turn and see how far the fit moves'));
-    return check('precise', label, a <= RATE_PRECISION && b <= RESERVE_PRECISION ? 'met' : 'doubt', t('{rate} and {reserve} (95 %) with each best left out in turn: standard errors of {rateShare} and {reserveShare}, {rateGood} and {reserveGood} or less expected; more means one best or two decide the value', {
+    if (a === null || b === null || !rate || !reserve) return check('precise', label, 'unknown', t('it takes 3 runs or more in the last {days} days, and a fit that stands without any one of them, to leave each out in turn and see how far it moves', { days: MARKER_DAYS }));
+    return check('precise', label, a <= RATE_PRECISION && b <= RESERVE_PRECISION ? 'met' : 'doubt', t('{rate} and {reserve} (95 %) with each run left out in turn: standard errors of {rateShare} and {reserveShare}, {rateGood} and {reserveGood} or less expected; more means one run or two decide the value', {
       rate: show(rate), reserve: showReserve(reserve), rateShare: `${number(a * 100, 1)} %`, reserveShare: `${number(b * 100, 1)} %`, rateGood: pct(RATE_PRECISION), reserveGood: pct(RESERVE_PRECISION),
     }));
   };
@@ -320,6 +320,8 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
     const last = [...have].sort((a, b) => b.startTime.localeCompare(a.startTime))[0];
     return last ? criticalSeries(have, summaries, metric)[last.id] ?? null : null;
   };
+  /** With an automatic threshold: how the loads stand against scores that take the pace or power of an hour. */
+  const scale = (what: string): Check => check('scale', t('The loads compare with those of other tools'), 'unknown', t('{what} is held for about half an hour, not an hour: against it a run scores several per cent less than against the threshold of an hour that such scores are named for. Set your own threshold in Model to match another tool', { what }));
   const autoThreshold = (label: string, c: CriticalAt | null, show: (v: number) => string): Check => (c === null
     ? check('threshold', label, 'unmet', t('no {days} days of bests show all-out short efforts (a reserve worth {s} s or more): every load is counted from its duration', { days: MARKER_DAYS, s: MIN_RESERVE_SECONDS }))
     : c.from === 'own'
@@ -334,13 +336,13 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
           inputs: [t('effort pace of every run'), t('threshold pace')], parents: p.thresholdPace === null ? ['cs'] : [],
           checks: [coverage, p.thresholdPace !== null
             ? check('threshold', t('The threshold pace is yours'), 'met', t('{pace} /km, set in Model', { pace: fmtPace(1000 / p.thresholdPace) }))
-            : autoThreshold(t('The threshold pace is yours'), lastCritical('speed'), (v) => `${fmtPace(1000 / v)} /km`)],
+            : autoThreshold(t('The threshold pace is yours'), lastCritical('speed'), (v) => `${fmtPace(1000 / v)} /km`), ...(p.thresholdPace === null ? [scale(t('Critical speed'))] : [])],
         }
         : {
           inputs: [t('power of every run'), t('critical power')], parents: p.thresholdPower === null ? ['cp'] : [],
           checks: [coverage, p.thresholdPower !== null
             ? check('threshold', t('The critical power is yours'), 'met', t('{power} W, set in Model', { power: p.thresholdPower }))
-            : autoThreshold(t('The critical power is yours'), lastCritical('power'), (v) => `${number(Math.round(v))} W`)],
+            : autoThreshold(t('The critical power is yours'), lastCritical('power'), (v) => `${number(Math.round(v))} W`), ...(p.thresholdPower === null ? [scale(t('Critical power'))] : [])],
         };
 
   const powerRuns = inWindow.filter((r) => summaries[r.id].normPower !== null);
@@ -357,9 +359,10 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
         check('points', pointsLabel, 'met', tn(fit.n, '{n} performances ({what})', '{n} performances ({what})', { what: name })),
         check('fit', t('The loads predict the performances'), graded(fit.r2cv, T.r2),
           t('R² {r2cv} on the performances left out of each fit, {r2} on those fitted: the model predicts {share} of their variation ({expected} or more expected)', { r2cv: number(fit.r2cv, 2), r2: number(fit.r2, 2), share: pct(Math.max(0, fit.r2cv)), expected: pct(T.r2[0]) })),
-        check('identified', t('Your data settle the time constants'), fit.tau1 > TAU1_RANGE[0] && fit.tau1 < TAU1_RANGE[1] && fit.tau2 > TAU2_RANGE[0] && fit.tau2 < TAU2_RANGE[1] ? 'met' : 'doubt',
-          t('τ1 {tau1} d of {from1}–{to1} tried, τ2 {tau2} d of {from2}–{to2}: one at the edge of its range is not settled by the data', {
-            tau1: number(fit.tau1), from1: TAU1_RANGE[0], to1: TAU1_RANGE[1], tau2: number(fit.tau2), from2: TAU2_RANGE[0], to2: TAU2_RANGE[1],
+        check('identified', t('Your data settle the time constants'), fit.tau1Range[0] > TAU1_RANGE[0] && fit.tau1Range[1] < TAU1_RANGE[1] && fit.tau2Range[0] > TAU2_RANGE[0] && fit.tau2Range[1] < TAU2_RANGE[1] ? 'met' : 'doubt',
+          t('τ1 {tau1} d ({low1}–{high1} fit as well, 95 %) of {from1}–{to1} tried, τ2 {tau2} d ({low2}–{high2}) of {from2}–{to2}: a range that reaches the edge of what was tried is not settled by the data', {
+            tau1: number(fit.tau1), low1: number(fit.tau1Range[0]), high1: number(fit.tau1Range[1]), from1: TAU1_RANGE[0], to1: TAU1_RANGE[1],
+            tau2: number(fit.tau2), low2: number(fit.tau2Range[0]), high2: number(fit.tau2Range[1]), from2: TAU2_RANGE[0], to2: TAU2_RANGE[1],
           })),
         check('fatigue', t('Fatigue shows in the performances'), fit.terms.fatigue >= T.fatigueShare * fit.terms.fitness ? 'met' : 'doubt',
           t('the fatigue term is {share} of the fitness term: under {least} the model is fitness alone, and its taper says nothing', {
@@ -465,16 +468,16 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
     },
     ef: {
       key: 'ef', group: 'aerobic', depth: 0, name: t('Efficiency factor'), method: t('mean speed per mean heart rate while moving, the easy runs'), tells: t('the speed you get for a heartbeat at an easy effort'),
-      inputs: [t('pace and heart rate of every run'), t('your heart rate zones (which runs are easy)')], parents: [], where: { tab: 'aerobic', view: 'efficiency' }, has: eff.ef !== null,
+      inputs: [t('pace and heart rate of every run'), t('maximum heart rate (a run is easy with a mean under {share} of it)', { share: pct(SEILER_SHARES[0]) })], parents: [], where: { tab: 'aerobic', view: 'efficiency' }, has: eff.ef !== null,
       checks: [
         check('easy', t('{runs} easy runs or more in the last {days} days', { runs: T.easyRuns, days: EF_TREND_DAYS }), eff.easyRuns >= T.easyRuns ? 'met' : eff.easyRuns > 0 ? 'doubt' : 'unmet',
-          tn(eff.easyRuns, '{n} easy run (mean heart rate in Z1–Z2)', '{n} easy runs (mean heart rate in Z1–Z2)')),
-        zonesCheck(t('which runs count as easy is decided by zones that are not yours'), 'doubt'), hrCheck(), sensorCheck(),
+          tn(eff.easyRuns, '{n} easy run (mean heart rate under {share} of the maximum)', '{n} easy runs (mean heart rate under {share} of the maximum)', { share: pct(SEILER_SHARES[0]) })),
+        maxCheck(t('fewer runs count as easy than are')), hrCheck(), sensorCheck(),
         check('conditions', t('The runs share terrain and weather'), 'unknown', t('hills, heat and wind move the factor as much as fitness does')),
       ],
     },
     decoupling: {
-      key: 'decoupling', group: 'aerobic', depth: 0, name: t('Aerobic decoupling'), method: t('the efficiency of a long run’s first half against its second (Pa:HR, Friel)'), tells: t('whether your heart rate drifts up at a steady pace'),
+      key: 'decoupling', group: 'aerobic', depth: 0, name: t('Aerobic decoupling'), method: t('the efficiency of a long run’s first half against its second, past the first {warmup} min (Pa:HR, Friel)', { warmup: WARMUP / 60 }), tells: t('whether your heart rate drifts up at a steady pace'),
       inputs: [t('pace and heart rate of runs of {min} min and more', { min: DECOUPLING_MIN / 60 })], parents: [], where: { tab: 'aerobic', view: 'decoupling' }, has: eff.decoupling !== null,
       checks: [
         check('long', t('{runs} long runs or more in the last {days} days', { runs: T.longRuns, days: MARKER_DAYS }), eff.longRuns90 >= T.longRuns ? 'met' : eff.longRuns90 > 0 ? 'doubt' : 'unmet',
@@ -514,11 +517,12 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
       inputs: [t('the load of every day'), t('VO2max from heart rate of each run')], parents: ['load', 'vo2hr'], where: { tab: 'response' }, ...fittedDef(fitted.hr, t("VO2max from heart rate, a day's mean")),
     },
     fittedVdot: {
-      key: 'fittedVdot', group: 'response', depth: 0, name: t('Fitted response · VDOT'), method: t('the same model, fitted to the weekly VDOT'), tells: t('your own time constants, on your bests'),
-      inputs: [t('the load of every day'), t('the weekly VDOT')], parents: ['load', 'vdot'], where: { tab: 'response' },
+      key: 'fittedVdot', group: 'response', depth: 0, name: t('Fitted response · VDOT'), method: t('the same model, fitted to the VDOT of the all-out efforts of each day'), tells: t('your own time constants, on your hardest efforts'),
+      inputs: [t('the load of every day'), t('the VDOT of each all-out effort of {min} min or more (Daniels)', { min: VDOT_MIN_SECONDS / 60 }), t('heart rate in the efforts'), t('maximum heart rate')], parents: ['load'], where: { tab: 'response' },
       ...(() => {
-        const d = fittedDef(fitted.vdot, t('weekly VDOT'));
-        return { ...d, checks: [...d.checks, check('smooth', t('The performance moves from week to week'), 'doubt', t('the VDOT is the best of {days} days: it holds for weeks after a hard effort, so it cannot show fatigue', { days: MARKER_DAYS }))] };
+        const d = fittedDef(fitted.vdot, t('VDOT of all-out efforts'));
+        return { ...d, checks: [...d.checks, maxCheck(t('efforts that were all-out are left out')),
+          check('maximal', t('Each effort is the most you could do'), 'unknown', t('an effort counts by its heart rate, a mean of {mean} of the maximum or more held over it: a rep of a session or a tempo run reaches that without being a race, and reads a lower VDOT than you have', { mean: pct(ALLOUT_MEAN) }))] };
       })(),
     },
   };

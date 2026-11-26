@@ -40,10 +40,10 @@ describe('Whole curve', () => {
     expect(c.params.wp / 1000).toBeCloseTo(20, 1);
     expect(c.params.pmax).toBeCloseTo(900, -1);
     expect(c.params.a).toBeCloseTo(15, 0);
-    // Without a best past TCPmax the decline is fixed at 0.
+    // Without a best past TCPmax the decline is Riegel's: 6 % of the critical power per unit of ln t.
     const short = fitWholeCurve(pts.filter((p) => p.duration <= OMPD_TCPMAX), 'power')!;
     expect(short.decline).toBe(false);
-    expect(short.params.a).toBe(0);
+    expect(short.params.a).toBeCloseTo(0.06 * short.params.cp, 9);
     expect(short.params.cp).toBeCloseTo(300, 0);
   });
 

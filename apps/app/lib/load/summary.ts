@@ -26,7 +26,7 @@ export interface LoadSummary {
   avgHr: number | null;
   /** efficiency factor while moving: mean speed (the effort pace where the watch gives it) per mean heart rate, metres per heartbeat */
   ef: number | null;
-  /** Pa:HR decoupling of the whole run, %: the efficiency of the first half against the second */
+  /** Pa:HR decoupling of the run past its first WARMUP s, %: the efficiency of the first half against the second (the heart rate still rising in the warm-up would read as drift) */
   decoupling: number | null;
   /**
    * The run past its first WARMUP s, while moving (VO2max from heart rate, whose heart rate must have
@@ -38,7 +38,7 @@ export interface LoadSummary {
   steadyHr?: number | null;
 }
 
-/** The warm-up left out of the steady part of a run, s (model's choice: 10 minutes, the heart rate still rising). */
+/** The warm-up left out of the steady part of a run and of its decoupling, s (model's choice: 10 minutes, the heart rate still rising). */
 export const WARMUP = 600;
 
 /**
@@ -67,8 +67,8 @@ export interface BestOfLength {
 /** The heart rate takes about this long to follow an effort, s: left out of a stretch's mean heart rate. */
 export const HR_LAG = 90;
 
-/** Raised when the summary changes, so every run is summarised again (3: where each best lies and the heart rate in it; 4: the bests of every length of the curve, 30 s to 2 h; 5: the curve fitted as an envelope moves the critical speed and power, so the loads of rTSS and Power TSS are counted again; 6: the bests taken whole and from the effort pace or without downhills, the heart rate's peak from a 10 s window, the efficiency from the effort pace, the steady part past the warm-up). */
-export const LOAD_SUMMARY_VERSION = 6;
+/** Raised when the summary changes, so every run is summarised again (3: where each best lies and the heart rate in it; 4: the bests of every length of the curve, 30 s to 2 h; 5: the curve fitted as an envelope moves the critical speed and power, so the loads of rTSS and Power TSS are counted again; 6: the bests taken whole and from the effort pace or without downhills, the heart rate's peak from a 10 s window, the efficiency from the effort pace, the steady part past the warm-up; 7: the decoupling past the warm-up). */
+export const LOAD_SUMMARY_VERSION = 7;
 
 /** A sample counts until the next one, but no longer than this, s: a pause counts as nothing. */
 const HOLD = 5;
@@ -164,7 +164,8 @@ export function summarizeLoad(run: RunFile): LoadSummary {
     moving: movingWindows * 10,
     avgHr: both ? Math.round(hrSum / both) : null,
     ef: both ? round((sp / both) * 60 / (hrSum / both)) : null,
-    decoupling: round(decouplingOf(run, 0, (w.start[w.start.length - 1] ?? 0) + 10), 10),
+    // Past the warm-up: a heart rate rising from 110 to 145 in the first 10 minutes of an even hour reads as 4 % of drift.
+    decoupling: round(decouplingOf(run, WARMUP, (w.start[w.start.length - 1] ?? 0) + 10), 10),
     steadyMoving: steady.windows * 10,
     steadySpeed: steady.both ? round(steady.sp / steady.both) : null,
     steadyHr: steady.both ? Math.round(steady.hr / steady.both) : null,

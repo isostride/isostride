@@ -13,10 +13,10 @@ const DECOUPLING_GOOD = 5;
  * Aerobic efficiency (requirement "Aerobic efficiency over time"), one model a view: the efficiency
  * factor of each run with the easy runs' trend, or the Pa:HR decoupling of the long runs.
  */
-export function EfficiencyTab({ part, runs, summaries, hrZones }: { part: 'ef' | 'decoupling'; runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; hrZones: number[] }) {
-  const points = useMemo(() => efficiencyRuns(runs, summaries, hrZones), [runs, summaries, hrZones]);
+export function EfficiencyTab({ part, runs, summaries, maxHr, today }: { part: 'ef' | 'decoupling'; runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; maxHr: number | null; today: string }) {
+  const points = useMemo(() => efficiencyRuns(runs, summaries, maxHr), [runs, summaries, maxHr]);
   if (!points.length) return <div className="card empty">{t('No run with a heart rate yet.')}</div>;
-  const now = efficiencyNow(points);
+  const now = efficiencyNow(points, today);
   if (part === 'ef') {
     const trend = trailingMean(points, (p) => (p.easy ? p.ef : null), EF_TREND_DAYS);
     return (

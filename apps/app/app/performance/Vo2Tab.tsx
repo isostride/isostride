@@ -15,12 +15,12 @@ const median = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b); retu
  * and hard enough, its running median, and Uth's ratio for reference. The VDOT from the bests stands
  * with the efforts it rests on, in Capacity.
  */
-export function Vo2Tab({ runs, summaries, performance }: { runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; performance: PerformanceSettings }) {
+export function Vo2Tab({ runs, summaries, performance, today }: { runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; performance: PerformanceSettings; today: string }) {
   const maxHr = performance.maxHr ?? autoMaxHr(Object.values(summaries));
   const restHr = performance.restHr;
   const perRun = useMemo(() => (maxHr ? hrVo2Runs(runs, summaries, restHr, maxHr) : []), [runs, summaries, restHr, maxHr]);
   if (!maxHr || !perRun.length) return <div className="card empty">{t('No run long and hard enough yet (20 minutes or more at half the heart rate reserve or more).')}</div>;
-  const now = hrVo2Now(perRun);
+  const now = hrVo2Now(perRun, today);
   const uth = uthVo2max(restHr, maxHr);
   const times = perRun.map((p) => Date.parse(p.startTime));
   const trend = perRun.map((p, i) => median(perRun.filter((q, j) => j <= i && Date.parse(q.startTime) > times[i] - HR_VO2_MEDIAN_DAYS * DAY).map((q) => q.vo2max)));

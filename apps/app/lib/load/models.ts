@@ -84,7 +84,7 @@ export interface CriticalAt {
   rate: number;
   /** D′ (m) or W′ (J) of the same fit */
   reserve: number;
-  /** own: the bests of the 90 days up to the run; held: the last own one before; first: the first own one after (runs before any) */
+  /** own: the bests of the 90 days up to the run (before it, when the run is left out); held: the last own one before; first: the first own one after (runs before any) */
   from: 'own' | 'held' | 'first';
 }
 
@@ -93,9 +93,10 @@ export interface CriticalAt {
  * of 2–20 minutes over the runs of the THRESHOLD_DAYS days up to and with it, when its reserve is worth
  * MIN_RESERVE_SECONDS or more; else the last one so taken holds (a stretch of easy running does not lower
  * the threshold to the easy pace), and the runs before the first take the first. Null when no window
- * gives one.
+ * gives one. With `before`, each run's window leaves the run itself out (the D′ balance of a run: what
+ * the bests before it implied; with the run in, a run that sets the bests ends at exactly 0 %).
  */
-export function criticalSeries(rows: LoadRow[], summaries: Record<string, LoadSummary>, metric: CurveMetric): Record<string, CriticalAt | null> {
+export function criticalSeries(rows: LoadRow[], summaries: Record<string, LoadSummary>, metric: CurveMetric, before = false): Record<string, CriticalAt | null> {
   const sorted = [...rows].filter((r) => summaries[r.id]).sort((a, b) => a.startTime.localeCompare(b.startTime));
   const at = sorted.map((r) => Date.parse(r.startTime));
   const own: ({ rate: number; reserve: number } | null)[] = [];
@@ -103,7 +104,7 @@ export function criticalSeries(rows: LoadRow[], summaries: Record<string, LoadSu
   for (let i = 0; i < sorted.length; i++) {
     while (at[i] - at[from] > THRESHOLD_DAYS * DAY) from++;
     const best = new Map<number, number>();
-    for (let k = from; k <= i; k++) {
+    for (let k = from; k <= (before ? i - 1 : i); k++) {
       for (const b of summaries[sorted[k].id].bests) {
         if (b.duration < CS_RANGE[0] || b.duration > CS_RANGE[1]) continue;
         const v = metric === 'power' ? b.power : b.speed;

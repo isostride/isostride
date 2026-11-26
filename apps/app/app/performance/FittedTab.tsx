@@ -8,6 +8,8 @@ import type { PerformanceSettings } from '@/lib/settings';
 import { TimeChart } from './TimeChart';
 
 const time = (d: string) => new Date(`${d}T12:00:00`).getTime();
+/** The time constants that fit as well as the best pair (95 %). */
+const range = ([low, high]: [number, number]) => t('{low}–{high} d fit as well', { low: number(low), high: number(high) });
 
 /**
  * Banister's model fitted to the runner (requirement "Fitted performance model"): the gains and
@@ -16,7 +18,7 @@ const time = (d: string) => new Date(`${d}T12:00:00`).getTime();
  */
 export function FittedTab({ criterion, runs, summaries, performance, days, today }: { criterion: Criterion; runs: RunsIndex['runs']; summaries: Record<string, LoadSummary>; performance: PerformanceSettings; days: FormDay[]; today: string }) {
   const maxHr = performance.maxHr ?? autoMaxHr(Object.values(summaries));
-  const perfs = useMemo(() => performancesFor(criterion, runs, summaries, performance.restHr, maxHr, today, performance.curve), [criterion, runs, summaries, today, maxHr, performance.restHr, performance.curve]);
+  const perfs = useMemo(() => performancesFor(criterion, runs, summaries, performance.restHr, maxHr, today), [criterion, runs, summaries, today, maxHr, performance.restHr]);
   const fit = useMemo(() => fitBanister(days.map((d) => ({ date: d.date, load: d.load })), perfs), [days, perfs]);
   if (!fit) return <div className="card empty">{t('No fit yet: it needs {points} performances or more over {span} days or more ({n} now), and gains that come out positive.', { points: BANISTER_MIN_POINTS, span: BANISTER_MIN_SPAN, n: number(perfs.length) })}</div>;
   const measured = new Map(perfs.map((p) => [p.date, p.value]));
@@ -28,8 +30,8 @@ export function FittedTab({ criterion, runs, summaries, performance, days, today
       <dl className="form-figures" aria-label={t('Fitted model figures')}>
         <div><dt>{t('Fit (R²)')}</dt><dd className="tnum">{number(fit.r2, 2)}</dd></div>
         <div><dt>{t('Prediction (cross-validated R²)')}</dt><dd className="tnum">{number(fit.r2cv, 2)}</dd></div>
-        <div><dt>{t('Fitness τ1')}</dt><dd className="tnum">{number(fit.tau1)} d</dd></div>
-        <div><dt>{t('Fatigue τ2')}</dt><dd className="tnum">{number(fit.tau2)} d</dd></div>
+        <div><dt>{t('Fitness τ1')}</dt><dd className="tnum">{number(fit.tau1)} d</dd><dd className="muted sub tnum" data-range="tau1">{range(fit.tau1Range)}</dd></div>
+        <div><dt>{t('Fatigue τ2')}</dt><dd className="tnum">{number(fit.tau2)} d</dd><dd className="muted sub tnum" data-range="tau2">{range(fit.tau2Range)}</dd></div>
         <div><dt>{t('Peak if you rest')}</dt><dd className="tnum">{peakIn <= 1 ? t('now') : t('in {n} d', { n: number(peakIn) })}</dd></div>
       </dl>
       <h3 className="chart-title">{t('Performance, measured and modelled')}</h3>
