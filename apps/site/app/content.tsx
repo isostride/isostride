@@ -57,7 +57,7 @@ const MODEL_ROWS_EN: [string, string][] = [
   ['How the curves are fitted', 'To your best efforts as their envelope: no best lies above the curve, and easy runs below it do not pull it down'],
   ['What if', 'An effort or weeks of training load that did not happen, run through the same models: the curve, predictions and form beside the real ones'],
   ['VO2max', 'From heart rate, and VDOT after Daniels and Gilbert (1979)'],
-  ['Intensity distribution', 'Time in heart rate zones; low, moderate and high after Seiler'],
+  ['Intensity distribution', 'Time at low, moderate and high intensity after Seiler: under 82 %, 82–87 % and above 87 % of the maximum heart rate'],
   ['Aerobic efficiency', 'Efficiency factor and pace to heart rate decoupling'],
 ];
 
@@ -237,7 +237,7 @@ export const CONTENT: Record<Lang, Content> = {
         ['Jak dopasowane są krzywe', 'Do Twoich najlepszych wysiłków jako ich obwiednia: żaden najlepszy wynik nie leży nad krzywą, a spokojne biegi pod nią nie ściągają jej w dół'],
         ['Co jeśli', 'Wysiłek albo tygodnie obciążenia, których nie było, przeliczone tymi samymi modelami: krzywa, prognozy i forma obok prawdziwych'],
         ['VO2max', 'Z tętna oraz VDOT według Danielsa i Gilberta (1979)'],
-        ['Rozkład intensywności', 'Czas w strefach tętna, w podziale na niską, umiarkowaną i wysoką intensywność według Seilera'],
+        ['Rozkład intensywności', 'Czas w niskiej, umiarkowanej i wysokiej intensywności według Seilera: poniżej 82 %, 82–87 % i powyżej 87 % tętna maksymalnego'],
         ['Wydolność tlenowa', 'Współczynnik efektywności i dryf tętna względem tempa (decoupling)'],
       ],
       shots: [

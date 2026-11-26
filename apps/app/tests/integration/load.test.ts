@@ -15,13 +15,14 @@ describe('Performance model', () => {
     for (const r of runs) await writeJson(folder, PATHS.runFile(r.id), r);
     const zones = { heartRate: [114, 133, 152, 171] };
 
-    // Edwards: 30 min in Z3 is 90 a run; the third run's day has 180 over the 3 days before, its form below zero.
+    // Edwards: 30 min in Z3 is 90 a run; the third run's day has 180 over the 3 days before. The averages start
+    // from the mean load of the first days, so a load the same every day leaves the form at zero.
     await writeSettings(folder, { schemaVersion: 1, zones, performance: { ...DEFAULT_PERFORMANCE, load: 'trimpEdwards' } });
     let index = (await joinContext(folder))!;
     expect(index.runs.map((r) => r.load)).toEqual([90, 90, 90]);
     expect(index.runs[2].load3).toBe(180);
     expect(index.runs[2].load7).toBe(180);
-    expect(index.runs[2].form).toBeLessThan(0);
+    expect(index.runs[2].form).toBe(0);
     // The summaries are kept: a change of model reads no run file.
     expect(Object.keys((await readJson<{ runs: object }>(folder, PATHS.loadSummaries))!.runs)).toEqual(['r0', 'r1', 'r2']);
     const reads: string[] = [];

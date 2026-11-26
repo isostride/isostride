@@ -14,7 +14,7 @@ const RACE: Record<number, string> = { 5000: '5 km', 10000: '10 km', 21097.5: ms
 /** What a model says now, in a line, in the language in use. */
 export function saysNow(key: ModelKey, now: PerformanceNow): string {
   const m = now.marker;
-  const fit = (f: PerformanceNow['fitted']['hr']) => (f ? `R² ${number(f.r2, 2)} · τ1 ${number(f.tau1)} d, τ2 ${number(f.tau2)} d` : '–');
+  const fit = (f: PerformanceNow['fitted']['hr']) => (f ? `${t('R² {r2} cross-validated', { r2: number(f.r2cv, 2) })} · τ1 ${number(f.tau1)} d, τ2 ${number(f.tau2)} d` : '–');
   const bests = (e: PerformanceNow['evidence']) => (e.lengths ? t('{n} of {total} all-out', { n: number(e.allOut.length), total: number(e.lengths) }) : '–');
   switch (key) {
     case 'load': return now.week ? t('{load} {unit} this week', { load: number(now.week.load), unit: now.loadUnit }) : '–';

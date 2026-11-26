@@ -7,7 +7,7 @@ import { Key, TipRow, WashGradient, columnPath, dayLabel, monthLabel, monthTicks
 import { useOpenFolder } from '@/lib/client';
 import { msg, number, t } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
-import { formSeries, type FormDay } from '@/lib/load';
+import { formSeed, formSeries, type FormDay } from '@/lib/load';
 import { DEFAULT_PERFORMANCE, LOAD_MODELS, readSettings, type PerformanceSettings } from '@/lib/settings';
 
 /** The periods the chart shows, kept in the link (period=90, 365 or all). */
@@ -47,7 +47,11 @@ export function FormTab({ runs, whatIf }: { runs: RunsIndex['runs']; /** a scena
   const model = LOAD_MODELS.find((m) => m.key === p.load)!;
   const withLoad = runs.filter((r) => typeof r.load === 'number');
   const today = localDay(new Date());
-  const all = useMemo(() => formSeries([...withLoad.map((r) => ({ startTime: r.startTime, load: r.load as number })), ...(whatIf?.planned ?? [])], p, whatIf?.until ?? today),
+  const all = useMemo(() => {
+    const past = withLoad.map((r) => ({ startTime: r.startTime, load: r.load as number }));
+    // A scenario's days do not move where the averages start: those of the runs alone (lib/load whatif.ts).
+    return formSeries([...past, ...(whatIf?.planned ?? [])], p, whatIf?.until ?? today, whatIf ? formSeed(past, today) : undefined);
+  },
     // withLoad follows runs.
     [runs, p, today, whatIf]);
   // With a scenario of What if the period is the past before it, the scenario's days after.

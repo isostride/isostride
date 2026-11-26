@@ -144,7 +144,7 @@
   },
   {
     "id": "0539615a-eec1-46f6-ba3b-259d9fbc108c",
-    "quote": "szacowanie VO2max z tempa i tętna: opiera się na wzorach populacyjnych, a CS liczę z Twoich własnych najlepszych odcinków.\nmozesz to zrobic",
+    "quote": "szacowanie VO2max z tempa i tętna: opiera się na wzorach populacyjnych, a CS liczę z Twoich własnych najlepszych odcinków.\nmozesz to zrobic\nzrob je",
     "relationType": "derives",
     "sourceId": "2ee5b387-72f8-482a-95d0-9159fd6bb065",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -270,6 +270,12 @@
     "relationType": "interacts",
     "sourceId": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9",
     "targetId": "ca29b4d4-2e21-4bd0-8a7d-dedef3dab8b4"
+  },
+  {
+    "id": "0995f624-7afc-4853-a17e-419133235c20",
+    "relationType": "verifies",
+    "sourceId": "1625c3af-559f-4f8f-a46f-f01ab5d577d1",
+    "targetId": "d90e9074-aef2-4bc6-86aa-4f791f348c64"
   },
   {
     "id": "09bde772-0877-4f4b-a50c-0290814fd623",
@@ -1015,6 +1021,12 @@
     "targetId": "cdb3ba69-24a7-48b5-a970-522185fa982b"
   },
   {
+    "id": "1a803389-b53d-4110-b3e9-935c884aa00c",
+    "relationType": "verifies",
+    "sourceId": "87a8392b-d82c-4f02-8389-06ac2cb0bff3",
+    "targetId": "2b61dfcd-5b1d-4162-be5d-353933843c37"
+  },
+  {
     "id": "1aaa9356-e880-4b1d-b348-072d2a5335c3",
     "label": "Jump to run",
     "relationType": "navigates-to",
@@ -1178,6 +1190,12 @@
     "relationType": "satisfies",
     "sourceId": "b493eda5-2af5-4894-8ad8-5ddd03cd76ff",
     "targetId": "e994cb73-b961-4a9d-8334-de1cd8a785e4"
+  },
+  {
+    "id": "208f40bb-423a-4158-acb7-2869b98b8c9c",
+    "relationType": "verifies",
+    "sourceId": "f28e62ba-e487-412d-a3d5-b4b237199edd",
+    "targetId": "2ee5b387-72f8-482a-95d0-9159fd6bb065"
   },
   {
     "id": "209b2f73-8581-434c-98b7-5f32f925eb68",
@@ -2664,7 +2682,7 @@
   },
   {
     "id": "4c057d32-c42e-4e8c-91da-151a58365cec",
-    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej",
+    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei",
     "relationType": "derives",
     "sourceId": "8690d92b-9be0-4782-8993-56acf708796a",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -2908,7 +2926,7 @@
   },
   {
     "id": "5632168a-0f6d-4aa4-8165-ae1d735ef6f7",
-    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej",
+    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei",
     "relationType": "derives",
     "sourceId": "cbed4aea-601a-491c-b4a3-735482d5b55e",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -3106,7 +3124,7 @@
   },
   {
     "id": "5c6a7db3-c0bf-4250-a825-fb1c7048ecee",
-    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej",
+    "quote": "performance ... przegladnij co jest i dodaj brakujace elementy .. ktore pomoga w ocenie wydajnsoci .. przekladnij modele i co jeszcze mozna dodac ... dodaj je ocenie je pozniej\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei",
     "relationType": "derives",
     "sourceId": "2cc97e54-4899-4f94-9b8c-24845459f7c0",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -3804,7 +3822,7 @@
   },
   {
     "id": "72c0f84b-77e6-4c6f-a04c-84486424ffe2",
-    "quote": "co gdybym mial takie a nie inne obciazenia; jak by kryzwa mocy wyhladala",
+    "quote": "co gdybym mial takie a nie inne obciazenia; jak by kryzwa mocy wyhladala\nzrob je",
     "relationType": "derives",
     "sourceId": "d6e83e7b-9fee-4c63-9437-767f86bf5aed",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -4138,6 +4156,12 @@
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
   },
   {
+    "id": "7d4d0f14-ea46-4826-9dca-f0018df27268",
+    "relationType": "verifies",
+    "sourceId": "eca23ec3-e158-4cff-9709-f40a557b940a",
+    "targetId": "2cc97e54-4899-4f94-9b8c-24845459f7c0"
+  },
+  {
     "id": "7d76ca05-7ab4-4a37-a0b9-09511be0c66d",
     "quote": "dodaktowo chce 2 osie x ... czas lub dystans",
     "relationType": "derives",
@@ -4364,7 +4388,7 @@
   },
   {
     "id": "831966f6-26f9-4c32-9790-9d0040bc2165",
-    "quote": "chcialbym miec model ktory modeluje performance .... np. TRIMP, critical pawer based ... chce aby model byl ustawiany przez uzytkownika w ustawieniach\nTRIMP Edwardsa, TRIMP Banistera, rTSS (tempo), Power TSS (CP)",
+    "quote": "chcialbym miec model ktory modeluje performance .... np. TRIMP, critical pawer based ... chce aby model byl ustawiany przez uzytkownika w ustawieniach\nTRIMP Edwardsa, TRIMP Banistera, rTSS (tempo), Power TSS (CP)\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei\nzrob je",
     "relationType": "derives",
     "sourceId": "fd0a299b-2073-4758-a3c8-abd7a18087be",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -4758,6 +4782,12 @@
     "relationType": "verifies",
     "sourceId": "4af56562-2cf3-4808-a6a5-5cd7d3dd13fd",
     "targetId": "936e1f6e-a1ae-4a68-84db-f7e636ec464e"
+  },
+  {
+    "id": "8dd8690f-297a-4b94-b9d0-69beb8e03667",
+    "relationType": "verifies",
+    "sourceId": "57e12626-04a5-48ed-91c5-a77303df52bc",
+    "targetId": "d6e83e7b-9fee-4c63-9437-767f86bf5aed"
   },
   {
     "id": "8de561d1-de0a-4a88-b2dc-a65f200097cc",
@@ -6046,7 +6076,7 @@
   },
   {
     "id": "b5f623ec-6ea3-4036-88c3-fd8ca25c6b62",
-    "quote": "chcialbym miec model ktory modeluje performance\nZakładka w Analysis",
+    "quote": "chcialbym miec model ktory modeluje performance\nZakładka w Analysis\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei",
     "relationType": "derives",
     "sourceId": "f43c283f-b3a3-4199-873e-c4773079e307",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -6338,6 +6368,12 @@
     "relationType": "satisfies",
     "sourceId": "af580e00-9fde-4182-89d8-479d71707a14",
     "targetId": "e59886da-dd99-4f9a-a722-ee9026468a35"
+  },
+  {
+    "id": "be5e164e-73f3-4c35-a6a9-d3c0e8e3003c",
+    "relationType": "verifies",
+    "sourceId": "da8b9c51-8194-4ccd-bf71-7f5cb7006e4f",
+    "targetId": "fd0a299b-2073-4758-a3c8-abd7a18087be"
   },
   {
     "id": "be899072-83e6-4dcd-a386-90ddedde39e4",
@@ -6691,7 +6727,7 @@
   },
   {
     "id": "ca919e40-0420-4177-8539-c4bc4bdd806c",
-    "quote": "dopasowanie wag modelu Banistera do Twoich wyników: potrzebuje regularnych maksymalnych prób, a markery z zakładki Fitness markers to właśnie dane, na których takie dopasowanie można później oprzeć;\nmozesz to zrobic",
+    "quote": "dopasowanie wag modelu Banistera do Twoich wyników: potrzebuje regularnych maksymalnych prób, a markery z zakładki Fitness markers to właśnie dane, na których takie dopasowanie można później oprzeć;\nmozesz to zrobic\nupewnij sie ze sa popranie zimplementowane\nok popraw wszystko pokolei",
     "relationType": "derives",
     "sourceId": "22d6df09-ddc7-4b2a-b735-e4b8aab92b10",
     "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
@@ -7190,6 +7226,12 @@
     "relationType": "verifies",
     "sourceId": "a5594f9e-b2dd-4555-9cfe-84de48874542",
     "targetId": "963972a3-59ff-4349-a241-9243356b180c"
+  },
+  {
+    "id": "d9c9ddef-d70f-4c6f-8386-3244e4b0fb63",
+    "relationType": "verifies",
+    "sourceId": "aef4a927-aa66-42ac-bce2-a1144b1d4cc1",
+    "targetId": "d90e9074-aef2-4bc6-86aa-4f791f348c64"
   },
   {
     "id": "d9fa4a55-1c4a-42b8-b9f7-2b2c450534b9",
@@ -8294,6 +8336,12 @@
     "relationType": "verifies",
     "sourceId": "a2084606-fba4-4417-b655-ea825c6a19fb",
     "targetId": "24464add-dd72-490e-a272-9d7b5b2c72bc"
+  },
+  {
+    "id": "f9c4d3d2-e6bd-4eaa-a2af-bbb165d3ee58",
+    "relationType": "verifies",
+    "sourceId": "54355ac3-9e2f-425f-86a0-237f3ffca525",
+    "targetId": "8690d92b-9be0-4782-8993-56acf708796a"
   },
   {
     "id": "fa366f8d-ab10-4cfd-baae-b28fa7ae48ac",

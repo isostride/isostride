@@ -2,11 +2,14 @@ import type { RunFile } from '@/lib/kernel';
 
 /** Fragments of a run by length (pure): the fastest stretch covering a distance or lasting a time. */
 
-/** The fragment from sample i covering `target` m (distance) or lasting `target` s (time): its end index, or -1. */
-function endFrom(ts: number[], ds: number[], i: number, kind: 'time' | 'distance', target: number): number {
+/**
+ * The fragment from sample i covering `target` m (distance) or lasting `target` s (time): its end index, or -1.
+ * A time may fall `slack` s short of its length (the last sample ends a run).
+ */
+function endFrom(ts: number[], ds: number[], i: number, kind: 'time' | 'distance', target: number, slack = 2): number {
   let lo = i;
   let hi = ts.length - 1;
-  const reached = (j: number) => (kind === 'distance' ? ds[j] - ds[i] >= target : ts[j] - ts[i] >= target - 2);
+  const reached = (j: number) => (kind === 'distance' ? ds[j] - ds[i] >= target : ts[j] - ts[i] >= target - slack);
   if (!reached(hi)) return -1;
   while (lo < hi) { const mid = (lo + hi) >> 1; if (reached(mid)) hi = mid; else lo = mid + 1; }
   return lo;
@@ -25,16 +28,35 @@ export function fastestFragment(run: RunFile, kind: 'time' | 'distance', target:
     const d = distance[i];
     if (d !== null && (!range || (t[i] >= range[0] && t[i] < range[1]))) { ts.push(t[i]); ds.push(d); }
   }
-  let best: { from: number; to: number; distance: number } | null = null;
-  for (let i = 0; i < ts.length; i++) {
-    if (allow && !allow(ts[i])) continue;
-    const j = endFrom(ts, ds, i, kind, target);
-    if (j < 0) break;
-    const cand = { from: ts[i], to: ts[j], distance: ds[j] - ds[i] };
-    const better = !best || (kind === 'distance' ? cand.to - cand.from < best.to - best.from : cand.distance > best.distance);
-    if (better) best = cand;
+  return fastestOver(ts, ds, kind, target, allow);
+}
+
+/**
+ * The fastest fragment over samples at times `ts` with cumulative distances `ds` (see fastestFragment).
+ * A stretch of time is taken whole: where no whole one exists, the longest there is when it falls 2 s
+ * short at most (a segment ending on its last sample); a shorter stretch is a faster one, so it would
+ * pass for the best of its length. `ok` may refuse a candidate
+ * by its sample indices (a downhill, for the bests of pace).
+ */
+export function fastestOver(ts: number[], ds: number[], kind: 'time' | 'distance', target: number, allow?: (t: number) => boolean, ok?: (i: number, j: number) => boolean): { from: number; to: number; distance: number } | null {
+  // Short of a whole stretch, the longest there is, when it falls 2 s short at most.
+  const short = ts.length ? target - (ts[ts.length - 1] - ts[0]) : Infinity;
+  for (const slack of kind === 'time' && short > 0 && short <= 2 ? [0, short] : [0]) {
+    let best: { from: number; to: number; distance: number } | null = null;
+    for (let i = 0; i < ts.length; i++) {
+      if (allow && !allow(ts[i])) continue;
+      const j = endFrom(ts, ds, i, kind, target, slack);
+      if (j < 0) break;
+      if (ok && !ok(i, j)) continue;
+      const cand = { from: ts[i], to: ts[j], distance: ds[j] - ds[i] };
+      const better = !best || (kind === 'distance' ? cand.to - cand.from < best.to - best.from : cand.distance > best.distance);
+      if (better) best = cand;
+    }
+    if (best) return best;
+    // A whole stretch fits, but none passes: no shorter one is taken for it.
+    if (ts.length && endFrom(ts, ds, 0, kind, target, slack) >= 0) return null;
   }
-  return best;
+  return null;
 }
 
 /** One candidate stretch of a length: its bounds, its distance and where it lies among the samples with a distance. */

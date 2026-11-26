@@ -29,17 +29,21 @@ export interface LoadWeek {
   ramp: number;
 }
 
-/** Weeks of the daily series, Monday to Sunday: load, monotony, strain, ramp rate. */
+/**
+ * Weeks of the daily series, Monday to Sunday: load, monotony, strain, ramp rate. The last week, when the
+ * series ends before its Sunday, has its monotony over its days so far: the days to come are no rest.
+ */
 export function weeklyLoad(days: FormDay[]): LoadWeek[] {
   const by = new Map<string, FormDay[]>();
   for (const d of days) { const w = weekOf(d.date); (by.get(w) ?? by.set(w, []).get(w)!).push(d); }
   const out: LoadWeek[] = [];
   let before = 0;
   for (const [start, list] of [...by].sort(([a], [b]) => a.localeCompare(b))) {
-    const loads = Array.from({ length: 7 }, (_, k) => list.find((d) => d.date === shift(start, k))?.load ?? 0);
+    const lastDay = days[days.length - 1].date;
+    const loads = Array.from({ length: 7 }, (_, k) => shift(start, k)).filter((d, k) => k === 0 || d <= lastDay).map((d) => list.find((x) => x.date === d)?.load ?? 0);
     const load = loads.reduce((s, v) => s + v, 0);
-    const mean = load / 7;
-    const sd = Math.sqrt(loads.reduce((s, v) => s + (v - mean) ** 2, 0) / 7);
+    const mean = load / loads.length;
+    const sd = Math.sqrt(loads.reduce((s, v) => s + (v - mean) ** 2, 0) / loads.length);
     const monotony = sd > 0 ? mean / sd : null;
     const end = list[list.length - 1].fitness;
     out.push({ start, load: Math.round(load), monotony: monotony === null ? null : Math.round(monotony * 100) / 100, strain: monotony === null ? null : Math.round(load * monotony), ramp: Math.round((end - before) * 10) / 10 });
@@ -68,7 +72,8 @@ export const MARKER_DAYS = 90;
 
 /**
  * The fitness markers at the end of each week, from the best of each length of 2–20 minutes over
- * the runs of the MARKER_DAYS days up to it: critical speed and D′, critical power and W′, and
+ * the runs of the MARKER_DAYS days up to it (the current week's up to `until`, as the table of bests
+ * takes them): critical speed and D′, critical power and W′, and
  * the predicted race times: Riegel's law over the same bests, or with the whole curve chosen
  * Péronnet–Thibault over the bests of every length, 30 s to 2 h.
  */
@@ -78,7 +83,7 @@ export function markersOverTime(rows: LoadRow[], summaries: Record<string, LoadS
   const last = until ?? runs[runs.length - 1].day;
   const out: MarkerWeek[] = [];
   for (let end = shift(weekOf(runs[0].day), 6); end <= shift(weekOf(last), 6); end = shift(end, 7)) {
-    const to = new Date(`${end}T23:59:59`).getTime();
+    const to = new Date(`${end < last ? end : last}T23:59:59`).getTime();
     const from = to - MARKER_DAYS * DAY;
     const inside = runs.filter((r) => r.t > from && r.t <= to);
     const speed = new Map<number, number>();
@@ -125,18 +130,24 @@ export function zonesByWeek(rows: LoadRow[], summaries: Record<string, LoadSumma
 }
 
 /**
- * Seiler's three intensity zones from the zones of Settings: low (Z1–Z2), moderate (Z3), high (Z4
- * and above); with fewer zones, the last is high and the one before moderate.
+ * Seiler's three intensity zones by the heart rate, as shares of the maximum (Seiler 2010, read on the
+ * Olympiatoppen scale: low Z1–Z2 under 82 %, moderate Z3 82–87 %, high Z4–Z5 above 87 %), apart from the
+ * zones of Settings: those are the runner's own (by default 60/70/80/90 % of the maximum, Edwards' bands),
+ * and their Z3 is no moderate intensity.
  */
+export const SEILER_SHARES: [number, number] = [0.82, 0.87];
+
+/** Each week's seconds at low, moderate and high intensity (Seiler's zones of `maxHr`); none without a maximum. */
+export function seilerByWeek(rows: LoadRow[], summaries: Record<string, LoadSummary>, maxHr: number | null): ZoneWeek[] {
+  if (!maxHr) return [];
+  return zonesByWeek(rows, summaries, SEILER_SHARES.map((f) => f * maxHr));
+}
+
+/** The shares of low, moderate and high intensity over weeks of Seiler's three zones (seilerByWeek). */
 export function intensityShares(weeks: ZoneWeek[]): { low: number; moderate: number; high: number; seconds: number } {
-  const sums = weeks.reduce((acc, w) => acc.map((v, k) => v + (w.seconds[k] ?? 0)), Array(Math.max(0, ...weeks.map((w) => w.seconds.length))).fill(0) as number[]);
-  const total = sums.reduce((s, v) => s + v, 0);
+  const [low, moderate, high] = [0, 1, 2].map((k) => weeks.reduce((s, w) => s + (w.seconds[k] ?? 0), 0));
+  const total = low + moderate + high;
   if (!total) return { low: 0, moderate: 0, high: 0, seconds: 0 };
-  const n = sums.length;
-  const lowEnd = n >= 5 ? 2 : Math.max(1, n - 2);
-  const low = sums.slice(0, lowEnd).reduce((s, v) => s + v, 0);
-  const moderate = sums.slice(lowEnd, lowEnd + 1).reduce((s, v) => s + v, 0);
-  const high = total - low - moderate;
   return { low: low / total, moderate: moderate / total, high: high / total, seconds: total };
 }
 

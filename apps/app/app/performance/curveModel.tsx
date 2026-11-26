@@ -55,6 +55,7 @@ export function CurveModelNote({ curve, metric }: { curve: DrawnCurve; metric: C
       <p className="chart-note" data-model={w.model}>
         {w.model === 'pt'
           ? t('Dashed: the Péronnet–Thibault model fitted to your bests of {from} to {to}: maximal aerobic speed {mas} /km, held for {tmap} minutes, then {decline} % slower for each doubling of the time; an anaerobic reserve of {s} m on top.', { ...range, mas: fmtPace(p.mas), tmap: number(PT_TMAP / 60), decline: number(Math.max(0, (p.a / p.mas) * Math.LN2 * 100), 1), s: number(Math.round(p.s)) })
+            + (w.decline ? '' : ` ${t('No best of 30 minutes or more, so the decline is not yours: it is Riegel’s 1.06, a population figure, and the half and the marathon follow it.')}`)
           : `${t('Dashed: the omni-domain model fitted to your bests of {from} to {to}: critical power {cp} W, W′ {wp} kJ spent no faster than a sprint of {pmax} W allows.', { ...range, cp: number(Math.round(p.cp)), wp: number(p.wp / 1000, 1), pmax: number(Math.round(p.pmax)) })} ${w.decline ? t('Past 30 minutes {decline} W less for each doubling of the time.', { decline: number(Math.round(p.a * Math.LN2)) }) : t('No best past 30 minutes, so no decline past them is fitted.')}`}
         {' '}{w.range[1] < 7200 ? t('Dotted: the same model past your longest best, an extrapolation.') : ''}
       </p>

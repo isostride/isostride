@@ -26,10 +26,17 @@ export interface RunLoad {
   threshold: number | null;
 }
 
-/** The highest heart rate held for 10 s in any run, bpm. */
+/** A run's peak more than this above every other run's is a sensor's spike, not the runner's maximum, bpm (model's choice). */
+export const MAX_HR_SPIKE = 5;
+
+/**
+ * The highest heart rate held for 10 s in the runs, bpm: the highest run's peak, unless it lies more than
+ * MAX_HR_SPIKE above every other run's (a strap's or a wrist sensor's spike), then the next run's.
+ */
 export function autoMaxHr(summaries: LoadSummary[]): number | null {
-  const peaks = summaries.map((s) => s.hrPeak).filter((v): v is number => v !== null);
-  return peaks.length ? Math.max(...peaks) : null;
+  const peaks = summaries.map((s) => s.hrPeak).filter((v): v is number => v !== null).sort((a, b) => b - a);
+  if (!peaks.length) return null;
+  return peaks.length > 1 && peaks[0] - peaks[1] > MAX_HR_SPIKE ? peaks[1] : peaks[0];
 }
 
 /** Banister's TRIMP: minutes × HRr × 0.64·e^(1.92·HRr) (women 0.86·e^(1.67·HRr)), HRr the heart rate reserve used. */
@@ -44,11 +51,18 @@ export function banisterTrimp(s: LoadSummary, restHr: number, maxHr: number, sex
   return sum;
 }
 
-/** Edwards' TRIMP: minutes in each heart rate zone times its number (Z1 = 1), from the zones of Settings. */
-export function edwardsTrimp(s: LoadSummary, hrZones: number[]): number | null {
+/** Edwards counts nothing under this share of the maximum heart rate (Edwards 1993: his bands start at 50 %). */
+export const EDWARDS_FLOOR = 0.5;
+
+/**
+ * Edwards' TRIMP: minutes in each heart rate zone times its number (Z1 = 1), from the zones of Settings;
+ * with a maximum heart rate, the minutes under EDWARDS_FLOOR of it count nothing.
+ */
+export function edwardsTrimp(s: LoadSummary, hrZones: number[], maxHr: number | null = null): number | null {
   if (!s.hr.length || !hrZones.length) return null;
+  const floor = maxHr ? EDWARDS_FLOOR * maxHr : 0;
   let sum = 0;
-  s.hr.forEach((sec, k) => { sum += (sec / 60) * (zoneOf('heartRate', hrZones, s.hrFrom + k) + 1); });
+  s.hr.forEach((sec, k) => { if (s.hrFrom + k >= floor) sum += (sec / 60) * (zoneOf('heartRate', hrZones, s.hrFrom + k) + 1); });
   return sum;
 }
 
@@ -59,14 +73,30 @@ export function stressScore(duration: number, normalised: number | null, thresho
 }
 
 /**
- * The critical speed (m/s) or power (W) at each run: the Monod–Scherrer fit of the best of each
- * length of 2–20 minutes over the runs of the THRESHOLD_DAYS days up to and with it; null with
- * fewer than 3 lengths.
+ * A critical speed (power) is taken for a threshold only when its reserve, D′ (W′), is worth this many
+ * seconds at it or more (model's choice: 12 s, about 50 m at 4 m/s): a smaller one means the short bests
+ * were held back, and the fit then lies near the pace of the easy runs.
  */
-export function criticalByRun(rows: LoadRow[], summaries: Record<string, LoadSummary>, metric: CurveMetric): Record<string, number | null> {
+export const MIN_RESERVE_SECONDS = 12;
+
+/** The threshold of a run: its value, and where it comes from. */
+export interface CriticalAt {
+  rate: number;
+  /** own: the bests of the 90 days up to the run; held: the last own one before; first: the first own one after (runs before any) */
+  from: 'own' | 'held' | 'first';
+}
+
+/**
+ * The critical speed (m/s) or power (W) at each run: the Monod–Scherrer fit of the best of each length
+ * of 2–20 minutes over the runs of the THRESHOLD_DAYS days up to and with it, when its reserve is worth
+ * MIN_RESERVE_SECONDS or more; else the last one so taken holds (a stretch of easy running does not lower
+ * the threshold to the easy pace), and the runs before the first take the first. Null when no window
+ * gives one.
+ */
+export function criticalSeries(rows: LoadRow[], summaries: Record<string, LoadSummary>, metric: CurveMetric): Record<string, CriticalAt | null> {
   const sorted = [...rows].filter((r) => summaries[r.id]).sort((a, b) => a.startTime.localeCompare(b.startTime));
   const at = sorted.map((r) => Date.parse(r.startTime));
-  const out: Record<string, number | null> = {};
+  const own: (number | null)[] = [];
   let from = 0;
   for (let i = 0; i < sorted.length; i++) {
     while (at[i] - at[from] > THRESHOLD_DAYS * DAY) from++;
@@ -80,9 +110,22 @@ export function criticalByRun(rows: LoadRow[], summaries: Record<string, LoadSum
     }
     const points = [...best].map(([duration, v]) => ({ duration, value: metric === 'power' ? v : 1000 / v }));
     const c = estimateCurve(points, metric)?.critical ?? null;
-    out[sorted[i].id] = c && c.rate > 0 ? c.rate : null;
+    own.push(c && c.rate > 0 && c.reserve >= MIN_RESERVE_SECONDS * c.rate ? c.rate : null);
   }
+  const first = own.find((v) => v !== null) ?? null;
+  const out: Record<string, CriticalAt | null> = {};
+  let held: number | null = null;
+  sorted.forEach((r, i) => {
+    const v = own[i];
+    if (v !== null) held = v;
+    out[r.id] = v !== null ? { rate: v, from: 'own' } : held !== null ? { rate: held, from: 'held' } : first !== null ? { rate: first, from: 'first' } : null;
+  });
   return out;
+}
+
+/** The critical speed (m/s) or power (W) at each run, as criticalSeries takes it; null without one. */
+export function criticalByRun(rows: LoadRow[], summaries: Record<string, LoadSummary>, metric: CurveMetric): Record<string, number | null> {
+  return Object.fromEntries(Object.entries(criticalSeries(rows, summaries, metric)).map(([id, c]) => [id, c?.rate ?? null]));
 }
 
 /** The load of every run with a summary, by the model and parameters given. */
@@ -95,7 +138,7 @@ export function runLoads(rows: LoadRow[], summaries: Record<string, LoadSummary>
   for (const r of have) {
     const s = summaries[r.id];
     if (p.load === 'trimpBanister') raw.set(r.id, { load: maxHr === null ? null : banisterTrimp(s, p.restHr, maxHr, p.sex), threshold: null });
-    else if (p.load === 'trimpEdwards') raw.set(r.id, { load: edwardsTrimp(s, hrZones), threshold: null });
+    else if (p.load === 'trimpEdwards') raw.set(r.id, { load: edwardsTrimp(s, hrZones, maxHr), threshold: null });
     else if (p.load === 'rtss') {
       const threshold = p.thresholdPace !== null ? 1000 / p.thresholdPace : critical[r.id] ?? null;
       raw.set(r.id, { load: stressScore(s.duration, s.normSpeed, threshold), threshold });

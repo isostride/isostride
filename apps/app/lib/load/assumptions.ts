@@ -5,9 +5,9 @@ import { LOAD_MODELS, type PerformanceSettings } from '@/lib/settings';
 import { BANISTER_MIN_POINTS, BANISTER_MIN_SPAN, TAU1_RANGE, TAU2_RANGE, fitBanister, type BanisterFit } from './banister';
 import { bestEfforts, effortEvidence, type BestEffort, type EffortEvidence } from './efforts';
 import type { FormDay } from './form';
-import { DECOUPLING_MIN, EF_TREND_DAYS, MARKER_DAYS, efficiencyNow, efficiencyRuns, intensityShares, markersOverTime, weeklyLoad, zonesByWeek, type LoadWeek, type MarkerWeek } from './insights';
-import { autoMaxHr, type LoadRow } from './models';
-import type { LoadSummary } from './summary';
+import { DECOUPLING_MIN, EF_TREND_DAYS, MARKER_DAYS, efficiencyNow, efficiencyRuns, intensityShares, markersOverTime, seilerByWeek, weeklyLoad, type LoadWeek, type MarkerWeek } from './insights';
+import { MIN_RESERVE_SECONDS, autoMaxHr, criticalSeries, type CriticalAt, type LoadRow } from './models';
+import { WARMUP, type LoadSummary } from './summary';
 import { HR_VO2_MEDIAN_DAYS, HR_VO2_MIN_RESERVE, HR_VO2_MIN_SECONDS, hrVo2Now, hrVo2Runs, performancesFor, uthVo2max, vdotOverTime } from './vo2';
 
 /**
@@ -126,7 +126,7 @@ export const THRESHOLDS = {
   vo2Runs: 5,
   /** VO2max from heart rate and VDOT agree within the first, disagree beyond the second (fractions) */
   agree: [0.1, 0.2] as [number, number],
-  /** R² of the fitted model: explains the performances from the first, says little under the second */
+  /** R² of the fitted model, cross-validated: predicts the performances from the first, says little under the second */
   r2: [0.5, 0.3] as [number, number],
   /** the fatigue term matters from this share of the fitness term */
   fatigueShare: 0.02,
@@ -156,7 +156,7 @@ export const THRESHOLD_FIELDS: { key: string; group: string; label: string; unit
   { key: 'dPrime.1', group: msg('Best efforts'), label: msg('to'), unit: 'm', scale: 1, min: 0, max: 2000 },
   { key: 'agree.0', group: msg('Agreement'), label: msg('VO2max from heart rate and VDOT agree within'), unit: '%', scale: 100, min: 0, max: 100 },
   { key: 'agree.1', group: msg('Agreement'), label: msg('and disagree beyond'), unit: '%', scale: 100, min: 0, max: 100 },
-  { key: 'r2.0', group: msg('Fitted response'), label: msg('The fit explains the performances from R²'), unit: '', scale: 1, min: 0, max: 1 },
+  { key: 'r2.0', group: msg('Fitted response'), label: msg('The fit predicts the performances left out from R²'), unit: '', scale: 1, min: 0, max: 1 },
   { key: 'r2.1', group: msg('Fitted response'), label: msg('and says little under R²'), unit: '', scale: 1, min: 0, max: 1 },
   { key: 'fatigueShare', group: msg('Fitted response'), label: msg('Fatigue matters from'), unit: msg('% of fitness'), scale: 100, min: 0, max: 100 },
 ];
@@ -219,8 +219,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
   const perRun = maxHr ? hrVo2Runs(have, summaries, p.restHr, maxHr) : [];
   const vo2 = hrVo2Now(perRun);
   const uth = maxHr ? uthVo2max(p.restHr, maxHr) : null;
-  const zoneWeeks = zonesByWeek(have, summaries, hrZones).slice(-12);
-  const shares = intensityShares(zoneWeeks);
+  const shares = intensityShares(seilerByWeek(have, summaries, maxHr).slice(-12));
   const loadWeeks = weeklyLoad(days);
   const loads = days.map((d) => ({ date: d.date, load: d.load }));
   const fitted = {
@@ -298,6 +297,16 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
   const counted = withLoad.length - measured;
   const coverage = check('coverage', t('Every run has what the model needs'), graded(withLoad.length ? measured / withLoad.length : 0, T.coverage),
     `${tn(withLoad.length, '{count} of {n} runs measured', '{count} of {n} runs measured', { count: number(measured) })}${counted ? `; ${tn(counted, '{n} counted from their duration', '{n} counted from their duration')}` : ''}`);
+  /** The automatic threshold of the newest run: from its own 90 days, held from before, or the first one taken. */
+  const lastCritical = (metric: 'speed' | 'power'): CriticalAt | null => {
+    const last = [...have].sort((a, b) => b.startTime.localeCompare(a.startTime))[0];
+    return last ? criticalSeries(have, summaries, metric)[last.id] ?? null : null;
+  };
+  const autoThreshold = (label: string, c: CriticalAt | null, show: (v: number) => string): Check => (c === null
+    ? check('threshold', label, 'unmet', t('no {days} days of bests show all-out short efforts (a reserve worth {s} s or more): every load is counted from its duration', { days: MARKER_DAYS, s: MIN_RESERVE_SECONDS }))
+    : c.from === 'own'
+      ? check('threshold', label, 'met', t('{value}, from the bests of the {days} days up to each run: as reliable as the efforts behind it', { value: show(c.rate), days: MARKER_DAYS }))
+      : check('threshold', label, 'doubt', t('{value}, held from older bests: the last {days} days show no all-out short efforts (a reserve worth {s} s or more), so the threshold is not lowered to the pace of easy runs', { value: show(c.rate), days: MARKER_DAYS, s: MIN_RESERVE_SECONDS })));
   const loadDef: Pick<Def, 'inputs' | 'parents' | 'checks'> = p.load === 'trimpBanister'
     ? { inputs: [t('heart rate of every run'), t('resting heart rate'), t('maximum heart rate'), t('sex')], parents: [], checks: [coverage, restCheck(t('the reserve is counted from it')), maxCheck(t('every load comes out too high'))] }
     : p.load === 'trimpEdwards'
@@ -307,13 +316,13 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
           inputs: [t('effort pace of every run'), t('threshold pace')], parents: p.thresholdPace === null ? ['cs'] : [],
           checks: [coverage, p.thresholdPace !== null
             ? check('threshold', t('The threshold pace is yours'), 'met', t('{pace} /km, set in Model', { pace: fmtPace(1000 / p.thresholdPace) }))
-            : check('threshold', t('The threshold pace is yours'), 'met', t('taken from the critical speed of the {days} days up to each run: as reliable as the efforts behind it', { days: MARKER_DAYS }))],
+            : autoThreshold(t('The threshold pace is yours'), lastCritical('speed'), (v) => `${fmtPace(1000 / v)} /km`)],
         }
         : {
           inputs: [t('power of every run'), t('critical power')], parents: p.thresholdPower === null ? ['cp'] : [],
           checks: [coverage, p.thresholdPower !== null
             ? check('threshold', t('The critical power is yours'), 'met', t('{power} W, set in Model', { power: p.thresholdPower }))
-            : check('threshold', t('The critical power is yours'), 'met', t('taken from the bests of the {days} days up to each run: as reliable as the efforts behind it', { days: MARKER_DAYS }))],
+            : autoThreshold(t('The critical power is yours'), lastCritical('power'), (v) => `${number(Math.round(v))} W`)],
         };
 
   const powerRuns = inWindow.filter((r) => summaries[r.id].normPower !== null);
@@ -328,8 +337,8 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
       ? [check('points', pointsLabel, 'unmet', t('too few performances, or no fit with positive gains'))]
       : [
         check('points', pointsLabel, 'met', tn(fit.n, '{n} performances ({what})', '{n} performances ({what})', { what: name })),
-        check('fit', t('The loads explain the performances'), graded(fit.r2, T.r2),
-          t('R² {r2}: the model explains {share} of their variation ({expected} or more expected)', { r2: number(fit.r2, 2), share: pct(Math.max(0, fit.r2)), expected: pct(T.r2[0]) })),
+        check('fit', t('The loads predict the performances'), graded(fit.r2cv, T.r2),
+          t('R² {r2cv} on the performances left out of each fit, {r2} on those fitted: the model predicts {share} of their variation ({expected} or more expected)', { r2cv: number(fit.r2cv, 2), r2: number(fit.r2, 2), share: pct(Math.max(0, fit.r2cv)), expected: pct(T.r2[0]) })),
         check('identified', t('Your data settle the time constants'), fit.tau1 > TAU1_RANGE[0] && fit.tau1 < TAU1_RANGE[1] && fit.tau2 > TAU2_RANGE[0] && fit.tau2 < TAU2_RANGE[1] ? 'met' : 'doubt',
           t('τ1 {tau1} d of {from1}–{to1} tried, τ2 {tau2} d of {from2}–{to2}: one at the edge of its range is not settled by the data', {
             tau1: number(fit.tau1), from1: TAU1_RANGE[0], to1: TAU1_RANGE[1], tau2: number(fit.tau2), from2: TAU2_RANGE[0], to2: TAU2_RANGE[1],
@@ -375,10 +384,11 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
       ],
     },
     intensity: {
-      key: 'intensity', group: 'load', depth: 0, name: t('Intensity distribution'), method: t('time in the heart rate zones; low, moderate and high after Seiler'), tells: t('how hard you train, by time'),
-      inputs: [t('heart rate of every run'), t('your heart rate zones')], parents: [], where: { tab: 'load', view: 'intensity' }, has: shares.seconds > 0,
+      key: 'intensity', group: 'load', depth: 0, name: t('Intensity distribution'), method: t('time at low, moderate and high intensity after Seiler: under 82 %, 82–87 % and above 87 % of the maximum heart rate'), tells: t('how hard you train, by time'),
+      inputs: [t('heart rate of every run'), t('maximum heart rate')], parents: [], where: { tab: 'load', view: 'intensity' }, has: shares.seconds > 0,
       checks: [
-        zonesCheck(t('the shares say nothing about you until you set yours')), hrCheck(), sensorCheck(),
+        maxCheck(t('every share is read against it, and too low a maximum makes easy running look hard')), hrCheck(), sensorCheck(),
+        check('thresholds', t('Your thresholds lie near 82 % and 87 % of your maximum'), 'unknown', t('Seiler’s zones are bounded by the first and second lactate thresholds; their shares of the maximum vary from runner to runner by several per cent')),
         check('method', t('Time in a zone is what you mean by intensity'), 'unknown', t('by time, a session of intervals looks easier than by its goal: its recoveries count as low intensity')),
       ],
     },
@@ -455,7 +465,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
     },
     vo2hr: {
       key: 'vo2hr', group: 'aerobic', depth: 0, name: t('VO2max from heart rate'), method: t('the oxygen cost of the pace (ACSM) over the share of the heart rate reserve used (Swain 1997)'), tells: t('your capacity guessed from everyday runs'),
-      inputs: [t('pace and heart rate of runs of {min} min and more at {share} of the reserve', { min: HR_VO2_MIN_SECONDS / 60, share: pct(HR_VO2_MIN_RESERVE) }), t('resting heart rate'), t('maximum heart rate')], parents: [], where: { tab: 'aerobic', view: 'vo2' }, has: vo2.value !== null,
+      inputs: [t('pace and heart rate of runs of {min} min and more past the first {warmup} min, at {share} of the reserve', { min: HR_VO2_MIN_SECONDS / 60, warmup: WARMUP / 60, share: pct(HR_VO2_MIN_RESERVE) }), t('resting heart rate'), t('maximum heart rate')], parents: [], where: { tab: 'aerobic', view: 'vo2' }, has: vo2.value !== null,
       checks: [
         check('runs', t('{runs} runs or more in the last {days} days', { runs: T.vo2Runs, days: HR_VO2_MEDIAN_DAYS }), vo2.runs >= T.vo2Runs ? 'met' : vo2.runs > 0 ? 'doubt' : 'unmet',
           tn(vo2.runs, '{n} run long and hard enough', '{n} runs long and hard enough')),

@@ -1,6 +1,6 @@
 import { CS_RANGE, CURVE_DURATIONS, MIN_FIT_SECONDS, estimateCurve, fitWholeCurve, wholePredictions, type CurveEstimate } from '@/lib/curve';
 import { dayOf } from '@/lib/gear';
-import { formSeries, type FormDay } from './form';
+import { formSeed, formSeries, type FormDay } from './form';
 import { weeklyLoad } from './insights';
 import { danielsVdot } from './vo2';
 
@@ -187,7 +187,8 @@ export function loadWhatIf(runs: { startTime: string; load: number }[], p: { fit
       if (load > 0) planned.push({ startTime: new Date(`${day}T12:00:00`).toISOString(), load });
     }
   });
-  const days = weeks.length ? formSeries([...runs, ...planned], p, until) : past;
+  // The averages start as those of the runs alone: with a short history the scenario's days would move the start.
+  const days = weeks.length ? formSeries([...runs, ...planned], p, until, formSeed(runs, today)) : past;
   const heaviest = Math.max(0, ...weeklyLoad(past).map((w) => w.load));
   const at = new Map(days.map((d, i) => [d.date, i]));
   const todayDay = past[past.length - 1] ?? null;

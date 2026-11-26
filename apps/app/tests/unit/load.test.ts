@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { autoMaxHr, banisterTrimp, criticalByRun, dayLoads, edwardsTrimp, formSeries, normalised, runLoads, stressScore, summarizeLoad, type LoadSummary } from '@/lib/load';
+import { autoMaxHr, banisterTrimp, criticalByRun, criticalSeries, dayLoads, edwardsTrimp, formSeries, normalised, runLoads, stressScore, summarizeLoad, type LoadSummary } from '@/lib/load';
 import { DEFAULT_PERFORMANCE, type PerformanceSettings } from '@/lib/settings';
 import { syntheticRun } from '../support/synthetic';
 
@@ -43,8 +43,11 @@ describe('Performance model', () => {
 
     // The model chosen gives the loads; the maximum heart rate from the runs when not set.
     const rows = [{ id: 'a', startTime: '2026-10-01T07:00:00Z', duration: 1800 }, { id: 'b', startTime: '2026-10-02T07:00:00Z', duration: 3600 }];
-    const sums = { a: steady(30, 120, { hrPeak: 180 }), b: steady(60, 150, { normSpeed: 3.5, normPower: 250 }) };
+    const sums = { a: steady(30, 120, { hrPeak: 180 }), b: steady(60, 150, { hrPeak: 177, normSpeed: 3.5, normPower: 250 }) };
     expect(autoMaxHr(Object.values(sums))).toBe(180);
+    // A run's peak more than 5 bpm above every other run's is a sensor's spike: the next run's peak is taken.
+    expect(autoMaxHr([steady(30, 120, { hrPeak: 214 }), steady(30, 120, { hrPeak: 182 }), steady(30, 120, { hrPeak: 179 })])).toBe(182);
+    expect(autoMaxHr([steady(30, 120, { hrPeak: 186 })])).toBe(186);
     const banister = runLoads(rows, sums, perf({ load: 'trimpBanister', restHr: 60 }), HR_ZONES);
     expect(banister.a.load).toBeCloseTo(30 * 0.5 * 0.64 * Math.exp(0.96), 1);
     expect(banister.a.estimated).toBe(false);
@@ -72,6 +75,20 @@ describe('Performance model', () => {
     // 100 days on, the early run has left the window: the critical power of the later bests only.
     expect(cp.late).toBeCloseTo(220, 6);
     expect(cp.later).toBeCloseTo(220, 6);
+    // A window of easy runs only (a reserve worth under 12 s): the last threshold of all-out bests holds, so
+    // the same run does not cost more; the runs before the first take the first.
+    const easy = (cp: number) => [120, 180, 300, 600, 900, 1200].map((d) => ({ duration: d, speed: null, power: cp + 300 / d }));
+    const held = [
+      { id: 'easy0', startTime: '2025-12-20T07:00:00Z', duration: 3600 }, ...rows.slice(0, 1),
+      { id: 'easy1', startTime: '2026-04-20T07:00:00Z', duration: 3600 },
+    ];
+    const hs: Record<string, LoadSummary> = { easy0: steady(60, 140, { bests: easy(180) }), early: sums.early, easy1: steady(60, 140, { bests: easy(180) }) };
+    const series = criticalSeries(held, hs, 'power');
+    expect(series.easy0).toEqual({ rate: expect.closeTo(250, 6), from: 'first' });
+    expect(series.early).toEqual({ rate: expect.closeTo(250, 6), from: 'own' });
+    expect(series.easy1).toEqual({ rate: expect.closeTo(250, 6), from: 'held' });
+    expect(criticalSeries([held[0]], { easy0: hs.easy0 }, 'power').easy0).toBeNull();
+
     // With the threshold left to the curve, Power TSS uses it.
     const loads = runLoads(rows, { ...sums, later: { ...sums.later, normPower: 220 } }, perf({ load: 'powerTss' }), HR_ZONES);
     expect(loads.later.threshold).toBeCloseTo(220, 2);
@@ -79,19 +96,24 @@ describe('Performance model', () => {
   });
 
   it('Fitness, fatigue and form', () => {
-    // 100 a day for 120 days: fitness and fatigue reach 100, form 0, the ratio 1.
+    // 100 a day for 120 days: the averages start from the mean of the first 28 days, so fitness and fatigue
+    // are 100 from the first day, the form 0 and the ratio 1 from day 28 (from zero, the ratio was 1.55 then).
     const start = new Date('2026-01-01T07:00:00');
     const daily = Array.from({ length: 120 }, (_, k) => { const d = new Date(start); d.setDate(d.getDate() + k); return { startTime: d.toISOString(), load: 100 }; });
     const s = formSeries(daily, { fitnessDays: 42, fatigueDays: 7 });
     expect(s).toHaveLength(120);
-    expect(s[119].fitness).toBeGreaterThan(94);
-    expect(s[119].fatigue).toBeCloseTo(100, 0);
-    expect(Math.abs(s[119].form)).toBeLessThan(6);
-    expect(s[119].acwr).toBeCloseTo(1, 1);
+    expect(s[0]).toMatchObject({ fitness: 100, fatigue: 100, form: 0 });
+    expect(s[27]).toMatchObject({ fitness: 100, fatigue: 100, form: 0, acwr: 1 });
+    expect(s[119]).toMatchObject({ fitness: 100, fatigue: 100, form: 0, acwr: 1 });
     expect(s[26].acwr).toBeNull();
-    // The first day: its morning form is 0, its load lifts fatigue (τ 7) more than fitness (τ 42).
-    expect(s[0].form).toBe(0);
-    expect(s[0].fatigue).toBeGreaterThan(s[0].fitness);
+    // A rise from 100 to 200 a day: fatigue (τ 7) follows faster than fitness (τ 42), so the form falls; the
+    // ratio as Williams et al. 2017 compute it, λ = 2/(N+1): 1.17 on the first day, 1.27 on the second.
+    const rise = [...daily.slice(0, 60), ...daily.slice(60, 67).map((d) => ({ ...d, load: 200 }))];
+    const r = formSeries(rise, { fitnessDays: 42, fatigueDays: 7 });
+    expect(r[60].acwr).toBe(1.17);
+    expect(r[61].acwr).toBe(1.27);
+    expect(r[61].fatigue).toBeGreaterThan(r[61].fitness);
+    expect(r[62].form).toBeLessThan(0);
     // A block of rest after: fatigue falls faster than fitness, so the form rises above zero.
     const rest = formSeries(daily, { fitnessDays: 42, fatigueDays: 7 }, '2026-05-15');
     const last = rest[rest.length - 1];
@@ -105,6 +127,6 @@ describe('Performance model', () => {
     const tenth = Object.values(days)[9];
     expect(tenth.load3).toBe(300);
     expect(tenth.load7).toBe(700);
-    expect(tenth.form).toBeLessThan(0);
+    expect(tenth.form).toBe(0);
   });
 });

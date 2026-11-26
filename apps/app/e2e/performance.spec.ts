@@ -172,10 +172,11 @@ test.describe('Performance model', () => {
     const trustOf = async (model: string) => order.indexOf((await page.locator(`.map-node[data-model="${model}"]`).getAttribute('data-trust'))!);
     expect(await trustOf('cs')).toBeGreaterThanOrEqual(await trustOf('efforts'));
     expect(await trustOf('vdot')).toBeGreaterThanOrEqual(await trustOf('efforts'));
-    // Nothing was saved yet: the load is rough and the intensity not reliable; the reasons stay behind "Why?".
+    // Nothing was saved yet: the load is rough, and so is the intensity, read against a maximum heart rate taken
+    // from the runs (Seiler's shares of it, not the default zones); the reasons stay behind "Why?".
     const load = page.locator('.map-node[data-model="load"]');
     await expect(load).toHaveAttribute('data-trust', 'rough');
-    await expect(page.locator('.map-node[data-model="intensity"]')).toHaveAttribute('data-trust', 'no');
+    await expect(page.locator('.map-node[data-model="intensity"]')).toHaveAttribute('data-trust', 'rough');
     await expect(load).not.toContainText('resting heart rate');
     await expect(page.getByRole('region', { name: /^Why:/ })).toHaveCount(0);
     // "Why?" opens the rest: why the trust, the assumptions with what the data show, what it rests on, what it is, how to read it.
@@ -327,7 +328,8 @@ test.describe('Performance model', () => {
     const shares = await page.getByLabel('Intensity shares').locator('dd.tnum').allTextContents();
     expect(Math.abs(shares.slice(0, 3).reduce((s, t) => s + Number(t.replace(/\D/g, '')), 0) - 100)).toBeLessThanOrEqual(2);
     await bar.getByRole('button', { name: /^Why\? Intensity distribution/ }).click();
-    await expect(panel('Intensity distribution')).toContainText('The heart rate zones are yours · does not hold');
+    // The shares rest on the maximum heart rate (Seiler's 82 and 87 % of it), here taken from the runs.
+    await expect(panel('Intensity distribution')).toContainText('Your maximum heart rate is known · in doubt');
     await page.keyboard.press('Escape');
 
     // Capacity, what you can do: first the best efforts themselves, each with how hard it was and the run it comes from.
