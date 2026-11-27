@@ -29,15 +29,21 @@ describe('Journeys tested before merge', () => {
       config: {}, suites: [{ title: 'trend.spec.ts', file: 'trend.spec.ts', specs: [], suites: [{ title: 'Show trend', file: 'trend.spec.ts', specs: [{ title: 'Trend draws noise threshold and gear changes', file: 'trend.spec.ts', ok: false, tests: [{ projectName: 'chromium', status: 'unexpected', results: [{ status: 'failed' }] }] }] }] }],
       errors: [], stats: { expected: 0, unexpected: 1, flaky: 0, skipped: 0 },
     };
-    const file = path.join(os.tmpdir(), `broken-journey-${process.pid}.json`);
+    // On a copy of the model: radical check keeps the reports it reads beside the model (.state/test-results.json,
+    // for Studio), and this broken one, kept in the model itself, showed there as a failed run in place of CI's.
+    const copy = fs.mkdtempSync(path.join(os.tmpdir(), 'broken-journey-'));
+    fs.cpSync(path.join(ROOT, '../../.radical'), path.join(copy, '.radical'), { recursive: true, filter: (src) => path.basename(src) !== '.state' });
+    const file = path.join(copy, 'report.json');
     fs.writeFileSync(file, JSON.stringify(report));
     let out = '';
     let code = 0;
     try {
-      out = execFileSync('sh', ['../../radical.sh', 'check', '../../.radical/model', '--report', file, '--format', 'json'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+      out = execFileSync('sh', ['../../radical.sh', 'check', path.join(copy, '.radical/model'), '--report', file, '--format', 'json'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
     } catch (e) {
       code = (e as { status: number }).status;
       out = (e as { stdout: string }).stdout;
+    } finally {
+      fs.rmSync(copy, { recursive: true, force: true });
     }
     const result = JSON.parse(out);
     expect(code).not.toBe(0);
