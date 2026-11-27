@@ -4546,6 +4546,13 @@
     "targetId": "e54a7ba9-36d5-4dfe-84b8-a3cf912726b9"
   },
   {
+    "id": "7d0f905c-685f-4aa8-b6ac-c46dc1d163b1",
+    "quote": "duzo bylo zmian, zmien wersje na 0.2 ....",
+    "relationType": "derives",
+    "sourceId": "f266c9f7-6a1e-4cb1-85d6-66de049e38e4",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "7d4232a3-fb34-403f-9cb2-95021e8f9f98",
     "quote": "popraw settings w tym momencie mam settings oraz gears and tags ... w osobnych tabach",
     "relationType": "derives",

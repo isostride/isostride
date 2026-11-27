@@ -4,6 +4,8 @@ The versions of IsoStride (the app at app.isostride.com and the site at isostrid
 
 ## Unreleased
 
+## 0.2 — 2026-11-27
+
 ### Every chart on the whole screen
 - Every chart can take the whole screen, as the run chart can: the full-screen icon at the top right of its card (beside Pin) on Performance, Compare (Over time, A/B, Efforts), the Runs screen's weeks and the Dashboard's tiles with a chart. Its charts grow to the width and height of the screen; on a phone the screen turns on its side where the browser can, and the card is made to fit. The reverse icon or Esc closes it.
 - One icon everywhere, drawn as Pin is: the run chart's and the map's too (the map's now at its top right).
