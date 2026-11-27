@@ -22,3 +22,21 @@ describe('App and site served from AWS', () => {
     expect(moved.headers.location.value).toBe('https://isostride.com/pricing?a=1&b=x&b=y');
   });
 });
+
+describe('Mail at the domain', () => {
+  it("Zoho Mail's records of the domain", () => {
+    const infra = (name: string) => fs.readFileSync(path.resolve(__dirname, `../../../../infra/${name}`), 'utf8');
+    const mail = JSON.parse(infra('mail.json')) as { address: string; mx: string[]; txt: string[]; dmarc: string; dkim: null | { selector: string; value: string } };
+    expect(mail.address).toBe('contact@isostride.com');
+    // Mail to the domain goes to Zoho's EU servers, the first one first.
+    expect(mail.mx).toEqual(['10 mx.zoho.eu', '20 mx2.zoho.eu', '50 mx3.zoho.eu']);
+    // One TXT record set at the domain: Zoho's verification and one SPF, which lets Zoho send as the domain.
+    expect(mail.txt.filter((t) => t.startsWith('zoho-verification='))).toHaveLength(1);
+    expect(mail.txt.filter((t) => t.startsWith('v=spf1'))).toEqual(['v=spf1 include:zohomail.eu ~all']);
+    expect(mail.dmarc).toMatch(/^v=DMARC1; p=(none|quarantine|reject);/);
+    if (mail.dkim) expect(mail.dkim.value).toMatch(/^v=DKIM1;/);
+    // Terraform makes each record from these values.
+    const tf = infra('mail.tf');
+    for (const used of ['local.mail.mx', 'local.mail.txt', 'local.mail.dmarc', 'local.mail.dkim']) expect(tf).toContain(used);
+  });
+});

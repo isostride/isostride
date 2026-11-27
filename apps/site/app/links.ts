@@ -9,3 +9,6 @@ export const APP_HOST = new URL(APP_URL).host;
 
 /** The source of the app and the site, under the MIT License. */
 export const REPO_URL = 'https://github.com/isostride/isostride';
+
+/** Where to write: a Zoho Mail mailbox at the domain (infra/mail.json). */
+export const CONTACT_EMAIL = 'contact@isostride.com';

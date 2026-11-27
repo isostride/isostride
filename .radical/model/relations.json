@@ -249,6 +249,12 @@
     "targetId": "60e86846-3529-4650-bb51-62d720d3242f"
   },
   {
+    "id": "083d9328-69d7-4400-af88-bd55a643ee15",
+    "relationType": "derives",
+    "sourceId": "c198b6e1-15d6-47ba-abbf-57d52c1c4cce",
+    "targetId": "8d04762f-4c1c-468b-8e99-b6fb65dfa133"
+  },
+  {
     "id": "0876bb51-316d-4330-b304-c7138da84e46",
     "quote": "runs entirely in the browser\nThere is no server and no database, and the data never leaves the computer.\nlocally on their own computer",
     "relationType": "derives",
@@ -3571,6 +3577,12 @@
     "targetId": "a86c78df-cf97-4315-ba16-57a66a78fd9e"
   },
   {
+    "id": "620deb64-73b4-445e-9770-33860ccec0c1",
+    "relationType": "verifies",
+    "sourceId": "4a7f2cd6-8a73-44c5-9366-b01b30f99a8f",
+    "targetId": "c198b6e1-15d6-47ba-abbf-57d52c1c4cce"
+  },
+  {
     "guard": "no folder handle is remembered",
     "id": "624efdcd-d5bc-404f-9ef1-e6d8ef15f487",
     "relationType": "transition",
@@ -5772,6 +5784,12 @@
     "relationType": "satisfies",
     "sourceId": "0765fef0-4b2e-4087-a745-30d31c103732",
     "targetId": "9e789550-5a27-427b-8418-a7a19cc56a1f"
+  },
+  {
+    "id": "9e4a6839-5ce4-4d82-a30e-2d6a670f936a",
+    "relationType": "verifies",
+    "sourceId": "d7bd17b7-f923-4637-9a9a-1d7eeb2cdcbe",
+    "targetId": "c198b6e1-15d6-47ba-abbf-57d52c1c4cce"
   },
   {
     "id": "9e8b5d30-2e14-487e-8679-92faeda6bf4c",

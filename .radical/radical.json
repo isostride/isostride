@@ -1136,6 +1136,12 @@
     ] },
     { "element": "f417f06e-7aae-493f-b3c7-b22ae00cbfa3", "name": "Chart expanded on a phone on its side", "tests": [
       "e2e/expand.spec.ts › Charts on the whole screen › Chart expanded on a phone on its side"
+    ] },
+    { "element": "d7bd17b7-f923-4637-9a9a-1d7eeb2cdcbe", "name": "Zoho Mail's records of the domain", "tests": [
+      "tests/unit/hosting.test.ts › Mail at the domain › Zoho Mail's records of the domain"
+    ] },
+    { "element": "4a7f2cd6-8a73-44c5-9366-b01b30f99a8f", "name": "Site gives the contact address", "tests": [
+      "e2e/site.spec.ts › Site without layout shift › Site gives the contact address"
     ] }
   ]
 }

@@ -41,6 +41,10 @@ One certificate (ACM, us-east-1) covers `<domain>` and `*.<domain>`. A CloudFron
 
 From then on every push and pull request runs the whole check (`npm run check`: every test, boundaries, budgets, `radical check`) on GitHub, and a push to `master` that passes it deploys the build it checked (`.github/workflows/deploy.yml`, CI/CD). The workflow can also be started by hand (Actions → CI/CD → Run workflow). The check's stages run as jobs side by side (unit and integration tests, the shuffled run, three shards of the end-to-end tests, the static checks); their reports reach the verdict through the same private bucket (`ci/<run>/`, deleted after 3 days). The logs of a public repository are public: no reports, traces or screenshots are published from it.
 
+## Mail
+
+`contact@<domain>` is a Zoho Mail (EU) mailbox. Its records are in `mail.json`, which `mail.tf` reads: MX, one TXT at the domain (Zoho's verification and SPF), DMARC, and DKIM once Zoho shows its key (`"dkim": { "selector": "zmail", "value": "v=DKIM1; k=rsa; p=…" }`). Use `terraform apply` after each change, then check the record in Zoho's setup.
+
 ## Costs
 
 The hosted zone costs 0.50 USD a month and the domain its yearly fee. The certificate is free. For a site this size, S3 and CloudFront cost cents a month: CloudFront's free tier covers 1 TB of transfer and 10 million requests a month.
