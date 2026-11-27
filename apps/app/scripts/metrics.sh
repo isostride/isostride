@@ -3,6 +3,16 @@
 # model's metrics, for radical check. Run after the tests.
 set -e
 M=reports/measures.json
+# Where a measurement goes: beside the model (locally, for Studio), or, with METRICS_OUT set (CI), into a
+# radical-metrics/1 file of its own there, which the verdict reads (radical check --metrics) and CI keeps
+# as an artifact, so the git hooks of a clone fetch it with the test reports (radical check --from-ci).
+n=0
+[ -n "${METRICS_OUT:-}" ] && mkdir -p "$METRICS_OUT"
+radsense() {
+  n=$((n + 1))
+  if [ -n "${METRICS_OUT:-}" ]; then sh ../../radical.sh sense json "$@" --folder ../../.radical/model --out "$METRICS_OUT/$n.json"
+  else sh ../../radical.sh sense json "$@" --folder ../../.radical/model; fi
+}
 # Merge the measures the tests wrote one file each (reports/measures.d/<name>.json).
 node -e '
 const fs = require("fs"), path = require("path"), dir = "reports/measures.d";
@@ -10,7 +20,7 @@ const all = {};
 if (fs.existsSync(dir)) for (const f of fs.readdirSync(dir)) all[path.basename(f, ".json")] = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
 fs.writeFileSync("reports/measures.json", JSON.stringify(all, null, 2));
 '
-sense() { sh ../../radical.sh sense json "$M" --folder ../../.radical/model "$@" >/dev/null; }
+sense() { radsense "$M" "$@" >/dev/null; }
 sense --label fixture=sample-fit \
   --metric ingest.import.duration.max=/importMaxSeconds@s \
   --metric derived.run_file.size.max=/runFileMaxKB@KB
@@ -43,7 +53,7 @@ sense --label expected=135 --metric acceptance.promenade.hr_2026_11_14.abs_error
 # End-to-end measurements (reports/measures-e2e.json, from npm run e2e).
 E=reports/measures-e2e.json
 if [ -f "$E" ]; then
-  sensee() { sh ../../radical.sh sense json "$E" --folder ../../.radical/model "$@" >/dev/null; }
+  sensee() { radsense "$E" "$@" >/dev/null; }
   # A measure a failed end-to-end test did not record stays unmeasured; the failed test is reported.
   sensee --label origin=external --metric app.network.requests=/externalRequests 2>/dev/null || true
   sensee --label origin=other-than-map-tiles --label map=on --metric app.network.requests=/mapOnOtherRequests 2>/dev/null || true
@@ -61,15 +71,15 @@ fi
 # Test strategy (scripts/test-metrics.mjs, scripts/coverage-new.mjs, scripts/nightly.sh).
 T=reports/measures-tests.json
 if [ -f "$T" ]; then
-  senset() { sh ../../radical.sh sense json "$T" --folder ../../.radical/model "$@" >/dev/null; }
+  senset() { radsense "$T" "$@" >/dev/null; }
   senset --metric tests.unit.share=/unitSharePercent@% --metric tests.e2e.share=/e2eSharePercent@% \
     --metric tests.unit.over_100ms=/unitOver100ms --metric tests.unit.network_calls=/unitNetworkCalls
   senset --metric tests.failed=/vitestFailed --metric tests.skipped=/vitestSkipped
   senset --metric e2e.failed=/e2eFailed --metric e2e.skipped=/e2eSkipped 2>/dev/null || true
   senset --metric tests.duration=/testsSeconds@s 2>/dev/null || true
 fi
-[ -f reports/measures-coverage.json ] && sh ../../radical.sh sense json reports/measures-coverage.json --folder ../../.radical/model --metric coverage.new_code=/newCodeCoveragePercent@% >/dev/null
-[ -f reports/measures-nightly.json ] && sh ../../radical.sh sense json reports/measures-nightly.json --folder ../../.radical/model \
+[ -f reports/measures-coverage.json ] && radsense reports/measures-coverage.json --metric coverage.new_code=/newCodeCoveragePercent@% >/dev/null
+[ -f reports/measures-nightly.json ] && radsense reports/measures-nightly.json \
   --metric tests.shuffled_runs.failed=/shuffledRunsFailed --metric tests.flaky.unquarantined=/flakyUnquarantined >/dev/null
 # Languages: texts outside a translation, keys without one (tests/integration/texts.test.ts).
 sense --metric i18n.texts.untranslated=/untranslatedTexts --metric i18n.translations.missing=/missingTranslations
@@ -78,6 +88,6 @@ sense --metric e2e.journeys.covered=/journeysCoveredPercent@%
 # Frontend stack.
 sense --metric fixtures.load_errors=/fixturesLoadErrors --metric fixtures.without_expected_values=/fixturesWithoutExpectedValues
 sense --metric compat.violations=/compatViolations --metric ui.other_frameworks=/otherFrameworks --metric styles.untokenized_colours=/untokenizedColours
-[ -f reports/measures-js.json ] && sh ../../radical.sh sense json reports/measures-js.json --folder ../../.radical/model --metric js.route.transfer.max=/scriptMaxKB@KB >/dev/null
-[ -f reports/measures-eol.json ] && sh ../../radical.sh sense json reports/measures-eol.json --folder ../../.radical/model --metric framework.near_eol=/frameworksNearEol >/dev/null
+[ -f reports/measures-js.json ] && radsense reports/measures-js.json --metric js.route.transfer.max=/scriptMaxKB@KB >/dev/null
+[ -f reports/measures-eol.json ] && radsense reports/measures-eol.json --metric framework.near_eol=/frameworksNearEol >/dev/null
 echo "metrics recorded"
