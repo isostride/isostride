@@ -75,4 +75,12 @@ test.describe('Site without layout shift', () => {
     const tag = `v${version.replace(/^(\d+\.\d+)\.0$/, '$1')}`;
     await expect(foot.getByRole('link', { name: 'release notes' })).toHaveAttribute('href', `https://github.com/isostride/isostride/releases/tag/${tag}`);
   });
+
+  test('Site gives the contact address', async ({ page }) => {
+    // The footer of both languages links the domain's mailbox (requirement "Mail at the domain").
+    for (const url of [SITE, `${SITE}pl`]) {
+      await page.goto(url);
+      await expect(page.locator('footer.foot').getByRole('link', { name: 'contact@isostride.com' })).toHaveAttribute('href', 'mailto:contact@isostride.com');
+    }
+  });
 });

@@ -1385,3 +1385,9 @@ A: (użytkownik) niech bedzie troche szersza ta ikona
 A: (użytkownik) i przesun do prawego gornego rogu na wysokosci metryk
 A: (użytkownik) wyprzchnij pr (no requirement)
 A: (użytkownik) duzo bylo zmian, zmien wersje na 0.2 ....
+Q: (użytkownik) chce dolozyc adres mailowy contact@isostride.com ... mam zoho mail ... to mam zrobic: (Zoho: add a TXT record in the DNS, @ (or) leave it blank, zoho-verification=zb95419137.zmverify.zoho.eu)
+A: (model) Yes: in Route 53 a TXT record at the domain; then Zoho's MX (mx.zoho.eu, mx2.zoho.eu, mx3.zoho.eu), SPF in the same TXT record set, DKIM and DMARC; by hand in the console or through Terraform.
+A: (użytkownik) przez terraform
+A: (użytkownik) tak zrob 1 (no requirement)
+A: (użytkownik) dkim: zmail._domainkey v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDiRQlvf/oTUwawpOsWtp8/90hLnMbwWXx+LKTxHbC5Nau3vmhEjvjbgAtn06L83lP48FKndb53KYCd7RKZKCO+O+5eBVhASY4JxnIDdypsURQw5EUlprlk2K9b0B+RZW6AbbAo5UYSjF0XliFvlQY/xn4Y0gqErL3u83f9Nsih4QIDAQAB
+A: (użytkownik) tak ale dodaktowo dodaj contact na stronie i wtedy zrob pr

@@ -1,0 +1,11 @@
+{
+  "address": "contact@isostride.com",
+  "provider": "Zoho Mail (EU)",
+  "mx": ["10 mx.zoho.eu", "20 mx2.zoho.eu", "50 mx3.zoho.eu"],
+  "txt": ["zoho-verification=zb95419137.zmverify.zoho.eu", "v=spf1 include:zohomail.eu ~all"],
+  "dmarc": "v=DMARC1; p=none; rua=mailto:contact@isostride.com",
+  "dkim": {
+    "selector": "zmail",
+    "value": "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDiRQlvf/oTUwawpOsWtp8/90hLnMbwWXx+LKTxHbC5Nau3vmhEjvjbgAtn06L83lP48FKndb53KYCd7RKZKCO+O+5eBVhASY4JxnIDdypsURQw5EUlprlk2K9b0B+RZW6AbbAo5UYSjF0XliFvlQY/xn4Y0gqErL3u83f9Nsih4QIDAQAB"
+  }
+}

@@ -2,7 +2,7 @@ import { CONTENT, HREF, SHOTS, type Lang } from './content';
 import { LocalDiagram } from './LocalDiagram';
 import { Logo } from './Logo';
 import { Shot } from './Shot';
-import { APP_URL, DEMO_URL, REPO_URL } from './links';
+import { APP_URL, CONTACT_EMAIL, DEMO_URL, REPO_URL } from './links';
 
 /** The version of the app deployed with the site (its build reads it from package.json), a patch of 0 left out. */
 const VERSION = (process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0').replace(/^(\d+\.\d+)\.0$/, '$1');
@@ -140,7 +140,10 @@ export function Home({ lang }: { lang: Lang }) {
 
       <footer className="foot">
         <span>© {new Date().getFullYear()} IsoStride {VERSION} · {c.foot.source} · <a href={VERSION === '0.0.0' ? `${REPO_URL}/releases` : `${REPO_URL}/releases/tag/v${VERSION}`}>{c.foot.notes}</a></span>
-        <a href={APP_URL}>{new URL(APP_URL).host}</a>
+        <span className="foot-links">
+          <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+          <a href={APP_URL}>{new URL(APP_URL).host}</a>
+        </span>
       </footer>
     </>
   );
