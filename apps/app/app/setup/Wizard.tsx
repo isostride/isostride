@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { runInWorker, useLocale, useOpenFolder, watchJob, type JobState } from '@/lib/client';
 import { PATHS, listFitFiles, readJson } from '@/lib/fs';
-import { dateText, msg, number, t, tn } from '@/lib/i18n';
+import { dateText, distanceUnit, fromPace, msg, number, paceUnit, t, tn, toPace } from '@/lib/i18n';
 import { dayOf, newGearId, readGear, writeGear, type Gear, type GearType } from '@/lib/gear';
 import type { RunsIndex } from '@/lib/kernel';
 import { autoMaxHr, criticalByRun, summariesCurrent, type LoadSummary } from '@/lib/load';
@@ -24,11 +24,12 @@ const ZONE_GROUPS: [string, string[]][] = [
   [msg('Other'), ['efficiency', 'altitude']],
 ];
 const num = (t: string): number | null => (t.trim() !== '' && Number.isFinite(Number(t)) ? Number(t) : null);
-const mmss = (s: number) => minSec(s);
+/** A pace kept in s/km as m:ss in the units chosen (requirement "Units chosen"), and read back from them. */
+const mmss = (s: number) => minSec(toPace(s));
 const paceOf = (t: string): number | null | undefined => {
   if (!t.trim()) return null;
   const m = t.trim().match(/^(\d{1,2}):([0-5]\d)$/);
-  return m ? Number(m[1]) * 60 + Number(m[2]) : undefined;
+  return m ? fromPace(Number(m[1]) * 60 + Number(m[2])) : undefined;
 };
 const GEAR_NAME: Record<GearType, string> = { shoes: msg('Shoes'), hrSensor: msg('Heart rate strap') };
 /** A day of the gear (yyyy-mm-dd), in the language in use, read as a local day. */
@@ -167,7 +168,7 @@ export function Wizard() {
   const powerRef = tPower ?? have?.cp ?? null;
   const fillFor = (k: string): [string, string, number[]] | null => {
     if (k === 'heartRate' && maxForZones) return [t('From max HR'), t('from your maximum, {max}: {percents} %', { max: number(maxForZones), percents: '60, 70, 80, 90' }), zonesFromMaxHr(maxForZones)];
-    if ((k === 'speed' || k === 'effortPace') && paceRef) return [t('From threshold pace'), t('from your threshold pace, {pace} /km: {percents} % (Friel)', { pace: mmss(paceRef), percents: '129, 114, 106, 99' }), zonesFromPace(paceRef)];
+    if ((k === 'speed' || k === 'effortPace') && paceRef) return [t('From threshold pace'), t('from your threshold pace, {pace} {unit}: {percents} % (Friel)', { pace: mmss(paceRef), unit: paceUnit(), percents: '129, 114, 106, 99' }), zonesFromPace(paceRef)];
     if (k === 'power' && powerRef) return [t('From critical power'), t('from your critical power, {power} W: {percents} % (Stryd)', { power: number(Math.round(powerRef)), percents: '80, 90, 100, 115' }), zonesFromPower(powerRef)];
     if (DEFAULT_ZONES[k]) return [t('Typical'), k === 'cadence' ? t('common cadence bands') : t("the bands of Garmin's running dynamics, from many runners"), DEFAULT_ZONES[k]];
     return null;
@@ -251,7 +252,7 @@ export function Wizard() {
         {step === 2 && (
           <>
             <h2>{t('Zones')}</h2>
-            <p className="muted">{t('The boundaries between your zones, separated by commas, Z1 the easiest; pace as m:ss per km.')} {savedZones.defaults ? t('These are the defaults, for trying the app: change them to yours.') : t('These are yours, as saved.')} {t("The run chart colours them; the intensity model and Edwards TRIMP read the heart rate's.")}</p>
+            <p className="muted">{t('The boundaries between your zones, separated by commas, Z1 the easiest; pace as m:ss per {unit}.', { unit: distanceUnit() })} {savedZones.defaults ? t('These are the defaults, for trying the app: change them to yours.') : t('These are yours, as saved.')} {t("The run chart colours them; the intensity model and Edwards TRIMP read the heart rate's.")}</p>
             {groups.filter(([, keys]) => keys.some((k) => ALL.includes(k))).map(([g, keys]) => (
               <div key={g} className="setup-zone-group" role="group" aria-label={t(g)}>
                 <h3>{t(g)}</h3>
@@ -299,7 +300,7 @@ export function Wizard() {
             {have && <LoadModelChoice value={p.load} onChoose={(load: LoadModel) => setP((q) => ({ ...q, load }))} runs={have.runs} summaries={have.summaries} performance={p} defaultZones={zonesDefault} criticalSpeed={have.cs} />}
             <div className="form-rows setup-rows">
               <Row label={t('Threshold pace')} hint={`${modelNamed('rtss')}${p.load === 'rtss' ? ` · ${t('in use')}` : ''} · ${t('empty: your critical speed of the 90 days up to each run')}`}>
-                <input className="input" aria-label={t('Threshold pace')} aria-invalid={tPace === undefined} placeholder={have?.cs ? t('auto: {value}', { value: mmss(1000 / have.cs) }) : t('auto')} value={texts.thresholdPace} onChange={(e) => setTexts((x) => ({ ...x, thresholdPace: e.target.value }))} /><span className="muted small">min/km</span>
+                <input className="input" aria-label={t('Threshold pace')} aria-invalid={tPace === undefined} placeholder={have?.cs ? t('auto: {value}', { value: mmss(1000 / have.cs) }) : t('auto')} value={texts.thresholdPace} onChange={(e) => setTexts((x) => ({ ...x, thresholdPace: e.target.value }))} /><span className="muted small">min{paceUnit()}</span>
               </Row>
               <Row label={t('Critical power')} hint={`${modelNamed('powerTss')}${p.load === 'powerTss' ? ` · ${t('in use')}` : ''} · ${t('empty: your critical power of the 90 days up to each run')}`}>
                 <input className="input" inputMode="numeric" aria-label={t('Critical power')} placeholder={t('auto')} value={texts.thresholdPower} onChange={(e) => setTexts((x) => ({ ...x, thresholdPower: e.target.value }))} /><span className="muted small">W</span>

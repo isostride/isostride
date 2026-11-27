@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Expandable, InstancePanel, Key, ProfileChart, useMetrics, ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useExpandedHeight, useWidth } from '@/components';
 import type { BlockInstance, BlockMetric } from '@/lib/blocks';
 import { unitOf, wordsOf, MIN_AB_INSTANCES, abCsv, byField, computeAb, contextValue, describeAb, firstUsableMetric, hash, meanProfile, type AbResult, instancesCsv, CONTEXT_FIELDS, valueOf, type ContextField } from '@/lib/compare';
-import { dateText, number, t } from '@/lib/i18n';
+import { dateText, number, t, toPace } from '@/lib/i18n';
 
 /** Ground contact time first: the A/B screen's usual question is a change of shoes or technique. */
 
@@ -186,9 +186,12 @@ const AB = ['var(--series-1)', 'var(--series-2)'];
  * The difference B − A on its own axis, in the metric's unit: zero, the noise band around it,
  * the 95% interval as a whisker and the difference as a dot; the ends say which way is which.
  */
-function DifferencePlot({ r, metric }: { r: AbResult; metric: BlockMetric }) {
+function DifferencePlot({ r: kept, metric }: { r: AbResult; metric: BlockMetric }) {
   const [box, width] = useWidth();
-  if (r.difference === null) return null;
+  if (kept.difference === null) return null;
+  // A pace's difference is kept in s/km: drawn in the units chosen (s/mi).
+  const k = wordsOf(metric).pace ? toPace(1) : 1;
+  const r = { ...kept, difference: kept.difference * k, noise: kept.noise === null ? null : kept.noise * k, ci: kept.ci ? ([kept.ci[0] * k, kept.ci[1] * k] as [number, number]) : null };
   const noise = r.noise ?? 0;
   const reach = Math.max(Math.abs(r.ci?.[0] ?? 0), Math.abs(r.ci?.[1] ?? 0), noise, Math.abs(r.difference)) * 1.15 || 1;
   const ticks = niceTicks(-reach, reach, 6);
@@ -197,7 +200,7 @@ function DifferencePlot({ r, metric }: { r: AbResult; metric: BlockMetric }) {
   const L = 16, R = 16, H = 96, mid = 40;
   const x = (v: number) => L + ((v - lo) / (hi - lo)) * (width - L - R);
   const unit = unitOf(metric);
-  const pace = unit === 's/km';
+  const pace = k !== 1 || wordsOf(metric).pace === true;
   return (
     <div ref={box} style={{ marginTop: 10 }}>
       <svg width={width} height={H} role="img" aria-label={t('Difference and interval')} style={{ display: 'block' }}>

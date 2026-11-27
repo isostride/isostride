@@ -1,5 +1,5 @@
 import type { IndexedRun } from '@/lib/kernel';
-import { LOCALES } from '@/lib/i18n';
+import { LOCALES, toDistance } from '@/lib/i18n';
 import { localDay } from './weeks';
 
 /**
@@ -9,7 +9,7 @@ import { localDay } from './weeks';
 export interface RunSearch {
   text: string;
   type: string | null;
-  /** km, inclusive; null: no bound */
+  /** in the unit of distance shown, km or mi (requirement "Units chosen"), inclusive; null: no bound */
   minKm: number | null;
   maxKm: number | null;
 }
@@ -49,7 +49,7 @@ function haystackOf(r: IndexedRun): string {
 
 /** Whether a run matches: every word found, its type the one asked, its distance within the range. */
 export function matchesSearch(r: IndexedRun, s: RunSearch): boolean {
-  const km = r.distance / 1000;
+  const km = toDistance(r.distance);
   if (s.type !== null && r.workoutType !== s.type) return false;
   if (s.minKm !== null && km < s.minKm) return false;
   if (s.maxKm !== null && km > s.maxKm) return false;

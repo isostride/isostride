@@ -1,26 +1,30 @@
 import type { BlockMetric } from '@/lib/blocks';
-import { dateText, msg, number, t, tn } from '@/lib/i18n';
+import { dateText, msg, number, paceUnit, t, tn, toPace } from '@/lib/i18n';
 import { directionOf, isPace, metricInfo, type Direction, type MetricInfo } from '@/lib/kernel';
 import { MIN_TREND_INSTANCES, type TrendSeries } from './trend';
 
 /**
- * What the words of a metric need: its name, its unit as compare shows it (pace in s/km), the decimals
- * of a change, and which way is better (requirement "Metric direction set by the runner").
+ * What the words of a metric need: its name, its unit as compare shows it (pace in s/km, or s/mi in
+ * the units chosen), the decimals of a change, which way is better (requirement "Metric direction set
+ * by the runner"), and whether it is a pace (its values s/km, shown in the units chosen).
  */
-export interface MetricWords { name: string; unit: string; decimals: number | null; direction: Direction }
+export interface MetricWords { name: string; unit: string; decimals: number | null; direction: Direction; pace?: boolean }
 
 /** The words of a metric from the folder's catalog and the directions the runner set. */
 export function wordsOf(metric: BlockMetric, catalog?: readonly MetricInfo[] | null, directions?: Record<string, Direction> | null): MetricWords {
   const m = metricInfo(metric, catalog);
   // A change of efficiency is in thousandths of a metre per beat, of leg stiffness in hundredths.
   const decimals = metric === 'efficiency' ? 3 : metric === 'legSpringStiffness' ? 2 : null;
-  return { name: m.name, unit: isPace(metric, catalog) ? 's/km' : m.unit, decimals, direction: directionOf(m, directions) };
+  const pace = isPace(metric, catalog);
+  return { name: m.name, unit: pace ? `s${paceUnit()}` : m.unit, decimals, direction: directionOf(m, directions), pace };
 }
 
-/** The unit of a metric's values as compare shows them (pace in s/km). */
+/** The unit of a metric's values as compare shows them (pace in s/km or s/mi). */
 export const unitOf = (metric: BlockMetric, catalog?: readonly MetricInfo[] | null) => wordsOf(metric, catalog).unit;
 
 const roundFor = (w: MetricWords, v: number) => {
+  // A pace's values are s/km: shown in the units chosen.
+  if (w.pace) v = toPace(v);
   const d = w.decimals ?? (Math.abs(v) >= 10 ? 0 : 1);
   return Math.round(v * 10 ** d) / 10 ** d;
 };
@@ -54,7 +58,7 @@ const DELTA = {
  * direction says only higher or lower.
  */
 export function describeDelta(metric: BlockMetric, d: number, w: MetricWords = wordsOf(metric), judged = true): string {
-  const pace = w.unit === 's/km';
+  const pace = !!w.pace;
   const word = pace ? (d < 0 ? 'faster' : 'slower') : d > 0 ? 'higher' : 'lower';
   // Not judged better or worse (a change within the noise): its size and way alone.
   return t(DELTA[word][judged ? betterOrWorse(d, w) : 0], { value: amount(w, Math.abs(d)) });

@@ -88,14 +88,14 @@ const likePace = (pace: number) => ({ paceMin: Math.round(pace * (1 - SIMILAR_PA
 /** "5.2 km north-bound, pace 4:45–5:15": the name of a route segment kept from a selection; English unless given the words of the language in use. */
 export function routeSegmentName(length: number, heading: number, band: { paceMin: number; paceMax: number } | null, w: Words = SAVED_WORDS): string {
   const route = routeName(length, heading, w);
-  return band ? w.t('{route}, pace {from}–{to}', { route, from: fmt(band.paceMin), to: fmt(band.paceMax) }) : w.t('{route}, any pace', { route });
+  return band ? w.t('{route}, pace {from}–{to}', { route, from: fmt(w.pace(band.paceMin)), to: fmt(w.pace(band.paceMax)) }) : w.t('{route}, any pace', { route });
 }
 
 /** "Like 3.0 km, 25 m up, pace 4:50": the name of a profile segment kept from a selection; English unless given the words of the language in use. */
 export function profileSegmentName(key: ProfileKey, w: Words = SAVED_WORDS): string {
   const climb = key.altitude ? Math.round(key.altitude.reduce((s, a, i, xs) => s + (i && a > xs[i - 1] ? a - xs[i - 1] : 0), 0)) : null;
-  const vars = { km: w.num(key.distance / 1000, 1), climb: w.num(climb ?? 0), pace: fmt(key.pace) };
-  return climb === null ? w.t('Like {km} km, pace {pace}', vars) : w.t('Like {km} km, {climb} m up, pace {pace}', vars);
+  const vars = { km: w.num(w.dist(key.distance), 1), unit: w.distUnit(), climb: w.num(Math.round(w.elev(climb ?? 0))), climbUnit: w.elevUnit(), pace: fmt(w.pace(key.pace)) };
+  return climb === null ? w.t('Like {km} {unit}, pace {pace}', vars) : w.t('Like {km} {unit}, {climb} {climbUnit} up, pace {pace}', vars);
 }
 
 /**

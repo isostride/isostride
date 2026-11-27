@@ -1,12 +1,13 @@
 'use client';
 
-import { t, tn } from '@/lib/i18n';
+import { paceUnit, t, tn, toPace } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import type { LoadSummary } from '@/lib/load';
 import { CURVE_MODELS, LOAD_MODELS, type CurveModel, type LoadModel, type PerformanceSettings } from '@/lib/settings';
 import { minSec } from '@/lib/kernel';
 
-const mmss = (s: number) => minSec(s);
+/** A pace in s/km as m:ss in the unit shown. */
+const mmss = (s: number) => minSec(toPace(s));
 
 /**
  * How the load of a run is counted, chosen in Settings › Models (the runner's "tak" to each choice
@@ -40,8 +41,8 @@ export function LoadModelChoice({ value, onChoose, runs, summaries, performance,
     },
     rtss: {
       text: p.thresholdPace !== null
-        ? t('pace: every run · threshold pace {pace} /km, yours', { pace: mmss(p.thresholdPace) })
-        : criticalSpeed ? t('pace: every run · threshold pace {pace} /km from your critical speed', { pace: mmss(1000 / criticalSpeed) }) : t('pace: every run · threshold pace not known yet'),
+        ? t('pace: every run · threshold pace {pace} {unit}, yours', { pace: mmss(p.thresholdPace), unit: paceUnit() })
+        : criticalSpeed ? t('pace: every run · threshold pace {pace} {unit} from your critical speed', { pace: mmss(1000 / criticalSpeed), unit: paceUnit() }) : t('pace: every run · threshold pace not known yet'),
       level: p.thresholdPace !== null || criticalSpeed ? 'ok' : 'some',
     },
     powerTss: {

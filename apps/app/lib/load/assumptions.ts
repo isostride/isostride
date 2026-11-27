@@ -1,6 +1,6 @@
 import { CURVE_DURATIONS } from '@/lib/curve';
 import { duration as fmtDuration, pace as fmtPace } from '@/lib/format';
-import { msg, number, t, tn } from '@/lib/i18n';
+import { msg, number, paceUnit, t, tn } from '@/lib/i18n';
 import { LOAD_MODELS, type PerformanceSettings } from '@/lib/settings';
 import { BANISTER_MIN_POINTS, BANISTER_MIN_SPAN, TAU1_RANGE, TAU2_RANGE, fitBanister, type BanisterFit } from './banister';
 import { ALLOUT_MEAN, bestEfforts, effortEvidence, type BestEffort, type EffortEvidence } from './efforts';
@@ -335,8 +335,8 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
         ? {
           inputs: [t('effort pace of every run'), t('threshold pace')], parents: p.thresholdPace === null ? ['cs'] : [],
           checks: [coverage, p.thresholdPace !== null
-            ? check('threshold', t('The threshold pace is yours'), 'met', t('{pace} /km, set in Model', { pace: fmtPace(1000 / p.thresholdPace) }))
-            : autoThreshold(t('The threshold pace is yours'), lastCritical('speed'), (v) => `${fmtPace(v)} /km`), ...(p.thresholdPace === null ? [scale(t('Critical speed'))] : [])],
+            ? check('threshold', t('The threshold pace is yours'), 'met', t('{pace} {unit}, set in Model', { pace: fmtPace(1000 / p.thresholdPace), unit: paceUnit() }))
+            : autoThreshold(t('The threshold pace is yours'), lastCritical('speed'), (v) => `${fmtPace(v)} ${paceUnit()}`), ...(p.thresholdPace === null ? [scale(t('Critical speed'))] : [])],
         }
         : {
           inputs: [t('power of every run'), t('critical power')], parents: p.thresholdPower === null ? ['cp'] : [],
@@ -422,7 +422,7 @@ export function performanceReport(input: ReportInput): { now: PerformanceNow; mo
       key: 'cs', group: 'capacity', depth: 1, name: t('Critical speed and D′'), method: t('distance = CS·time + D′ fitted to the bests as their envelope: none lies above it (Monod & Scherrer 1965; Jones & Vanhatalo 2017)'), tells: t('the fastest pace you can hold in a steady state, and the reserve above it'),
       inputs: [], parents: ['efforts'], where: { tab: 'capacity', view: 'critical' }, has: (marker?.cs ?? null) !== null,
       checks: marker?.dPrime === null || marker?.dPrime === undefined ? [] : [
-        preciseCheck(t('Your bests settle the critical speed and D′'), ranges.cs, ranges.dPrime, (r) => `${fmtPace(r.high)}–${fmtPace(r.low)} /km`, (r) => `${number(Math.round(r.low))}–${number(Math.round(r.high))} m`),
+        preciseCheck(t('Your bests settle the critical speed and D′'), ranges.cs, ranges.dPrime, (r) => `${fmtPace(r.high)}–${fmtPace(r.low)} ${paceUnit()}`, (r) => `${number(Math.round(r.low))}–${number(Math.round(r.high))} m`),
         check('dprime', t("D′ comes out as a runner's ({from}–{to} m)", { from: T.dPrime[0], to: T.dPrime[1] }), marker.dPrime >= T.dPrime[0] && marker.dPrime <= T.dPrime[1] ? 'met' : 'doubt',
           marker.dPrime < T.dPrime[0]
             ? t('{d} m: so small a reserve means the short bests were held back, and the critical speed is then too high', { d: number(Math.round(marker.dPrime)) })

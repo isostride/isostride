@@ -8,7 +8,7 @@ import { useLocale, useOpenFolder } from '@/lib/client';
 import type { SavedAnalysesFile, SavedAnalysis } from '@/lib/compare';
 import { TILE_KINDS, addTile, moveTile, paceProfile, readDashboard, removeTile, resizeTile, sizeOf, weekContext, weekFigures, weeklyDistance, writeDashboard, type Tile, type TileKind } from '@/lib/dashboard';
 import { date, km, pace } from '@/lib/format';
-import { dateText, msg, number, t, tn } from '@/lib/i18n';
+import { dateText, distanceUnit, msg, number, paceUnit, t, tn, toDistance, toPace } from '@/lib/i18n';
 import { PATHS, readJson, type DataFolder, readRunFile } from '@/lib/fs';
 import type { IndexedRun, RunFile, RunsIndex } from '@/lib/kernel';
 import { formSeries, type ModelKey } from '@/lib/load';
@@ -38,7 +38,10 @@ const days = () => Array.from({ length: 7 }, (_, i) => dateText(new Date(2024, 0
 const WIDTH_MARKS = ['⅓', '⅔', msg('Full')];
 const WIDTH_NAMES = [msg('one third'), msg('two thirds'), msg('the whole row')];
 const hm = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`;
-const mmss = (s: number) => minSec(s);
+/** A pace in s/km as m:ss in the unit shown (min/km or min/mi). */
+const mmss = (s: number) => minSec(toPace(s));
+/** Kilometres in the unit of distance shown (km or mi). */
+const inUnit = (km: number) => toDistance(km * 1000);
 // The sign of the value as it is written: one that writes as zero has none (−0.04 km read "−0.0 km").
 const signed = (v: number, digits = 0) => { const r = Number(v.toFixed(digits)); return `${r > 0 ? '+' : r < 0 ? '−' : ''}${number(Math.abs(v), digits)}`; };
 const localDay = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -189,7 +192,7 @@ export function DashboardPage() {
 function AddTile({ tiles, data, onAdd, onReset }: { tiles: Tile[]; data: Data; onAdd: (kind: TileKind, ref?: string, name?: string) => void; onReset: () => void }) {
   const [kind, setKind] = useState<TileKind>('week');
   const of = TILE_KINDS.find((k) => k.kind === kind)?.of;
-  const choices: [string, string][] = of === 'perf' ? TABS.filter((x) => x.key !== 'whatif').flatMap((x) => x.views.map((v): [string, string] => [`${x.key}/${v.key}`, perfName(`${x.key}/${v.key}`)])) : of === 'run' ? [...data.runs].reverse().map((r) => [r.id, `${runTitle(r)} · ${km(r.distance)} km`]) : of === 'segment' ? data.defs.map((d) => [d.id, d.name]) : of === 'analysis' ? data.analyses.map((a) => [a.id, a.name]) : of === 'model' ? MODELS.map(([k, n]) => [k, t(n)]) : [];
+  const choices: [string, string][] = of === 'perf' ? TABS.filter((x) => x.key !== 'whatif').flatMap((x) => x.views.map((v): [string, string] => [`${x.key}/${v.key}`, perfName(`${x.key}/${v.key}`)])) : of === 'run' ? [...data.runs].reverse().map((r) => [r.id, `${runTitle(r)} · ${km(r.distance)} ${distanceUnit()}`]) : of === 'segment' ? data.defs.map((d) => [d.id, d.name]) : of === 'analysis' ? data.analyses.map((a) => [a.id, a.name]) : of === 'model' ? MODELS.map(([k, n]) => [k, t(n)]) : [];
   const [ref, setRef] = useState('');
   const chosen = of ? (choices.some(([id]) => id === ref) ? ref : choices[0]?.[0] ?? '') : undefined;
   const taken = tiles.some((x) => x.kind === kind && x.ref === (chosen || undefined));
@@ -251,17 +254,18 @@ function WeekTile({ runs, today }: { runs: IndexedRun[]; today: Date }) {
   const day = (today.getDay() + 6) % 7;
   const initials = days();
   const share = c.averageKm ? w.km / c.averageKm : null;
+  const unit = distanceUnit();
   // The average named by the weeks it is of: a runner two weeks in has two weeks to average.
-  const vars = { percent: number(Math.round(share ? share * 100 : 0)), km: number(c.averageKm ?? 0, 1) };
-  const against = share === null ? '' : c.weeks >= 4 ? t('{percent} % of your 4-week average, {km} km', vars) : c.weeks === 1 ? t('{percent} % of last week, {km} km', vars) : t('{percent} % of your average of {n} weeks, {km} km', { ...vars, n: c.weeks });
+  const vars = { percent: number(Math.round(share ? share * 100 : 0)), km: number(inUnit(c.averageKm ?? 0), 1), unit };
+  const against = share === null ? '' : c.weeks >= 4 ? t('{percent} % of your 4-week average, {km} {unit}', vars) : c.weeks === 1 ? t('{percent} % of last week, {km} {unit}', vars) : t('{percent} % of your average of {n} weeks, {km} {unit}', { ...vars, n: c.weeks });
   return (
     <div className="dash-week">
       <div className="dash-hero">
-        <p className="dash-hero-value"><b>{number(w.km, 1)}</b> km</p>
+        <p className="dash-hero-value"><b>{number(inUnit(w.km), 1)}</b> {unit}</p>
         <dl className="dash-stats">
           <div><dt>{t('Runs')}</dt><dd className="tnum">{number(w.runs)}</dd></div>
           <div><dt>{t('Time')}</dt><dd className="tnum">{hm(w.time)} h</dd></div>
-          <div><dt>{t('Last week by this day')}</dt><dd className="tnum">{number(c.lastWeekToDateKm, 1)} km</dd></div>
+          <div><dt>{t('Last week by this day')}</dt><dd className="tnum">{number(inUnit(c.lastWeekToDateKm), 1)} {unit}</dd></div>
         </dl>
       </div>
       {share !== null && (
@@ -270,7 +274,7 @@ function WeekTile({ runs, today }: { runs: IndexedRun[]; today: Date }) {
           <span className="muted small" aria-hidden="true">{against}</span>
         </div>
       )}
-      <div className="dash-days" role="img" aria-label={t('Kilometres by day: {days}', { days: w.byDay.map((v, i) => `${initials[i]} ${number(v, 1)}`).join(', ') })}>
+      <div className="dash-days" role="img" aria-label={t('{unit} by day: {days}', { unit: distanceUnit() === 'mi' ? t('Miles') : t('Kilometres'), days: w.byDay.map((v, i) => `${initials[i]} ${number(inUnit(v), 1)}`).join(', ') })}>
         {w.byDay.map((v, i) => {
           const h = v ? Math.max(5, (v / top) * 100) : 0;
           return (
@@ -293,7 +297,8 @@ function WeekTile({ runs, today }: { runs: IndexedRun[]; today: Date }) {
  * across them, this week's value on its column; each week's on pointing.
  */
 function WeeklyTile({ runs, today }: { runs: IndexedRun[]; today: Date }) {
-  const weeks = weeklyDistance(runs, 12, today);
+  // In the unit of distance shown: its ticks round in it.
+  const weeks = weeklyDistance(runs, 12, today).map((w) => ({ ...w, km: inUnit(w.km) }));
   const [box, width] = useWidth(600);
   const [hover, setHover] = useState<number | null>(null);
   const H = useExpandedHeight(300);
@@ -312,8 +317,8 @@ function WeeklyTile({ runs, today }: { runs: IndexedRun[]; today: Date }) {
   const shown = hover ?? weeks.length - 1;
   return (
     <div ref={box} className="dash-weekly">
-      <p className="muted small">{t('{km} km a week on average over the {n} whole weeks before this one', { km: number(avg, 1), n: number(whole.length) })}</p>
-      <svg width={width} height={H} role="img" aria-label={t('Kilometres a week, the last 12 weeks: {weeks}', { weeks: weeks.map((w) => `${date(w.monday)} ${number(w.km, 1)}`).join(', ') })} onMouseLeave={() => setHover(null)}>
+      <p className="muted small">{t('{km} {unit} a week on average over the {n} whole weeks before this one', { km: number(avg, 1), unit: distanceUnit(), n: number(whole.length) })}</p>
+      <svg width={width} height={H} role="img" aria-label={t('{unit} a week, the last 12 weeks: {weeks}', { unit: distanceUnit() === 'mi' ? t('Miles') : t('Kilometres'),  weeks: weeks.map((w) => `${date(w.monday)} ${number(w.km, 1)}`).join(', ') })} onMouseLeave={() => setHover(null)}>
         {ticks.map((v) => (
           <g key={v}>
             <line x1={M.l} x2={M.l + plot} y1={y(v)} y2={y(v)} stroke={v ? 'var(--line)' : 'var(--axis)'} />
@@ -343,7 +348,7 @@ function WeeklyTile({ runs, today }: { runs: IndexedRun[]; today: Date }) {
       {hover !== null && (
         <div className="tooltip dash-tip" style={tipAt(M.l + (hover + 0.5) * colW, width)}>
           <b>{t('Week of {date}', { date: date(weeks[hover].monday) })}</b>
-          <div className="tnum">{number(weeks[hover].km, 1)} km · {tn(weeks[hover].runs, '{n} run', '{n} runs')}</div>
+          <div className="tnum">{number(weeks[hover].km, 1)} {distanceUnit()} · {tn(weeks[hover].runs, '{n} run', '{n} runs')}</div>
         </div>
       )}
     </div>
@@ -397,16 +402,16 @@ function RunTile({ folder, run, named = false }: { folder: DataFolder; run: Inde
         {run.shoes && <span className="chip">{run.shoes}</span>}
       </div>
       <dl className="dash-facts">
-        <div><dt>{t('Distance')}</dt><dd className="tnum">{km(run.distance)} km</dd></div>
+        <div><dt>{t('Distance')}</dt><dd className="tnum">{km(run.distance)} {distanceUnit()}</dd></div>
         <div><dt>{t('Time')}</dt><dd className="tnum">{hm(run.duration)}</dd></div>
-        <div><dt>{t('Pace')}</dt><dd className="tnum">{pace(run.avgSpeed)} /km</dd></div>
+        <div><dt>{t('Pace')}</dt><dd className="tnum">{pace(run.avgSpeed)} {paceUnit()}</dd></div>
         <div><dt>{t('Heart rate')}</dt><dd className="tnum">{run.avgHeartRate ? `${number(Math.round(run.avgHeartRate))} bpm` : '–'}</dd></div>
         {typeof run.load === 'number' && <div><dt>{t('Load')}</dt><dd className="tnum">{number(Math.round(run.load))}</dd></div>}
       </dl>
       {/* The chart's room held while the run's file is read, so the row of tiles never moves (layout shift 0). */}
       <div ref={box} className="dash-chart" style={{ height: H }}>
         {shown && (
-          <svg width={width} height={H} role="img" aria-label={t('Pace along the run, from {from} to {to} /km, fastest {fastest} /km', { from: mmss(shown[0]), to: mmss(shown[shown.length - 1]), fastest: mmss(sorted[0]) })} onMouseMove={(e) => setHover(pointAt(e, M.l, plot, shown.length))} onMouseLeave={() => setHover(null)}>
+          <svg width={width} height={H} role="img" aria-label={t('Pace along the run, from {from} to {to} {unit}, fastest {fastest} {unit}', { unit: paceUnit(), from: mmss(shown[0]), to: mmss(shown[shown.length - 1]), fastest: mmss(sorted[0]) })} onMouseMove={(e) => setHover(pointAt(e, M.l, plot, shown.length))} onMouseLeave={() => setHover(null)}>
             <text x={M.l - 8} y={M.t + 7} textAnchor="end" fontSize="10.5" fill="var(--muted)">{mmss(lo)}</text>
             <text x={M.l - 8} y={H - M.b} textAnchor="end" fontSize="10.5" fill="var(--muted)">{mmss(hi)}</text>
             <line x1={M.l} x2={M.l + plot} y1={H - M.b} y2={H - M.b} stroke="var(--axis)" />
@@ -416,7 +421,7 @@ function RunTile({ folder, run, named = false }: { folder: DataFolder; run: Inde
             {hover !== null && <><line x1={x(hover)} x2={x(hover)} y1={M.t} y2={H - M.b} stroke="var(--axis)" /><circle cx={x(hover)} cy={y(shown[hover])} r="4" fill="var(--accent)" stroke="var(--surface)" strokeWidth="2" /></>}
           </svg>
         )}
-        {shown && hover !== null && shown[hover] !== undefined && <div className="tooltip dash-tip" style={tipAt(x(hover), width)}><b className="tnum">{mmss(shown[hover])} /km</b><div className="muted">{t('{percent} % into the run', { percent: number(Math.round((hover / (shown.length - 1)) * 100)) })}</div></div>}
+        {shown && hover !== null && shown[hover] !== undefined && <div className="tooltip dash-tip" style={tipAt(x(hover), width)}><b className="tnum">{mmss(shown[hover])} {paceUnit()}</b><div className="muted">{t('{percent} % into the run', { percent: number(Math.round((hover / (shown.length - 1)) * 100)) })}</div></div>}
       </div>
       <Link className="row-open" href={`/run?id=${run.id}`}>{t('Open the run →')}</Link>
     </div>
@@ -507,8 +512,8 @@ function RecentTile({ runs }: { runs: IndexedRun[] }) {
               <span className="dash-recent-name">{r.title ?? r.workoutType ?? t('Run')}</span>
               {r.title && r.workoutType && <small>{r.workoutType}</small>}
             </span>
-            <span className="dash-recent-km"><span className="tnum">{km(r.distance)} km</span><i aria-hidden="true"><i style={{ width: `${Math.max(4, (r.distance / longest) * 100)}%` }} /></i></span>
-            <span className="dash-recent-pace tnum">{pace(r.avgSpeed)} /km</span>
+            <span className="dash-recent-km"><span className="tnum">{km(r.distance)} {distanceUnit()}</span><i aria-hidden="true"><i style={{ width: `${Math.max(4, (r.distance / longest) * 100)}%` }} /></i></span>
+            <span className="dash-recent-pace tnum">{pace(r.avgSpeed)} {paceUnit()}</span>
           </Link>
         </li>
       ))}
@@ -541,7 +546,7 @@ function SegmentTile({ def, efforts }: { def: BlockDefinition; efforts: BlockIns
   return (
     <div className="dash-segment">
       <div className="dash-hero">
-        <p className="dash-hero-value"><b>{mmss(paces[end])}</b> /km</p>
+        <p className="dash-hero-value"><b>{mmss(paces[end])}</b> {paceUnit()}</p>
         <dl className="dash-stats">
           <div><dt>{t('Efforts')}</dt><dd className="tnum">{number(mine.length)}</dd></div>
           <div><dt>{t('Fastest')}</dt><dd className="tnum">{mmss(lo)}</dd></div>
@@ -561,7 +566,7 @@ function SegmentTile({ def, efforts }: { def: BlockDefinition; efforts: BlockIns
           {end > 0 && <text x={M.l + plot} y={H - 5} textAnchor="end" fontSize="10.5" fill="var(--muted)">{date(lastE.runStart)}</text>}
           {hover !== null && <><line x1={x(hover)} x2={x(hover)} y1={M.t} y2={H - M.b} stroke="var(--axis)" /><circle cx={x(hover)} cy={y(paces[hover])} r="4" fill="var(--accent)" stroke="var(--surface)" strokeWidth="2" /></>}
         </svg>
-        {hover !== null && mine[hover] && <div className="tooltip dash-tip" style={tipAt(x(hover), width)}><b className="tnum">{mmss(paces[hover])} /km</b><div className="muted">{date(mine[hover].runStart)}</div></div>}
+        {hover !== null && mine[hover] && <div className="tooltip dash-tip" style={tipAt(x(hover), width)}><b className="tnum">{mmss(paces[hover])} {paceUnit()}</b><div className="muted">{date(mine[hover].runStart)}</div></div>}
       </div>
       <Link className="row-open" href={`/compare?items=b:${def.id}:0`}>{t('Compare →')}</Link>
     </div>

@@ -4,7 +4,7 @@ import { useMemo, useState, type MouseEvent } from 'react';
 import type { BlockInstance } from '@/lib/blocks';
 import { contextValue } from '@/lib/blocks';
 import type { TrendResult } from '@/lib/compare';
-import { dateText, t } from '@/lib/i18n';
+import { dateText, paceUnit, t, toPace } from '@/lib/i18n';
 import { Key, ensureSpan, monthLabel, monthTicks, niceTicks, tickDecimals, useWidth } from './chartKit';
 import { useExpandedHeight } from './Expandable';
 
@@ -164,13 +164,14 @@ export function TrendChart({ trend, format, tick = format, invert, markers, sele
 
 function Tooltip({ h, format, width }: { h: Hover; format: (v: number) => string; width: number }) {
   const c = h.i.context;
-  const pace = `${Math.floor(c.block.pace / 60)}:${String(c.block.pace % 60).padStart(2, '0')}`;
+  const p = Math.round(toPace(c.block.pace));
+  const pace = `${Math.floor(p / 60)}:${String(p % 60).padStart(2, '0')}`;
   const left = h.x > width - 260 ? h.x - 248 : h.x + 16;
   return (
     <div className="tooltip" style={{ left, top: Math.max(4, h.y - 20) }}>
       <div className="tip-value"><i className="key-dot" style={{ background: h.color }} /> {format(h.v)}</div>
       <div>{t('{date}, minute {minute} of the run', { date: dateText(h.i.runStart, { day: 'numeric', month: 'short', year: 'numeric' }), minute: c.before.minuteOfRun })}</div>
-      <div className="muted">{t('pace {pace} /km', { pace })} · {c.run.shoes ?? t('no shoes set')} · {contextValue(c.run.heartRateSource)}</div>
+      <div className="muted">{t('pace {pace} {unit}', { pace, unit: paceUnit() })} · {c.run.shoes ?? t('no shoes set')} · {contextValue(c.run.heartRateSource)}</div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { msg, number, t } from '@/lib/i18n';
+import { msg, number, paceUnit, t } from '@/lib/i18n';
 import type { ModelKey, ModelReport, PerformanceNow } from '@/lib/load';
 import { duration as fmtDuration, pace as fmtPace } from '@/lib/format';
 import type { Models } from './Assumptions';
@@ -24,7 +24,7 @@ export function saysNow(key: ModelKey, now: PerformanceNow): string {
     case 'intensity': return now.shares.seconds ? t('{low} low · {moderate} moderate · {high} high', { low: pct(now.shares.low), moderate: pct(now.shares.moderate), high: pct(now.shares.high) }) : '–';
     case 'efforts': return bests(now.evidence);
     case 'powerEfforts': return bests(now.powerEvidence);
-    case 'cs': return m?.cs ? `${fmtPace(m.cs)} /km · D′ ${number(Math.round(m.dPrime ?? 0))} m` : '–';
+    case 'cs': return m?.cs ? `${fmtPace(m.cs)} ${paceUnit()} · D′ ${number(Math.round(m.dPrime ?? 0))} m` : '–';
     case 'cp': return m?.cp ? `${number(Math.round(m.cp))} W · W′ ${number((m.wPrime ?? 0) / 1000, 1)} kJ` : '–';
     case 'predictions': return m?.predictions.length ? m.predictions.map((p) => `${t(RACE[p.distance])} ${fmtDuration(Math.round(p.seconds))}`).join(' · ') : '–';
     case 'vdot': return now.vdot !== null ? number(now.vdot) : '–';

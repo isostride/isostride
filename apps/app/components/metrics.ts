@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useOpenFolder } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
 import { CONTEXT_METRICS, KNOWN_METRICS, directionOf, metricInfo, type Direction, type MetricInfo, type MetricsFile } from '@/lib/kernel';
-import { number, t } from '@/lib/i18n';
+import { distanceUnit, elevationUnit, fromElevation, fromPace, number, paceUnit, t, toElevation, toPace, units } from '@/lib/i18n';
 import { readSettings } from '@/lib/settings';
 import { useDataVersion } from './dataVersion';
 
@@ -16,6 +16,8 @@ const mmss = (v: number) => {
 const num = (min: number) => (v: number, d = 0) => number(v, Math.max(min, d));
 /** Round steps of a pace axis, s/km: 0:05 up to 5:00. */
 export const PACE_STEPS = [5, 10, 15, 30, 60, 120, 300];
+/** Round steps of an elevation axis in feet. */
+const ELEVATION_STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000];
 
 /**
  * How the screens show a metric (ADR "Metrics from the file"): a short button name, its name with
@@ -47,7 +49,10 @@ export function metricView(key: string, catalog?: readonly MetricInfo[] | null, 
   // The names of the metrics the app knows in the language in use; a file's own names as the file gives them.
   const m = { ...info, name: t(info.name), short: t(info.short), unit: info.unit ? t(info.unit) : info.unit };
   const direction = directionOf(m, directions);
-  if (m.display === 'pace') return { key, short: m.short, title: m.name, name: `${m.name} (min/km)`, unit: 'min/km', fmt: (v) => `${mmss(v)} /km`, tick: mmss, minSpan: m.minSpan, invert: true, steps: PACE_STEPS, direction };
+  // A pace's values stay s/km; shown in the units chosen (min/mi), its ticks round there (requirement "Units chosen").
+  if (m.display === 'pace') return { key, short: m.short, title: m.name, name: `${m.name} (min/${distanceUnit()})`, unit: `min/${distanceUnit()}`, fmt: (v) => `${mmss(toPace(v))} ${paceUnit()}`, tick: (v) => mmss(toPace(v)), minSpan: m.minSpan, invert: true, steps: PACE_STEPS.map(fromPace), direction };
+  // The elevation in the units chosen (ft): its values stay metres, its ticks round in feet.
+  if (key === 'altitude' && units() === 'imperial') return { key, short: m.short, title: m.name, name: `${m.name} (${elevationUnit()})`, unit: elevationUnit(), fmt: (v) => `${number(Math.round(toElevation(v)))} ${elevationUnit()}`, tick: (v) => number(Math.round(toElevation(v))), minSpan: fromElevation(m.minSpan || 0), steps: ELEVATION_STEPS.map(fromElevation), direction };
   const unit = m.unit ? ` ${m.unit}` : '';
   return { key, short: m.short, title: m.name, name: m.unit ? `${m.name} (${m.unit})` : m.name, unit: m.unit, fmt: (v) => `${number(v, m.decimals)}${unit}`, tick: num(m.decimals), minSpan: m.minSpan || 0, direction };
 }
@@ -62,8 +67,8 @@ export function blockKeysOf(catalog: readonly MetricInfo[]): string[] {
   return [...known, ...keys.filter((k) => !known.includes(k)).sort((a, b) => metricInfo(a, catalog).name.localeCompare(metricInfo(b, catalog).name))];
 }
 
-/** The known metrics' views, for a folder that holds no catalog yet (its data from before schema 2). */
-export const METRIC_VIEW: MetricView[] = BLOCK_ORDER.map((k) => metricView(k));
+/** The known metrics' views, for a folder that holds no catalog yet (its data from before schema 2); made when asked, in the units in use. */
+export const knownMetricViews = (): MetricView[] => BLOCK_ORDER.map((k) => metricView(k));
 
 /** Raised when the runner saves the metrics' directions in Settings: the screens read them again. */
 export const METRICS_CHANGED = 'isostride:metrics';

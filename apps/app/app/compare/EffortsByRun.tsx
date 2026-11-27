@@ -6,7 +6,7 @@ import { useMetrics } from '@/components';
 import type { BlockInstance } from '@/lib/blocks';
 import { LEAST_CHANGE, clearDifference, differenceNoise, effortsByRun, meanOf, trendPerWeek, valueOf, type RunEfforts } from '@/lib/compare';
 import { date, duration, km } from '@/lib/format';
-import { number, t } from '@/lib/i18n';
+import { distanceUnit, number, paceUnit, t, toPace } from '@/lib/i18n';
 
 /** A signed number, with the minus sign of print: +340, −11, ±0 (a value that writes as 0 has no sign). */
 const signed = (v: number, f: (x: number) => string) => { const a = f(Math.abs(v)); return `${/^[0.,]+$/.test(a) ? '±' : v > 0 ? '+' : '−'}${a}`; };
@@ -53,10 +53,12 @@ export function EffortsByRun({ efforts, columns, titleOf, isReference, totals = 
   const pace = view('speed');
   const held = metrics.filter((m) => runs.some((x) => x.metrics[m]?.some((v) => v !== null)));
   const seconds = (d: number) => `${signed(d, (v) => number(Math.round(v)))} s`;
+  /** a change of pace, kept in s/km, in seconds per the unit shown */
+  const paceSeconds = (d: number) => seconds(toPace(d));
   const figures: Figure[] = [
-    { key: 'pace', label: t('Pace (min/km)'), of: (x) => x.pace, mean: (x) => x.meanPace, fmt: pace.tick, diff: seconds, direction: 'lower', least: LEAST_CHANGE * pace.minSpan, drift: true },
+    { key: 'pace', label: t('Pace (min{unit})', { unit: paceUnit() }), of: (x) => x.pace, mean: (x) => x.meanPace, fmt: pace.tick, diff: paceSeconds, direction: 'lower', least: LEAST_CHANGE * pace.minSpan, drift: true },
     { key: 'time', label: t('Time'), of: (x) => x.durations, ...(totals ? { mean: (x: RunEfforts) => x.durations.reduce((a, b) => a + b, 0) } : {}), fmt: duration, diff: seconds, direction: 'neutral', least: 0 },
-    { key: 'distance', label: t('Distance (km)'), of: (x) => x.distances, ...(totals ? { mean: (x: RunEfforts) => x.distances.reduce((a, b) => a + b, 0) } : {}), fmt: km, diff: (d) => `${signed(d, (v) => number(Math.round(v)))} m`, direction: 'neutral', least: 0 },
+    { key: 'distance', label: t('Distance ({unit})', { unit: distanceUnit() }), of: (x) => x.distances, ...(totals ? { mean: (x: RunEfforts) => x.distances.reduce((a, b) => a + b, 0) } : {}), fmt: km, diff: (d) => `${signed(d, (v) => number(Math.round(v)))} m`, direction: 'neutral', least: 0 },
     ...held.map((m): Figure => {
       const v = view(m);
       // The unit in the head, not again in each change ("nachodzi na siebie").

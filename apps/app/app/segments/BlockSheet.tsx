@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import { EditGlyph, useConfirm, useFocusTrap } from '@/components';
 import { asRuleDefinition, shownName, type BlockDefinition, type BlockStart, type Rule, type Tolerances } from '@/lib/blocks';
 import { useLocale } from '@/lib/client';
-import { msg, number, t } from '@/lib/i18n';
+import { fromPace, msg, number, paceUnit, t, toPace } from '@/lib/i18n';
 import { RuleBuilder, type BuilderOptions } from './RuleBuilder';
 import { minSec } from '@/lib/kernel';
 
-const fmtPace = (s: number) => minSec(s);
+/** A pace kept in s/km as m:ss in the units chosen. */
+const fmtPace = (s: number) => minSec(toPace(s));
 
 const FIELDS: { key: Exclude<keyof Tolerances, 'start'>; label: string; unit: string; scale?: number; pace?: boolean }[] = [
   { key: 'paceMin', label: msg('Pace band from'), unit: '/km', pace: true },
@@ -69,7 +70,8 @@ export function BlockSheet({ def, kept, options, handle, onClose, onSave, onDele
     if (!text.trim()) return null;
     if (f.pace) {
       const [m, s] = text.split(':').map(Number);
-      return Number.isFinite(m) ? m * 60 + (s || 0) : null;
+      // Typed in the units chosen, kept in s/km.
+      return Number.isFinite(m) ? fromPace(m * 60 + (s || 0)) : null;
     }
     const n = Number(text.replace(',', '.'));
     return Number.isFinite(n) ? n / (f.scale ?? 1) : null;
@@ -107,7 +109,7 @@ export function BlockSheet({ def, kept, options, handle, onClose, onSave, onDele
                 <span>{t(f.label)}</span>
                 <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <input aria-label={t(f.label)} defaultValue={show(f)} placeholder="–" onBlur={(e) => setTol({ ...tol, [f.key]: parse(f, e.target.value) } as Tolerances)} style={{ width: 80 }} />
-                  <span className="muted small" style={{ width: 28 }}>{f.unit}</span>
+                  <span className="muted small" style={{ width: 28 }}>{f.pace ? paceUnit() : f.unit}</span>
                 </span>
               </label>
             ))}

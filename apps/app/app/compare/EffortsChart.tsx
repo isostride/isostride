@@ -5,7 +5,7 @@ import { clock, ensureSpan, niceTicks, robustExtent, smoothPaths, useExpandScale
 import { figuresInWorker, type EffortFigures } from '@/lib/client';
 import { date, time } from '@/lib/format';
 import type { DataFolder } from '@/lib/fs';
-import { number, t, tn } from '@/lib/i18n';
+import { distanceUnit, fromDistance, number, t, tn, toDistance } from '@/lib/i18n';
 import { readSettings, zoneColor, zoneRanges } from '@/lib/settings';
 
 /** An effort chosen on the Efforts tab: where it is, and whether it is the selection compared from. */
@@ -139,8 +139,8 @@ export function EffortsChart({ efforts, handle, folder, metrics: given }: { effo
     });
     return { m, view, ys, top, py, paths, stripes, ticks: niceTicks(lo, hi, 3).filter((t) => t >= lo && t <= hi) };
   });
-  const xTicks = niceTicks(0, axis === 'distance' ? xMax / 1000 : xMax / 60, 6).map((v) => (axis === 'distance' ? v * 1000 : v * 60)).filter((v) => v <= xMax);
-  const xLabel = (v: number) => (axis === 'distance' ? `${number(+(v / 1000).toFixed(2))} km` : clock(v));
+  const xTicks = niceTicks(0, axis === 'distance' ? toDistance(xMax) : xMax / 60, 6).map((v) => (axis === 'distance' ? fromDistance(v) : v * 60)).filter((v) => v <= xMax + 1e-6);
+  const xLabel = (v: number) => (axis === 'distance' ? `${number(+toDistance(v).toFixed(2))} ${distanceUnit()}` : clock(v));
   /** Each effort's value of a metric nearest the cursor. */
   const at = (i: number, ys: (number | null)[]) => {
     if (cursor === null) return null;
@@ -237,7 +237,7 @@ function EffortsFigures({ lines, metrics }: { lines: { e: ChartEffort; f: Effort
             <tr key={`${l.e.runId}:${l.e.from}`} className={l.e.reference ? 'reference' : ''}>
               <td><span className="effort-name"><i style={{ background: l.color }} aria-hidden="true" />{l.name}</span></td>
               <td className="num tnum">{clock(l.f.moving)}</td>
-              <td className="num tnum">{number(l.f.distance / 1000, 2)} km</td>
+              <td className="num tnum">{number(toDistance(l.f.distance), 2)} {distanceUnit()}</td>
               <td className="num tnum">{l.f.ascent === null ? '–' : `${l.f.ascent} m`}</td>
               {metrics.map((m) => {
                 const mv = view(m);

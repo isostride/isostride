@@ -4,18 +4,19 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { runInWorker, useOpenFolder } from '@/lib/client';
 import { PATHS, readJson } from '@/lib/fs';
-import { t } from '@/lib/i18n';
+import { fromPace, paceUnit, t, toPace } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import { autoMaxHr, criticalByRun, type LoadSummary } from '@/lib/load';
 import { DEFAULT_PERFORMANCE, PERFORMANCE_RANGES, invalidPerformance, parsePerformance, readSettings, writeSettings, type PerformanceSettings } from '@/lib/settings';
 import { CurveModelChoice, LoadModelChoice } from './LoadModelPicker';
 import { minSec } from '@/lib/kernel';
 
-const mmss = (s: number) => minSec(s);
+/** A pace kept in s/km as m:ss in the units chosen (requirement "Units chosen"), and read back from them. */
+const mmss = (s: number) => minSec(toPace(s));
 const parsePace = (t: string): number | null | undefined => {
   if (!t.trim()) return null;
   const m = t.trim().match(/^(\d{1,2}):([0-5]\d)$/);
-  return m ? Number(m[1]) * 60 + Number(m[2]) : undefined;
+  return m ? fromPace(Number(m[1]) * 60 + Number(m[2])) : undefined;
 };
 const clockOf = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 const range = (k: keyof typeof PERFORMANCE_RANGES) => `${PERFORMANCE_RANGES[k][0]}–${PERFORMANCE_RANGES[k][1]}`;
@@ -123,7 +124,7 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
         {status && <span className="muted small" role="status">{status}</span>}
         {dirty && <button className="btn" onClick={discard}>{t('Cancel')}</button>}
         {dirty && <button className="btn primary" disabled={bad.length > 0} onClick={save}>{t('Save and recompute')}</button>}
-        {dirty && bad.length > 0 && <span className="form-error small" role="alert">{t('Not saved: the values marked lie outside their range (resting heart rate {restHr} bpm, maximum {maxHr} bpm, threshold pace {pace} /km, power {power} W, fitness {fitness} days, fatigue {fatigue} days), or the maximum heart rate is not above the resting one, or fatigue is not shorter than fitness.', { restHr: range('restHr'), maxHr: range('maxHr'), pace: `${clockOf(PERFORMANCE_RANGES.thresholdPace[0])}–${clockOf(PERFORMANCE_RANGES.thresholdPace[1])}`, power: range('thresholdPower'), fitness: range('fitnessDays'), fatigue: range('fatigueDays') })}</span>}
+        {dirty && bad.length > 0 && <span className="form-error small" role="alert">{t('Not saved: the values marked lie outside their range (resting heart rate {restHr} bpm, maximum {maxHr} bpm, threshold pace {pace} {unit}, power {power} W, fitness {fitness} days, fatigue {fatigue} days), or the maximum heart rate is not above the resting one, or fatigue is not shorter than fitness.', { restHr: range('restHr'), maxHr: range('maxHr'), unit: paceUnit(), pace: `${clockOf(Math.round(toPace(PERFORMANCE_RANGES.thresholdPace[0])))}–${clockOf(Math.round(toPace(PERFORMANCE_RANGES.thresholdPace[1])))}`, power: range('thresholdPower'), fitness: range('fitnessDays'), fatigue: range('fatigueDays') })}</span>}
       </div>
       <div className="form-section">
         <h3>{t('Load of a run, counted as')}</h3>
@@ -151,7 +152,7 @@ export function PerformanceCard({ onSaved, onReady }: { onSaved?: () => void; on
       <div className="form-section">
         <h3>{t('Thresholds')}</h3>
         <div className="form-rows">
-          {field('thresholdPace', t('Threshold pace'), 'min/km', `rTSS${inUse('rtss')} · ${t('empty: your critical speed of the 90 days up to each run')}`, auto.pace ? t('auto: {value}', { value: mmss(auto.pace) }) : t('auto'))}
+          {field('thresholdPace', t('Threshold pace'), `min${paceUnit()}`, `rTSS${inUse('rtss')} · ${t('empty: your critical speed of the 90 days up to each run')}`, auto.pace ? t('auto: {value}', { value: mmss(auto.pace) }) : t('auto'))}
           {field('thresholdPower', t('Critical power'), 'W', `${t('Power TSS')}${inUse('powerTss')} · ${t('empty: your critical power of the 90 days up to each run')}`, auto.power ? t('auto: {value}', { value: Math.round(auto.power) }) : t('auto'))}
         </div>
       </div>

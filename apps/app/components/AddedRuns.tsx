@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { PATHS, readJson, type DataFolder } from '@/lib/fs';
 import { date, km, time } from '@/lib/format';
-import { t, tn } from '@/lib/i18n';
+import { distanceUnit, t, tn } from '@/lib/i18n';
 import type { IndexedRun, RunsIndex } from '@/lib/kernel';
 
 /** How many runs a notice names; the others are counted. */
@@ -28,7 +28,7 @@ export function AddedRuns({ folder, ids }: { folder: DataFolder; ids: string[] }
     <ul className="added-runs" aria-label={t('Runs added')}>
       {runs.slice(0, NAMED).map((r) => (
         <li key={r.id}>
-          <Link href={`/run?id=${r.id}`}><b>{date(r.startTime)}</b> {time(r.startTime)} · <span className="tnum">{km(r.distance)} km</span></Link>
+          <Link href={`/run?id=${r.id}`}><b>{date(r.startTime)}</b> {time(r.startTime)} · <span className="tnum">{km(r.distance)} {distanceUnit()}</span></Link>
         </li>
       ))}
       {more > 0 && <li><Link href="/">{tn(more, 'and {n} more in Runs', 'and {n} more in Runs')}</Link></li>}

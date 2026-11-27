@@ -1,6 +1,7 @@
 import { PATHS, readJson, writeJson, type DataFolder } from '@/lib/fs';
 import { isPace, metricInfo, type Direction, type MetricInfo, minSec } from '@/lib/kernel';
 import { DEFAULT_PERFORMANCE, parsePerformance, type PerformanceSettings } from './performance';
+import { fromPace, toPace } from '@/lib/i18n';
 
 /**
  * The zones of the runner's metrics ("w settingsach chce podawac zakresy"): the boundaries between
@@ -120,7 +121,8 @@ function parseOne(text: string, pace: boolean): number | null {
   const t = text.trim();
   if (pace) {
     const m = t.match(/^(\d{1,2}):([0-5]\d)$/);
-    return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+    // Typed per km or per mile, in the units chosen (requirement "Units chosen"); kept in s/km.
+    return m ? fromPace(Number(m[1]) * 60 + Number(m[2])) : null;
   }
   const v = Number(t);
   return t !== '' && Number.isFinite(v) && v > 0 ? v : null;
@@ -146,7 +148,7 @@ export function parseBoundaries(metric: string, text: string): number[] | null {
 /** Boundaries as the runner types them: between commas, or between semicolons when one has decimals (a comma may then be its decimal sign). */
 export function formatBoundaries(metric: string, boundaries: number[]): string {
   const decimals = !PACES.has(metric) && boundaries.some((b) => !Number.isInteger(b));
-  return boundaries.map((b) => (PACES.has(metric) ? minSec(b) : String(b))).join(decimals ? '; ' : ', ');
+  return boundaries.map((b) => (PACES.has(metric) ? minSec(toPace(b)) : String(b))).join(decimals ? '; ' : ', ');
 }
 
 export async function readSettings(folder: DataFolder): Promise<SettingsFile> {

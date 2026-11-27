@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { runInWorker, useLocale, useOpenFolder } from '@/lib/client';
-import { msg, number, t } from '@/lib/i18n';
+import { distanceUnit, msg, number, t, toPace } from '@/lib/i18n';
 import { AboutCard, ChartsCard, DisplayCard, LanguageCard } from './DeviceCards';
 import { METRICS_CHANGED, useMetrics, eager, useTabInView } from '@/components';
 import { metricInfo, minSec } from '@/lib/kernel';
@@ -20,8 +20,8 @@ import { DEFAULT_ZONES, zoneMetricsOf, formatBoundaries, parseBoundaries, readSe
 /** The values of the models (heart rates, thresholds, time constants): loaded with the Models tab. */
 const PerformanceCard = eager(() => import('../performance/PerformanceCard').then((m) => m.PerformanceCard));
 
-/** A value of a metric as the runner reads it: pace as m:ss, others as they are. */
-const show = (m: ZoneMetric, v: number) => (m.pace ? minSec(v) : number(v));
+/** A value of a metric as the runner reads it: pace as m:ss in the units chosen, others as they are. */
+const show = (m: ZoneMetric, v: number) => (m.pace ? minSec(toPace(v)) : number(v));
 
 /** The zones a metric's boundaries give, as chips: Z1 … Zn with their ranges. */
 function ZoneChips({ m, boundaries }: { m: ZoneMetric; boundaries: number[] }) {
@@ -190,7 +190,7 @@ function MetricsCard() {
       <div className="settings-head">
         <div>
           <h2>{t('Metrics')}</h2>
-          <p className="muted small">{t('Every metric your files hold, with its unit as the file gives it. Its zones: the boundaries between them, separated by commas, Z1 the easiest, pace as m:ss per km; the ')}<Link href="/">{t('run chart')}</Link>{t(' colours them. Which way is better: Compare words a change as better or worse only where this is known; otherwise it says only higher or lower.')}</p>
+          <p className="muted small">{t('Every metric your files hold, with its unit as the file gives it. Its zones: the boundaries between them, separated by commas, Z1 the easiest, pace as m:ss per {unit}; the ', { unit: distanceUnit() })}<Link href="/">{t('run chart')}</Link>{t(' colours them. Which way is better: Compare words a change as better or worse only where this is known; otherwise it says only higher or lower.')}</p>
         </div>
         <span className="spacer" />
         {status && <span className="muted small" role="status">{t(status)}</span>}

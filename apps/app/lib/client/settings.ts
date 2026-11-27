@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
-import { isLocale, loadLocale, locale, localeOf, onLocale, setLocale, type Locale } from '@/lib/i18n';
+import { isLocale, isUnits, loadLocale, locale, localeOf, onLocale, setLocale, setUnits, shownKey, units, type Locale, type Units } from '@/lib/i18n';
 
 const MAP_TILES = 'strideprism.mapTiles';
 
@@ -171,9 +171,26 @@ const applyLocale = async (l: Locale) => {
   document.documentElement.removeAttribute('data-lang-pending');
 };
 
-/** The language in use; the component renders again when it changes. */
-export function useLocale(): Locale {
-  return useSyncExternalStore(onLocale, locale, () => 'en');
+/**
+ * The language and the units in use, as one key (a memo lists it to be made again in them); the
+ * component renders again when either changes.
+ */
+export function useLocale(): string {
+  // i18n-ignore: a key of the language and the units, not a text
+  return useSyncExternalStore(onLocale, shownKey, () => 'en metric');
+}
+
+/** The units chosen in this browser (requirement "Units chosen"). */
+export const UNITS_KEY = 'isostride.units';
+
+/** The units chosen in this browser, else metric. */
+export function startUnits(): Units {
+  try {
+    const saved = localStorage.getItem(UNITS_KEY);
+    if (isUnits(saved)) return saved;
+  } catch { /* storage blocked */ }
+  // i18n-ignore: a value of the setting, not a text
+  return 'metric';
 }
 
 /**
@@ -182,8 +199,13 @@ export function useLocale(): Locale {
  */
 export function useStartLocale(): void {
   useLayoutEffect(() => {
+    // The units first: they need no loading, and the page shows in them from its first paint in its language.
+    setUnits(startUnits());
     void applyLocale(startLocale());
-    const other = (e: StorageEvent) => { if (e.key === LANGUAGE_KEY) void applyLocale(startLocale()); };
+    const other = (e: StorageEvent) => {
+      if (e.key === LANGUAGE_KEY) void applyLocale(startLocale());
+      if (e.key === UNITS_KEY) setUnits(startUnits());
+    };
     window.addEventListener('storage', other);
     return () => window.removeEventListener('storage', other);
   }, []);
@@ -191,10 +213,21 @@ export function useStartLocale(): void {
 
 /** The language and its setter (Settings › Display, the setup wizard): kept in this browser, applied at once. */
 export function useLanguage(): [Locale, (l: Locale) => void] {
-  const l = useLocale();
+  useLocale();
+  const l = locale();
   const set = (next: Locale) => {
     try { localStorage.setItem(LANGUAGE_KEY, next); } catch { /* storage blocked: for this visit only */ }
     void applyLocale(next);
   };
   return [l, set];
+}
+
+/** The units and their setter (Settings › Language & region): kept in this browser, applied at once. */
+export function useUnits(): [Units, (u: Units) => void] {
+  useLocale();
+  const set = (next: Units) => {
+    try { localStorage.setItem(UNITS_KEY, next); } catch { /* storage blocked: for this visit only */ }
+    setUnits(next);
+  };
+  return [units(), set];
 }

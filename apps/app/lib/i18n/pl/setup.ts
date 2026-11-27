@@ -99,7 +99,7 @@ export const SETUP: Dictionary = {
   Male: 'Mężczyzna',
   Female: 'Kobieta',
   // Zones
-  'The boundaries between your zones, separated by commas, Z1 the easiest; pace as m:ss per km.': 'Granice między twoimi strefami, rozdzielone przecinkami, Z1 najłatwiejsza; tempo jako m:ss na km.',
+  'The boundaries between your zones, separated by commas, Z1 the easiest; pace as m:ss per {unit}.': 'Granice między twoimi strefami, rozdzielone przecinkami, Z1 najłatwiejsza; tempo jako m:ss na {unit}.',
   'These are the defaults, for trying the app: change them to yours.': 'To wartości domyślne, do wypróbowania aplikacji: zmień je na swoje.',
   'These are yours, as saved.': 'To twoje, tak jak zapisane.',
   "The run chart colours them; the intensity model and Edwards TRIMP read the heart rate's.": 'Wykres biegu je koloruje; model intensywności i Edwards TRIMP czytają strefy tętna.',
@@ -113,7 +113,7 @@ export const SETUP: Dictionary = {
   'From max HR': 'Z tętna maks.',
   'from your maximum, {max}: {percents} %': 'z twojego maksimum, {max}: {percents} %',
   'From threshold pace': 'Z tempa progowego',
-  'from your threshold pace, {pace} /km: {percents} % (Friel)': 'z twojego tempa progowego, {pace} /km: {percents} % (Friel)',
+  'from your threshold pace, {pace} {unit}: {percents} % (Friel)': 'z twojego tempa progowego, {pace} {unit}: {percents} % (Friel)',
   'From critical power': 'Z mocy krytycznej',
   'from your critical power, {power} W: {percents} % (Stryd)': 'z twojej mocy krytycznej, {power} W: {percents} % (Stryd)',
   Typical: 'Typowe',

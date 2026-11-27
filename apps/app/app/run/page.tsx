@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { CollapseButton, FullScreenIcon, MIN_SPAN, RouteMap, RunChart, clampDomain, clock, useTouch, distanceMap, mergeParams, rollingMean, smoothSpan, viewFromParams, viewToParams, SCREEN_LEAVE, type Domain, type MapCamera, type RunLine, type RunMark, type RunView, backTarget, previousPage, runStartOf, eager } from '@/components';
 import { readChartSettings, runInWorker, useChartSettings, useLocale, useOpenFolder } from '@/lib/client';
-import { msg, number, signOf, t, tn } from '@/lib/i18n';
+import { distanceUnit, elevationText, elevationUnit, msg, number, paceUnit, signOf, t, tn, toElevation } from '@/lib/i18n';
 import { readGear, readRunTags, saveRunTag, type Gear, type RunTag, type RunTagsFile } from '@/lib/gear';
 import { PATHS, readJson, readRunFile, markRunsSeen } from '@/lib/fs';
 import type { RunFile, RunsIndex } from '@/lib/kernel';
@@ -340,7 +340,7 @@ function RunPage() {
     w.start.forEach((s, i) => {
       if (w.flags.stopped[i] || w.flags.grade[i] || w.flags.missingSignal[i]) flagged.push({ from: s, to: s + WINDOW_SECONDS });
     });
-    const laps = run.laps.map((l, i) => ({ from: l.start, to: l.end, label: t('Lap {n} · {km} km · {time}', { n: i + 1, km: km(l.distance), time: duration(l.duration) }), short: t('Lap {n} · {km} km', { n: i + 1, km: km(l.distance) }) }));
+    const laps = run.laps.map((l, i) => ({ from: l.start, to: l.end, label: t('Lap {n} · {km} {unit} · {time}', { n: i + 1, km: km(l.distance), unit: distanceUnit(), time: duration(l.duration) }), short: t('Lap {n} · {km} {unit}', { n: i + 1, km: km(l.distance), unit: distanceUnit() }) }));
     const wseries = seriesOf(run);
     const hr = (run.samples.values.heartRate ?? []).filter((v): v is number => v !== null);
     const avgHr = hr.length ? Math.round(hr.reduce((a, b) => a + b, 0) / hr.length) : null;
@@ -415,7 +415,7 @@ function RunPage() {
   const head = (at: number) => {
     const i = run.samples.t.findIndex((s) => s >= at);
     const lap = run.laps.findIndex((l) => at >= l.start && at < l.end);
-    return `${clock(at)}${i >= 0 && run.samples.distance[i] !== null ? ` · ${km(run.samples.distance[i]!)} km` : ''}${lap >= 0 ? ` · ${t('lap {n}', { n: lap + 1 })}` : ''}`;
+    return `${clock(at)}${i >= 0 && run.samples.distance[i] !== null ? ` · ${km(run.samples.distance[i]!)} ${distanceUnit()}` : ''}${lap >= 0 ? ` · ${t('lap {n}', { n: lap + 1 })}` : ''}`;
   };
   const zoomed = zoom !== null;
   // The lap the selection is, if it is one.
@@ -431,8 +431,8 @@ function RunPage() {
   const figures: [string, string, string][] = stats ? [
     ['time', t('time'), duration(stats.seconds)],
     ['moving', t('moving time'), duration(stats.moving)],
-    ['distance', t('distance'), stats.distance !== null ? `${km(stats.distance)} km` : '–'],
-    ['elevation', t('elevation'), stats.ascent !== null ? `+${Math.round(stats.ascent)} / −${Math.round(stats.descent ?? 0)} m` : '–'],
+    ['distance', t('distance'), stats.distance !== null ? `${km(stats.distance)} ${distanceUnit()}` : '–'],
+    ['elevation', t('elevation'), stats.ascent !== null ? `+${number(Math.round(toElevation(stats.ascent)))} / −${elevationText(stats.descent ?? 0)}` : '–'],
     ['laps', covered.length > 1 ? t('laps') : t('lap'), covered.length === 0 ? '–' : t('{lap} of {n}', { lap: covered.length === 1 ? covered[0] : `${covered[0]}–${covered[covered.length - 1]}`, n: run.laps.length })],
     ['share', t('of the run'), `${Math.round(((stats.to - stats.from) / total) * 100)} %`],
   ] : [];
@@ -451,11 +451,11 @@ function RunPage() {
           <h1>{title ?? <>{date(run.startTime)} <span className="muted">· {time(run.startTime)}</span></>}</h1>
         </div>
         <dl className="run-figures">
-          <div><dt>{t('distance')}</dt><dd>{km(run.distance)} km</dd></div>
+          <div><dt>{t('distance')}</dt><dd>{km(run.distance)} {distanceUnit()}</dd></div>
           <div><dt>{t('moving time')}</dt><dd>{duration(run.duration)}</dd></div>
-          <div><dt>{t('average pace')}</dt><dd>{pace(run.distance / run.duration)} /km</dd></div>
+          <div><dt>{t('average pace')}</dt><dd>{pace(run.distance / run.duration)} {paceUnit()}</dd></div>
           <div><dt>{t('average heart rate')}</dt><dd>{view.avgHr ?? '–'}{view.avgHr ? ' bpm' : ''}</dd></div>
-          <div><dt>{t('elevation gain')}</dt><dd>{view.gain ?? '–'}{view.gain !== null ? ' m' : ''}</dd></div>
+          <div><dt>{t('elevation gain')}</dt><dd>{view.gain !== null ? elevationText(view.gain) : '–'}</dd></div>
           {effort && <div className="run-load" title={(effort.estimated ? t('{model}, estimated from the duration: the run lacks what the model needs; form that morning {form}', { model: t(effort.model), form: `${effort.form > 0 ? '+' : ''}${number(effort.form)}` }) : t('{model}; form that morning {form}', { model: t(effort.model), form: `${effort.form > 0 ? '+' : ''}${number(effort.form)}` }))}><dt>{t('load')}</dt><dd>{Math.round(effort.load)}{effort.estimated ? '*' : ''} {effort.unit}</dd></div>}
           {effort && <div><dt>{t('form that morning')}</dt><dd>{effort.form > 0 ? '+' : ''}{number(effort.form)}</dd></div>}
         </dl>
@@ -541,7 +541,7 @@ function RunPage() {
                   <button key={b.id} type="button" className={`run-block${b.status === 'accepted' ? '' : ' rejected'}`} title={b.reasons.length ? t('Not counted: {reasons}', { reasons: b.reasons.map(reasonText).join(' · ') }) : t('Select it on the chart')}
                     onMouseEnter={() => setPointed(b.id)} onMouseLeave={() => setPointed(null)} onFocus={() => setPointed(b.id)} onBlur={() => setPointed(null)} onClick={() => select({ from: b.start, to: b.end })}>
                     <span className="dot" style={{ background: b.status === 'accepted' ? 'var(--ok)' : 'var(--muted)' }} />
-                    <b>{b.name}</b><span className="muted"> · min {Math.floor(b.start / 60)}–{Math.ceil(b.end / 60)} · {pace(b.metrics.speed)} /km</span>
+                    <b>{b.name}</b><span className="muted"> · min {Math.floor(b.start / 60)}–{Math.ceil(b.end / 60)} · {pace(b.metrics.speed)} {paceUnit()}</span>
                   </button>
                 ))}
               </div>
@@ -558,7 +558,7 @@ function RunPage() {
               <div className="laps-head"><h3>{t('Laps')}</h3><span className="muted tnum">{run.laps.length}</span><span className="muted small laps-hint">{t('click one to show it')}</span></div>
               <div className="run-list" role="region" aria-label={t('Laps of the run')} tabIndex={0}>
                 <table className="data laps-table" aria-label={t('Laps')}>
-                  <thead><tr><th>{t('Lap')}</th><th className="num">km</th><th className="num">{t('Time')}</th><th>{t('Pace')}</th></tr></thead>
+                  <thead><tr><th>{t('Lap')}</th><th className="num">{distanceUnit()}</th><th className="num">{t('Time')}</th><th>{t('Pace')}</th></tr></thead>
                   <tbody>
                     {run.laps.map((l, i) => {
                       const v = l.duration ? l.distance / l.duration : 0;
