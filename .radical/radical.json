@@ -1,4 +1,5 @@
 {
+  "ci": { "artifacts": ["test-reports"] },
   "implements": [
     { "element": "39491f93-4fcc-4f9c-960b-e12750deef8f", "name": "Web App", "paths": ["apps/app/app"] },
     { "element": "244fc1c2-dda7-40cd-ab1e-27a047cccdc1", "name": "App Shell", "paths": ["apps/app/components"] },

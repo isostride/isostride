@@ -280,6 +280,18 @@ jobs:
       - name: Verdict
         working-directory: apps/app
         run: sh scripts/check.sh verdict
+      # The test reports the verdict read, for the git hooks of a clone (radical check --from-ci, the
+      # artifact .radical/model/check.json names): Studio shows the tests of CI, not of the last local run.
+      - name: Keep the test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-reports
+          path: |
+            apps/app/reports/vitest.json
+            apps/app/reports/playwright.json
+          retention-days: 30
+          if-no-files-found: warn
       # The tree passed: its mark, so a push to master of the same tree runs no test again. Only when
       # every job before the verdict passed too.
       - name: Mark the tree as checked
