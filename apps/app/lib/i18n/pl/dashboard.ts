@@ -11,8 +11,8 @@ export const DASHBOARD: Dictionary = {
   'Settings sections': 'Sekcje ustawień',
   'Opening Settings…': 'Otwieram ustawienia…',
   // Settings › Metrics: the zones and which way is better.
-  'Every metric your files hold, with its unit as the file gives it. Its zones: the boundaries between them, separated by commas, Z1 the easiest, pace as m:ss per km; the ':
-    'Każda metryka z twoich plików, z jednostką podaną w pliku. Jej strefy: granice między nimi, rozdzielone przecinkami, Z1 najłatwiejsza, tempo jako m:ss na km; strefy koloruje ',
+  'Every metric your files hold, with its unit as the file gives it. Its zones: the boundaries between them, separated by commas, Z1 the easiest, pace as m:ss per {unit}; the ':
+    'Każda metryka z twoich plików, z jednostką podaną w pliku. Jej strefy: granice między nimi, rozdzielone przecinkami, Z1 najłatwiejsza, tempo jako m:ss na {unit}; strefy koloruje ',
   'run chart': 'wykres biegu',
   ' colours them. Which way is better: Compare words a change as better or worse only where this is known; otherwise it says only higher or lower.':
     '. Który kierunek jest lepszy: ekran Porównaj nazywa zmianę lepszą lub gorszą tylko tam, gdzie to wiadomo; inaczej mówi tylko, że wartość wzrosła lub spadła.',
@@ -131,15 +131,15 @@ export const DASHBOARD: Dictionary = {
   'Compare →': 'Porównaj →',
   'All runs →': 'Wszystkie biegi →',
   'Open the run →': 'Otwórz bieg →',
-  'Kilometres by day: {days}': 'Kilometry według dni: {days}',
-  'Kilometres a week, the last 12 weeks: {weeks}': 'Kilometry tygodniowo, ostatnie 12 tygodni: {weeks}',
-  'Pace along the run, from {from} to {to} /km, fastest {fastest} /km': 'Tempo w trakcie biegu, od {from} do {to} /km, najszybsze {fastest} /km',
+  '{unit} by day: {days}': '{unit} według dni: {days}',
+  '{unit} a week, the last 12 weeks: {weeks}': '{unit} tygodniowo, ostatnie 12 tygodni: {weeks}',
+  'Pace along the run, from {from} to {to} {unit}, fastest {fastest} {unit}': 'Tempo w trakcie biegu, od {from} do {to} {unit}, najszybsze {fastest} {unit}',
   "No load yet: the form needs the runs' loads.": 'Nie ma jeszcze obciążenia: forma potrzebuje obciążeń biegów.',
   'Last week by this day': 'Zeszły tydzień do tego dnia',
-  '{percent} % of your 4-week average, {km} km': '{percent} % Twojej średniej z 4 tygodni ({km} km)',
-  '{percent} % of last week, {km} km': '{percent} % zeszłego tygodnia ({km} km)',
-  '{percent} % of your average of {n} weeks, {km} km': '{percent} % Twojej średniej z {n} tygodni ({km} km)',
-  '{km} km a week on average over the {n} whole weeks before this one': 'Średnio {km} km tygodniowo w {n} pełnych tygodniach przed tym',
+  '{percent} % of your 4-week average, {km} {unit}': '{percent} % Twojej średniej z 4 tygodni ({km} {unit})',
+  '{percent} % of last week, {km} {unit}': '{percent} % zeszłego tygodnia ({km} {unit})',
+  '{percent} % of your average of {n} weeks, {km} {unit}': '{percent} % Twojej średniej z {n} tygodni ({km} {unit})',
+  '{km} {unit} a week on average over the {n} whole weeks before this one': 'Średnio {km} {unit} tygodniowo w {n} pełnych tygodniach przed tym',
   'avg {km}': 'śr. {km}',
   '{percent} % into the run': '{percent} % biegu',
   Fastest: 'Najszybszy',

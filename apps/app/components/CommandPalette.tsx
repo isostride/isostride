@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFolder } from '@/lib/client';
 import { readDefinitions } from '@/lib/blocks';
 import { PATHS, readJson } from '@/lib/fs';
-import { dateText, msg, number, t } from '@/lib/i18n';
+import { dateText, distanceUnit, msg, number, paceUnit, t, toDistance, toPace } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import { SCREEN_LEAVE } from './screenTrail';
 
@@ -132,8 +132,8 @@ export function CommandPalette({ onTheme }: { onTheme: () => void }) {
         all.push({
           group: 'Runs', glyph: 'run',
           label: r.title ?? dateText(d, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }),
-          hint: [r.title ? dateText(d, { day: 'numeric', month: 'short', year: 'numeric' }) : null, r.workoutType, clock(r.duration), r.avgSpeed ? `${clock(1000 / r.avgSpeed)} /km` : null].filter(Boolean).join(' · '),
-          side: `${number(r.distance / 1000, 1)} km`,
+          hint: [r.title ? dateText(d, { day: 'numeric', month: 'short', year: 'numeric' }) : null, r.workoutType, clock(r.duration), r.avgSpeed ? `${clock(toPace(1000 / r.avgSpeed))} ${paceUnit()}` : null].filter(Boolean).join(' · '),
+          side: `${number(toDistance(r.distance), 1)} ${distanceUnit()}`,
           // Found by its month in English too, and by its month and weekday in the language in use.
           keys: `${r.shoes ?? ''} ${r.startTime.slice(0, 10)} ${d.toLocaleDateString('en', { month: 'long' })} ${dateText(d, { month: 'long' })} ${dateText(d, { month: 'long', weekday: 'long' })}`,
           run: go(`/run?id=${r.id}`),

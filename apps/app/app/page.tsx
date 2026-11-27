@@ -5,7 +5,7 @@ import { CellBar, EditButton, Expandable, ReadError, columnPath, useWidth, WithE
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocale, useOpenFolder, runInWorker, watchJob } from '@/lib/client';
-import { locale, localeTag, msg, number, t, tn } from '@/lib/i18n';
+import { distanceUnit, locale, localeTag, msg, number, paceUnit, t, tn, toDistance } from '@/lib/i18n';
 import { PATHS, readJson, isOutdated, markRunsSeen, readManifest, readNewRuns, type Manifest } from '@/lib/fs';
 import { type RunsIndex, ALGORITHM_VERSION } from '@/lib/kernel';
 import { date, duration, km, pace, time } from '@/lib/format';
@@ -29,7 +29,8 @@ const monthName = (d: string) => {
 };
 /** A week's dates: "21–27 Sept", or "28 Sept – 4 Oct" across two months. */
 const weekDates = (a: string, b: string) => (a.slice(0, 7) === b.slice(0, 7) ? `${dayNumber(a)}–${shortDate(b)}` : `${shortDate(a)} – ${shortDate(b)}`);
-const kmOf = (m: number) => number(m / 1000, m >= 100000 ? 0 : 1);
+/** A distance in the unit shown (km or mi), whole from 100 on; its unit is distanceUnit(). */
+const kmOf = (m: number) => number(toDistance(m), toDistance(m) >= 100 ? 0 : 1);
 /** The source of a run's heart rate: a strap by its name, or the watch's wrist sensor ("wrist (PACE 4)", as the context names it). */
 const hrFrom = (source: string) => { const m = /^wrist \((.*)\)$/.exec(source); return m ? t('wrist ({device})', { device: m[1] }) : source; };
 
@@ -125,7 +126,7 @@ function RunsPage() {
   const runs = [...(index?.runs ?? [])].reverse();
   /** The longest run, the scale of the distance bars of the list. */
   const longest = Math.max(1, ...runs.map((r) => r.distance ?? 0));
-  const totalKm = runs.reduce((a, r) => a + r.distance, 0) / 1000;
+  const totalKm = toDistance(runs.reduce((a, r) => a + r.distance, 0));
   const weeks = useMemo(() => weeksOf(index?.runs ?? []), [index]);
 
   return (
@@ -176,7 +177,7 @@ function RunsPage() {
           <table className="data runs-table">
             <thead>
               <tr>
-                <th>{t('Date')}</th><th className="wide-col">{t('Start')}</th><th className="wide-col">{t('Title')}</th><th className="num">{t('Distance km')}</th><th className="num">{t('Time')}</th><th className="num">{t('Pace /km')}</th><th className="num wide-col">{t('Avg HR')}</th><th className="wide-col">{t('HR from')}</th><th className="wide-col">{t('Shoes')}</th><th className="wide-col">{t('Tags')}</th><th className="num wide-col">{t('Load')}{loadUnit ? ` ${loadUnit}` : ''}</th><th className="wide-col" />
+                <th>{t('Date')}</th><th className="wide-col">{t('Start')}</th><th className="wide-col">{t('Title')}</th><th className="num">{t('Distance {unit}', { unit: distanceUnit() })}</th><th className="num">{t('Time')}</th><th className="num">{t('Pace {unit}', { unit: paceUnit() })}</th><th className="num wide-col">{t('Avg HR')}</th><th className="wide-col">{t('HR from')}</th><th className="wide-col">{t('Shoes')}</th><th className="wide-col">{t('Tags')}</th><th className="num wide-col">{t('Load')}{loadUnit ? ` ${loadUnit}` : ''}</th><th className="wide-col" />
               </tr>
             </thead>
             <tbody>
@@ -241,19 +242,19 @@ function WeeksAtAGlance({ weeks, runs, totalKm, since }: { weeks: LogWeek[]; run
       <div className="glance-figures">
         <div className="glance-now">
           <span className="muted small">{now.current ? t('This week') : t('Week of {date}', { date: shortDate(now.start) })}</span>
-          <b className="tnum">{kmOf(now.distance)} km</b>
+          <b className="tnum">{kmOf(now.distance)} {distanceUnit()}</b>
           <span className="muted small tnum">{duration(now.duration)} · {tn(now.count, '{n} run', '{n} runs')}{change !== null && ` · ${t('{change} % vs 4-week avg', { change: `${change >= 0 ? '+' : '−'}${number(Math.abs(change))}` })}`}</span>
         </div>
         <dl className="glance-dl">
-          <div><dt>{t('4-week average')}</dt><dd className="tnum">{t('{km} km / week', { km: kmOf(avg) })}</dd></div>
-          <div><dt>{t('All runs')}</dt><dd className="tnum">{tn(runs, '{n} run', '{n} runs')} · {number(totalKm, 0)} km</dd></div>
+          <div><dt>{t('4-week average')}</dt><dd className="tnum">{t('{km} {unit} / week', { km: kmOf(avg), unit: distanceUnit() })}</dd></div>
+          <div><dt>{t('All runs')}</dt><dd className="tnum">{tn(runs, '{n} run', '{n} runs')} · {number(totalKm, 0)} {distanceUnit()}</dd></div>
           <div><dt>{t('Since')}</dt><dd>{date(since)}</dd></div>
         </dl>
       </div>
       <div ref={box} className="glance-chart">
         {/* Its height, taller on the whole screen, is read inside the card (components/Expandable). */}
         <WithExpandedHeight height={96}>{(H) => (
-          <svg width={W} height={H + 18} role="img" aria-label={t('Distance of the last {n} weeks: {weeks}', { n: number(bars.length), weeks: bars.map((w) => `${shortDate(w.start)} ${kmOf(w.distance)} km`).join(', ') })} onMouseLeave={() => setHover(null)}>
+          <svg width={W} height={H + 18} role="img" aria-label={t('Distance of the last {n} weeks: {weeks}', { n: number(bars.length), weeks: bars.map((w) => `${shortDate(w.start)} ${kmOf(w.distance)} ${distanceUnit()}`).join(', ') })} onMouseLeave={() => setHover(null)}>
             <line x1={0} x2={W} y1={H} y2={H} stroke="var(--axis)" strokeWidth="1" />
             {bars.map((w, i) => {
               const h = (w.distance / max) * (H - 14);
@@ -268,7 +269,7 @@ function WeeksAtAGlance({ weeks, runs, totalKm, since }: { weeks: LogWeek[]; run
             {hover !== null && (() => {
               const w = bars[hover];
               const x = Math.min(W - 70, Math.max(70, x0 + hover * bw + bw / 2));
-              return <text x={x} y={11} fontSize="11" fontWeight="600" textAnchor="middle" fill="var(--text)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke">{shortDate(w.start)} · {kmOf(w.distance)} km · {tn(w.count, '{n} run', '{n} runs')}</text>;
+              return <text x={x} y={11} fontSize="11" fontWeight="600" textAnchor="middle" fill="var(--text)" stroke="var(--surface)" strokeWidth="3" paintOrder="stroke">{shortDate(w.start)} · {kmOf(w.distance)} {distanceUnit()} · {tn(w.count, '{n} run', '{n} runs')}</text>;
             })()}
           </svg>
         )}</WithExpandedHeight>
@@ -299,7 +300,7 @@ function Calendar({ weeks, match, searching, loadUnit, fresh }: { weeks: LogWeek
           <div className="cal-month-band">
             <h3>{monthName(`${m.month}-01`)}</h3>
             {m.count > 0 ? (
-              <span className="muted tnum">{kmOf(m.distance)} km · {duration(m.duration)} · {tn(m.count, '{n} run', '{n} runs')}</span>
+              <span className="muted tnum">{kmOf(m.distance)} {distanceUnit()} · {duration(m.duration)} · {tn(m.count, '{n} run', '{n} runs')}</span>
             ) : <span className="muted">{t('no runs')}</span>}
             {searching && (() => {
               const n = m.weeks.flatMap((w) => w.days).filter((d) => d.date.slice(0, 7) === m.month).flatMap((d) => d.runs).filter(match).length;
@@ -314,10 +315,10 @@ function Calendar({ weeks, match, searching, loadUnit, fresh }: { weeks: LogWeek
                   <span className="cal-date">{dayNumber(d.date)}</span>
                   {d.runs.map((r) => (!match(r) ? (
                     // A run the search did not find: a thin bar, still a way to it.
-                    <Link key={r.id} href={`/run?id=${r.id}`} className="run-tile dim" aria-label={t('{km} km, not found by the search', { km: kmOf(r.distance) })} title={`${kmOf(r.distance)} km`} />
+                    <Link key={r.id} href={`/run?id=${r.id}`} className="run-tile dim" aria-label={t('{km} {unit}, not found by the search', { km: kmOf(r.distance), unit: distanceUnit() })} title={`${kmOf(r.distance)} ${distanceUnit()}`} />
                   ) : (
                     <Link key={r.id} href={`/run?id=${r.id}`} className={`run-tile ${fresh.has(r.id) ? 'new' : ''}`} title={[r.title, r.workoutType, r.note].filter(Boolean).join(' · ') || undefined}>
-                      <b className="tnum">{kmOf(r.distance)} km{fresh.has(r.id) && <span className="new-chip">{t('New')}</span>}</b>
+                      <b className="tnum">{kmOf(r.distance)} {distanceUnit()}{fresh.has(r.id) && <span className="new-chip">{t('New')}</span>}</b>
                       <span className="tnum">{duration(r.duration)} · {pace(r.avgSpeed)}</span>
                       {(r.title || r.workoutType) && <span className="run-tile-tag">{r.title ?? r.workoutType}</span>}
                     </Link>
@@ -327,9 +328,9 @@ function Calendar({ weeks, match, searching, loadUnit, fresh }: { weeks: LogWeek
               <div className="cal-total">
                 {w.count ? (
                   <>
-                    <b className="tnum">{kmOf(w.distance)} km</b>
+                    <b className="tnum">{kmOf(w.distance)} {distanceUnit()}</b>
                     <span className="muted tnum">{duration(w.duration)} · {tn(w.count, '{n} run', '{n} runs')}</span>
-                    <span className="muted tnum">{pace(w.distance / w.duration)} /km{w.heartRate ? ` · ${Math.round(w.heartRate)} bpm` : ''}</span>
+                    <span className="muted tnum">{pace(w.distance / w.duration)} {paceUnit()}{w.heartRate ? ` · ${Math.round(w.heartRate)} bpm` : ''}</span>
                     {(() => {
                       // The week's load by the model of Settings; its line held while the loads are read (layout shift 0).
                       const load = w.days.flatMap((d) => d.runs).reduce((sum, r) => sum + (r.load ?? 0), 0);
@@ -375,10 +376,10 @@ function RunsToolbar({ search, onSearch, found, total, types, months }: { search
         {types.map((type) => <option key={type} value={type}>{type}</option>)}
       </select>
       <span className="runs-km">
-        <input type="number" min={0} step={0.5} aria-label={t('From km')} placeholder={t('from')} value={search.minKm ?? ''} onChange={(e) => set({ minKm: km(e.target.value) })} />
+        <input type="number" min={0} step={0.5} aria-label={t('From {unit}', { unit: distanceUnit() })} placeholder={t('from')} value={search.minKm ?? ''} onChange={(e) => set({ minKm: km(e.target.value) })} />
         <span className="muted">–</span>
-        <input type="number" min={0} step={0.5} aria-label={t('To km')} placeholder={t('to')} value={search.maxKm ?? ''} onChange={(e) => set({ maxKm: km(e.target.value) })} />
-        <span className="muted small">km</span>
+        <input type="number" min={0} step={0.5} aria-label={t('To {unit}', { unit: distanceUnit() })} placeholder={t('to')} value={search.maxKm ?? ''} onChange={(e) => set({ maxKm: km(e.target.value) })} />
+        <span className="muted small">{distanceUnit()}</span>
       </span>
       <span className="runs-found tnum" aria-live="polite">{isSearching(search) ? tn(total, '{found} of {n} run', '{found} of {n} runs', { found: number(found) }) : tn(total, '{n} run', '{n} runs')}</span>
       {isSearching(search) && <button type="button" className="btn sm" onClick={() => onSearch(NO_SEARCH)}>{t('Clear')}</button>}

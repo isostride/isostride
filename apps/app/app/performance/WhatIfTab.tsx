@@ -2,9 +2,9 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { METRIC_VIEW } from '@/components';
+import { knownMetricViews } from '@/components';
 import { CS_RANGE, WHOLE_AXIS } from '@/lib/curve';
-import { dateText, msg, number, t } from '@/lib/i18n';
+import { dateText, distanceUnit, distanceStep, fromDistance, msg, number, paceUnit, t, toDistance, toPace } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import {
   MARKER_DAYS, PATTERN_WEEKS, WHATIF_MAX_PERCENT, WHATIF_WEEKS, curveWhatIf, effortsParam, loadWhatIf, parseClock, parseEfforts, parseWeeks, weeksParam,
@@ -53,38 +53,38 @@ const lengthOf = (d: number) => (d < 60 ? `${number(d)} s` : `${number(d / 60)} 
 function EffortRow({ effort, best, index, onChange, onRemove }: { effort: WhatIfEffort; /** the best of the longest length of the curve within it */ best: { length: number; speed: number | null } | null; index: number; onChange: (e: WhatIfEffort) => void; onRemove: (() => void) | null }) {
   const [time, setTime] = useState(fmtDuration(effort.seconds));
   const [paceText, setPaceText] = useState(fmtPace(effort.metres / effort.seconds));
-  const [dist, setDist] = useState(number(effort.metres / 1000, 2));
+  const [dist, setDist] = useState(number(toDistance(effort.metres), 2));
   /** which of pace and distance stays when the time changes: the one written last */
   const [keep, setKeep] = useState<'pace' | 'distance'>('pace');
   const name = t('Effort {n}', { n: index + 1 });
   const commit = (seconds: number | null, metres: number | null) => { if (seconds && metres && seconds > 0 && metres > 0) onChange({ seconds, metres }); };
-  /** The metres of `seconds` at a pace written m:ss per km (parseClock reads it as seconds per km). */
-  const fromPace = (seconds: number | null, p: string) => { const perKm = parseClock(p); return seconds && perKm ? (seconds / perKm) * 1000 : null; };
+  /** The metres of `seconds` at a pace written m:ss per km or per mile, in the units chosen (parseClock reads it as seconds per that unit). */
+  const metresAt = (seconds: number | null, p: string) => { const perUnit = parseClock(p); return seconds && perUnit ? (seconds / perUnit) * distanceStep() : null; };
   const onTime = (v: string) => {
     setTime(v);
     const s = parseClock(v);
     if (!s) return;
-    if (keep === 'pace') { const m = fromPace(s, paceText); if (m) { setDist(number(m / 1000, 2)); commit(s, m); } }
-    else { const m = Number(dist.replace(',', '.')) * 1000; if (m > 0) { setPaceText(fmtPace(m / s)); commit(s, m); } }
+    if (keep === 'pace') { const m = metresAt(s, paceText); if (m) { setDist(number(toDistance(m), 2)); commit(s, m); } }
+    else { const m = fromDistance(Number(dist.replace(',', '.'))); if (m > 0) { setPaceText(fmtPace(m / s)); commit(s, m); } }
   };
   const onPace = (v: string) => {
     setPaceText(v); setKeep('pace');
     const s = parseClock(time);
-    const m = fromPace(s, v);
-    if (s && m) { setDist(number(m / 1000, 2)); commit(s, m); }
+    const m = metresAt(s, v);
+    if (s && m) { setDist(number(toDistance(m), 2)); commit(s, m); }
   };
   const onDist = (v: string) => {
     setDist(v); setKeep('distance');
     const s = parseClock(time);
-    const m = Number(v.replace(',', '.')) * 1000;
+    const m = fromDistance(Number(v.replace(',', '.')));
     if (s && m > 0) { setPaceText(fmtPace(m / s)); commit(s, m); }
   };
   return (
     <div className="whatif-effort" role="group" aria-label={name}>
       <label><span className="muted small">{t('Time')}</span><input aria-label={t('{name}: time', { name })} value={time} onChange={(e) => onTime(e.target.value)} inputMode="numeric" /></label>
-      <label><span className="muted small">{t('Pace')}</span><span className="with-unit"><input aria-label={t('{name}: pace', { name })} value={paceText} onChange={(e) => onPace(e.target.value)} /><span className="unit">/km</span></span></label>
-      <label><span className="muted small">{t('Distance')}</span><span className="with-unit"><input aria-label={t('{name}: distance', { name })} value={dist} onChange={(e) => onDist(e.target.value)} inputMode="decimal" /><span className="unit">km</span></span></label>
-      <span className="muted small whatif-best">{best === null ? t('under 30 seconds: no model uses it') : best.speed === null ? t('no best of {length} in the last {days} days', { length: lengthOf(best.length), days: MARKER_DAYS }) : t('your best of {length}: {pace} /km', { length: lengthOf(best.length), pace: fmtPace(best.speed) })}</span>
+      <label><span className="muted small">{t('Pace')}</span><span className="with-unit"><input aria-label={t('{name}: pace', { name })} value={paceText} onChange={(e) => onPace(e.target.value)} /><span className="unit">{paceUnit()}</span></span></label>
+      <label><span className="muted small">{t('Distance')}</span><span className="with-unit"><input aria-label={t('{name}: distance', { name })} value={dist} onChange={(e) => onDist(e.target.value)} inputMode="decimal" /><span className="unit">{distanceUnit()}</span></span></label>
+      <span className="muted small whatif-best">{best === null ? t('under 30 seconds: no model uses it') : best.speed === null ? t('no best of {length} in the last {days} days', { length: lengthOf(best.length), days: MARKER_DAYS }) : t('your best of {length}: {pace} {unit}', { unit: paceUnit(), length: lengthOf(best.length), pace: fmtPace(best.speed) })}</span>
       {onRemove && <button type="button" className="btn sm icon" aria-label={t('Remove {name}', { name })} onClick={onRemove}>×</button>}
     </div>
   );
@@ -125,12 +125,12 @@ export function CurveWhatIfView({ now, runs, summaries, model }: { now: Performa
     points: s.bests.map((b) => ({ duration: b.duration, value: 1000 / b.speed, note: label })),
     estimate: d.estimate, extrapolate: d.extrapolate, estimateAt: d.at,
   });
-  const view = METRIC_VIEW.find((x) => x.key === 'speed')!;
+  const view = knownMetricViews().find((x) => x.key === 'speed')!;
   const predicted = (s: CurveState, d: number) => s.predictions.find((p) => p.distance === d)?.seconds ?? null;
   const cs = (s: CurveState) => s.estimate?.critical?.rate ?? null;
   const dp = (s: CurveState) => s.estimate?.critical?.reserve ?? null;
   const rows: [string, string, string, string][] = [
-    [t('Critical speed'), cs(r.now) ? `${fmtPace(cs(r.now)!)} /km` : '–', cs(r.then) ? `${fmtPace(cs(r.then)!)} /km` : '–', change(cs(r.now) && 1000 / cs(r.now)!, cs(r.then) && 1000 / cs(r.then)!, (v) => `${number(Math.round(v))} s/km`, true)],
+    [t('Critical speed'), cs(r.now) ? `${fmtPace(cs(r.now)!)} ${paceUnit()}` : '–', cs(r.then) ? `${fmtPace(cs(r.then)!)} ${paceUnit()}` : '–', change(cs(r.now) && 1000 / cs(r.now)!, cs(r.then) && 1000 / cs(r.then)!, (v) => `${number(Math.round(toPace(v)))} s${paceUnit()}`, true)],
     ['D′', dp(r.now) !== null ? `${number(Math.round(dp(r.now)!))} m` : '–', dp(r.then) !== null ? `${number(Math.round(dp(r.then)!))} m` : '–', change(dp(r.now), dp(r.then), (v) => `${number(Math.round(v))} m`)],
     ...RACES.map(([d, name]): [string, string, string, string] => {
       const [a, b] = [predicted(r.now, d), predicted(r.then, d)];
@@ -174,8 +174,8 @@ export function CurveWhatIfView({ now, runs, summaries, model }: { now: Performa
       <div className="card chart" style={{ marginTop: 12 }}>
         <h3 className="chart-title">{t('Your pace curve')} <span className="muted">· {t('now, from the bests of the last {days} days, and with the effort', { days: MARKER_DAYS })}</span></h3>
         <CurveChart label={t('Pace curve now and with the effort')} lines={[line('now', t('Now'), 'var(--series-1)', 'circle', r.now, drawnNow), line('then', t('What if'), 'var(--series-2)', 'diamond', r.then, drawnThen)]}
-          durations={WHOLE_AXIS} format={(v) => `${paceOf(v)} /km`} tick={view.tick} minSpan={view.minSpan} height={260}
-          gap={(m, e) => { const d = Math.round(m - e); return d === 0 ? t('on the curve') : d > 0 ? t('{v} s/km slower than the curve', { v: number(d) }) : t('{v} s/km faster than the curve', { v: number(-d) }); }} />
+          durations={WHOLE_AXIS} format={(v) => `${paceOf(v)} ${paceUnit()}`} tick={view.tick} minSpan={view.minSpan} height={260}
+          gap={(m, e) => { const d = Math.round(toPace(m - e)); return d === 0 ? t('on the curve') : d > 0 ? t('{v} s{unit} slower than the curve', { v: number(d), unit: paceUnit() }) : t('{v} s{unit} faster than the curve', { v: number(-d), unit: paceUnit() }); }} />
         <div className="table-scroll" style={{ marginTop: 12 }}>
           <table className="data whatif-table" aria-label={t('What the models say now and with the effort')}>
             <thead><tr><th>{t('Model')}</th><th className="num">{t('Now')}</th><th className="num">{t('What if')}</th><th className="num">{t('Change')}</th></tr></thead>

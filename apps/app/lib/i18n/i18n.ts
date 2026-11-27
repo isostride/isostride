@@ -58,10 +58,61 @@ export function setLocale(l: Locale): void {
   for (const f of listeners) f(l);
 }
 
-/** Calls back on every change of the language; returns the unsubscribe. */
+/** Calls back on every change of the language or of the units; returns the unsubscribe. */
 export function onLocale(f: (l: Locale) => void): () => void {
   listeners.add(f);
   return () => listeners.delete(f);
+}
+
+/**
+ * The units a distance, a pace and an elevation are shown and typed in (the runner's request of
+ * 27 Nov 2026: "dodaj obsluge innych jednostek mam na mysli mile ... ustawienie oczwicje w languegs &
+ * loca..."; requirement "Units chosen"): metric (km, min/km, m) or imperial (mi, min/mi, ft). The data
+ * keep metres and s/km whatever is chosen; only what is shown and typed changes. Metric at first.
+ */
+export type Units = 'metric' | 'imperial';
+export const isUnits = (v: unknown): v is Units => v === 'metric' || v === 'imperial';
+
+let currentUnits: Units = 'metric';
+/** The units in use. */
+export const units = (): Units => currentUnits;
+/** Sets the units in use; the parts listening render again in them. */
+export function setUnits(u: Units): void {
+  if (u === currentUnits) return;
+  currentUnits = u;
+  for (const f of listeners) f(current);
+}
+/** The language and the units in use as one key: what a screen is drawn in. */
+export const shownKey = (): string => `${current} ${currentUnits}`;
+
+/** A mile and a foot, m. */
+export const MILE = 1609.344;
+export const FOOT = 0.3048;
+/** The metres of one unit of distance shown: 1000 or a mile. */
+export const distanceStep = (): number => (currentUnits === 'imperial' ? MILE : 1000);
+/** The unit of distance shown: km or mi. */
+export const distanceUnit = (): string => (currentUnits === 'imperial' ? 'mi' : 'km');
+/** The unit of a pace shown, after its m:ss: /km or /mi. */
+export const paceUnit = (): string => `/${distanceUnit()}`;
+/** The unit of an elevation shown: m or ft. */
+export const elevationUnit = (): string => (currentUnits === 'imperial' ? 'ft' : 'm');
+/** Metres in the unit of distance shown (km or mi), and back. */
+export const toDistance = (m: number): number => m / distanceStep();
+export const fromDistance = (v: number): number => v * distanceStep();
+/** A pace in s/km as seconds per the unit shown (s/km or s/mi), and back. */
+export const toPace = (secPerKm: number): number => (secPerKm * distanceStep()) / 1000;
+export const fromPace = (secPerUnit: number): number => (secPerUnit * 1000) / distanceStep();
+/** An elevation in metres in the unit shown (m or ft), and back. */
+export const toElevation = (m: number): number => (currentUnits === 'imperial' ? m / FOOT : m);
+export const fromElevation = (v: number): number => (currentUnits === 'imperial' ? v * FOOT : v);
+
+/** A distance in metres with its unit: "5.24 km", "3.26 mi"; two decimals unless given. */
+export function distanceText(m: number, digits = 2): string {
+  return `${number(toDistance(m), digits)} ${distanceUnit()}`;
+}
+/** An elevation in metres with its unit, whole: "120 m", "394 ft". */
+export function elevationText(m: number): string {
+  return `${number(Math.round(toElevation(m)))} ${elevationUnit()}`;
 }
 
 const fill = (text: string, vars?: Record<string, string | number>): string =>

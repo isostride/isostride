@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { RunChart, clampDomain, clock, rollingMean, smoothSpan, type Domain, type RunLine } from '@/components';
 import { PATHS, readJson, type DataFolder, readRunFile } from '@/lib/fs';
 import { duration, km, pace } from '@/lib/format';
-import { t } from '@/lib/i18n';
+import { distanceUnit, paceUnit, t } from '@/lib/i18n';
 import type { RunFile } from '@/lib/kernel';
 import { runMetric, secondsOf, type WindowKey } from './metrics';
 
@@ -32,7 +32,7 @@ export function RunWidget({ folder, id, metrics }: { folder: DataFolder; id: str
     // Second by second, as the Run screen draws it.
     const { x, series } = secondsOf(run);
     const total = x.length ? x[x.length - 1] : 1;
-    return { x, total, series, laps: run.laps.map((l, i) => ({ from: l.start, to: l.end, label: t('Lap {n} · {km} km', { n: i + 1, km: km(l.distance) }), short: t('Lap {n}', { n: i + 1 }) })) };
+    return { x, total, series, laps: run.laps.map((l, i) => ({ from: l.start, to: l.end, label: t('Lap {n} · {km} {unit}', { n: i + 1, km: km(l.distance), unit: distanceUnit() }), short: t('Lap {n}', { n: i + 1 }) })) };
   }, [run]);
 
   if (run === undefined) return <p className="muted small" role="status">{t('Reading the run…')}</p>;
@@ -46,14 +46,14 @@ export function RunWidget({ folder, id, metrics }: { folder: DataFolder; id: str
   });
   const head = (at: number) => {
     const i = run.samples.t.findIndex((s) => s >= at);
-    return `${clock(at)}${i >= 0 && run.samples.distance[i] !== null ? ` · ${km(run.samples.distance[i]!)} km` : ''}`;
+    return `${clock(at)}${i >= 0 && run.samples.distance[i] !== null ? ` · ${km(run.samples.distance[i]!)} ${distanceUnit()}` : ''}`;
   };
   return (
     <div className="dash-run" onDoubleClick={() => setZoom(null)}>
       <div className="dash-figures">
-        <span><b className="tnum">{km(run.distance)}</b> km</span>
+        <span><b className="tnum">{km(run.distance)}</b> {distanceUnit()}</span>
         <span><b className="tnum">{duration(run.duration)}</b></span>
-        <span><b className="tnum">{pace(run.distance / run.duration)}</b> /km</span>
+        <span><b className="tnum">{pace(run.distance / run.duration)}</b> {paceUnit()}</span>
       </div>
       <RunChart x={view.x} total={view.total} lines={lines} focus={focus} onFocus={setFocus} domain={domain}
         onDomain={(d) => setZoom(d[0] <= 0 && d[1] >= view.total ? null : d)} laps={view.laps} cursor={cursor} onCursor={setCursor}

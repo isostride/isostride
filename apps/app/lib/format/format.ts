@@ -1,9 +1,9 @@
-import { dateText, number } from '@/lib/i18n';
+import { dateText, distanceText, number, toDistance, toPace } from '@/lib/i18n';
 
-/** min:ss per km from m/s */
+/** min:ss per km (or per mile, in the units chosen) from m/s; its unit is paceUnit() */
 export function pace(speed: number | null | undefined): string {
   if (!speed || speed <= 0) return '–';
-  const secPerKm = 1000 / speed;
+  const secPerKm = toPace(1000 / speed);
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm - m * 60);
   return s === 60 ? `${m + 1}:00` : `${m}:${String(s).padStart(2, '0')}`;
@@ -18,10 +18,13 @@ export function duration(seconds: number): string {
   return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
 }
 
-/** Kilometres with two decimals, in the language in use (5.24, 5,24). */
+/** Kilometres (or miles, in the units chosen) with two decimals, in the language in use (5.24, 5,24); its unit is distanceUnit(). */
 export function km(meters: number): string {
-  return number(meters / 1000, 2);
+  return number(toDistance(meters), 2);
 }
+
+/** A distance with its unit, in the units chosen: "5.24 km", "3.26 mi". */
+export const distance = (meters: number, digits = 2): string => distanceText(meters, digits);
 
 export function date(iso: string): string {
   return dateText(iso, { day: 'numeric', month: 'short', year: 'numeric' });

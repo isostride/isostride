@@ -40,6 +40,11 @@ export const SETTINGS: Dictionary = {
   'Release notes': 'Informacje o wydaniu',
   // The language in a tab of its own.
   'Language & region': 'Język i region',
+  Units: 'Jednostki',
+  Kilometres: 'Kilometry',
+  Miles: 'Mile',
+  'Distance, pace and elevation: km, min/km and m, or mi, min/mi and ft. Your data keep metres whatever you choose.':
+    'Dystans, tempo i przewyższenie: km, min/km i m albo mi, min/mi i ft. Twoje dane zostają w metrach, cokolwiek wybierzesz.',
   // Diagnostics of this device, in About.
   Diagnostics: 'Diagnostyka',
   'Measures on this device how long the folder takes to read and the app to work, as text to copy and send when the app is slow. Nothing is sent by itself.': 'Mierzy na tym urządzeniu, ile trwa czytanie folderu i praca aplikacji, i podaje wynik jako tekst do skopiowania i wysłania, gdy aplikacja działa wolno. Sama niczego nie wysyła.',

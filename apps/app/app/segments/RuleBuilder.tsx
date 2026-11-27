@@ -5,7 +5,7 @@ import { useMetrics } from '@/components';
 import { PERIOD_PRESETS, REFERENCE_SHAPES, patternKey, patternName, repsName, type LayoutFilter, RULE_TOLERANCES, SHOWN_WORDS, STATS, STAT_LABEL, STRETCH_PRESETS, lengthName, presetDates, ruleName, ruleOf, shownName, type BlockDefinition, type BlockInstance, type BlockStart, type Conditions, type PeriodPreset, type Pick, type Rule, type RuleShape, type RunFilter, type Stat, type Tolerances, shapeName } from '@/lib/blocks';
 import { instancesInWorker, useLocale } from '@/lib/client';
 import { date, pace as fmtPace } from '@/lib/format';
-import { msg, number, t, tn } from '@/lib/i18n';
+import { MILE, distanceUnit, fromDistance, fromPace, msg, number, paceUnit, t, tn, toDistance, toPace, units } from '@/lib/i18n';
 import type { FoundLayout } from './options';
 import { minSec } from '@/lib/kernel';
 
@@ -20,11 +20,15 @@ export interface BuilderOptions {
 }
 
 const mmss = (sec: number) => minSec(sec);
+/** A pace kept in s/km, as m:ss in the units chosen (requirement "Units chosen"), and read back from them. */
+const paceText = (secPerKm: number) => minSec(toPace(secPerKm));
 const parsePace = (text: string): number | null => {
   if (!text.trim()) return null;
   const [m, s] = text.split(':').map(Number);
-  return Number.isFinite(m) ? m * 60 + (s || 0) : null;
+  return Number.isFinite(m) ? fromPace(m * 60 + (s || 0)) : null;
 };
+/** The lengths a fastest stretch is offered in: by the clock, and by distance in the unit shown (1, 2, 5, 10 mi in miles). */
+const stretchPresets = () => (units() === 'imperial' ? [...STRETCH_PRESETS.filter((w) => w.kind === 'time'), ...[1, 2, 5, 10].map((n) => ({ kind: 'distance' as const, target: n * MILE }))] : STRETCH_PRESETS);
 const parseNum = (text: string, scale = 1): number | null => {
   if (!text.trim()) return null;
   const n = Number(text.replace(',', '.'));
@@ -312,7 +316,7 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
           {accepted.length > 0 && (
             <ul className="preview-list">
               {[...accepted].sort((a, b) => b.runStart.localeCompare(a.runStart) || a.start - b.start).map((i) => (
-                <li key={i.id}><span>{date(i.runStart)}</span><span className="muted">{t('min {from}–{to}', { from: mmss(i.start), to: mmss(i.end) })} · {fmtPace(i.metrics.speed)} /km{i.metrics.heartRate ? ` · ${number(Math.round(i.metrics.heartRate))} bpm` : ''}</span></li>
+                <li key={i.id}><span>{date(i.runStart)}</span><span className="muted">{t('min {from}–{to}', { from: mmss(i.start), to: mmss(i.end) })} · {fmtPace(i.metrics.speed)} {paceUnit()}{i.metrics.heartRate ? ` · ${number(Math.round(i.metrics.heartRate))} bpm` : ''}</span></li>
               ))}
             </ul>
           )}
@@ -370,10 +374,10 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
                   <div className="field picks">
                     <span>{t('Length')}</span>
                     <span className="metric-picker" role="group" aria-label={t('Length')}>
-                      {STRETCH_PRESETS.filter((w) => w.kind === shape.kind).map((w) => { const on = w.target === shape.target; return <button key={stretchLabel(w)} type="button" className={`pill ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => chooseSegment({ type: 'fastest', ...w, effort: shape.effort })}>{stretchLabel(w)}</button>; })}
+                      {stretchPresets().filter((w) => w.kind === shape.kind).map((w) => { const on = w.target === shape.target; return <button key={stretchLabel(w)} type="button" className={`pill ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => chooseSegment({ type: 'fastest', ...w, effort: shape.effort })}>{stretchLabel(w)}</button>; })}
                       <span className="range">
-                        <input aria-label={t('Length value')} type="number" min={0.1} step="any" value={shape.kind === 'time' ? shape.target / 60 : shape.target / 1000} onChange={(e) => { const n = Number(e.target.value); if (n > 0) chooseSegment({ type: 'fastest', kind: shape.kind, target: shape.kind === 'time' ? n * 60 : n * 1000, effort: shape.effort }); }} style={{ width: 64 }} />
-                        <span className="muted small unit">{shape.kind === 'time' ? 'min' : 'km'}</span>
+                        <input aria-label={t('Length value')} type="number" min={0.1} step="any" value={shape.kind === 'time' ? shape.target / 60 : +toDistance(shape.target).toFixed(3)} onChange={(e) => { const n = Number(e.target.value); if (n > 0) chooseSegment({ type: 'fastest', kind: shape.kind, target: shape.kind === 'time' ? n * 60 : fromDistance(n), effort: shape.effort }); }} style={{ width: 64 }} />
+                        <span className="muted small unit">{shape.kind === 'time' ? 'min' : distanceUnit()}</span>
                       </span>
                     </span>
                   </div>
@@ -415,7 +419,7 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
             ))}
             {shown('title') && <Opt label={t('Title contains')} onRemove={() => remove('title')}><label className="field"><span>{t('Title contains')}</span><input aria-label={t('Title contains')} placeholder={t('e.g. COROS test')} value={f.title} onChange={(e) => runs({ title: e.target.value })} style={{ width: 200 }} /></label></Opt>}
             {shown('laps') && <Opt label={t('Laps in the run')} onRemove={() => remove('laps')}><Range label={t('Laps in the run')} names={[t('Laps from'), t('Laps to')]} unit="" from={f.lapsMin} to={f.lapsMax} show={num} parse={(t) => parseNum(t)} onChange={(a, b) => runs({ lapsMin: a, lapsMax: b })} /></Opt>}
-            {shown('pace') && <Opt label={t('Pace')} onRemove={() => remove('pace')}><Range label={t('Pace')} names={[t('Pace from'), t('Pace to')]} unit="/km" from={c.paceMin} to={c.paceMax} show={mmss} parse={parsePace} onChange={(a, b) => cond({ paceMin: a, paceMax: b })} /></Opt>}
+            {shown('pace') && <Opt label={t('Pace')} onRemove={() => remove('pace')}><Range label={t('Pace')} names={[t('Pace from'), t('Pace to')]} unit={paceUnit()} from={c.paceMin} to={c.paceMax} show={paceText} parse={parsePace} onChange={(a, b) => cond({ paceMin: a, paceMax: b })} /></Opt>}
             {shown('hr') && <Opt label={t('Heart rate')} onRemove={() => remove('hr')}><Range label={t('Heart rate')} names={[t('Heart rate from'), t('Heart rate to')]} unit="bpm" from={c.hrMin} to={c.hrMax} show={num} parse={(t) => parseNum(t)} onChange={(a, b) => cond({ hrMin: a, hrMax: b })} /></Opt>}
             {shown('metric') && (
               <Opt label={t('Another metric')} onRemove={() => remove('metric')}>
@@ -427,16 +431,16 @@ export function RuleBuilder({ initial, initialName, options, handle, footer, tol
                   </select>
                 </label>
                 {chosenMetric && (
-                  <Range key={chosenMetric.key} label={chosenMetric.title} names={[t('{metric} from', { metric: chosenMetric.title }), t('{metric} to', { metric: chosenMetric.title })]} unit={chosenMetric.invert ? '/km' : chosenMetric.unit}
-                    from={c.metricMin ?? null} to={c.metricMax ?? null} show={chosenMetric.invert ? mmss : (v) => num(+v.toFixed(2))} parse={chosenMetric.invert ? parsePace : (t) => parseNum(t)}
+                  <Range key={chosenMetric.key} label={chosenMetric.title} names={[t('{metric} from', { metric: chosenMetric.title }), t('{metric} to', { metric: chosenMetric.title })]} unit={chosenMetric.invert ? paceUnit() : chosenMetric.unit}
+                    from={c.metricMin ?? null} to={c.metricMax ?? null} show={chosenMetric.invert ? paceText : (v) => num(+v.toFixed(2))} parse={chosenMetric.invert ? parsePace : (t) => parseNum(t)}
                     onChange={(a, b) => cond({ metricMin: a, metricMax: b })} />
                 )}
               </Opt>
             )}
-            {shown('distance') && <Opt label={t('Distance')} onRemove={() => remove('distance')}><Range label={t('Distance')} names={[t('Distance from'), t('Distance to')]} unit="km" from={c.distanceMin} to={c.distanceMax} show={(v) => num(+(v / 1000).toFixed(2))} parse={(t) => parseNum(t, 1000)} onChange={(a, b) => cond({ distanceMin: a, distanceMax: b })} /></Opt>}
+            {shown('distance') && <Opt label={t('Distance')} onRemove={() => remove('distance')}><Range label={t('Distance')} names={[t('Distance from'), t('Distance to')]} unit={distanceUnit()} from={c.distanceMin} to={c.distanceMax} show={(v) => num(+toDistance(v).toFixed(2))} parse={(t) => parseNum(t, fromDistance(1))} onChange={(a, b) => cond({ distanceMin: a, distanceMax: b })} /></Opt>}
             {shown('duration') && <Opt label={t('Duration')} onRemove={() => remove('duration')}><Range label={t('Duration')} names={[t('Duration from'), t('Duration to')]} unit="min" from={c.durationMin} to={c.durationMax} show={(v) => num(Math.round(v / 60))} parse={(t) => parseNum(t, 60)} onChange={(a, b) => cond({ durationMin: a, durationMax: b })} /></Opt>}
             {shown('alwaysHr') && <Opt label={t('Heart rate never below / above')} onRemove={() => remove('alwaysHr')}><Range label={t('Heart rate never below / above')} names={[t('Heart rate never below'), t('Heart rate never above')]} unit="bpm" from={c.alwaysHrMin} to={c.alwaysHrMax} show={num} parse={(t) => parseNum(t)} onChange={(a, b) => cond({ alwaysHrMin: a, alwaysHrMax: b })} /></Opt>}
-            {shown('alwaysPace') && <Opt label={t('Pace always within')} onRemove={() => remove('alwaysPace')}><Range label={t('Pace always within')} names={[t('Pace always from'), t('Pace always to')]} unit="/km" from={c.alwaysPaceMin} to={c.alwaysPaceMax} show={mmss} parse={parsePace} onChange={(a, b) => cond({ alwaysPaceMin: a, alwaysPaceMax: b })} /></Opt>}
+            {shown('alwaysPace') && <Opt label={t('Pace always within')} onRemove={() => remove('alwaysPace')}><Range label={t('Pace always within')} names={[t('Pace always from'), t('Pace always to')]} unit={paceUnit()} from={c.alwaysPaceMin} to={c.alwaysPaceMax} show={paceText} parse={parsePace} onChange={(a, b) => cond({ alwaysPaceMin: a, alwaysPaceMax: b })} /></Opt>}
             {shown('start') && (
               <Opt label={t('Start of the effort')} onRemove={() => remove('start')}>
                 <label className="field">

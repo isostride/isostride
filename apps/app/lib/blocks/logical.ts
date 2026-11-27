@@ -7,7 +7,7 @@ import { SAVED_WORDS, type Words } from './words';
 
 /** "10-minute effort", "5 km effort": a suggestion's name, kept in English unless given the words of the language in use. */
 export function effortName(kind: 'time' | 'distance', target: number, w: Words = SAVED_WORDS): string {
-  return kind === 'time' ? w.t('{min}-minute effort', { min: w.num(target / 60) }) : w.t('{km} km effort', { km: w.num(target / 1000) });
+  return kind === 'time' ? w.t('{min}-minute effort', { min: w.num(target / 60) }) : w.t('{km} {unit} effort', { km: w.num(w.distUnit() === 'km' ? w.dist(target) : +w.dist(target).toFixed(2)), unit: w.distUnit() });
 }
 
 /** "Workout: tempo": the name of a workout type's segment (the type is the runner's, as it is). */
@@ -41,7 +41,7 @@ export function followsPattern(laps: Lap[], pattern: PatternLap[], tolerance: nu
 
 /** "2 km + 4 × 8 min": the set laps before the first effort, then the efforts by length. */
 export function patternName(pattern: PatternLap[], w: Words = SAVED_WORDS): string {
-  const label = (p: PatternLap) => (p.kind === 'time' ? `${w.num(+(p.target / 60).toFixed(1))} min` : `${w.num(+(p.target / 1000).toFixed(1))} km`);
+  const label = (p: PatternLap) => (p.kind === 'time' ? `${w.num(+(p.target / 60).toFixed(1))} min` : `${w.num(+w.dist(p.target).toFixed(1))} ${w.distUnit()}`);
   const firstEffort = pattern.findIndex((p) => p.effort);
   const lead = pattern.slice(0, Math.max(0, firstEffort)).filter((p) => p.kind !== 'free').map(label);
   const efforts = new Map<string, number>();

@@ -3,7 +3,7 @@
  * time drawn kept inside the run, zoomed around a time that keeps its place, moved, and the
  * round ticks of a time axis and of a pace scale.
  */
-import { number } from '@/lib/i18n';
+import { distanceUnit, fromDistance, number, toDistance } from '@/lib/i18n';
 
 /** The range of time drawn, s since the start of the run. */
 export type Domain = [number, number];
@@ -96,16 +96,17 @@ export function distanceMap(t: number[], distance: (number | null)[]): DistanceM
   return { toDist, toTime, max: n ? ds[n - 1] : 0 };
 }
 
-/** Round distance ticks inside [a, b] m: every 100 m up to every 10 km, about `count`. */
+/** Round distance ticks inside [a, b] m: every 0.1 km (or mi, in the units chosen) up to every 10, about `count`. */
 export function kmTicks(a: number, b: number, count = 6): number[] {
-  const step = [100, 200, 250, 500, 1000, 2000, 5000, 10000].find((s) => (b - a) / s <= count) ?? 10000;
+  const steps = [0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10].map(fromDistance);
+  const step = steps.find((s) => (b - a) / s <= count) ?? steps[steps.length - 1];
   const out: number[] = [];
   for (let v = Math.ceil(a / step) * step; v <= b + 1e-6; v += step) out.push(v);
   return out;
 }
 
-/** A distance as a tick: 2 km, 2.5 km, 2.25 km. */
-export const kmLabel = (m: number) => `${number(Number((m / 1000).toFixed(2)))} km`;
+/** A distance as a tick: 2 km, 2.5 km, 2.25 km (mi in the units chosen). */
+export const kmLabel = (m: number) => `${number(Number(toDistance(m).toFixed(2)))} ${distanceUnit()}`;
 
 /**
  * The zoom factor of one wheel event: above 1 out, below 1 in. It grows with the square root of

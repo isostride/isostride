@@ -1,8 +1,8 @@
 'use client';
 
 import { Diagnostics } from './Diagnostics';
-import { useChartSettings, useLanguage, useMapTiles, useNarrowMenu, useTheme, type ChartSettings, type Theme } from '@/lib/client';
-import { LOCALES, t } from '@/lib/i18n';
+import { useChartSettings, useLanguage, useMapTiles, useNarrowMenu, useTheme, useUnits, type ChartSettings, type Theme } from '@/lib/client';
+import { LOCALES, t, type Units } from '@/lib/i18n';
 import { APP_BUILT, APP_COMMIT, APP_VERSION, REPO_URL, releaseNotesUrl, versionLabel } from '@/lib/kernel';
 
 /** A setting of a choice among a few: its name and what it does on the left, the choice on the right. */
@@ -67,6 +67,7 @@ export function ChartsCard({ compare = true }: { /** the switches of Compare's O
  */
 export function LanguageCard() {
   const [language, setLanguage] = useLanguage();
+  const [units, setUnits] = useUnits();
   return (
     <section className="card display-card" aria-label={t('Language & region')}>
       <div className="settings-head"><div><h2>{t('Language & region')}</h2><p className="muted small">{t('Kept in this browser: they belong to the device, not to the data folder.')}</p></div></div>
@@ -82,6 +83,8 @@ export function LanguageCard() {
           ))}
         </div>
       </div>
+      {/* The units (requirement "Units chosen": "dodaj obsluge innych jednostek mam na mysli mile"): what is shown and typed; the data folder keeps metres and s/km. */}
+      <Choice<Units> name={t('Units')} hint={t('Distance, pace and elevation: km, min/km and m, or mi, min/mi and ft. Your data keep metres whatever you choose.')} label={t('Units')} value={units} options={[['metric', t('Kilometres')], ['imperial', t('Miles')]]} onChange={setUnits} />
     </section>
   );
 }

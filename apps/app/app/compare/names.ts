@@ -1,10 +1,10 @@
 import { asRule, shownName, type BlockDefinition, type BlockParams } from '@/lib/blocks';
-import { dateText, msg, number, t } from '@/lib/i18n';
+import { dateText, distanceText, msg, number, paceUnit, t, toPace } from '@/lib/i18n';
 import { minSec } from '@/lib/kernel';
 
 /** A run's name in the Analysis screen: its title if any, its date and its distance. */
 export const runName = (start: string, distance: number, title?: string | null) =>
-  `${title ? `${title} · ` : ''}${dateText(start, { day: 'numeric', month: 'short', year: 'numeric' })} · ${number(distance / 1000, 1)} km`;
+  `${title ? `${title} · ` : ''}${dateText(start, { day: 'numeric', month: 'short', year: 'numeric' })} · ${distanceText(distance, 1)}`;
 
 /** The kinds of block, in words (shown through t()). */
 export const TYPE_LABEL: Record<BlockParams['type'], string> = {
@@ -31,7 +31,7 @@ function similarShown(name: string): string | null {
   const [day, km, ...rest] = m[2].split(' · ');
   const at = Date.parse(day);
   const what = m[2] === 'the selection' ? t('the selection')
-    : km !== undefined && Number.isFinite(at) ? [dateText(at, { day: 'numeric', month: 'short', year: 'numeric' }), km.replace(/^([\d.]+) km$/, (_, v: string) => `${number(Number(v), 1)} km`), ...rest].join(' · ')
+    : km !== undefined && Number.isFinite(at) ? [dateText(at, { day: 'numeric', month: 'short', year: 'numeric' }), km.replace(/^([\d.]+) km$/, (_, v: string) => distanceText(Number(v) * 1000, 1)), ...rest.map((p) => p.replace(/^(\d+):(\d\d) \/km/, (all, m: string, s: string) => { const v = Math.round(toPace(Number(m) * 60 + Number(s))); return `${Math.floor(v / 60)}:${String(v % 60).padStart(2, '0')} ${paceUnit()}`; }))].join(' · ')
     : m[2];
   return m[1] === 'route' ? t('Same route as {what}', { what }) : t('Same profile as {what}', { what });
 }

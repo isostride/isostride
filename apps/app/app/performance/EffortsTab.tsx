@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
-import { dateText, msg, number, t, tn } from '@/lib/i18n';
+import { dateText, msg, number, paceUnit, t, tn, toPace } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import { MARKER_DAYS, pairEfforts, type BestEffort, type Effort, type PerformanceNow } from '@/lib/load';
 import { WHOLE_AXIS, type CurveMetric } from '@/lib/curve';
 import { date, pace as fmtPace } from '@/lib/format';
-import { CellBar, METRIC_VIEW } from '@/components';
+import { CellBar, knownMetricViews } from '@/components';
 import { CurveChart } from '../compare/CurveChart';
 import { runHref } from '../compare/links';
 import { CurveModelNote, drawnCurve } from './curveModel';
@@ -65,13 +65,13 @@ export function EffortsTab({ now, runs, model }: { now: PerformanceNow; runs: Ru
       <div className="table-scroll">
         <table className="data efforts-table" aria-label={t('Best efforts')}>
           <thead>
-            <tr><th>{t('Length')}</th><th className="num"><span className="wide-text">{t('Best pace')}</span><span className="narrow-text">{t('Pace /km')}</span></th>{withPower && <th className="num"><span className="wide-text">{t('Best power')}</span><span className="narrow-text">{t('Power W')}</span></th>}<th className="col-effort">{t('Effort')}</th><th className="num col-hr">{t('Of max heart rate')}</th><th>{t('Run')}</th></tr>
+            <tr><th>{t('Length')}</th><th className="num"><span className="wide-text">{t('Best pace')}</span><span className="narrow-text">{t('Pace {unit}', { unit: paceUnit() })}</span></th>{withPower && <th className="num"><span className="wide-text">{t('Best power')}</span><span className="narrow-text">{t('Power W')}</span></th>}<th className="col-effort">{t('Effort')}</th><th className="num col-hr">{t('Of max heart rate')}</th><th>{t('Run')}</th></tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.duration} data-effort={(r.pace ?? r.power)!.effort} data-same={withPower ? String(r.same) : undefined} onMouseEnter={() => setFocus(r.duration)} onMouseLeave={() => setFocus(null)}>
                 <td className="strong">{number(r.duration / 60)} min</td>
-                <td className="num tnum strong">{r.pace ? <>{fmtPace(r.pace.value)}<span className="unit"> /km</span></> : '–'}</td>
+                <td className="num tnum strong">{r.pace ? <>{fmtPace(r.pace.value)}<span className="unit"> {paceUnit()}</span></> : '–'}</td>
                 {withPower && <td className="num tnum strong">{r.power ? <>{number(Math.round(r.power.value))}<span className="unit"> W</span></> : '–'}</td>}
                 <td className="col-effort">{both(r.pace, r.power, r.same, hard)}</td>
                 <td className="num tnum muted col-hr">{both(r.pace, r.power, r.same, ofMax)}</td>
@@ -108,13 +108,13 @@ function Curve({ now, runs, metric, onMetric, focus, model }: { now: Performance
   const points = efforts.map((e) => ({ duration: e.duration, value: power ? e.value : 1000 / e.value, note: `${date(e.startTime)}${title.get(e.runId) ? ` · ${title.get(e.runId)}` : ''}`, href: runHref(e.runId, e.at?.[0], e.at?.[1]) }));
   const drawn = drawnCurve(points, metric, model);
   const fit = drawn.fit;
-  const view = METRIC_VIEW.find((x) => x.key === metric)!;
+  const view = knownMetricViews().find((x) => x.key === metric)!;
   const gap = (m: number, e: number) => {
     const d = Math.round(m - e);
     if (d === 0) return t('on the curve');
-    const v = number(Math.abs(d));
+    const v = number(Math.abs(power ? d : Math.round(toPace(d))));
     if (power) return d > 0 ? t('{v} W above the curve', { v }) : t('{v} W below the curve', { v });
-    return d > 0 ? t('{v} s/km slower than the curve', { v }) : t('{v} s/km faster than the curve', { v });
+    return d > 0 ? t('{v} s{unit} slower than the curve', { v, unit: paceUnit() }) : t('{v} s{unit} faster than the curve', { v, unit: paceUnit() });
   };
   const c = fit?.critical;
   return (
@@ -130,12 +130,12 @@ function Curve({ now, runs, metric, onMetric, focus, model }: { now: Performance
       </div>
       {points.length ? (
         <CurveChart label={power ? t('Your power curve') : t('Your pace curve')} higherIsBetter={power} lines={[{ key: 'you', label: t('Bests of the last {days} days', { days: MARKER_DAYS }), color: 'var(--series-1)', shape: 'circle', points, estimate: drawn.estimate, extrapolate: drawn.extrapolate, estimateAt: drawn.at }]}
-          durations={WHOLE_AXIS} format={(v) => (power ? `${number(Math.round(v))} W` : `${fmtPace(1000 / v)} /km`)} tick={view.tick} minSpan={view.minSpan} gap={gap} highlight={focus === null ? null : { key: 'you', duration: focus }} height={240} />
+          durations={WHOLE_AXIS} format={(v) => (power ? `${number(Math.round(v))} W` : `${fmtPace(1000 / v)} ${paceUnit()}`)} tick={view.tick} minSpan={view.minSpan} gap={gap} highlight={focus === null ? null : { key: 'you', duration: focus }} height={240} />
       ) : <p className="muted small">{t('No best in the last {days} days.', { days: MARKER_DAYS })}</p>}
       <p className="chart-note">
         {c ? (power
           ? <>{t('Critical power')} <b className="tnum">{number(Math.round(c.rate))} W</b>{t(', the power you could hold for about half an hour to an hour; W′')} <b className="tnum">{number(c.reserve / 1000, 1)} kJ</b>{t(', the work above it you can spend.')}</>
-          : <>{t('Critical speed')} <b className="tnum">{fmtPace(c.rate)} /km</b>{t(', the pace you could hold for about half an hour to an hour; D′')} <b className="tnum">{number(Math.round(c.reserve))} m</b>{t(', the distance above it you can spend.')}</>)
+          : <>{t('Critical speed')} <b className="tnum">{fmtPace(c.rate)} {paceUnit()}</b>{t(', the pace you could hold for about half an hour to an hour; D′')} <b className="tnum">{number(Math.round(c.reserve))} m</b>{t(', the distance above it you can spend.')}</>)
           : t('The curve needs bests of at least three lengths of 2–20 minutes.')}{' '}{t('Compare draws the curves of runs, periods or shoes side by side.')}
       </p>
       <CurveModelNote curve={drawn} metric={metric} />

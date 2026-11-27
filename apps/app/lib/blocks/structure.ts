@@ -78,5 +78,6 @@ export function structureName(kind: 'time' | 'distance', target: number, w: Word
     const min = target / 60;
     return w.t('{min}-minute lap', { min: Number.isInteger(min) ? w.num(min) : w.num(min, 1) });
   }
-  return w.t('{km} km lap', { km: w.num(target / 1000, target % 1000 ? 1 : 0) });
+  const d = w.dist(target);
+  return w.t('{km} {unit} lap', { km: w.num(d, Math.abs(d - Math.round(d)) > 1e-9 ? 1 : 0), unit: w.distUnit() });
 }

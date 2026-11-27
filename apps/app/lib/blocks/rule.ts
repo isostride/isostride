@@ -137,8 +137,8 @@ export function shapeName(shape: RuleShape, w: Words = SHOWN_WORDS): string {
   if (shape.type === 'profile') {
     const k = shape.key;
     const climb = k.altitude ? Math.round(k.altitude.reduce((s, a, i, xs) => s + (i && a > xs[i - 1] ? a - xs[i - 1] : 0), 0)) : null;
-    const vars = { km: w.num(k.distance / 1000, 1), climb: w.num(climb ?? 0), pace: mmss(Math.round(k.pace)) };
-    return climb === null ? w.t('Same profile: {km} km, pace shape of {pace}', vars) : w.t('Same profile: {km} km, {climb} m up, pace shape of {pace}', vars);
+    const vars = { km: w.num(w.dist(k.distance), 1), unit: w.distUnit(), climb: w.num(Math.round(w.elev(climb ?? 0))), climbUnit: w.elevUnit(), pace: mmss(Math.round(w.pace(k.pace))) };
+    return climb === null ? w.t('Same profile: {km} {unit}, pace shape of {pace}', vars) : w.t('Same profile: {km} {unit}, {climb} {climbUnit} up, pace shape of {pace}', vars);
   }
   const length = lengthName(shape.kind, shape.target, w);
   return shape.effort ? w.t('Fastest {length}, run as an effort', { length }) : w.t('Fastest {length}', { length });
@@ -176,14 +176,14 @@ export function ruleName(r: Rule, w: Words = SAVED_WORDS): string {
   const n2 = (v: number) => w.num(+v.toFixed(2));
   const parts = [
     shapeName(r.shape, w),
-    range(w, c.distanceMin, c.distanceMax, (v) => n2(v / 1000), ' km'),
+    range(w, c.distanceMin, c.distanceMax, (v) => n2(w.dist(v)), ` ${w.distUnit()}`),
     range(w, c.durationMin, c.durationMax, (v) => w.num(Math.round(v / 60)), ' min'),
-    range(w, c.paceMin, c.paceMax, mmss, ' /km'),
+    range(w, c.paceMin, c.paceMax, (v) => mmss(w.pace(v)), ` ${w.paceUnit()}`),
     range(w, c.hrMin, c.hrMax, (v) => w.num(v), ' bpm'),
-    c.metric && (c.metricMin != null || c.metricMax != null) ? `${w.t(metricInfo(c.metric).name)} ${range(w, c.metricMin ?? null, c.metricMax ?? null, isPace(c.metric) ? mmss : n2, isPace(c.metric) ? ' /km' : metricInfo(c.metric).unit ? ` ${metricInfo(c.metric).unit}` : '')}` : null,
+    c.metric && (c.metricMin != null || c.metricMax != null) ? `${w.t(metricInfo(c.metric).name)} ${range(w, c.metricMin ?? null, c.metricMax ?? null, isPace(c.metric) ? (v) => mmss(w.pace(v)) : n2, isPace(c.metric) ? ` ${w.paceUnit()}` : metricInfo(c.metric).unit ? ` ${metricInfo(c.metric).unit}` : '')}` : null,
     c.alwaysHrMin !== null ? w.t('HR never below {hr}', { hr: w.num(c.alwaysHrMin) }) : null,
     c.alwaysHrMax !== null ? w.t('HR never above {hr}', { hr: w.num(c.alwaysHrMax) }) : null,
-    c.alwaysPaceMin !== null || c.alwaysPaceMax !== null ? w.t('pace always {range}', { range: range(w, c.alwaysPaceMin, c.alwaysPaceMax, mmss, ' /km') ?? '' }) : null,
+    c.alwaysPaceMin !== null || c.alwaysPaceMax !== null ? w.t('pace always {range}', { range: range(w, c.alwaysPaceMin, c.alwaysPaceMax, (v) => mmss(w.pace(v)), ` ${w.paceUnit()}`) ?? '' }) : null,
     c.start === 'standing' ? w.t('standing start') : c.start === 'flying' ? w.t('flying start') : null,
     f.title.trim() ? w.t('“{title}”', { title: f.title.trim() }) : null,
     // The runner's tags, gear and devices: data, as they are.

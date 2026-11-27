@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { msg, number, t } from '@/lib/i18n';
+import { msg, number, paceUnit, t, toPace } from '@/lib/i18n';
 import type { RunsIndex } from '@/lib/kernel';
 import { MARKER_DAYS, markerRanges, markersOverTime, vdotOverTime, type LoadSummary, type MarkerWeek, type Range } from '@/lib/load';
 import { duration as fmtDuration, pace as fmtPace } from '@/lib/format';
@@ -42,7 +42,7 @@ export function CriticalTab({ runs, summaries, today }: Props) {
   return (
     <div className="card chart">
       <dl className="form-figures" aria-label={t('Critical speed and power now')}>
-        <div><dt>{t('Critical speed')}</dt><dd className="tnum">{now.cs ? `${fmtPace(now.cs)} /km` : '–'}</dd><dd className="muted sub">{delta(now.cs && 1000 / now.cs, before?.cs ? 1000 / before.cs : null, (v) => `${number(Math.round(v))} s/km`, true)}</dd><RangeNote text={rangeText(ranges.cs, (lo, hi) => `${fmtPace(hi)}–${fmtPace(lo)} /km`)} /></div>
+        <div><dt>{t('Critical speed')}</dt><dd className="tnum">{now.cs ? `${fmtPace(now.cs)} ${paceUnit()}` : '–'}</dd><dd className="muted sub">{delta(now.cs && 1000 / now.cs, before?.cs ? 1000 / before.cs : null, (v) => `${number(Math.round(toPace(v)))} s${paceUnit()}`, true)}</dd><RangeNote text={rangeText(ranges.cs, (lo, hi) => `${fmtPace(hi)}–${fmtPace(lo)} ${paceUnit()}`)} /></div>
         <div><dt>D′</dt><dd className="tnum">{now.dPrime !== null ? `${number(Math.round(now.dPrime))} m` : '–'}</dd><RangeNote text={rangeText(ranges.dPrime, (lo, hi) => `${number(Math.round(lo))}–${number(Math.round(hi))} m`)} /></div>
         {hasPower && <div><dt>{t('Critical power')}</dt><dd className="tnum">{now.cp !== null ? `${number(Math.round(now.cp))} W` : '–'}</dd><dd className="muted sub">{delta(now.cp, before?.cp ?? null, (v) => `${number(Math.round(v))} W`)}</dd><RangeNote text={rangeText(ranges.cp, (lo, hi) => `${number(Math.round(lo))}–${number(Math.round(hi))} W`)} /></div>}
         {hasPower && <div><dt>W′</dt><dd className="tnum">{now.wPrime !== null ? `${number(now.wPrime / 1000, 1)} kJ` : '–'}</dd><RangeNote text={rangeText(ranges.wPrime, (lo, hi) => `${number(lo / 1000, 1)}–${number(hi / 1000, 1)} kJ`)} /></div>}
@@ -54,7 +54,7 @@ export function CriticalTab({ runs, summaries, today }: Props) {
           <h3 className="chart-title">{t('Critical speed')}</h3>
           <TimeChart label={t('Critical speed over time')} times={times} invert
             series={[{ key: 'cs', label: t('critical speed'), color: 'var(--series-1)', kind: 'line', values: weeks.map((w) => (w.cs ? 1000 / w.cs : null)) }]}
-            format={(v) => `${fmtPace(1000 / v)} /km`} tick={(v) => fmtPace(1000 / v)} />
+            format={(v) => `${fmtPace(1000 / v)} ${paceUnit()}`} tick={(v) => fmtPace(1000 / v)} />
         </div>
         {hasPower && (
           <div>

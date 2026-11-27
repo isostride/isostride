@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Key, clock, niceTicks, timeTicks, useWidth } from '@/components';
 import { useDialogKeys } from './dialogKeys';
 import { pace as fmtPace } from '@/lib/format';
-import { number, t } from '@/lib/i18n';
+import { number, paceUnit, t } from '@/lib/i18n';
 import { PATHS, readJson, type DataFolder } from '@/lib/fs';
 import { metricSeries, type RunFile, type RunsIndex } from '@/lib/kernel';
 import { criticalSeries, reserveBalance, type CriticalAt, type LoadSummary } from '@/lib/load';
@@ -58,7 +58,7 @@ function BalanceCard({ run, folder }: { run: RunFile; folder: DataFolder }) {
     const watts = metricSeries(run.samples, 'power');
     const out: { key: string; label: string; color: string; balance: ReturnType<typeof reserveBalance>; critical: string }[] = [];
     if (speed && pace.some((v) => v !== null && v > 0)) {
-      out.push({ key: 'speed', label: t('D′ (pace)'), color: 'var(--series-1)', balance: reserveBalance(ts, pace, speed.rate, speed.reserve), critical: t('critical speed {pace} /km, D′ {reserve} m', { pace: fmtPace(speed.rate), reserve: number(Math.round(speed.reserve)) }) });
+      out.push({ key: 'speed', label: t('D′ (pace)'), color: 'var(--series-1)', balance: reserveBalance(ts, pace, speed.rate, speed.reserve), critical: t('critical speed {pace} {unit}, D′ {reserve} m', { pace: fmtPace(speed.rate), unit: paceUnit(), reserve: number(Math.round(speed.reserve)) }) });
     }
     if (power && watts.some((v) => v !== null && v > 0)) {
       out.push({ key: 'power', label: t('W′ (power)'), color: 'var(--series-2)', balance: reserveBalance(ts, watts, power.rate, power.reserve), critical: t('critical power {power} W, W′ {reserve} kJ', { power: number(Math.round(power.rate)), reserve: number(power.reserve / 1000, 1) }) });
