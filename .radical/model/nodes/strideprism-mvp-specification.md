@@ -1384,3 +1384,4 @@ A: (użytkownik) lepiej ... niech bedzie troche szersza
 A: (użytkownik) niech bedzie troche szersza ta ikona
 A: (użytkownik) i przesun do prawego gornego rogu na wysokosci metryk
 A: (użytkownik) wyprzchnij pr (no requirement)
+A: (użytkownik) duzo bylo zmian, zmien wersje na 0.2 ....
