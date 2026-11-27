@@ -65,7 +65,8 @@ fs.writeFileSync("reports/timing.json", JSON.stringify({ ...read("reports/timing
   run node scripts/coverage-new.mjs
   run node scripts/test-metrics.mjs
   run sh scripts/metrics.sh
-  run sh ../../radical.sh check ../../.radical/model --report reports/vitest.json --report reports/playwright.json
+  # With METRICS_OUT (CI) the measurements are in files there (scripts/metrics.sh), read beside the reports.
+  run sh ../../radical.sh check ../../.radical/model --report reports/vitest.json --report reports/playwright.json ${METRICS_OUT:+--metrics "$METRICS_OUT"}
 fi
 
 exit $failed

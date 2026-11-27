@@ -16,7 +16,7 @@
 # another for one run: RADICAL_VERSION=latest sh radical.sh setup upgrades.
 set -eu
 
-default_version=0.5.0
+default_version=0.6.1
 version=${RADICAL_VERSION:-$default_version}
 home=${RADICAL_HOME:-"$HOME/.radical"}
 mirror=${RADICAL_NODE_MIRROR:-https://nodejs.org/dist}
